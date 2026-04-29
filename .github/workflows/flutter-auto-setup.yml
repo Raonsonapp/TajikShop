@@ -1,0 +1,55 @@
+name: Flutter Auto Setup (All Platforms)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # 2. Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+
+      # 3. Enable platforms
+      - name: Enable platforms
+        run: |
+          flutter config --enable-web
+          flutter config --enable-linux-desktop
+          flutter config --enable-macos-desktop
+          flutter config --enable-windows-desktop
+
+      # 4. Create project if not exists
+      - name: Create Flutter project if missing
+        run: |
+          if [ ! -f "pubspec.yaml" ]; then
+            flutter create .
+          fi
+
+      # 5. Generate missing platform folders
+      - name: Generate platform folders
+        run: flutter create .
+
+      # 6. Get packages
+      - name: Pub get
+        run: flutter pub get
+
+      # 7. Commit changes
+      - name: Commit & Push
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+
+          git add .
+          git commit -m "Auto-generate Flutter platforms (android, ios, web, desktop)" || echo "No changes"
+          git push
