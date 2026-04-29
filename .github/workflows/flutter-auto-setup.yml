@@ -5,23 +5,32 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   setup:
     runs-on: ubuntu-latest
 
     steps:
       # 1. Checkout
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Setup Flutter
+      # 2. Setup Flutter SDK
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
           channel: 'stable'
 
-      # 3. Enable platforms
+      # 3. Fix project name (lowercase)
+      - name: Generate valid project name
+        run: |
+          NAME=$(basename $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]' | tr '-' '_' )
+          echo "PROJECT_NAME=$NAME" >> $GITHUB_ENV
+
+      # 4. Enable all platforms
       - name: Enable platforms
         run: |
           flutter config --enable-web
@@ -29,27 +38,32 @@ jobs:
           flutter config --enable-macos-desktop
           flutter config --enable-windows-desktop
 
-      # 4. Create project if not exists
+      # 5. Create project if missing
       - name: Create Flutter project if missing
         run: |
           if [ ! -f "pubspec.yaml" ]; then
-            flutter create .
+            flutter create --project-name $PROJECT_NAME .
           fi
 
-      # 5. Generate missing platform folders
+      # 6. Ensure all platform folders exist
       - name: Generate platform folders
         run: flutter create .
 
-      # 6. Get packages
-      - name: Pub get
+      # 7. Get dependencies
+      - name: Install dependencies
         run: flutter pub get
 
-      # 7. Commit changes
-      - name: Commit & Push
+      # 8. Fix pubspec name if wrong
+      - name: Fix pubspec.yaml name
+        run: |
+          sed -i "s/^name: .*/name: $PROJECT_NAME/" pubspec.yaml || true
+
+      # 9. Commit & Push changes
+      - name: Commit and push
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
 
           git add .
-          git commit -m "Auto-generate Flutter platforms (android, ios, web, desktop)" || echo "No changes"
+          git commit -m "Auto setup Flutter project (android, ios, web, desktop)" || echo "No changes"
           git push
