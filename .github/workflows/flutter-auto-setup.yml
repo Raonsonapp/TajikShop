@@ -14,56 +14,54 @@ jobs:
 
     steps:
       # 1. Checkout
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # 2. Setup Flutter SDK
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      # 2. Setup Flutter
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
           channel: 'stable'
 
-      # 3. Fix project name (lowercase)
-      - name: Generate valid project name
+      # 3. Generate valid name
+      - name: Fix project name
         run: |
           NAME=$(basename $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]' | tr '-' '_' )
           echo "PROJECT_NAME=$NAME" >> $GITHUB_ENV
 
-      # 4. Enable all platforms
-      - name: Enable platforms
-        run: |
+      # 4. Enable platforms
+      - run: |
           flutter config --enable-web
           flutter config --enable-linux-desktop
           flutter config --enable-macos-desktop
           flutter config --enable-windows-desktop
 
-      # 5. Create project if missing
-      - name: Create Flutter project if missing
+      # 5. Create project (АГАР НЕСТ)
+      - name: Create project if missing
         run: |
           if [ ! -f "pubspec.yaml" ]; then
-            flutter create --project-name $PROJECT_NAME .
+            flutter create --project-name $PROJECT_NAME temp_app
+            cp -r temp_app/* .
+            rm -rf temp_app
           fi
 
-      # 6. Ensure all platform folders exist
-      - name: Generate platform folders
-        run: flutter create .
+      # 6. FIX МУҲИМ: regenerate platforms БЕ ХАТО
+      - name: Generate platforms safely
+        run: flutter create --project-name $PROJECT_NAME .
 
-      # 7. Get dependencies
-      - name: Install dependencies
-        run: flutter pub get
+      # 7. Dependencies
+      - run: flutter pub get
 
-      # 8. Fix pubspec name if wrong
-      - name: Fix pubspec.yaml name
+      # 8. Fix pubspec
+      - name: Fix pubspec name
         run: |
           sed -i "s/^name: .*/name: $PROJECT_NAME/" pubspec.yaml || true
 
-      # 9. Commit & Push changes
-      - name: Commit and push
+      # 9. Commit
+      - name: Commit & push
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
 
           git add .
-          git commit -m "Auto setup Flutter project (android, ios, web, desktop)" || echo "No changes"
+          git commit -m "Auto setup Flutter بالكامل (fixed name issue)" || echo "No changes"
           git push
