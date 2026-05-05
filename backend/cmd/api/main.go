@@ -9,15 +9,19 @@ import (
 
 	"tajikshop/internal/db"
 	"tajikshop/internal/handlers"
-	"tajikshop/internal/storage"
 )
 
 func main() {
-	godotenv.Load()
+	// load .env (локально)
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("No .env file found (ok in production)")
+	}
 
+	// connect database
 	db.Connect()
-	storage.InitR2()
 
+	// router
 	r := gin.Default()
 
 	r.GET("/ping", func(c *gin.Context) {
@@ -26,6 +30,7 @@ func main() {
 
 	r.POST("/products", handlers.CreateProduct)
 
+	// port
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
