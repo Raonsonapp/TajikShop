@@ -12,11 +12,12 @@ import (
 )
 
 type R2 struct {
-	Client *s3.Client
-	Bucket string
+	Client     *s3.Client
+	Bucket     string
+	AccountID  string
 }
 
-// сохтани client барои Cloudflare R2
+// сохтани client
 func NewR2(accountID, accessKey, secretKey, bucket string) *R2 {
 	endpoint := "https://" + accountID + ".r2.cloudflarestorage.com"
 
@@ -36,12 +37,13 @@ func NewR2(accountID, accessKey, secretKey, bucket string) *R2 {
 	})
 
 	return &R2{
-		Client: client,
-		Bucket: bucket,
+		Client:    client,
+		Bucket:    bucket,
+		AccountID: accountID,
 	}
 }
 
-// upload файл ба R2
+// upload файл
 func (r *R2) Upload(fileName string, file []byte) (string, error) {
 	_, err := r.Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: &r.Bucket,
@@ -53,11 +55,8 @@ func (r *R2) Upload(fileName string, file []byte) (string, error) {
 		return "", err
 	}
 
-	// линк барои дастрасӣ
-	url := "https://" + r.Bucket + "." + r.Client.EndpointResolverV2.ResolveEndpoint(
-		context.TODO(),
-		s3.EndpointParameters{},
-	).URI.Host + "/" + fileName
+	// ✔ ДУРУСТ URL (бе EndpointResolverV2)
+	url := "https://" + r.Bucket + "." + r.AccountID + ".r2.cloudflarestorage.com/" + fileName
 
 	return url, nil
 }
