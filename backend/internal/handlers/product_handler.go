@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"bytes"
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -20,15 +23,33 @@ func CreateProduct(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "image required"})
 		return
 	}
+	defer file.Close()
 
-	filename := uuid.New().String() + "_" + header.Filename
-
-	url, err := storage.Upload(file, filename)
+	// 📦 файлро ба []byte табдил медиҳем
+	fileBytes, err := io.ReadAll(file)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
+	fileName := uuid.New().String() + "_" + header.Filename
+
+	// 🔥 R2 INIT
+	r2 := storage.NewR2(
+		os.Getenv("R2_ACCOUNT_ID"),
+		os.Getenv("R2_ACCESS_KEY"),
+		os.Getenv("R2_SECRET_KEY"),
+		os.Getenv("R2_BUCKET"),
+	)
+
+	// 🚀 Upload
+	url, err := r2.Upload(fileName, fileBytes)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 💾 DB save
 	_, err = db.DB.Exec(`
 		INSERT INTO products (id, title, description, price)
 		VALUES ($1,$2,$3,$4)
