@@ -5,9 +5,14 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+
+	"tajikshop/internal/db"
 )
 
 func main() {
+	// 👉 ИН САТРРО ИЛОВА КУН
+	db.Connect()
+
 	r := gin.Default()
 
 	r.GET("/ping", func(c *gin.Context) {
