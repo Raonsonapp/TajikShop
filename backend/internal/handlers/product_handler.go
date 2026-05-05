@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"io"
 	"net/http"
 	"os"
