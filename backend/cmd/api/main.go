@@ -10,7 +10,14 @@ import (
 )
 
 func main() {
-	// 👉 ИН САТРРО ИЛОВА КУН
+	// Debug: DB_URL-ро санҷед
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("❌ ХАТО: DB_URL environment variable холӣ аст! Онро дар Render → Environment илова кун.")
+	} else {
+		log.Println("✅ DB_URL ёфт шуд, пайваст мешавем...")
+	}
+
 	db.Connect()
 
 	r := gin.Default()
