@@ -1,14 +1,12 @@
-# Gradle files
+# =========================
+# FLUTTER / ANDROID
+# =========================
 .gradle/
 build/
-
-# Local configuration file (sdk path, etc)
 local.properties
 
-# Log/OS Files
 *.log
 
-# Android Studio generated files and folders
 captures/
 .externalNativeBuild/
 .cxx/
@@ -16,19 +14,50 @@ captures/
 *.apk
 output-metadata.json
 
-# IntelliJ
 *.iml
 .idea/
 misc.xml
 deploymentTargetDropDown.xml
 render.experimental.xml
 
-# Keystore files
 *.jks
 *.keystore
 
-# Google Services (e.g. APIs or Firebase)
 google-services.json
 
-# Android Profiling
 *.hprof
+
+# =========================
+# DART / FLUTTER
+# =========================
+.dart_tool/
+.packages
+.pub/
+build/
+flutter_export_environment.sh
+
+# =========================
+# GO BACKEND
+# =========================
+bin/
+vendor/
+*.exe
+*.out
+
+# =========================
+# ENV / SECRETS (VERY IMPORTANT)
+# =========================
+.env
+.env.*
+*.env
+
+# =========================
+# OS FILES
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE
+# =========================
+.vscode/
