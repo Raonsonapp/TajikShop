@@ -2,35 +2,39 @@ package main
 
 import (
 	"log"
-	"os"
+	"tajikshop/internal/config"
+	"tajikshop/internal/db"
+	"tajikshop/internal/middleware"
+	"tajikshop/internal/routes"
+	"tajikshop/internal/storage"
 
 	"github.com/gin-gonic/gin"
-
-	"tajikshop/internal/db"
 )
 
 func main() {
-	// Debug: DB_URL-ро санҷед
-	dbURL := os.Getenv("DB_URL")
-	if dbURL == "" {
-		log.Fatal("❌ ХАТО: DB_URL environment variable холӣ аст! Онро дар Render → Environment илова кун.")
-	} else {
-		log.Println("✅ DB_URL ёфт шуд, пайваст мешавем...")
-	}
+	cfg := config.Load()
 
-	db.Connect()
+	db.Connect(cfg.DBUrl)
+	db.Init()
+
+	middleware.SetSecret(cfg.JWTSecret)
+
+	var r2 *storage.R2Client
+	if cfg.R2Endpoint != "" && cfg.R2AccessKey != "" {
+		var err error
+		r2, err = storage.NewR2Client(cfg.R2Endpoint, cfg.R2AccessKey, cfg.R2SecretKey, cfg.R2Bucket, cfg.R2PublicURL)
+		if err != nil {
+			log.Printf("⚠️  R2 not configured: %v", err)
+		} else {
+			log.Println("✅ Cloudflare R2 connected")
+		}
+	}
 
 	r := gin.Default()
+	routes.Setup(r, cfg.JWTSecret, r2)
 
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "🚀 TajikShop LIVE"})
-	})
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	log.Printf("🚀 TajikShop API running on :%s", cfg.Port)
+	if err := r.Run(":" + cfg.Port); err != nil {
+		log.Fatalf("❌ Server failed: %v", err)
 	}
-
-	log.Println("Server running on", port)
-	r.Run(":" + port)
 }
