@@ -24,10 +24,31 @@ func Connect(dsn string) {
 }
 
 func Init() {
+	drops := `
+DROP TABLE IF EXISTS payments CASCADE;
+DROP TABLE IF EXISTS notifications CASCADE;
+DROP TABLE IF EXISTS messages CASCADE;
+DROP TABLE IF EXISTS stories CASCADE;
+DROP TABLE IF EXISTS follows CASCADE;
+DROP TABLE IF EXISTS reviews CASCADE;
+DROP TABLE IF EXISTS order_items CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS addresses CASCADE;
+DROP TABLE IF EXISTS cart_items CASCADE;
+DROP TABLE IF EXISTS favorites CASCADE;
+DROP TABLE IF EXISTS product_images CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+`
+	if _, err := DB.Exec(drops); err != nil {
+		log.Fatalf("❌ Drop tables failed: %v", err)
+	}
+
 	schema := `
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	name VARCHAR(100) NOT NULL,
 	email VARCHAR(255) UNIQUE,
@@ -44,7 +65,7 @@ CREATE TABLE IF NOT EXISTS users (
 	updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS categories (
+CREATE TABLE categories (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	name VARCHAR(100) NOT NULL,
 	slug VARCHAR(100) UNIQUE NOT NULL,
@@ -53,7 +74,7 @@ CREATE TABLE IF NOT EXISTS categories (
 	created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE products (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	seller_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	category_id UUID REFERENCES categories(id),
@@ -69,7 +90,7 @@ CREATE TABLE IF NOT EXISTS products (
 	updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS product_images (
+CREATE TABLE product_images (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
 	url TEXT NOT NULL,
@@ -77,7 +98,7 @@ CREATE TABLE IF NOT EXISTS product_images (
 	created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS favorites (
+CREATE TABLE favorites (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -85,7 +106,7 @@ CREATE TABLE IF NOT EXISTS favorites (
 	UNIQUE(user_id, product_id)
 );
 
-CREATE TABLE IF NOT EXISTS cart_items (
+CREATE TABLE cart_items (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -94,7 +115,7 @@ CREATE TABLE IF NOT EXISTS cart_items (
 	UNIQUE(user_id, product_id)
 );
 
-CREATE TABLE IF NOT EXISTS addresses (
+CREATE TABLE addresses (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	title VARCHAR(100) NOT NULL,
@@ -105,7 +126,7 @@ CREATE TABLE IF NOT EXISTS addresses (
 	created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS orders (
+CREATE TABLE orders (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	user_id UUID NOT NULL REFERENCES users(id),
 	address_id UUID REFERENCES addresses(id),
@@ -117,7 +138,7 @@ CREATE TABLE IF NOT EXISTS orders (
 	updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS order_items (
+CREATE TABLE order_items (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
 	product_id UUID NOT NULL REFERENCES products(id),
@@ -126,7 +147,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 	created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS reviews (
+CREATE TABLE reviews (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
@@ -136,7 +157,7 @@ CREATE TABLE IF NOT EXISTS reviews (
 	UNIQUE(user_id, product_id)
 );
 
-CREATE TABLE IF NOT EXISTS follows (
+CREATE TABLE follows (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	follower_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	following_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -144,7 +165,7 @@ CREATE TABLE IF NOT EXISTS follows (
 	UNIQUE(follower_id, following_id)
 );
 
-CREATE TABLE IF NOT EXISTS stories (
+CREATE TABLE stories (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	media_url TEXT NOT NULL,
@@ -153,7 +174,7 @@ CREATE TABLE IF NOT EXISTS stories (
 	created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS messages (
+CREATE TABLE messages (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	receiver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -162,7 +183,7 @@ CREATE TABLE IF NOT EXISTS messages (
 	created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS notifications (
+CREATE TABLE notifications (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	type VARCHAR(50) NOT NULL,
@@ -173,7 +194,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 	created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS payments (
+CREATE TABLE payments (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
 	user_id UUID NOT NULL REFERENCES users(id),
@@ -184,13 +205,12 @@ CREATE TABLE IF NOT EXISTS payments (
 	created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_products_seller ON products(seller_id);
-CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
-CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active);
-CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
-CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
-CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id);
-CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX idx_products_seller ON products(seller_id);
+CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_orders_user ON orders(user_id);
+CREATE INDEX idx_messages_sender ON messages(sender_id);
+CREATE INDEX idx_messages_receiver ON messages(receiver_id);
+CREATE INDEX idx_notifications_user ON notifications(user_id);
 `
 	if _, err := DB.Exec(schema); err != nil {
 		log.Fatalf("❌ Schema migration failed: %v", err)
