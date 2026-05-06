@@ -11,7 +11,6 @@ import (
 func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	r.Use(middleware.CORS())
 
-	// Handlers
 	uh := handlers.NewUserHandler(secret, r2)
 	ph := handlers.NewProductHandler(r2)
 	oh := handlers.NewOrderHandler(r2)
@@ -27,119 +26,79 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 
 	api := r.Group("/api/v1")
 
-	// ── Auth ──────────────────────────────────────────────
-	auth := api.Group("/auth")
-	{
-		auth.POST("/register", uh.Register)
-		auth.POST("/login", uh.Login)
-		auth.POST("/refresh", uh.RefreshToken)
-	}
+	// Auth
+	api.POST("/auth/register", uh.Register)
+	api.POST("/auth/login", uh.Login)
+	api.POST("/auth/refresh", uh.RefreshToken)
 
-	// ── Users ─────────────────────────────────────────────
-	users := api.Group("/users").Use(middleware.Auth())
-	{
-		users.GET("/me", uh.Me)
-		users.PUT("/me", uh.UpdateProfile)
-		users.POST("/me/avatar", uh.UploadAvatar)
-		users.POST("/me/become-seller", uh.BecomeSellerHandler)
-	}
+	// Users
+	api.GET("/users/me", middleware.Auth(), uh.Me)
+	api.PUT("/users/me", middleware.Auth(), uh.UpdateProfile)
+	api.POST("/users/me/avatar", middleware.Auth(), uh.UploadAvatar)
+	api.POST("/users/me/become-seller", middleware.Auth(), uh.BecomeSellerHandler)
+	api.POST("/users/:id/follow", middleware.Auth(), flh.Follow)
+	api.DELETE("/users/:id/follow", middleware.Auth(), flh.Unfollow)
+	api.GET("/users/:id/followers", middleware.Auth(), flh.Followers)
 
-	// ── Products ──────────────────────────────────────────
-	products := api.Group("/products")
-	{
-		products.GET("", ph.List)
-		products.GET("/trending", ph.Trending)
-		products.GET("/:id", ph.GetByID)
-		products.GET("/:product_id/reviews", rh.ByProduct)
+	// Products
+	api.GET("/products", ph.List)
+	api.GET("/products/trending", ph.Trending)
+	api.GET("/products/:id", ph.GetByID)
+	api.POST("/products", middleware.Auth(), middleware.SellerOnly(), ph.Create)
+	api.PUT("/products/:id", middleware.Auth(), middleware.SellerOnly(), ph.Update)
+	api.DELETE("/products/:id", middleware.Auth(), middleware.SellerOnly(), ph.Delete)
+	api.POST("/products/:id/images", middleware.Auth(), middleware.SellerOnly(), ph.UploadImages)
 
-		seller := products.Group("").Use(middleware.Auth(), middleware.SellerOnly())
-		seller.POST("", ph.Create)
-		seller.PUT("/:id", ph.Update)
-		seller.DELETE("/:id", ph.Delete)
-		seller.POST("/:id/images", ph.UploadImages)
-	}
-
-	// ── Categories ────────────────────────────────────────
-	api.GET("/categories", ch.List)
-
-	// ── Reviews ───────────────────────────────────────────
+	// Reviews — separate path to avoid conflict
+	api.GET("/reviews/product/:product_id", rh.ByProduct)
 	api.POST("/reviews", middleware.Auth(), rh.Create)
 
-	// ── Cart ──────────────────────────────────────────────
-	cart := api.Group("/cart").Use(middleware.Auth())
-	{
-		cart.GET("", oh.GetCart)
-		cart.POST("", oh.AddToCart)
-		cart.DELETE("/:id", oh.RemoveFromCart)
-	}
+	// Categories
+	api.GET("/categories", ch.List)
 
-	// ── Orders ────────────────────────────────────────────
-	orders := api.Group("/orders").Use(middleware.Auth())
-	{
-		orders.POST("/checkout", oh.Checkout)
-		orders.GET("", oh.MyOrders)
-		orders.GET("/:id", oh.GetOrder)
-		orders.POST("/:id/payment-proof", oh.UploadPaymentProof)
-	}
+	// Cart
+	api.GET("/cart", middleware.Auth(), oh.GetCart)
+	api.POST("/cart", middleware.Auth(), oh.AddToCart)
+	api.DELETE("/cart/:id", middleware.Auth(), oh.RemoveFromCart)
 
-	// ── Favorites ─────────────────────────────────────────
-	favs := api.Group("/favorites").Use(middleware.Auth())
-	{
-		favs.GET("", fh.List)
-		favs.POST("", fh.Add)
-		favs.DELETE("/:product_id", fh.Remove)
-	}
+	// Orders
+	api.POST("/orders/checkout", middleware.Auth(), oh.Checkout)
+	api.GET("/orders", middleware.Auth(), oh.MyOrders)
+	api.GET("/orders/:id", middleware.Auth(), oh.GetOrder)
+	api.POST("/orders/:id/payment-proof", middleware.Auth(), oh.UploadPaymentProof)
 
-	// ── Addresses ─────────────────────────────────────────
-	addrs := api.Group("/addresses").Use(middleware.Auth())
-	{
-		addrs.GET("", ah.List)
-		addrs.POST("", ah.Create)
-		addrs.DELETE("/:id", ah.Delete)
-	}
+	// Favorites
+	api.GET("/favorites", middleware.Auth(), fh.List)
+	api.POST("/favorites", middleware.Auth(), fh.Add)
+	api.DELETE("/favorites/:product_id", middleware.Auth(), fh.Remove)
 
-	// ── Stories ───────────────────────────────────────────
-	stories := api.Group("/stories").Use(middleware.Auth())
-	{
-		stories.GET("/feed", sh.Feed)
-		stories.POST("", sh.Create)
-	}
+	// Addresses
+	api.GET("/addresses", middleware.Auth(), ah.List)
+	api.POST("/addresses", middleware.Auth(), ah.Create)
+	api.DELETE("/addresses/:id", middleware.Auth(), ah.Delete)
 
-	// ── Follow ────────────────────────────────────────────
-	follows := api.Group("/users").Use(middleware.Auth())
-	{
-		follows.POST("/:id/follow", flh.Follow)
-		follows.DELETE("/:id/follow", flh.Unfollow)
-		follows.GET("/:id/followers", flh.Followers)
-	}
+	// Stories
+	api.GET("/stories/feed", middleware.Auth(), sh.Feed)
+	api.POST("/stories", middleware.Auth(), sh.Create)
 
-	// ── Messages ──────────────────────────────────────────
-	msgs := api.Group("/messages").Use(middleware.Auth())
-	{
-		msgs.POST("", mh.Send)
-		msgs.GET("/:user_id", mh.Conversation)
-	}
+	// Messages
+	api.POST("/messages", middleware.Auth(), mh.Send)
+	api.GET("/messages/:user_id", middleware.Auth(), mh.Conversation)
 
-	// ── Notifications ─────────────────────────────────────
-	notifs := api.Group("/notifications").Use(middleware.Auth())
-	{
-		notifs.GET("", nh.List)
-		notifs.POST("/read-all", nh.MarkRead)
-	}
+	// Notifications
+	api.GET("/notifications", middleware.Auth(), nh.List)
+	api.POST("/notifications/read-all", middleware.Auth(), nh.MarkRead)
 
-	// ── Admin ─────────────────────────────────────────────
-	admin := api.Group("/admin").Use(middleware.Auth(), middleware.AdminOnly())
-	{
-		admin.GET("/stats", adm.Stats)
-		admin.GET("/users", adm.ListUsers)
-		admin.POST("/users/:id/ban", adm.BanUser)
-		admin.POST("/users/:id/unban", adm.UnbanUser)
-		admin.POST("/users/:id/verify-seller", adm.VerifySeller)
-		admin.DELETE("/products/:id", adm.DeleteProduct)
-		admin.GET("/orders", adm.ListOrders)
-		admin.PATCH("/orders/:id/status", adm.UpdateOrderStatus)
-		admin.POST("/categories", ch.Create)
-	}
+	// Admin
+	api.GET("/admin/stats", middleware.Auth(), middleware.AdminOnly(), adm.Stats)
+	api.GET("/admin/users", middleware.Auth(), middleware.AdminOnly(), adm.ListUsers)
+	api.POST("/admin/users/:id/ban", middleware.Auth(), middleware.AdminOnly(), adm.BanUser)
+	api.POST("/admin/users/:id/unban", middleware.Auth(), middleware.AdminOnly(), adm.UnbanUser)
+	api.POST("/admin/users/:id/verify-seller", middleware.Auth(), middleware.AdminOnly(), adm.VerifySeller)
+	api.DELETE("/admin/products/:id", middleware.Auth(), middleware.AdminOnly(), adm.DeleteProduct)
+	api.GET("/admin/orders", middleware.Auth(), middleware.AdminOnly(), adm.ListOrders)
+	api.PATCH("/admin/orders/:id/status", middleware.Auth(), middleware.AdminOnly(), adm.UpdateOrderStatus)
+	api.POST("/admin/categories", middleware.Auth(), middleware.AdminOnly(), ch.Create)
 
 	// Health
 	r.GET("/health", func(c *gin.Context) {
