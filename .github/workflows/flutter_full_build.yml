@@ -1,0 +1,84 @@
+name: Flutter Full Build (Analyze + APK)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # =============================
+      # 1. CHECKOUT
+      # =============================
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # =============================
+      # 2. SETUP JAVA (required for Android build)
+      # =============================
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # =============================
+      # 3. SETUP FLUTTER
+      # =============================
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.2'
+          channel: 'stable'
+          cache: true
+
+      # =============================
+      # 4. FLUTTER VERSION
+      # =============================
+      - name: Flutter version
+        run: flutter --version
+
+      # =============================
+      # 5. GET DEPENDENCIES
+      # =============================
+      - name: Flutter pub get
+        run: flutter pub get
+
+      # =============================
+      # 6. ANALYZE (ERRORS ONLY)
+      # =============================
+      - name: Flutter analyze (errors only)
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      # =============================
+      # 7. RUN TESTS (SKIP IF NONE)
+      # =============================
+      - name: Flutter test
+        run: |
+          if [ -d "test" ]; then
+            flutter test
+          else
+            echo "No tests found, skipping."
+          fi
+
+      # =============================
+      # 8. BUILD APK (RELEASE)
+      # =============================
+      - name: Build APK (release)
+        run: flutter build apk --release
+
+      # =============================
+      # 9. UPLOAD APK ARTIFACT
+      # =============================
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: raonson-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
