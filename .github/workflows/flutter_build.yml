@@ -48,19 +48,22 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Analyze (errors only)
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Build AAB
         run: flutter build appbundle --release --no-tree-shake-icons
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: TajikShop-APK
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Upload AAB artifact
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
           name: TajikShop-AAB
@@ -71,8 +74,6 @@ jobs:
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: "TajikShop v1.0.${{ github.run_number }}"
-          draft: false
-          prerelease: false
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
