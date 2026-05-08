@@ -31,9 +31,17 @@ class ProductsState {
         products: products ?? this.products,
         trending: trending ?? this.trending,
         isLoading: isLoading ?? this.isLoading,
-        error: error,
+        error: error ?? this.error,
         page: page ?? this.page,
         hasMore: hasMore ?? this.hasMore,
+      );
+
+  ProductsState clearError() => ProductsState(
+        products: products,
+        trending: trending,
+        isLoading: isLoading,
+        page: page,
+        hasMore: hasMore,
       );
 }
 
@@ -41,12 +49,19 @@ class ProductsNotifier extends StateNotifier<ProductsState> {
   final ProductRepository _repo = ProductRepository();
   ProductsNotifier() : super(const ProductsState());
 
-  Future<void> loadProducts({String? categoryId, String? search, bool refresh = false}) async {
-    if (refresh) {
-      state = const ProductsState(isLoading: true);
-    } else if (!state.hasMore || state.isLoading) return;
+  Future<void> loadProducts({
+    String? categoryId,
+    String? search,
+    bool refresh = false,
+  }) async {
+    if (!refresh && (!state.hasMore || state.isLoading)) return;
 
-    state = state.copyWith(isLoading: true);
+    if (refresh) {
+      state = ProductsState(isLoading: true);
+    } else {
+      state = state.copyWith(isLoading: true);
+    }
+
     try {
       final page = refresh ? 1 : state.page;
       final products = await _repo.getProducts(
@@ -73,10 +88,12 @@ class ProductsNotifier extends StateNotifier<ProductsState> {
   }
 }
 
-final productsProvider = StateNotifierProvider<ProductsNotifier, ProductsState>((ref) {
+final productsProvider =
+    StateNotifierProvider<ProductsNotifier, ProductsState>((ref) {
   return ProductsNotifier();
 });
 
-final productDetailProvider = FutureProvider.family<ProductModel, String>((ref, id) {
+final productDetailProvider =
+    FutureProvider.family<ProductModel, String>((ref, id) async {
   return ProductRepository().getProductById(id);
 });
