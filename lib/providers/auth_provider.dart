@@ -36,10 +36,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> checkAuth() async {
     state = state.copyWith(isLoading: true);
     final user = await _repo.getMe();
-    state = AuthState(
-      user: user,
-      isAuthenticated: user != null,
-    );
+    state = AuthState(user: user, isAuthenticated: user != null);
   }
 
   Future<bool> login(String email, String password) async {
@@ -57,7 +54,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> register(String email, String password, String fullName) async {
+  Future<bool> register(
+      String email, String password, String fullName) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final user = await _repo.register(email, password, fullName);
@@ -78,6 +76,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 }
 
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authProvider =
+    StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier();
 });
