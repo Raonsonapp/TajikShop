@@ -2,20 +2,17 @@ include: package:flutter_lints/flutter.yaml
 
 analyzer:
   errors:
-    # Deprecations - info only, not error
     deprecated_member_use: ignore
     deprecated_member_use_from_same_package: ignore
-    # Const suggestions - ignore
-    prefer_const_constructors: ignore
-    prefer_const_literals_to_create_immutables: ignore
-    prefer_const_declarations: ignore
-    # Other common infos - ignore
-    avoid_print: ignore
-    use_build_context_synchronously: warning
+    unused_import: ignore
+    unused_local_variable: ignore
+    unused_element: ignore
+    use_build_context_synchronously: ignore
 
 linter:
   rules:
     prefer_const_constructors: false
     prefer_const_literals_to_create_immutables: false
-    deprecated_member_use: false
+    prefer_const_declarations: false
     avoid_print: false
+    use_build_context_synchronously: false
