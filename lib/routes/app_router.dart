@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/auth_provider.dart';
 import '../modules/splash/splash_screen.dart';
 import '../modules/auth/login_screen.dart';
 import '../modules/auth/register_screen.dart';
@@ -21,30 +20,14 @@ import '../shared/widgets/main_scaffold.dart';
 import 'route_names.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
-
   return GoRouter(
     initialLocation: RouteNames.splash,
-    redirect: (context, state) {
-      final isAuth = authState.isAuthenticated;
-      final loc = state.matchedLocation;
-      final isSplash = loc == RouteNames.splash;
-      final isAuthPage =
-          loc == RouteNames.login || loc == RouteNames.register;
-
-      if (isSplash) return null;
-      if (!isAuth && !isAuthPage) return RouteNames.login;
-      if (isAuth && isAuthPage) return RouteNames.home;
-      return null;
-    },
-    errorBuilder: (_, state) => Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
+    debugLogDiagnostics: false,
+    errorBuilder: (_, __) => const Scaffold(
+      backgroundColor: Color(0xFF0A0A0F),
       body: Center(
-        child: Text(
-          'Саҳифа ёфт нашуд\n${state.error}',
-          style: const TextStyle(color: Colors.white),
-          textAlign: TextAlign.center,
-        ),
+        child: Text('Саҳифа ёфт нашуд',
+            style: TextStyle(color: Colors.white)),
       ),
     ),
     routes: [
@@ -60,39 +43,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: RouteNames.register,
         builder: (_, __) => const RegisterScreen(),
       ),
-
-      // Main shell with bottom nav
-      ShellRoute(
-        builder: (context, state, child) => MainScaffold(child: child),
-        routes: [
-          GoRoute(
-            path: RouteNames.home,
-            builder: (_, __) => const HomeScreen(),
-          ),
-          GoRoute(
-            path: RouteNames.search,
-            builder: (_, __) => const SearchScreen(),
-          ),
-          GoRoute(
-            path: RouteNames.favorites,
-            builder: (_, __) => const FavoritesScreen(),
-          ),
-          GoRoute(
-            path: RouteNames.cart,
-            builder: (_, __) => const CartScreen(),
-          ),
-          GoRoute(
-            path: RouteNames.profile,
-            builder: (_, __) => const ProfileScreen(),
-          ),
-        ],
-      ),
-
-      // Push routes (no bottom nav)
-      GoRoute(
-        path: RouteNames.categories,
-        builder: (_, __) => const CategoriesScreen(),
-      ),
       GoRoute(
         path: '/product/:id',
         builder: (_, state) =>
@@ -107,6 +57,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const NotificationsScreen(),
       ),
       GoRoute(
+        path: RouteNames.categories,
+        builder: (_, __) => const CategoriesScreen(),
+      ),
+      GoRoute(
         path: RouteNames.seller,
         builder: (_, __) => const SellerDashboardScreen(),
       ),
@@ -117,6 +71,38 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.admin,
         builder: (_, __) => const AdminDashboardScreen(),
+      ),
+      // Shell with bottom nav - LAST
+      ShellRoute(
+        builder: (context, state, child) =>
+            MainScaffold(child: child),
+        routes: [
+          GoRoute(
+            path: RouteNames.home,
+            pageBuilder: (_, __) => const NoTransitionPage(
+                child: HomeScreen()),
+          ),
+          GoRoute(
+            path: RouteNames.search,
+            pageBuilder: (_, __) => const NoTransitionPage(
+                child: SearchScreen()),
+          ),
+          GoRoute(
+            path: RouteNames.favorites,
+            pageBuilder: (_, __) => const NoTransitionPage(
+                child: FavoritesScreen()),
+          ),
+          GoRoute(
+            path: RouteNames.cart,
+            pageBuilder: (_, __) =>
+                const NoTransitionPage(child: CartScreen()),
+          ),
+          GoRoute(
+            path: RouteNames.profile,
+            pageBuilder: (_, __) => const NoTransitionPage(
+                child: ProfileScreen()),
+          ),
+        ],
       ),
     ],
   );
