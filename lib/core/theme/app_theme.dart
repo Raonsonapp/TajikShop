@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 
 class AppTheme {
@@ -12,32 +11,40 @@ class AppTheme {
         primary: AppColors.primary,
         secondary: AppColors.accent,
         surface: AppColors.bgCard,
-        background: AppColors.bgDark,
         error: AppColors.error,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: AppColors.textPrimary,
-        onBackground: AppColors.textPrimary,
         onError: Colors.white,
       ),
-      textTheme: GoogleFonts.dmSansTextTheme(
-        const TextTheme(
-          displayLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
-          displayMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
-          titleLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 20),
-          titleMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 16),
-          bodyLarge: TextStyle(color: AppColors.textPrimary, fontSize: 16),
-          bodyMedium: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-          bodySmall: TextStyle(color: AppColors.textMuted, fontSize: 12),
-          labelLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
-        ),
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(
+            color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+        displayMedium: TextStyle(
+            color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+        titleLarge: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 20),
+        titleMedium: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 16),
+        bodyLarge:
+            TextStyle(color: AppColors.textPrimary, fontSize: 16),
+        bodyMedium:
+            TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        bodySmall:
+            TextStyle(color: AppColors.textMuted, fontSize: 12),
+        labelLarge: TextStyle(
+            color: AppColors.textPrimary, fontWeight: FontWeight.w600),
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.bgDark,
         elevation: 0,
         centerTitle: false,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        titleTextStyle: GoogleFonts.dmSans(
+        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        titleTextStyle: TextStyle(
           color: AppColors.textPrimary,
           fontSize: 20,
           fontWeight: FontWeight.w700,
@@ -68,23 +75,32 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide:
+              const BorderSide(color: AppColors.border, width: 0.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+          borderSide:
+              const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error),
         ),
         hintStyle: const TextStyle(color: AppColors.textMuted),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 14),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14)),
           elevation: 0,
-          textStyle: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       dividerTheme: const DividerThemeData(
@@ -98,13 +114,12 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       brightness: Brightness.light,
-      scaffoldBackgroundColor: AppColors.bgLight,
+      scaffoldBackgroundColor: const Color(0xFFF4F6FA),
       primaryColor: AppColors.primary,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.accent,
-        surface: AppColors.bgCardLight,
-        background: AppColors.bgLight,
+        surface: Colors.white,
         error: AppColors.error,
       ),
       useMaterial3: true,
