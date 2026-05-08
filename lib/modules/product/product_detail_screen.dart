@@ -49,7 +49,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   );
 
   Widget _buildProduct(ProductModel p) {
-    final cart = ref.watch(cartProvider);
+
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       body: CustomScrollView(
@@ -256,17 +256,16 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               isOutlined: true,
               icon: Icons.shopping_bag_outlined,
               onTap: () async {
+                final messenger = ScaffoldMessenger.of(context);
                 await ref.read(cartProvider.notifier).addToCart(p.id);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Ба сабад илова шуд ✓'),
-                      backgroundColor: AppColors.primary,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  );
-                }
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: const Text('Ба сабад илова шуд ✓'),
+                    backgroundColor: AppColors.primary,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                );
               },
             ),
           ),
