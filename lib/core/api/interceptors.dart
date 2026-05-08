@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import '../storage/token_storage.dart';
 
 class AuthInterceptor extends Interceptor {
   final String? token;
