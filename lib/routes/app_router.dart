@@ -27,15 +27,26 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: RouteNames.splash,
     redirect: (context, state) {
       final isAuth = authState.isAuthenticated;
-      final isSplash = state.matchedLocation == RouteNames.splash;
-      final isAuthRoute = state.matchedLocation == RouteNames.login ||
-          state.matchedLocation == RouteNames.register;
+      final loc = state.matchedLocation;
+      final isSplash = loc == RouteNames.splash;
+      final isAuthPage =
+          loc == RouteNames.login || loc == RouteNames.register;
 
       if (isSplash) return null;
-      if (!isAuth && !isAuthRoute) return RouteNames.login;
-      if (isAuth && isAuthRoute) return RouteNames.home;
+      if (!isAuth && !isAuthPage) return RouteNames.login;
+      if (isAuth && isAuthPage) return RouteNames.home;
       return null;
     },
+    errorBuilder: (_, state) => Scaffold(
+      backgroundColor: const Color(0xFF0A0A0F),
+      body: Center(
+        child: Text(
+          'Саҳифа ёфт нашуд\n${state.error}',
+          style: const TextStyle(color: Colors.white),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    ),
     routes: [
       GoRoute(
         path: RouteNames.splash,
@@ -49,32 +60,64 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: RouteNames.register,
         builder: (_, __) => const RegisterScreen(),
       ),
+
+      // Main shell with bottom nav
       ShellRoute(
         builder: (context, state, child) => MainScaffold(child: child),
         routes: [
-          GoRoute(path: RouteNames.home, builder: (_, __) => const HomeScreen()),
-          GoRoute(path: RouteNames.search, builder: (_, __) => const SearchScreen()),
-          GoRoute(path: RouteNames.favorites, builder: (_, __) => const FavoritesScreen()),
-          GoRoute(path: RouteNames.cart, builder: (_, __) => const CartScreen()),
-          GoRoute(path: RouteNames.profile, builder: (_, __) => const ProfileScreen()),
+          GoRoute(
+            path: RouteNames.home,
+            builder: (_, __) => const HomeScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.search,
+            builder: (_, __) => const SearchScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.favorites,
+            builder: (_, __) => const FavoritesScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.cart,
+            builder: (_, __) => const CartScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.profile,
+            builder: (_, __) => const ProfileScreen(),
+          ),
         ],
       ),
+
+      // Push routes (no bottom nav)
       GoRoute(
         path: RouteNames.categories,
         builder: (_, __) => const CategoriesScreen(),
       ),
       GoRoute(
         path: '/product/:id',
-        builder: (_, state) => ProductDetailScreen(id: state.pathParameters['id']!),
+        builder: (_, state) =>
+            ProductDetailScreen(id: state.pathParameters['id']!),
       ),
-      GoRoute(path: RouteNames.orders, builder: (_, __) => const OrdersScreen()),
-      GoRoute(path: RouteNames.notifications, builder: (_, __) => const NotificationsScreen()),
-      GoRoute(path: RouteNames.seller, builder: (_, __) => const SellerDashboardScreen()),
-      GoRoute(path: RouteNames.addProduct, builder: (_, __) => const AddProductScreen()),
-      GoRoute(path: RouteNames.admin, builder: (_, __) => const AdminDashboardScreen()),
+      GoRoute(
+        path: RouteNames.orders,
+        builder: (_, __) => const OrdersScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.notifications,
+        builder: (_, __) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.seller,
+        builder: (_, __) => const SellerDashboardScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.addProduct,
+        builder: (_, __) => const AddProductScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.admin,
+        builder: (_, __) => const AdminDashboardScreen(),
+      ),
     ],
-    errorBuilder: (_, state) => Scaffold(
-      body: Center(child: Text('Саҳифа ёфт нашуд: ${state.error}')),
-    ),
   );
 });
