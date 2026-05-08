@@ -23,21 +23,33 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1000),
     );
     _fadeAnim = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
-    _scaleAnim = Tween<double>(begin: 0.7, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    _scaleAnim = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
     _controller.forward();
     _init();
   }
 
   Future<void> _init() async {
-    await Future.delayed(const Duration(milliseconds: 1500));
-    await ref.read(authProvider.notifier).checkAuth();
+    // Minimum splash time
+    await Future.delayed(const Duration(milliseconds: 1800));
+    if (!mounted) return;
+
+    try {
+      // Timeout 5 seconds - if backend is sleeping, don't wait forever
+      await ref
+          .read(authProvider.notifier)
+          .checkAuth()
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Timeout or error - just go to login
+    }
+
     if (!mounted) return;
     final isAuth = ref.read(authProvider).isAuthenticated;
     context.go(isAuth ? RouteNames.home : RouteNames.login);
@@ -69,7 +81,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.4),
+                        color: AppColors.primary.withValues(alpha: 0.4),
                         blurRadius: 30,
                         spreadRadius: 5,
                       ),
@@ -101,18 +113,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 16,
-                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 const SizedBox(height: 60),
-                SizedBox(
-                  width: 36,
-                  height: 36,
+                const SizedBox(
+                  width: 32,
+                  height: 32,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation(
-                      AppColors.primary.withOpacity(0.7),
-                    ),
+                    valueColor: AlwaysStoppedAnimation(AppColors.primary),
                   ),
                 ),
               ],
