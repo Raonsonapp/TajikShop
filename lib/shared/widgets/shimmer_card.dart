@@ -7,7 +7,12 @@ class ShimmerCard extends StatelessWidget {
   final double? height;
   final double radius;
 
-  const ShimmerCard({super.key, this.width, this.height, this.radius = 16});
+  const ShimmerCard({
+    super.key,
+    this.width,
+    this.height,
+    this.radius = 16,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +21,7 @@ class ShimmerCard extends StatelessWidget {
       highlightColor: AppColors.shimmerHighlight,
       child: Container(
         width: width,
-        height: height,
+        height: height ?? 150,
         decoration: BoxDecoration(
           color: AppColors.shimmerBase,
           borderRadius: BorderRadius.circular(radius),
@@ -39,13 +44,13 @@ class ShimmerProductGrid extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 0.7,
+        childAspectRatio: 0.68,
       ),
       itemCount: 6,
       itemBuilder: (_, __) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ShimmerCard(height: 150, radius: 16),
+          const Expanded(child: ShimmerCard(radius: 16)),
           const SizedBox(height: 8),
           ShimmerCard(height: 14, width: 120, radius: 4),
           const SizedBox(height: 4),
