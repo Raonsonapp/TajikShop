@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:yandex_mobileads/mobile_ads.dart';
 
-/// Raonson ID: 19230220
-/// Banner ID: R-M-19230220-1
-/// Interstitial ID: R-M-19230220-2
+// Raonson App ID: 19230220
+// Banner Unit ID: R-M-19230220-1
+// Interstitial Unit ID: R-M-19230220-2
 
 class AdsService {
   static const _bannerId = 'R-M-19230220-1';
@@ -13,33 +13,62 @@ class AdsService {
     await MobileAds.initialize();
   }
 
-  static BannerAdWidget buildBanner() {
-    return BannerAdWidget(
-      adUnitId: _bannerId,
-      adSize: AdSize.sticky(width: 320),
-      onAdLoaded: (_) {},
-      onAdFailedToLoad: (_, __) {},
-    );
-  }
-
   static Future<void> showInterstitial() async {
     final loader = await InterstitialAdLoader.create(
-      onAdLoaded: (ad) => ad.show(),
+      onAdLoaded: (ad) {
+        ad.show();
+        ad.destroy();
+      },
       onAdFailedToLoad: (_, __) {},
     );
-    await loader.loadAd(adRequestConfiguration: AdRequestConfiguration(adUnitId: _interstitialId));
+    await loader.loadAd(
+      adRequestConfiguration: const AdRequestConfiguration(
+        adUnitId: _interstitialId,
+      ),
+    );
   }
 }
 
-/// Widget - banner рекламро дар саҳифа нишон медиҳад
-class AdBannerWidget extends StatelessWidget {
+class AdBannerWidget extends StatefulWidget {
   const AdBannerWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.center,
-      child: AdsService.buildBanner(),
+  State<AdBannerWidget> createState() => _AdBannerWidgetState();
+}
+
+class _AdBannerWidgetState extends State<AdBannerWidget> {
+  BannerAd? _ad;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final loader = await BannerAdLoader.create(
+      onAdLoaded: (ad) {
+        setState(() { _ad = ad; _loaded = true; });
+      },
+      onAdFailedToLoad: (_, __) {},
     );
+    await loader.loadAd(
+      adRequestConfiguration: const AdRequestConfiguration(
+        adUnitId: 'R-M-19230220-1',
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ad?.destroy();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded || _ad == null) return const SizedBox.shrink();
+    return AdWidget(ad: _ad!);
   }
 }
