@@ -1,28 +1,34 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TokenStorage {
-  static const _storage = FlutterSecureStorage();
-  static const _accessKey = 'access_token';
-  static const _refreshKey = 'refresh_token';
+  static const _accessKey = 'ts_access_token';
+  static const _refreshKey = 'ts_refresh_token';
 
   static Future<void> saveTokens({
     required String accessToken,
     String? refreshToken,
   }) async {
-    await _storage.write(key: _accessKey, value: accessToken);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_accessKey, accessToken);
     if (refreshToken != null) {
-      await _storage.write(key: _refreshKey, value: refreshToken);
+      await prefs.setString(_refreshKey, refreshToken);
     }
   }
 
-  static Future<String?> getAccessToken() =>
-      _storage.read(key: _accessKey);
+  static Future<String?> getAccessToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_accessKey);
+    return (token == null || token.isEmpty) ? null : token;
+  }
 
-  static Future<String?> getRefreshToken() =>
-      _storage.read(key: _refreshKey);
+  static Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_refreshKey);
+  }
 
   static Future<void> clearTokens() async {
-    await _storage.delete(key: _accessKey);
-    await _storage.delete(key: _refreshKey);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_accessKey);
+    await prefs.remove(_refreshKey);
   }
 }
