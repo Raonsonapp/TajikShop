@@ -1,3 +1,4 @@
+// ignore_for_file: curly_braces_in_flow_control_structures, camel_case_types
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
