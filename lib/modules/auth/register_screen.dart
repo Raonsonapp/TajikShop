@@ -1,3 +1,4 @@
+// ignore_for_file: curly_braces_in_flow_control_structures
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,10 +41,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 40),
             Row(children: [
               Container(width: 44, height: 44,
-                decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(12)),
                 child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 24)),
               const SizedBox(width: 12),
-              const Text('TajikShop', style: TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w800)),
+              const Text('TajikShop',
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w800)),
             ]),
             const SizedBox(height: 32),
             const Text('Ҳисоб созед 🚀',
@@ -52,8 +55,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const Text('Ба бозори Тоҷикистон хуш омадед',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
             const SizedBox(height: 32),
-
-            // Username - lowercase only
             AppTextField(
               hint: 'Номи корбар (масалан: ali_99)',
               controller: _nameCtrl,
@@ -74,9 +75,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const Padding(
               padding: EdgeInsets.only(left: 4, top: 4, bottom: 12),
               child: Text('Танҳо ҳарфҳои хурд, рақам ва _ (масалан: ali_dushanbe)',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
-            ),
-
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
             AppTextField(
               hint: 'Email',
               controller: _emailCtrl,
@@ -84,22 +83,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 12),
-
-            // Password with toggle using suffixWidget
             AppTextField(
               hint: 'Парол (ҳадди ақал 6)',
               controller: _passCtrl,
               prefixIcon: Icons.lock_outline_rounded,
               obscure: _obscure,
               suffixWidget: IconButton(
-                icon: Icon(
-                  _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                  color: AppColors.textMuted, size: 20),
+                icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: AppColors.textMuted, size: 20),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
             ),
             const SizedBox(height: 24),
-
             if (auth.error != null)
               Container(
                 margin: const EdgeInsets.only(bottom: 16),
@@ -109,7 +104,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.error.withValues(alpha: 0.3))),
                 child: Text(auth.error!, style: const TextStyle(color: AppColors.error, fontSize: 13))),
-
             AppButton(
               text: 'Сабтном',
               isLoading: auth.isLoading,
@@ -136,3 +130,4 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 }
+// END OF FILE - RegisterScreen only
