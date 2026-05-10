@@ -43,10 +43,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final res = await _dio.post(ApiEndpoints.login,
           data: {'email': email, 'password': password});
-      final data = res.data as Map<String, dynamic>;
+      final body = res.data as Map<String, dynamic>;
+      // Server wraps response: {"success": true, "data": {"access_token": "..."}}
+      final data = (body['data'] as Map<String, dynamic>? ?? body);
       final token = data['access_token']?.toString() ?? '';
+      final refresh = data['refresh_token']?.toString();
       if (token.isEmpty) throw Exception('Token гирифта нашуд');
-      await TokenStorage.saveTokens(accessToken: token);
+      await TokenStorage.saveTokens(accessToken: token, refreshToken: refresh);
       final user = await _fetchMe();
       state = AuthState(user: user, isAuthenticated: true);
       return true;
@@ -67,10 +70,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final res = await _dio.post(ApiEndpoints.register,
           data: {'name': fullName, 'email': email, 'password': password});
-      final data = res.data as Map<String, dynamic>;
+      final body = res.data as Map<String, dynamic>;
+      // Server wraps response: {"success": true, "data": {"access_token": "..."}}
+      final data = (body['data'] as Map<String, dynamic>? ?? body);
       final token = data['access_token']?.toString() ?? '';
+      final refresh = data['refresh_token']?.toString();
       if (token.isEmpty) throw Exception('Token гирифта нашуд');
-      await TokenStorage.saveTokens(accessToken: token);
+      await TokenStorage.saveTokens(accessToken: token, refreshToken: refresh);
       final user = await _fetchMe();
       state = AuthState(user: user, isAuthenticated: true);
       return true;
@@ -95,10 +101,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   // ── Fetch /users/me ──────────────────────────────────────────────────────
   Future<UserModel> _fetchMe() async {
     final res = await _dio.get(ApiEndpoints.me);
-    final data = res.data;
-    final map = data is Map<String, dynamic>
-        ? (data['user'] as Map<String, dynamic>? ?? data)
-        : data as Map<String, dynamic>;
+    final body = res.data;
+    // Server wraps: {"success": true, "data": {...user...}}
+    final unwrapped = body is Map<String, dynamic>
+        ? (body['data'] as Map<String, dynamic>? ?? body)
+        : body as Map<String, dynamic>;
+    final map = unwrapped['user'] as Map<String, dynamic>? ?? unwrapped;
     return UserModel.fromJson(map);
   }
 }
