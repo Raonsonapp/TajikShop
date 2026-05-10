@@ -1,33 +1,44 @@
-import 'package:shared_preferences/shared_preferences.dart';
+// lib/core/storage/token_storage.dart
+// flutter_secure_storage istifoda мекунад — токен дар Keychain/Keystore захира мешавад
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class TokenStorage {
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
   static const _accessKey  = 'access_token';
   static const _refreshKey = 'refresh_token';
+  static const _userIdKey  = 'user_id';
 
   static Future<void> saveTokens({
     required String accessToken,
     String? refreshToken,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_accessKey, accessToken);
+    await _storage.write(key: _accessKey, value: accessToken);
     if (refreshToken != null && refreshToken.isNotEmpty) {
-      await prefs.setString(_refreshKey, refreshToken);
+      await _storage.write(key: _refreshKey, value: refreshToken);
     }
   }
 
   static Future<String?> getAccessToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_accessKey);
+    return _storage.read(key: _accessKey);
   }
 
   static Future<String?> getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_refreshKey);
+    return _storage.read(key: _refreshKey);
+  }
+
+  static Future<void> saveUserId(String id) async {
+    await _storage.write(key: _userIdKey, value: id);
+  }
+
+  static Future<String?> getUserId() async {
+    return _storage.read(key: _userIdKey);
   }
 
   static Future<void> clearTokens() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_accessKey);
-    await prefs.remove(_refreshKey);
+    await _storage.delete(key: _accessKey);
+    await _storage.delete(key: _refreshKey);
+    await _storage.delete(key: _userIdKey);
   }
 }
