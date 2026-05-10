@@ -17,7 +17,7 @@ class AuthRemote {
   Future<Map<String, dynamic>> register(
       String email, String password, String fullName) async {
     final res = await _dio.post(ApiEndpoints.register, data: {
-      'name':     fullName, // backend expects "name" not "full_name"
+      'name':     fullName,
       'email':    email,
       'password': password,
     });
@@ -26,7 +26,10 @@ class AuthRemote {
 
   Future<UserModel> getMe() async {
     final res = await _dio.get(ApiEndpoints.me);
-    final data = res.data as Map<String, dynamic>;
-    return UserModel.fromJson(data['user'] as Map<String, dynamic>? ?? data);
+    final data = res.data;
+    final map = data is Map<String, dynamic>
+        ? (data['user'] as Map<String, dynamic>? ?? data)
+        : data as Map<String, dynamic>;
+    return UserModel.fromJson(map);
   }
 }
