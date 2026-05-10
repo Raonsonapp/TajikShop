@@ -1,75 +1,33 @@
-import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class RetryInterceptor extends Interceptor {
-  final Dio dio;
-  RetryInterceptor(this.dio);
+class TokenStorage {
+  static const _accessKey  = 'access_token';
+  static const _refreshKey = 'refresh_token';
 
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
-    final opts = err.requestOptions;
-    final retries = (opts.extra['retries'] as int?) ?? 0;
-    if (retries < 2 &&
-        (err.type == DioExceptionType.connectionTimeout ||
-            err.type == DioExceptionType.receiveTimeout ||
-            err.type == DioExceptionType.sendTimeout ||
-            err.type == DioExceptionType.connectionError)) {
-      opts.extra['retries'] = retries + 1;
-      await Future.delayed(Duration(seconds: 2 * (retries + 1)));
-      try {
-        return handler.resolve(await dio.fetch(opts));
-      } catch (_) {}
+  static Future<void> saveTokens({
+    required String accessToken,
+    String? refreshToken,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_accessKey, accessToken);
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await prefs.setString(_refreshKey, refreshToken);
     }
-    handler.next(err);
-  }
-}
-
-class ErrorInterceptor extends Interceptor {
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    String msg;
-    switch (err.response?.statusCode) {
-      case 400: msg = err.response?.data?['message'] ?? 'Дархости нодуруст'; break;
-      case 401: msg = 'Иҷозат нест. Аз нав ворид шавед'; break;
-      case 403: msg = 'Дастрасӣ манъ аст'; break;
-      case 404: msg = 'Ёфт нашуд'; break;
-      case 409: msg = 'Ин email аллакай вуҷуд дорад'; break;
-      case 422: msg = err.response?.data?['message'] ?? 'Маълумоти нодуруст'; break;
-      case 429: msg = 'Хеле зиёд дархост. Каме сабр кунед'; break;
-      case 500: msg = 'Хатои сервер. Баъдтар кӯшиш кунед'; break;
-      default:
-        if (err.type == DioExceptionType.connectionTimeout ||
-            err.type == DioExceptionType.receiveTimeout ||
-            err.type == DioExceptionType.sendTimeout) {
-          msg = 'Интернет суст аст. Дубора кӯшиш кунед';
-        } else if (err.type == DioExceptionType.connectionError) {
-          msg = 'Пайвастшавӣ нест. Интернетро санҷед';
-        } else {
-          msg = err.response?.data?['message'] ??
-              err.response?.data?['error'] ??
-              err.message ?? 'Хатои номаълум';
-        }
-    }
-    handler.next(DioException(
-        requestOptions: err.requestOptions,
-        response: err.response,
-        type: err.type,
-        error: msg,
-        message: msg));
-  }
-}
-
-class LoggingInterceptor extends Interceptor {
-  @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // ignore: avoid_print
-    print('→ ${options.method} ${options.path}  auth:${options.headers['Authorization'] != null ? "✓" : "✗"}');
-    handler.next(options);
   }
 
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    // ignore: avoid_print
-    print('✗ ${err.response?.statusCode} ${err.requestOptions.path}: ${err.message}');
-    handler.next(err);
+  static Future<String?> getAccessToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_accessKey);
+  }
+
+  static Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_refreshKey);
+  }
+
+  static Future<void> clearTokens() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_accessKey);
+    await prefs.remove(_refreshKey);
   }
 }
