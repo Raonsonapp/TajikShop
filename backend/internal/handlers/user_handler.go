@@ -140,7 +140,15 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 func (h *UserHandler) BecomeSellerHandler(c *gin.Context) {
 	uid := utils.UserID(c)
 	db.DB.Exec(`UPDATE users SET is_seller=true,role='seller',updated_at=$1 WHERE id=$2`, time.Now(), uid)
-	utils.OK(c, gin.H{"message": "you are now a seller"})
+	// Generate new tokens with updated role='seller' so middleware allows product upload immediately
+	accessToken, _ := auth.GenerateAccessToken(uid, "seller", h.secret)
+	refreshToken, _ := auth.GenerateRefreshToken(uid, h.secret)
+	db.DB.Exec(`UPDATE users SET refresh_token=$1 WHERE id=$2`, refreshToken, uid)
+	utils.OK(c, gin.H{
+		"message":       "you are now a seller",
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
 }
 
 func (h *UserHandler) RefreshToken(c *gin.Context) {
