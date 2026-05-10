@@ -24,16 +24,27 @@ class RetryInterceptor extends Interceptor {
 }
 
 class ErrorInterceptor extends Interceptor {
+  // Server returns: {"success": false, "error": "message text"}
+  String _extractMsg(dynamic data, String fallback) {
+    if (data is Map) {
+      return data['error']?.toString() ??
+          data['message']?.toString() ??
+          fallback;
+    }
+    return fallback;
+  }
+
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     String msg;
+    final d = err.response?.data;
     switch (err.response?.statusCode) {
-      case 400: msg = err.response?.data?['message'] ?? 'Дархости нодуруст'; break;
-      case 401: msg = 'Иҷозат нест. Аз нав ворид шавед'; break;
+      case 400: msg = _extractMsg(d, 'Дархости нодуруст'); break;
+      case 401: msg = _extractMsg(d, 'Email ё парол нодуруст'); break;
       case 403: msg = 'Дастрасӣ манъ аст'; break;
       case 404: msg = 'Ёфт нашуд'; break;
       case 409: msg = 'Ин email аллакай вуҷуд дорад'; break;
-      case 422: msg = err.response?.data?['message'] ?? 'Маълумоти нодуруст'; break;
+      case 422: msg = _extractMsg(d, 'Маълумоти нодуруст'); break;
       case 429: msg = 'Хеле зиёд дархост. Каме сабр кунед'; break;
       case 500: msg = 'Хатои сервер. Баъдтар кӯшиш кунед'; break;
       default:
@@ -44,9 +55,7 @@ class ErrorInterceptor extends Interceptor {
         } else if (err.type == DioExceptionType.connectionError) {
           msg = 'Пайвастшавӣ нест. Интернетро санҷед';
         } else {
-          msg = err.response?.data?['message'] ??
-              err.response?.data?['error'] ??
-              err.message ?? 'Хатои номаълум';
+          msg = _extractMsg(d, err.message ?? 'Хатои номаълум');
         }
     }
     handler.next(DioException(
