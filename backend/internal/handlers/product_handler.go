@@ -37,9 +37,16 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		return
 	}
 	id := uuid.NewString()
+
+	// category_id холӣ бошад NULL фиристон — PostgreSQL UUID хато надиҳад
+	var catID interface{}
+	if in.CategoryID != "" {
+		catID = in.CategoryID
+	}
+
 	_, err := db.DB.Exec(`INSERT INTO products(id,seller_id,category_id,title,description,price,discount_percent,stock)
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
-		id, uid, in.CategoryID, in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock)
+		id, uid, catID, in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock)
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return
