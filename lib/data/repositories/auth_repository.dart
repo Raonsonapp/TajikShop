@@ -1,31 +1,39 @@
 import '../datasources/remote/auth_remote.dart';
 import '../models/user_model.dart';
 import '../../core/storage/token_storage.dart';
-import '../../core/api/api_client.dart';
 
 class AuthRepository {
   final AuthRemote _remote = AuthRemote();
 
   Future<UserModel> login(String email, String password) async {
     final data = await _remote.login(email, password);
-    final token   = data['token'] ?? data['access_token'] ?? '';
-    final refresh = data['refresh_token'] ?? '';
-    // Save token to SharedPreferences — _TokenInjector will read it automatically
+    // Backend returns "access_token" not "token"
+    final token = data['access_token']?.toString() ?? '';
+    final refresh = data['refresh_token']?.toString() ?? '';
+    if (token.isEmpty) throw Exception('Token нест — посухи backend нодуруст');
     await TokenStorage.saveTokens(accessToken: token, refreshToken: refresh);
-    ApiClient.instance.init(token: token); // backward compat
-    final user = data['user'] ?? data;
-    return UserModel.fromJson(user as Map<String, dynamic>);
+    final userMap = data['user'] as Map<String, dynamic>? ?? {};
+    return UserModel.fromJson(userMap);
   }
 
   Future<UserModel> register(
       String email, String password, String fullName) async {
     final data = await _remote.register(email, password, fullName);
-    final token   = data['token'] ?? data['access_token'] ?? '';
-    final refresh = data['refresh_token'] ?? '';
+    // Backend returns "access_token" not "token"
+    final token = data['access_token']?.toString() ?? '';
+    final refresh = data['refresh_token']?.toString() ?? '';
+    if (token.isEmpty) throw Exception('Token нест — посухи backend нодуруст');
     await TokenStorage.saveTokens(accessToken: token, refreshToken: refresh);
-    ApiClient.instance.init(token: token);
-    final user = data['user'] ?? data;
-    return UserModel.fromJson(user as Map<String, dynamic>);
+    // Register doesn't return user object, build minimal one
+    return UserModel(
+      id: '',
+      email: email,
+      fullName: fullName,
+      role: 'buyer',
+      isSeller: false,
+      isVerified: false,
+      createdAt: DateTime.now(),
+    );
   }
 
   Future<UserModel?> getMe() async {
@@ -34,8 +42,7 @@ class AuthRepository {
     try {
       return await _remote.getMe();
     } catch (_) {
-      await TokenStorage.clearTokens();
-      return null;
+      return null; // don't clear token - might be network error
     }
   }
 
