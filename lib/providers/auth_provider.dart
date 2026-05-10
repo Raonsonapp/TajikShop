@@ -32,7 +32,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final _repo = AuthRepository();
   AuthNotifier() : super(const AuthState());
 
-  // Called on splash — restores session
   Future<void> checkAuth() async {
     state = state.copyWith(isLoading: true);
     try {
@@ -46,7 +45,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final user = await _repo.login(email, password);
+      await _repo.login(email, password);      // saves token
+      final user = await _repo.getMe();        // fetch user with saved token
       state = AuthState(user: user, isAuthenticated: true);
       return true;
     } catch (e) {
@@ -62,14 +62,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
       String email, String password, String fullName) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      // Register → token saved inside repo → then fetch full user profile
-      await _repo.register(email, password, fullName);
-      // Immediately fetch real user from /me
-      final user = await _repo.getMe();
-      state = AuthState(
-        user: user,
-        isAuthenticated: true,
-      );
+      await _repo.register(email, password, fullName); // saves token
+      final user = await _repo.getMe();                // fetch user
+      state = AuthState(user: user, isAuthenticated: true);
       return true;
     } catch (e) {
       state = state.copyWith(
