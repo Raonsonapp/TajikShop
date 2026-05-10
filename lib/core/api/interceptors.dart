@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 
-/// Auto-retry up to 2 times on timeout (helps H/0.1KB/s slow internet)
 class RetryInterceptor extends Interceptor {
   final Dio dio;
   RetryInterceptor(this.dio);
@@ -29,27 +28,14 @@ class ErrorInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) {
     String msg;
     switch (err.response?.statusCode) {
-      case 400:
-        msg = err.response?.data?['message'] ?? 'Дархости нодуруст';
-        break;
-      case 401:
-        msg = 'Иҷозат нест. Аз нав ворид шавед';
-        break;
-      case 403:
-        msg = 'Дастрасӣ манъ аст';
-        break;
-      case 404:
-        msg = 'Ёфт нашуд';
-        break;
-      case 422:
-        msg = err.response?.data?['message'] ?? 'Маълумоти нодуруст';
-        break;
-      case 429:
-        msg = 'Хеле зиёд дархост. Каме сабр кунед';
-        break;
-      case 500:
-        msg = 'Хатои сервер. Баъдтар кӯшиш кунед';
-        break;
+      case 400: msg = err.response?.data?['message'] ?? 'Дархости нодуруст'; break;
+      case 401: msg = 'Иҷозат нест. Аз нав ворид шавед'; break;
+      case 403: msg = 'Дастрасӣ манъ аст'; break;
+      case 404: msg = 'Ёфт нашуд'; break;
+      case 409: msg = 'Ин email аллакай вуҷуд дорад'; break;
+      case 422: msg = err.response?.data?['message'] ?? 'Маълумоти нодуруст'; break;
+      case 429: msg = 'Хеле зиёд дархост. Каме сабр кунед'; break;
+      case 500: msg = 'Хатои сервер. Баъдтар кӯшиш кунед'; break;
       default:
         if (err.type == DioExceptionType.connectionTimeout ||
             err.type == DioExceptionType.receiveTimeout ||
@@ -60,8 +46,7 @@ class ErrorInterceptor extends Interceptor {
         } else {
           msg = err.response?.data?['message'] ??
               err.response?.data?['error'] ??
-              err.message ??
-              'Хатои номаълум';
+              err.message ?? 'Хатои номаълум';
         }
     }
     handler.next(DioException(
@@ -75,16 +60,16 @@ class ErrorInterceptor extends Interceptor {
 
 class LoggingInterceptor extends Interceptor {
   @override
-  void onRequest(RequestOptions o, RequestInterceptorHandler h) {
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     // ignore: avoid_print
-    print('→ ${o.method} ${o.path}  token:${o.headers['Authorization'] != null ? "✓" : "✗"}');
-    h.next(o);
+    print('→ ${options.method} ${options.path}  auth:${options.headers['Authorization'] != null ? "✓" : "✗"}');
+    handler.next(options);
   }
 
   @override
-  void onError(DioException e, ErrorInterceptorHandler h) {
+  void onError(DioException err, ErrorInterceptorHandler handler) {
     // ignore: avoid_print
-    print('✗ ${e.response?.statusCode} ${e.requestOptions.path}: ${e.message}');
-    h.next(e);
+    print('✗ ${err.response?.statusCode} ${err.requestOptions.path}: ${err.message}');
+    handler.next(err);
   }
 }
