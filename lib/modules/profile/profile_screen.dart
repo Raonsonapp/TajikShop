@@ -9,6 +9,7 @@ import 'dart:io';
 import '../../core/constants/app_colors.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
+import '../../core/storage/token_storage.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
@@ -330,7 +331,17 @@ class ProfileScreen extends ConsumerWidget {
 
   Future<void> _becomeSeller(BuildContext context, WidgetRef ref) async {
     try {
-      await ApiClient.instance.dio.post(ApiEndpoints.becomeSeller);
+      final res = await ApiClient.instance.dio.post(ApiEndpoints.becomeSeller);
+      // Server returns new tokens with role='seller' — save them immediately
+      // so the next request (product upload) uses the updated role
+      final body = res.data is Map ? res.data as Map<String, dynamic> : <String, dynamic>{};
+      final data = body['data'] as Map<String, dynamic>? ?? body;
+      final newAccess  = data['access_token']?.toString();
+      final newRefresh = data['refresh_token']?.toString();
+      if (newAccess != null && newAccess.isNotEmpty) {
+        await TokenStorage.saveTokens(
+            accessToken: newAccess, refreshToken: newRefresh);
+      }
       await ref.read(authProvider.notifier).checkAuth();
       if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: const Text('🎉 Шумо фурӯшанда шудед!'), backgroundColor: AppColors.success,
