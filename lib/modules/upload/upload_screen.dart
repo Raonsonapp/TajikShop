@@ -61,7 +61,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         [..._images, ...picked.map((x) => File(x.path))].take(5).toList());
   }
 
-  // Become seller first, then reload user
+  // Become seller first — токени нав гирифта захира мешавад
   Future<bool> _ensureSeller() async {
     final user = ref.read(authProvider).user;
     if (user == null) return false;
@@ -69,8 +69,12 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
     setState(() { _becomingS = true; _error = null; });
     try {
-      await ApiClient.instance.dio.post(ApiEndpoints.becomeSeller);
-      await ref.read(authProvider.notifier).checkAuth();
+      // becomeSeller() токени нав бо role='seller' мегирад ва захира мекунад
+      final ok = await ref.read(authProvider.notifier).becomeSeller();
+      if (!ok) {
+        setState(() => _error = 'Фурӯшанда шудан мумкин набуд');
+        return false;
+      }
       return true;
     } catch (e) {
       setState(() => _error = 'Фурӯшанда шудан мумкин набуд: ${e.toString().replaceAll("Exception: ", "")}');
@@ -102,7 +106,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       );
       setState(() => _progress = 0.4);
 
-      final pid = (res.data['id'] ?? res.data['product']?['id'])?.toString() ?? '';
+      final body = res.data is Map<String, dynamic> ? res.data as Map<String, dynamic> : <String, dynamic>{};
+      final productData = body['data'] as Map<String, dynamic>? ?? body;
+      final pid = (productData['id'] ?? productData['product']?['id'])?.toString() ?? '';
 
       // Step 3: upload images one by one
       if (pid.isNotEmpty && _images.isNotEmpty) {
