@@ -15,7 +15,7 @@ func main() {
 	cfg := config.Load()
 
 	db.Connect(cfg.DBUrl)
-	db.Init()
+	db.Migrate() // Танҳо ҷадвалҳои нав месозад — DROP намекунад
 
 	middleware.SetSecret(cfg.JWTSecret)
 
