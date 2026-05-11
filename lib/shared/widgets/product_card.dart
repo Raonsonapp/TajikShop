@@ -20,7 +20,6 @@ class _ProductCardState extends ConsumerState<ProductCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _heartCtrl;
   late Animation<double> _heartScale;
-  late Animation<double> _heartOpacity;
 
   @override
   void initState() {
@@ -31,8 +30,6 @@ class _ProductCardState extends ConsumerState<ProductCard>
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.5), weight: 50),
       TweenSequenceItem(tween: Tween(begin: 1.5, end: 1.0), weight: 50),
     ]).animate(CurvedAnimation(parent: _heartCtrl, curve: Curves.elasticOut));
-    _heartOpacity = Tween(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: _heartCtrl, curve: const Interval(0, 0.3)));
   }
 
   @override
