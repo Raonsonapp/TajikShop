@@ -14,7 +14,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../routes/route_names.dart';
-import '../../main.dart' show _AppL10n;
+import '../../main.dart' show AppL10n;
 import '../../shared/widgets/app_button.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -44,7 +44,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   // ── Become Seller ────────────────────────────────────────────────────────────
   Future<void> _becomeSeller() async {
-    final l = _AppL10n.of(context);
+    final l = AppL10n.of(context);
     final ok = await ref.read(authProvider.notifier).becomeSeller();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -55,7 +55,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   // ── Language picker ──────────────────────────────────────────────────────────
   void _showLanguagePicker() {
-    final l = _AppL10n.of(context);
+    final l = AppL10n.of(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgCard,
@@ -97,7 +97,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final auth   = ref.watch(authProvider);
     final user   = auth.user;
     final isDark = ref.watch(themeProvider) == ThemeMode.dark;
-    final l      = _AppL10n.of(context);
+    final l      = AppL10n.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
