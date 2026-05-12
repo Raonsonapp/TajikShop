@@ -16,13 +16,13 @@ import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../data/models/product_model.dart';
 import '../../data/models/category_model.dart';
+import '../../main.dart' show _AppL10n; // ← ИЛОВА ШУД
 
-// ─── Notification count provider (mock — сервер /notifications мехонад) ───────
+// ─── Notification count provider ──────────────────────────────────────────────
 final _notifCountProvider = FutureProvider<int>((ref) async {
   try {
     final auth = ref.watch(authProvider);
     if (!auth.isAuthenticated) return 0;
-    // TODO: replace with real API call
     return 0;
   } catch (_) { return 0; }
 });
@@ -44,7 +44,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   late AnimationController _fadeCtrl;
   late Animation<double>   _fadeAnim;
 
-  // Категорияи танхошуда
   String? _selectedCatId;
 
   static const _banners = [
@@ -112,6 +111,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final ps   = ref.watch(productsProvider);
     final cats = ref.watch(categoriesProvider);
     final auth = ref.watch(authProvider);
+    final l    = _AppL10n.of(context); // ← ИСЛОҲ: context аз build гирифта мешавад
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
@@ -147,12 +147,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               fontSize: 22, letterSpacing: -0.5)),
                     ]),
               actions: _searchActive ? [] : [
-                // Search
                 _AppBarBtn(icon: Icons.search_rounded,
                     onTap: () => setState(() => _searchActive = true)),
-                // Notifications
                 _NotifBtn(),
-                // Avatar
                 GestureDetector(
                   onTap: () => context.push(RouteNames.profile),
                   child: Padding(
@@ -169,7 +166,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             SliverToBoxAdapter(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
               // ══════════════════════════════════════════════════
-              // SEARCH BAR (inline, агар search active набошад)
+              // SEARCH BAR
               // ══════════════════════════════════════════════════
               if (!_searchActive)
                 Padding(
@@ -186,8 +183,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         const SizedBox(width: 12),
                         const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 20),
                         const SizedBox(width: 8),
-                        const Expanded(child: Text(l.searchHint,
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 13))),
+                        // ← ИСЛОҲ: const хорӣ шуд, l.searchHint аз build() гирифта мешавад
+                        Expanded(child: Text(l.searchHint,
+                            style: const TextStyle(color: AppColors.textMuted, fontSize: 13))),
                         Container(margin: const EdgeInsets.all(6),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
@@ -195,8 +193,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             borderRadius: BorderRadius.circular(8)),
                           child: const Text('Ёбед',
                               style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700))),
-                      ]))),
-                ),
+                      ])))),
 
               // ══════════════════════════════════════════════════
               // BANNER CAROUSEL
@@ -210,7 +207,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   itemCount: _banners.length,
                   itemBuilder: (_, i) => _BannerCard(banner: _banners[i])),
               ),
-              // Dots
               Padding(
                 padding: const EdgeInsets.only(top: 10, bottom: 6),
                 child: Row(mainAxisAlignment: MainAxisAlignment.center,
@@ -224,7 +220,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         borderRadius: BorderRadius.circular(3)))))),
 
               // ══════════════════════════════════════════════════
-              // QUICK STATS / PROMO CHIPS
+              // PROMO CHIPS
               // ══════════════════════════════════════════════════
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
@@ -268,7 +264,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     }))),
 
               // ══════════════════════════════════════════════════
-              // TRENDING — горизонтал
+              // TRENDING
               // ══════════════════════════════════════════════════
               if (ps.trending.isNotEmpty) ...[
                 _SectionHeader(title: l.trending, onSeeAll: null),
@@ -283,7 +279,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ],
 
               // ══════════════════════════════════════════════════
-              // FLASH SALE (агар тахфифдор бошанд)
+              // FLASH SALE
               // ══════════════════════════════════════════════════
               Builder(builder: (_) {
                 final sale = ps.products.where((p) => p.computedDiscount > 0).toList();
