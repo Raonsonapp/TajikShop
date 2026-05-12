@@ -6,363 +6,302 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import 'dart:io';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
+import '../../providers/locale_provider.dart';
 import '../../routes/route_names.dart';
+import '../../main.dart' show _AppL10n;
 import '../../shared/widgets/app_button.dart';
 
-final _profileStatsProvider = FutureProvider<Map<String, int>>((ref) async {
-  try {
-    final orders = await ApiClient.instance.dio.get(ApiEndpoints.orders);
-    final favs = await ApiClient.instance.dio.get(ApiEndpoints.favorites);
-    final ordList = orders.data is List ? orders.data as List : (orders.data['orders'] ?? []);
-    final favList = favs.data is List ? favs.data as List : (favs.data['favorites'] ?? favs.data['items'] ?? []);
-    return {'orders': ordList.length, 'favorites': favList.length};
-  } catch (_) {
-    return {'orders': 0, 'favorites': 0};
-  }
-});
-
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
+  @override
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+
+  // ── Avatar upload ────────────────────────────────────────────────────────────
+  Future<void> _pickAvatar() async {
+    final xf = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (xf == null) return;
+    final file = File(xf.path);
+    try {
+      final form = FormData.fromMap({'avatar': await MultipartFile.fromFile(file.path)});
+      final res = await ApiClient.instance.dio.put(ApiEndpoints.me, data: form);
+      final body = res.data is Map ? res.data as Map<String, dynamic> : <String, dynamic>{};
+      final data = body['data'] as Map<String, dynamic>? ?? body;
+      final url  = data['avatar_url']?.toString();
+      if (url != null && url.isNotEmpty) {
+        await ref.read(authProvider.notifier).checkAuth();
+      }
+    } catch (_) {}
+  }
+
+  // ── Become Seller ────────────────────────────────────────────────────────────
+  Future<void> _becomeSeller() async {
+    final l = _AppL10n.of(context);
+    final ok = await ref.read(authProvider.notifier).becomeSeller();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(ok ? l.becomeSellerSuccess : l.error),
+      backgroundColor: ok ? AppColors.success : AppColors.error,
+      behavior: SnackBarBehavior.floating));
+  }
+
+  // ── Language picker ──────────────────────────────────────────────────────────
+  void _showLanguagePicker() {
+    final l = _AppL10n.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgCard,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 20),
+          Text(l.language, style: const TextStyle(color: Colors.white,
+              fontSize: 18, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 20),
+          ...LocaleNotifier.supported.map((locale) {
+            final current = ref.read(localeProvider);
+            final isActive = current.languageCode == locale.languageCode;
+            return ListTile(
+              leading: Text(locale.languageCode == 'tg' ? '🇹🇯' :
+                  locale.languageCode == 'ru' ? '🇷🇺' : '🇬🇧',
+                  style: const TextStyle(fontSize: 24)),
+              title: Text(LocaleNotifier.langName(locale.languageCode),
+                  style: TextStyle(color: isActive ? AppColors.primary : Colors.white,
+                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w400)),
+              trailing: isActive
+                  ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                  : null,
+              onTap: () {
+                ref.read(localeProvider.notifier).setLocale(locale);
+                Navigator.pop(context);
+              });
+          }),
+        ])));
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final auth = ref.watch(authProvider);
-    final user = auth.user;
-    final stats = ref.watch(_profileStatsProvider);
+  Widget build(BuildContext context) {
+    final auth   = ref.watch(authProvider);
+    final user   = auth.user;
+    final isDark = ref.watch(themeProvider) == ThemeMode.dark;
+    final l      = _AppL10n.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
         slivers: [
-          SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 56, 20, 20),
-              child: Column(children: [
-                // Avatar with edit
-                Stack(children: [
-                  Container(
-                    width: 88, height: 88,
-                    decoration: BoxDecoration(shape: BoxShape.circle,
-                        gradient: AppColors.primaryGradient,
-                        border: Border.all(color: AppColors.primary, width: 2)),
-                    child: ClipOval(child: user?.avatar != null && user!.avatar!.isNotEmpty
-                        ? CachedNetworkImage(imageUrl: user.avatar!, fit: BoxFit.cover,
-                            errorWidget: (_, __, ___) => _initials(user.fullName))
-                        : _initials(user?.fullName ?? 'U')),
-                  ),
-                  Positioned(bottom: 0, right: 0,
-                    child: GestureDetector(
-                      onTap: () => _uploadAvatar(context, ref),
-                      child: Container(width: 26, height: 26,
-                        decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.bgDark, width: 2)),
-                        child: const Icon(Icons.camera_alt_rounded, size: 14, color: Colors.white)),
-                    ),
-                  ),
-                ]),
-                const SizedBox(height: 12),
-                // Username lowercase
-                Text('@${(user?.fullName ?? 'меҳмон').toLowerCase().replaceAll(' ', '_')}',
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 2),
-                Text(user?.email ?? '', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                const SizedBox(height: 8),
-                // Badges
-                Wrap(spacing: 8, children: [
-                  if (user?.isSeller == true) _badge('🏪 Фурӯшанда', AppColors.primary),
-                  if (user?.isVerified == true) _badge('✓ Тасдиқ', AppColors.info),
-                  if (user?.role == 'admin') _badge('👑 Админ', AppColors.error),
-                ]),
-                const SizedBox(height: 20),
-                // Real stats from API
-                Container(
-                  decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(16)),
-                  child: stats.when(
-                    loading: () => const Padding(padding: EdgeInsets.all(20),
-                        child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
-                    error: (_, __) => _statsRow(0, 0),
-                    data: (s) => _statsRow(s['orders'] ?? 0, s['favorites'] ?? 0),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Edit profile button
-                OutlinedButton.icon(
-                  onPressed: () => _showEditDialog(context, ref, user),
-                  icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
-                  label: const Text('Таҳрир кардан', style: TextStyle(color: AppColors.primary, fontSize: 13)),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  ),
-                ),
-              ]),
-            ),
+
+          // ── App Bar ────────────────────────────────────────────────────────
+          SliverAppBar(
+            backgroundColor: AppColors.bgDark,
+            floating: true, elevation: 0,
+            title: Text(l.profile, style: const TextStyle(color: Colors.white,
+                fontWeight: FontWeight.w700, fontSize: 20)),
           ),
 
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                _section('Харид'),
-                _tile(context, Icons.receipt_long_outlined, 'Фармоишҳоям', AppColors.primary,
-                    subtitle: 'Таърихи харид', onTap: () => context.push(RouteNames.orders)),
-                _tile(context, Icons.favorite_outline_rounded, 'Дӯстдоштаҳо', AppColors.error,
-                    subtitle: 'Маҳсулотҳои маъруб', onTap: () => context.go(RouteNames.favorites)),
-                _tile(context, Icons.location_on_outlined, 'Суроғаҳо', AppColors.warning,
-                    subtitle: 'Идораи суроғаҳо', onTap: () => _showAddressDialog(context, ref)),
-                _tile(context, Icons.payment_outlined, 'Пардохтҳо', AppColors.info,
-                    subtitle: 'DC / Корт', onTap: () => _showPaymentInfo(context)),
+          SliverToBoxAdapter(child: Column(children: [
 
-                _section('Нашр'),
-                _tile(context, Icons.add_box_outlined, 'Маҳсулот нашр кунед', AppColors.primary,
-                    onTap: () => context.go(RouteNames.upload)),
-                if (user?.isSeller == true)
-                  _tile(context, Icons.store_outlined, 'Дӯкони ман', const Color(0xFF6C63FF),
-                      onTap: () => context.push(RouteNames.seller))
-                else
-                  _tile(context, Icons.storefront_outlined, 'Фурӯшанда шавед', AppColors.success,
-                      subtitle: 'Маҳсулотҳои худро бифурӯшед', onTap: () => _becomeSeller(context, ref)),
+            // ── Avatar & Name ──────────────────────────────────────────────
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                    colors: [AppColors.primary.withOpacity(0.15), AppColors.bgCard],
+                    begin: Alignment.topLeft, end: Alignment.bottomRight),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.border)),
+              child: Row(children: [
+                // Avatar
+                GestureDetector(
+                  onTap: _pickAvatar,
+                  child: Stack(children: [
+                    CircleAvatar(radius: 36,
+                      backgroundColor: AppColors.bgSurface,
+                      backgroundImage: user?.avatar != null && user!.avatar!.isNotEmpty
+                          ? CachedNetworkImageProvider(user.avatar!) : null,
+                      child: user?.avatar == null || user!.avatar!.isEmpty
+                          ? const Icon(Icons.person_rounded, color: AppColors.textMuted, size: 36)
+                          : null),
+                    Positioned(bottom: 0, right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(5),
+                        decoration: const BoxDecoration(
+                            gradient: LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                            shape: BoxShape.circle),
+                        child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 12))),
+                  ])),
+                const SizedBox(width: 16),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(user?.fullName ?? 'Корбар',
+                      style: const TextStyle(color: Colors.white,
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text(user?.email ?? '',
+                      style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  _RoleBadge(role: user?.role ?? 'buyer', l: l),
+                ])),
+              ])),
 
-                if (user?.role == 'admin') ...[
-                  _section('Идора'),
-                  _tile(context, Icons.admin_panel_settings_outlined, 'Панели Админ', AppColors.error,
-                      onTap: () => context.push(RouteNames.admin)),
-                ],
+            // ── Seller / Become Seller ─────────────────────────────────────
+            if (user?.isSeller == true || user?.role == 'seller')
+              _MenuItem(icon: Icons.store_rounded, iconColor: const Color(0xFF00D084),
+                  label: l.sellerDashboard,
+                  onTap: () => context.push(RouteNames.sellerDashboard))
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: AppButton(
+                  label: '🏪 ${l.becomeSeller}',
+                  onPressed: _becomeSeller,
+                  gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                )),
 
-                _section('Танзимот'),
-                _tile(context, Icons.notifications_outlined, 'Огоҳиномаҳо', AppColors.primary,
-                    onTap: () => context.push(RouteNames.notifications)),
-                _tile(context, Icons.language_outlined, 'Забон', AppColors.info,
-                    subtitle: 'Тоҷикӣ', onTap: () => _showLanguageDialog(context)),
-                _tile(context, Icons.dark_mode_outlined, 'Намоиш', AppColors.textMuted,
-                    subtitle: 'Торик', onTap: () {}),
-                _tile(context, Icons.help_outline_rounded, 'Кӯмак', AppColors.textMuted,
-                    onTap: () => _showHelp(context)),
-                const SizedBox(height: 8),
-                _tile(context, Icons.logout_rounded, 'Баромадан', AppColors.error,
-                    onTap: () => _logout(context, ref)),
-                const SizedBox(height: 16),
-                const Center(child: Text('TajikShop v1.0 • Бозори Тоҷикистон',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
-                const SizedBox(height: 90),
-              ]),
-            ),
-          ),
-        ],
-      ),
-    );
+            const SizedBox(height: 8),
+            _SectionLabel(l.orders),
+            _MenuItem(icon: Icons.receipt_long_rounded, iconColor: const Color(0xFF00A3FF),
+                label: l.orders, onTap: () => context.push(RouteNames.orders)),
+            _MenuItem(icon: Icons.favorite_rounded, iconColor: const Color(0xFF00D084),
+                label: l.favorites, onTap: () => context.push(RouteNames.favorites)),
+
+            const SizedBox(height: 8),
+            _SectionLabel(l.settings),
+            // ── Тема ─────────────────────────────────────────────────────
+            _SwitchTile(
+              icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+              iconColor: const Color(0xFFFFB800),
+              label: isDark ? l.darkMode : l.lightMode,
+              value: isDark,
+              onChanged: (v) => ref.read(themeProvider.notifier).toggle()),
+
+            // ── Забон ────────────────────────────────────────────────────
+            _MenuItem(
+              icon: Icons.language_rounded, iconColor: const Color(0xFF00A3FF),
+              label: '${l.language}: ${LocaleNotifier.langName(ref.watch(localeProvider).languageCode)}',
+              onTap: _showLanguagePicker),
+
+            _MenuItem(icon: Icons.notifications_outlined, iconColor: const Color(0xFFE040FB),
+                label: l.notifications, onTap: () => context.push(RouteNames.notifications)),
+
+            const SizedBox(height: 8),
+            _SectionLabel(l.about),
+            _MenuItem(icon: Icons.info_outline_rounded, iconColor: AppColors.textMuted,
+                label: l.about, onTap: () {}),
+
+            // ── Logout ─────────────────────────────────────────────────
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+              child: ListTile(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                tileColor: const Color(0xFFFF3B5C).withOpacity(0.1),
+                leading: const Icon(Icons.logout_rounded, color: Color(0xFFFF3B5C)),
+                title: Text(l.logout, style: const TextStyle(
+                    color: Color(0xFFFF3B5C), fontWeight: FontWeight.w600)),
+                onTap: () async {
+                  await ref.read(authProvider.notifier).logout();
+                  if (context.mounted) context.go(RouteNames.login);
+                })),
+          ])),
+        ]));
   }
+}
 
-  Widget _statsRow(int orders, int favs) => Row(children: [
-    _stat('$orders', 'Фармоишҳо', Icons.receipt_long_outlined),
-    Container(width: 1, height: 40, color: AppColors.border),
-    _stat('$favs', 'Дӯстдошта', Icons.favorite_outline),
-    Container(width: 1, height: 40, color: AppColors.border),
-    _stat('0', 'Маҳсулот', Icons.inventory_2_outlined),
-  ]);
+// ── Helpers ───────────────────────────────────────────────────────────────────
+class _RoleBadge extends StatelessWidget {
+  final String role;
+  final dynamic l;
+  const _RoleBadge({required this.role, required this.l});
 
-  Widget _stat(String val, String label, IconData icon) => Expanded(
-    child: Padding(padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Column(children: [
-        Icon(icon, color: AppColors.primary, size: 18),
-        const SizedBox(height: 4),
-        Text(val, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-        Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 10)),
-      ])),
-  );
-
-  Widget _initials(String name) => Container(color: AppColors.bgSurface,
-    child: Center(child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'U',
-        style: const TextStyle(color: AppColors.primary, fontSize: 32, fontWeight: FontWeight.w700))));
-
-  Widget _badge(String label, Color color) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-    decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-    child: Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)));
-
-  Widget _section(String title) => Padding(
-    padding: const EdgeInsets.fromLTRB(4, 16, 0, 8),
-    child: Text(title, style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)));
-
-  Widget _tile(BuildContext context, IconData icon, String label, Color color,
-      {String? subtitle, VoidCallback? onTap}) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 6), padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border, width: 0.5)),
-      child: Row(children: [
-        Container(width: 38, height: 38,
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: color, size: 20)),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(
-              color: color == AppColors.error && label.contains('Барор') ? color : AppColors.textPrimary,
-              fontSize: 14, fontWeight: FontWeight.w500)),
-          if (subtitle != null) Text(subtitle, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
-        ])),
-        Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
-      ]),
-    ));
-
-  Future<void> _uploadAvatar(BuildContext context, WidgetRef ref) async {
-    final picker = ImagePicker();
-    final img = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80, maxWidth: 500);
-    if (img == null) return;
-    try {
-      final formData = FormData.fromMap({'avatar': await MultipartFile.fromFile(img.path)});
-      await ApiClient.instance.dio.post(ApiEndpoints.uploadAvatar, data: formData);
-      await ref.read(authProvider.notifier).checkAuth();
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('✅ Расм нав шуд'), backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))));
-    } catch (e) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Хато: $e'), backgroundColor: AppColors.error));
+  @override
+  Widget build(BuildContext context) {
+    Color c;
+    String label;
+    switch (role) {
+      case 'seller': c = const Color(0xFF00D084); label = '🏪 ${l.seller}'; break;
+      case 'admin':  c = const Color(0xFFE040FB); label = '👑 ${l.admin}'; break;
+      default:       c = const Color(0xFF00A3FF); label = '🛍️ ${l.buyer}';
     }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+          color: c.withOpacity(0.15), borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: c.withOpacity(0.4))),
+      child: Text(label, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700)));
   }
+}
 
-  void _showEditDialog(BuildContext context, WidgetRef ref, dynamic user) {
-    final nameCtrl = TextEditingController(text: user?.fullName ?? '');
-    showModalBottomSheet(context: context, backgroundColor: AppColors.bgCard, isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Padding(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
-          const SizedBox(height: 16),
-          const Text('Таҳрири профил', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 20),
-          TextField(controller: nameCtrl,
-            style: const TextStyle(color: AppColors.textPrimary),
-            decoration: InputDecoration(hintText: 'Номи пурра', hintStyle: const TextStyle(color: AppColors.textMuted),
-              filled: true, fillColor: AppColors.bgSurface,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
-          const SizedBox(height: 16),
-          AppButton(text: 'Сабт кардан', onTap: () async {
-            try {
-              await ApiClient.instance.dio.put(ApiEndpoints.updateProfile, data: {'name': nameCtrl.text.trim()});
-              await ref.read(authProvider.notifier).checkAuth();
-              if (context.mounted) Navigator.pop(context);
-            } catch (_) {}
-          }),
-        ]),
-      ));
-  }
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel(this.label);
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 8, 20, 6),
+    child: Text(label.toUpperCase(), style: const TextStyle(
+        color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)));
+}
 
-  void _showAddressDialog(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(context: context, backgroundColor: AppColors.bgCard, isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) {
-        final ctrl = TextEditingController();
-        return Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 16),
-            const Text('Суроғаи нав', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 20),
-            TextField(controller: ctrl, style: const TextStyle(color: AppColors.textPrimary),
-              decoration: InputDecoration(hintText: 'Суроға, Шаҳр, Кӯча...', hintStyle: const TextStyle(color: AppColors.textMuted),
-                filled: true, fillColor: AppColors.bgSurface,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
-            const SizedBox(height: 16),
-            AppButton(text: 'Илова кардан', onTap: () async {
-              try {
-                await ApiClient.instance.dio.post('/addresses', data: {'address': ctrl.text.trim()});
-                if (context.mounted) { Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: const Text('✅ Суроға илова шуд'), backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating)); }
-              } catch (_) {}
-            }),
-          ]));
-      });
-  }
+class _MenuItem extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final VoidCallback onTap;
+  const _MenuItem({required this.icon, required this.iconColor,
+      required this.label, required this.onTap});
 
-  void _showPaymentInfo(BuildContext context) {
-    showModalBottomSheet(context: context, backgroundColor: AppColors.bgCard,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
-        const SizedBox(height: 16),
-        const Icon(Icons.payment_outlined, color: AppColors.primary, size: 48),
-        const SizedBox(height: 12),
-        const Text('Пардохти DC', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
-        const Text('Вақте харид мекунед, рақами DC-и фурӯшандаро мебинед. Пул мефиристед ва чекро ба барнома бор мекунед.',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14), textAlign: TextAlign.center),
-        const SizedBox(height: 20),
-      ])));
-  }
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+    child: ListTile(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      tileColor: AppColors.bgCard,
+      leading: Container(padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: iconColor, size: 18)),
+      title: Text(label, style: const TextStyle(color: Colors.white,
+          fontSize: 14, fontWeight: FontWeight.w500)),
+      trailing: const Icon(Icons.chevron_right_rounded,
+          color: AppColors.textMuted, size: 20),
+      onTap: onTap));
+}
 
-  void _showLanguageDialog(BuildContext context) {
-    showModalBottomSheet(context: context, backgroundColor: AppColors.bgCard,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Text('Забон', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 16),
-        for (final lang in [('🇹🇯 Тоҷикӣ', true), ('🇷🇺 Русӣ', false), ('🇬🇧 English', false)])
-          ListTile(title: Text(lang.$1, style: const TextStyle(color: AppColors.textPrimary)),
-            trailing: lang.$2 ? const Icon(Icons.check_rounded, color: AppColors.primary) : null,
-            onTap: () => Navigator.pop(context)),
-      ])));
-  }
+class _SwitchTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  const _SwitchTile({required this.icon, required this.iconColor,
+      required this.label, required this.value, required this.onChanged});
 
-  void _showHelp(BuildContext context) {
-    showModalBottomSheet(context: context, backgroundColor: AppColors.bgCard,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => const Padding(padding: EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(Icons.help_outline_rounded, color: AppColors.primary, size: 48),
-        SizedBox(height: 12),
-        Text('Кӯмак', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-        SizedBox(height: 12),
-        Text('Агар мушкил дошта бошед, ба @TajikShop_support нависед.',
-            style: TextStyle(color: AppColors.textSecondary), textAlign: TextAlign.center),
-      ])));
-  }
-
-  Future<void> _becomeSeller(BuildContext context, WidgetRef ref) async {
-    try {
-      // becomeSeller() дар authProvider токени нав захира мекунад
-      final ok = await ref.read(authProvider.notifier).becomeSeller();
-      if (!context.mounted) return;
-      if (ok) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('🎉 Шумо фурӯшанда шудед!'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Фурӯшанда шудан мумкин набуд'),
-          backgroundColor: AppColors.error));
-      }
-    } catch (e) {
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Хато: $e'), backgroundColor: AppColors.error));
-    }
-  }
-
-  Future<void> _logout(BuildContext context, WidgetRef ref) async {
-    final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
-      backgroundColor: AppColors.bgCard,
-      title: const Text('Баромадан', style: TextStyle(color: AppColors.textPrimary)),
-      content: const Text('Шумо мутмаин ҳастед?', style: TextStyle(color: AppColors.textSecondary)),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false),
-            child: const Text('Не', style: TextStyle(color: AppColors.textSecondary))),
-        TextButton(onPressed: () => Navigator.pop(context, true),
-            child: const Text('Бале', style: TextStyle(color: AppColors.error))),
-      ]));
-    if (ok == true) {
-      await ref.read(authProvider.notifier).logout();
-      if (context.mounted) context.go(RouteNames.login);
-    }
-  }
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+    child: ListTile(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      tileColor: AppColors.bgCard,
+      leading: Container(padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: iconColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: iconColor, size: 18)),
+      title: Text(label, style: const TextStyle(color: Colors.white,
+          fontSize: 14, fontWeight: FontWeight.w500)),
+      trailing: Switch.adaptive(value: value, onChanged: onChanged,
+          activeColor: AppColors.primary)));
 }
