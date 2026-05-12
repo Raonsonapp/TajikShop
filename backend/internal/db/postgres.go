@@ -197,6 +197,34 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 		log.Fatalf("❌ Schema migration failed: %v", err)
 	}
 	log.Println("✅ DB schema ready")
+	seedCategories()
+}
+
+func seedCategories() {
+	var count int
+	DB.QueryRow(`SELECT COUNT(*) FROM categories`).Scan(&count)
+	if count > 0 {
+		return // Аллакай категорияҳо ҳастанд
+	}
+	cats := []struct{ name, slug string }{
+		{"Телефон ва техника", "electronics"},
+		{"Либос ва мода", "fashion"},
+		{"Хонагӣ ва мебел", "home"},
+		{"Косметика ва зебоӣ", "beauty"},
+		{"Варзиш", "sports"},
+		{"Китоб ва таълим", "books"},
+		{"Ғизо ва нӯшидан", "food"},
+		{"Мошин ва автомобил", "auto"},
+		{"Кӯдакон", "kids"},
+		{"Зевар ва тилло", "jewelry"},
+		{"Боғ ва растанӣ", "garden"},
+		{"Дигар", "other"},
+	}
+	for _, cat := range cats {
+		DB.Exec(`INSERT INTO categories(id,name,slug) VALUES(uuid_generate_v4(),$1,$2)
+			ON CONFLICT(slug) DO NOTHING`, cat.name, cat.slug)
+	}
+	log.Println("✅ Categories seeded")
 }
 
 func Init() {
