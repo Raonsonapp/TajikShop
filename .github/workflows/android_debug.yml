@@ -1,13 +1,12 @@
-name: Android Debug Build & SHA Keys
+name: Get Android SHA Keys
 
 on:
   push:
-    branches: [ "main" ] # Вақте кодро ба branch-и main мепартоед, кор мекунад
-  pull_request:
     branches: [ "main" ]
+  workflow_dispatch: # Ин имкон медиҳад, ки тугмачаи "Run" пайдо шавад
 
 jobs:
-  build:
+  get_sha:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,15 +19,7 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-
-      - name: Get dependencies
-        run: flutter pub get
-
-      - name: Extract SHA-1 and SHA-256
+      - name: Get SHA Keys
         run: |
           cd android
           chmod +x gradlew
