@@ -15,6 +15,7 @@ class ProductModel {
   final int stock;
   final bool inStock;
   final int views;
+  final int likeCount;
   final DateTime createdAt;
 
   const ProductModel({
@@ -34,6 +35,7 @@ class ProductModel {
     required this.stock,
     required this.inStock,
     this.views = 0,
+    this.likeCount = 0,
     required this.createdAt,
   });
 
@@ -47,11 +49,19 @@ class ProductModel {
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     List<String> imgs = [];
-    final rawImages = json['images'];
+    final rawImages = json['images'] ?? json['image_urls'];
     if (rawImages is List) {
-      imgs = rawImages.map((e) => e.toString()).toList();
-    } else if (json['image_url'] != null) {
-      imgs = [json['image_url'].toString()];
+      imgs = rawImages
+          .where((e) => e != null && e.toString().isNotEmpty)
+          .map((e) {
+            final s = e.toString();
+            if (s.startsWith('http')) return s;
+            return 'https://tajikshop.onrender.com$s';
+          })
+          .toList();
+    } else if (json['image_url'] != null && json['image_url'].toString().isNotEmpty) {
+      final s = json['image_url'].toString();
+      imgs = [s.startsWith('http') ? s : 'https://tajikshop.onrender.com$s'];
     }
 
     final discPct = (json['discount_percent'] as num?)?.toInt() ?? 0;
@@ -60,6 +70,10 @@ class ProductModel {
     if (discPct > 0 && basePrice > 0) {
       oldPrice = basePrice / (1 - discPct / 100);
     }
+
+    final stock = (json['stock'] as num?)?.toInt() ?? 0;
+    final isActive = json['is_active'] as bool? ?? true;
+    final inStock = isActive && stock > 0;
 
     return ProductModel(
       id: json['id']?.toString() ?? '',
@@ -75,9 +89,10 @@ class ProductModel {
       images: imgs,
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
       reviewCount: (json['review_count'] as num?)?.toInt() ?? 0,
-      stock: (json['stock'] as num?)?.toInt() ?? 0,
-      inStock: (json['is_active'] ?? json['in_stock'] ?? true) as bool,
+      stock: stock,
+      inStock: inStock,
       views: (json['views'] as num?)?.toInt() ?? 0,
+      likeCount: (json['like_count'] ?? json['favorites_count'] as num?)?.toInt() ?? 0,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
