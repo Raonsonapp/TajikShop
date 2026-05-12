@@ -42,7 +42,7 @@ class TajikShopApp extends ConsumerWidget {
       locale:    locale,
       routerConfig: router,
       localizationsDelegates: const [
-        _AppLocalizationsDelegate(),
+        AppLocalizationsDelegate(), // ← ИСЛОҲ: _ хорӣ шуд
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -54,24 +54,25 @@ class TajikShopApp extends ConsumerWidget {
   }
 }
 
-// Temporary delegate until flutter gen-l10n runs
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<_AppL10n> {
-  const _AppLocalizationsDelegate();
+// ← ИСЛОҲ: _ хорӣ шуд — акнун public аст ва дигар файлҳо import карда метавонанд
+class AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppL10n> {
+  const AppLocalizationsDelegate();
   @override
   bool isSupported(Locale locale) => ['tg', 'ru', 'en'].contains(locale.languageCode);
   @override
-  Future<_AppL10n> load(Locale locale) async => _AppL10n(locale.languageCode);
+  Future<AppL10n> load(Locale locale) async => AppL10n(locale.languageCode);
   @override
   bool shouldReload(_) => false;
 }
 
-class _AppL10n {
+// ← ИСЛОҲ: _AppL10n → AppL10n (public)
+class AppL10n {
   final String lang;
-  _AppL10n(this.lang);
+  AppL10n(this.lang);
 
-  static _AppL10n of(BuildContext context) =>
-      Localizations.of<_AppL10n>(context, _AppL10n) ?? _AppL10n('tg');
+  static AppL10n of(BuildContext context) =>
+      Localizations.of<AppL10n>(context, AppL10n) ?? AppL10n('tg');
 
   String get appName    => 'TajikShop';
   String get home       => lang == 'ru' ? 'Главная'   : lang == 'en' ? 'Home'      : 'Хона';
