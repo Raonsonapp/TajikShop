@@ -62,10 +62,12 @@ class _ProductCardState extends ConsumerState<ProductCard>
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
+          // ── IMAGE ZONE ─────────────────────────────────────────
           Expanded(
             flex: 58,
             child: Stack(children: [
 
+              // Image
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 child: p.mainImage.isNotEmpty
@@ -78,6 +80,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                     : _noImage(),
               ),
 
+              // Bottom gradient
               Positioned(bottom: 0, left: 0, right: 0,
                 child: Container(height: 60,
                   decoration: BoxDecoration(
@@ -86,6 +89,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                       begin: Alignment.bottomCenter, end: Alignment.topCenter,
                       colors: [Colors.black.withOpacity(0.7), Colors.transparent])))),
 
+              // Discount badge
               if (disc > 0)
                 Positioned(top: 8, left: 8,
                   child: Container(
@@ -100,6 +104,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                         style: const TextStyle(color: Colors.white,
                             fontSize: 10, fontWeight: FontWeight.w900)))),
 
+              // 💚 Fav button
               Positioned(top: 8, right: 8,
                 child: GestureDetector(
                   onTap: _toggleFav,
@@ -123,6 +128,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                         color: isFav ? const Color(0xFF00D084) : Colors.white60,
                         size: 15))))),
 
+              // Out of stock
               if (!p.inStock)
                 Positioned.fill(
                   child: ClipRRect(
@@ -139,6 +145,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                             style: TextStyle(color: Colors.white70, fontSize: 11,
                                 fontWeight: FontWeight.w700)))))),
 
+              // Like + comment chips (bottom overlay)
               Positioned(bottom: 6, left: 8, right: 8,
                 child: Row(children: [
                   _Chip(icon: Icons.favorite_rounded,
@@ -159,6 +166,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
             ]),
           ),
 
+          // ── INFO ZONE ──────────────────────────────────────────
           Expanded(
             flex: 42,
             child: Padding(
@@ -167,10 +175,12 @@ class _ProductCardState extends ConsumerState<ProductCard>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  // Title
                   Text(p.title, maxLines: 2, overflow: TextOverflow.ellipsis,
                       style: const TextStyle(color: Colors.white,
                           fontSize: 12, fontWeight: FontWeight.w600, height: 1.35)),
 
+                  // Rating
                   Row(children: [
                     const Icon(Icons.star_rounded, size: 11, color: Color(0xFFFFB800)),
                     const SizedBox(width: 2),
@@ -183,6 +193,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                     ],
                   ]),
 
+                  // Price + cart
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -199,7 +210,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                                     fontSize: 10, decoration: TextDecoration.lineThrough)),
                         ])),
                       GestureDetector(
-                        onTap: () => HapticFeedback.selectionClick(),
+                        onTap: () { HapticFeedback.selectionClick(); },
                         child: Container(
                           width: 30, height: 30,
                           decoration: BoxDecoration(
