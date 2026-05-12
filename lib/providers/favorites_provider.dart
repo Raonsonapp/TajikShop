@@ -30,6 +30,7 @@ class FavoritesNotifier extends StateNotifier<Set<String>> {
 
   Future<void> toggle(String productId) async {
     final wasFav = state.contains(productId);
+    // Optimistic update
     if (wasFav) {
       final next = Set<String>.from(state);
       next.remove(productId);
@@ -44,6 +45,7 @@ class FavoritesNotifier extends StateNotifier<Set<String>> {
         await _dio.post(ApiEndpoints.favorites, data: {'product_id': productId});
       }
     } catch (_) {
+      // Rollback
       if (wasFav) {
         state = Set<String>.from(state)..add(productId);
       } else {
