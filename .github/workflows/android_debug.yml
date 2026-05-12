@@ -19,11 +19,19 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Get SHA Keys
+      - name: Find and Get SHA Keys
         run: |
-          # Ба папкаи android мегузарем
-          cd android
-          # Иҷозат медиҳем, ки файл кор кунад
+          # Ҷустуҷӯи файли gradlew дар тамоми папкаҳо
+          GRADLEW_PATH=$(find . -name gradlew | head -n 1)
+          
+          if [ -z "$GRADLEW_PATH" ]; then
+            echo "Хато: Файли gradlew ёфт нашуд!"
+            exit 1
+          fi
+          
+          echo "Файл дар ин ҷо ёфт шуд: $GRADLEW_PATH"
+          
+          # Гузаштан ба папкаи файл ва иҷрои фармон
+          cd $(dirname $GRADLEW_PATH)
           chmod +x gradlew
-          # Фармонро иҷро мекунем
           ./gradlew signingReport | grep -E "Variant|SHA1|SHA-256"
