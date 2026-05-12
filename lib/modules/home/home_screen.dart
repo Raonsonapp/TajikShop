@@ -1,3 +1,4 @@
+// ignore_for_file: depend_on_referenced_packages
 // ignore_for_file: curly_braces_in_flow_control_structures
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -185,7 +186,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         const SizedBox(width: 12),
                         const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 20),
                         const SizedBox(width: 8),
-                        const Expanded(child: Text('Маҳсулот, фурӯшанда, категория...',
+                        const Expanded(child: Text(l.searchHint,
                             style: TextStyle(color: AppColors.textMuted, fontSize: 13))),
                         Container(margin: const EdgeInsets.all(6),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -244,7 +245,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               // ══════════════════════════════════════════════════
               // CATEGORIES
               // ══════════════════════════════════════════════════
-              _SectionHeader(title: 'Категорияҳо',
+              _SectionHeader(title: l.categories,
                   onSeeAll: () => context.push(RouteNames.categories)),
               SizedBox(height: 100,
                 child: cats.when(
@@ -270,7 +271,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               // TRENDING — горизонтал
               // ══════════════════════════════════════════════════
               if (ps.trending.isNotEmpty) ...[
-                _SectionHeader(title: '🔥 Маъруб', onSeeAll: null),
+                _SectionHeader(title: l.trending, onSeeAll: null),
                 SizedBox(height: 250,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
@@ -288,7 +289,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 final sale = ps.products.where((p) => p.computedDiscount > 0).toList();
                 if (sale.isEmpty) return const SizedBox();
                 return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  _SectionHeader(title: '⚡ Flash Sale', onSeeAll: null),
+                  _SectionHeader(title: l.flashSale, onSeeAll: null),
                   SizedBox(height: 250,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
@@ -303,7 +304,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               // ══════════════════════════════════════════════════
               // ALL PRODUCTS header
               // ══════════════════════════════════════════════════
-              _SectionHeader(title: 'Ҳамаи маҳсулотҳо', onSeeAll: null),
+              _SectionHeader(title: l.allProducts, onSeeAll: null),
               if (ps.error != null)
                 Padding(padding: const EdgeInsets.all(20),
                   child: Center(child: Column(children: [
