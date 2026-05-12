@@ -14,8 +14,6 @@ allprojects {
         mavenCentral()
     }
 dependencies {
-        // Сатри зеринро илова кун:
-        classpath 'com.google.gms:google-services:4.4.1'
     }
 }
 
