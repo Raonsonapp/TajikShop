@@ -14,6 +14,7 @@ class RouteNames {
   static const editProfile = '/profile/edit';
   static const addresses = '/addresses';
   static const seller = '/seller';
+  static const sellerDashboard = '/seller'; // ← ИЛОВА ШУД
   static const addProduct = '/seller/add-product';
   static const admin = '/admin';
 
