@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"tajikshop/internal/handlers"
+	"tajikshop/internal/handles"
 	"tajikshop/internal/middleware"
 	"tajikshop/internal/storage"
 
