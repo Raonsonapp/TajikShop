@@ -42,7 +42,7 @@ class TajikShopApp extends ConsumerWidget {
       locale:    locale,
       routerConfig: router,
       localizationsDelegates: const [
-        AppLocalizationsDelegate(), // ← ИСЛОҲ: _ хорӣ шуд
+        _AppLocalizationsDelegate(),
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -54,10 +54,10 @@ class TajikShopApp extends ConsumerWidget {
   }
 }
 
-// ← ИСЛОҲ: _ хорӣ шуд — акнун public аст ва дигар файлҳо import карда метавонанд
-class AppLocalizationsDelegate
+// Temporary delegate until flutter gen-l10n runs
+class _AppLocalizationsDelegate
     extends LocalizationsDelegate<AppL10n> {
-  const AppLocalizationsDelegate();
+  const _AppLocalizationsDelegate();
   @override
   bool isSupported(Locale locale) => ['tg', 'ru', 'en'].contains(locale.languageCode);
   @override
@@ -66,7 +66,6 @@ class AppLocalizationsDelegate
   bool shouldReload(_) => false;
 }
 
-// ← ИСЛОҲ: _AppL10n → AppL10n (public)
 class AppL10n {
   final String lang;
   AppL10n(this.lang);
