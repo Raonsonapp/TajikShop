@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../modules/splash/splash_screen.dart';
 import '../modules/auth/login_screen.dart';
 import '../modules/auth/register_screen.dart';
+import '../modules/auth/phone_auth_screen.dart';
 import '../modules/home/home_screen.dart';
 import '../modules/upload/upload_screen.dart';
 import '../modules/categories/categories_screen.dart';
@@ -29,10 +30,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.splash, builder: (_, __) => const SplashScreen()),
       GoRoute(path: RouteNames.login, builder: (_, __) => const LoginScreen()),
       GoRoute(path: RouteNames.register, builder: (_, __) => const RegisterScreen()),
+      // ── Phone Auth ──────────────────────────────────────────────────────────
+      GoRoute(path: RouteNames.phoneAuth, builder: (_, __) => const PhoneAuthScreen()),
+      GoRoute(path: RouteNames.phoneOtp, builder: (_, s) {
+        final extra = s.extra as Map<String, dynamic>? ?? {};
+        return PhoneOtpScreen(
+          verificationId: extra['verificationId'] as String? ?? '',
+          phone: extra['phone'] as String? ?? '',
+        );
+      }),
+      // ───────────────────────────────────────────────────────────────────────
       GoRoute(path: '/product/:id', builder: (_, s) => ProductDetailScreen(id: s.pathParameters['id']!)),
       GoRoute(path: RouteNames.orders, builder: (_, __) => const OrdersScreen()),
       GoRoute(path: RouteNames.notifications, builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: RouteNames.categories, builder: (_, __) => const CategoriesScreen()),
+      GoRoute(path: RouteNames.sellerDashboard, builder: (_, __) => const SellerDashboardScreen()),
       GoRoute(path: RouteNames.seller, builder: (_, __) => const SellerDashboardScreen()),
       GoRoute(path: RouteNames.addProduct, builder: (_, __) => const AddProductScreen()),
       GoRoute(path: RouteNames.admin, builder: (_, __) => const AdminDashboardScreen()),
