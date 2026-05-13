@@ -1,7 +1,8 @@
 package routes
 
 import (
-	"tajikshop/internal/handles"
+	"os"
+	"tajikshop/internal/handlers"
 	"tajikshop/internal/middleware"
 	"tajikshop/internal/storage"
 
@@ -11,18 +12,21 @@ import (
 func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	r.Use(middleware.CORS())
 
-	uh := handlers.NewUserHandler(secret, r2)
-	ph := handlers.NewProductHandler(r2)
-	oh := handlers.NewOrderHandler(r2)
-	rh := handlers.NewReviewHandler()
-	fh := handlers.NewFavoriteHandler()
-	ah := handlers.NewAddressHandler()
-	sh := handlers.NewStoryHandler(r2)
+	uh  := handlers.NewUserHandler(secret, r2)
+	ph  := handlers.NewProductHandler(r2)
+	oh  := handlers.NewOrderHandler(r2)
+	rh  := handlers.NewReviewHandler()
+	fh  := handlers.NewFavoriteHandler()
+	ah  := handlers.NewAddressHandler()
+	sh  := handlers.NewStoryHandler(r2)
 	flh := handlers.NewFollowHandler()
-	mh := handlers.NewMessageHandler()
-	nh := handlers.NewNotificationHandler()
-	ch := handlers.NewCategoryHandler()
+	mh  := handlers.NewMessageHandler()
+	nh  := handlers.NewNotificationHandler()
+	ch  := handlers.NewCategoryHandler()
 	adm := handlers.NewAdminHandler()
+
+	// Firebase handler — FIREBASE_PROJECT_ID env-дан мегирад
+	fbh := handlers.NewFirebaseHandler(secret, getenv("FIREBASE_WEB_API_KEY", ""))
 
 	api := r.Group("/api/v1")
 
@@ -30,6 +34,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/auth/register", uh.Register)
 	api.POST("/auth/login", uh.Login)
 	api.POST("/auth/refresh", uh.RefreshToken)
+	api.POST("/auth/phone-verify", fbh.VerifyPhone)
 
 	// Users
 	api.GET("/users/me", middleware.Auth(), uh.Me)
@@ -104,4 +109,11 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "TajikShop API"})
 	})
+}
+
+func getenv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }
