@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/network_service.dart';
 import 'core/services/server_wakeup_service.dart';
@@ -13,15 +14,21 @@ import 'shared/widgets/offline_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase инициализатсия — МУХИМ!
+  await Firebase.initializeApp();
+
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light));
+
   await UserSession.loadCachedData();
   NetworkService.instance.init();
   ServerWakeupService.instance.wakeUp();
   ServerWakeupService.instance.startKeepAlive();
+
   runApp(const ProviderScope(child: TajikShopApp()));
 }
 
@@ -54,7 +61,6 @@ class TajikShopApp extends ConsumerWidget {
   }
 }
 
-// Temporary delegate until flutter gen-l10n runs
 class _AppLocalizationsDelegate
     extends LocalizationsDelegate<AppL10n> {
   const _AppLocalizationsDelegate();
@@ -108,7 +114,7 @@ class AppL10n {
   String get admin      => lang == 'ru' ? 'Администратор' : lang == 'en' ? 'Admin' : 'Маъмур';
   String get error      => lang == 'ru' ? 'Ошибка'    : lang == 'en' ? 'Error'    : 'Хато';
   String get retry      => lang == 'ru' ? 'Повторить' : lang == 'en' ? 'Retry'    : 'Дубора';
-  String get searchHint => lang == 'ru' ? 'Товары, продавцы, категории...' : lang == 'en' ? 'Products, sellers...' : 'Маҳсулот, фурӯшанда...';
+  String get searchHint => lang == 'ru' ? 'Товары, продавцы...' : lang == 'en' ? 'Products, sellers...' : 'Маҳсулот, фурӯшанда...';
   String get noResults  => lang == 'ru' ? 'Нет результатов' : lang == 'en' ? 'No results' : 'Натиҷа нест';
   String get emptyCart  => lang == 'ru' ? 'Корзина пуста' : lang == 'en' ? 'Cart is empty' : 'Сабад холӣ аст';
   String get checkout   => lang == 'ru' ? 'Оформить заказ' : lang == 'en' ? 'Checkout' : 'Пардохт';
