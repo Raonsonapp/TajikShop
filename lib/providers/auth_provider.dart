@@ -141,7 +141,28 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  // ── Become Seller — токени нав гиред ────────────────────────────────────
+  // ── Login with Firebase Phone ─────────────────────────────────────────────
+  Future<bool> loginWithPhone(String firebaseIdToken, {String name = ''}) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final res = await _dio.post('/auth/phone-verify',
+          data: {'id_token': firebaseIdToken, 'name': name});
+      final data = _unwrap(res.data);
+      final token   = data['access_token']?.toString() ?? '';
+      final refresh = data['refresh_token']?.toString();
+      if (token.isEmpty) throw Exception('Token нест');
+      await TokenStorage.saveTokens(accessToken: token, refreshToken: refresh);
+      final user = await _fetchMe();
+      await _persistSession(user);
+      state = AuthState(user: user, isAuthenticated: true);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+          isLoading: false,
+          error: e.toString().replaceAll('Exception: ', ''));
+      return false;
+    }
+  }
   Future<bool> becomeSeller() async {
     try {
       final res = await _dio.post(ApiEndpoints.becomeSeller);
