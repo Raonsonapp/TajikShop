@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/network_service.dart';
 import 'core/services/server_wakeup_service.dart';
@@ -11,15 +12,14 @@ import 'providers/locale_provider.dart';
 import 'routes/app_router.dart';
 import 'shared/widgets/offline_banner.dart';
 
-import 'package:firebase_core/firebase_core.dart';
-
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light));
-  await Firebase.initializeApp();
   await UserSession.loadCachedData();
   NetworkService.instance.init();
   ServerWakeupService.instance.wakeUp();
@@ -56,9 +56,7 @@ class TajikShopApp extends ConsumerWidget {
   }
 }
 
-// Temporary delegate until flutter gen-l10n runs
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppL10n> {
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppL10n> {
   const _AppLocalizationsDelegate();
   @override
   bool isSupported(Locale locale) => ['tg', 'ru', 'en'].contains(locale.languageCode);
@@ -94,42 +92,42 @@ class AppL10n {
   String get login      => lang == 'ru' ? 'Войти'     : lang == 'en' ? 'Login'     : 'Ворид шудан';
   String get register   => lang == 'ru' ? 'Регистрация' : lang == 'en' ? 'Register' : 'Бақайдгирӣ';
   String get email      => lang == 'ru' ? 'Электронная почта' : lang == 'en' ? 'Email' : 'Почтаи электронӣ';
-  String get password   => lang == 'ru' ? 'Пароль'    : lang == 'en' ? 'Password' : 'Парол';
-  String get fullName   => lang == 'ru' ? 'Полное имя': lang == 'en' ? 'Full Name' : 'Номи пурра';
-  String get logout     => lang == 'ru' ? 'Выйти'     : lang == 'en' ? 'Logout'   : 'Баромадан';
+  String get password   => lang == 'ru' ? 'Пароль'    : lang == 'en' ? 'Password'  : 'Парол';
+  String get fullName   => lang == 'ru' ? 'Полное имя': lang == 'en' ? 'Full Name'  : 'Номи пурра';
+  String get logout     => lang == 'ru' ? 'Выйти'     : lang == 'en' ? 'Logout'    : 'Баромадан';
   String get becomeSeller => lang == 'ru' ? 'Стать продавцом' : lang == 'en' ? 'Become Seller' : 'Фурӯшанда шудан';
   String get sellerDashboard => lang == 'ru' ? 'Панель продавца' : lang == 'en' ? 'Seller Dashboard' : 'Панели фурӯшанда';
-  String get orders     => lang == 'ru' ? 'Заказы'    : lang == 'en' ? 'Orders'   : 'Фармоишҳо';
-  String get settings   => lang == 'ru' ? 'Настройки' : lang == 'en' ? 'Settings' : 'Танзимот';
-  String get language   => lang == 'ru' ? 'Язык'      : lang == 'en' ? 'Language' : 'Забон';
+  String get orders     => lang == 'ru' ? 'Заказы'    : lang == 'en' ? 'Orders'    : 'Фармоишҳо';
+  String get settings   => lang == 'ru' ? 'Настройки' : lang == 'en' ? 'Settings'  : 'Танзимот';
+  String get language   => lang == 'ru' ? 'Язык'      : lang == 'en' ? 'Language'  : 'Забон';
   String get darkMode   => lang == 'ru' ? 'Тёмная тема' : lang == 'en' ? 'Dark Mode' : 'Тарзи торик';
   String get lightMode  => lang == 'ru' ? 'Светлая тема' : lang == 'en' ? 'Light Mode' : 'Тарзи равшан';
-  String get about      => lang == 'ru' ? 'О приложении' : lang == 'en' ? 'About' : 'Дар бораи барнома';
-  String get seller     => lang == 'ru' ? 'Продавец'  : lang == 'en' ? 'Seller'   : 'Фурӯшанда';
-  String get buyer      => lang == 'ru' ? 'Покупатель': lang == 'en' ? 'Buyer'    : 'Харидор';
+  String get about      => lang == 'ru' ? 'О приложении' : lang == 'en' ? 'About'   : 'Дар бораи барнома';
+  String get seller     => lang == 'ru' ? 'Продавец'  : lang == 'en' ? 'Seller'    : 'Фурӯшанда';
+  String get buyer      => lang == 'ru' ? 'Покупатель': lang == 'en' ? 'Buyer'     : 'Харидор';
   String get admin      => lang == 'ru' ? 'Администратор' : lang == 'en' ? 'Admin' : 'Маъмур';
-  String get error      => lang == 'ru' ? 'Ошибка'    : lang == 'en' ? 'Error'    : 'Хато';
-  String get retry      => lang == 'ru' ? 'Повторить' : lang == 'en' ? 'Retry'    : 'Дубора';
-  String get searchHint => lang == 'ru' ? 'Товары, продавцы, категории...' : lang == 'en' ? 'Products, sellers...' : 'Маҳсулот, фурӯшанда...';
+  String get error      => lang == 'ru' ? 'Ошибка'    : lang == 'en' ? 'Error'     : 'Хато';
+  String get retry      => lang == 'ru' ? 'Повторить' : lang == 'en' ? 'Retry'     : 'Дубора';
+  String get searchHint => lang == 'ru' ? 'Товары, продавцы...' : lang == 'en' ? 'Products, sellers...' : 'Маҳсулот, фурӯшанда...';
   String get noResults  => lang == 'ru' ? 'Нет результатов' : lang == 'en' ? 'No results' : 'Натиҷа нест';
   String get emptyCart  => lang == 'ru' ? 'Корзина пуста' : lang == 'en' ? 'Cart is empty' : 'Сабад холӣ аст';
   String get checkout   => lang == 'ru' ? 'Оформить заказ' : lang == 'en' ? 'Checkout' : 'Пардохт';
-  String get total      => lang == 'ru' ? 'Итого'     : lang == 'en' ? 'Total'    : 'Ҷамъ';
-  String get som        => lang == 'ru' ? 'сом.'      : lang == 'en' ? 'som.'     : 'сом.';
+  String get total      => lang == 'ru' ? 'Итого'     : lang == 'en' ? 'Total'     : 'Ҷамъ';
+  String get som        => lang == 'ru' ? 'сом.'      : lang == 'en' ? 'som.'      : 'сом.';
   String get uploadProduct => lang == 'ru' ? 'Добавить товар' : lang == 'en' ? 'Upload Product' : 'Маҳсулот гузоштан';
   String get successUpload => lang == 'ru' ? 'Товар добавлен! 🎉' : lang == 'en' ? 'Product uploaded! 🎉' : 'Маҳсулот гузошта шуд! 🎉';
   String get becomeSellerSuccess => lang == 'ru' ? 'Вы стали продавцом! 🎉' : lang == 'en' ? 'You are now a seller! 🎉' : 'Шумо фурӯшанда шудед! 🎉';
   String get noNotifications => lang == 'ru' ? 'Нет уведомлений' : lang == 'en' ? 'No notifications' : 'Огоҳӣ нест';
   String get markAllRead => lang == 'ru' ? 'Отметить все' : lang == 'en' ? 'Mark all read' : 'Ҳама хонда шуданд';
-  String get save       => lang == 'ru' ? 'Сохранить' : lang == 'en' ? 'Save'     : 'Захира кардан';
-  String get cancel     => lang == 'ru' ? 'Отмена'    : lang == 'en' ? 'Cancel'   : 'Бекор кардан';
+  String get save       => lang == 'ru' ? 'Сохранить' : lang == 'en' ? 'Save'      : 'Захира кардан';
+  String get cancel     => lang == 'ru' ? 'Отмена'    : lang == 'en' ? 'Cancel'    : 'Бекор кардан';
   String get freeDelivery => lang == 'ru' ? 'Бесплатная доставка' : lang == 'en' ? 'Free Delivery' : 'Доставка ройгон';
-  String get verified   => lang == 'ru' ? 'Проверено' : lang == 'en' ? 'Verified' : 'Тасдиқшуда';
-  String get returns    => lang == 'ru' ? 'Возврат'   : lang == 'en' ? 'Returns'  : 'Бозгашт';
-  String get support    => lang == 'ru' ? 'Поддержка' : lang == 'en' ? 'Support'  : 'Дастгирӣ';
+  String get verified   => lang == 'ru' ? 'Проверено' : lang == 'en' ? 'Verified'  : 'Тасдиқшуда';
+  String get returns    => lang == 'ru' ? 'Возврат'   : lang == 'en' ? 'Returns'   : 'Бозгашт';
+  String get support    => lang == 'ru' ? 'Поддержка' : lang == 'en' ? 'Support'   : 'Дастгирӣ';
   String get dontHaveAccount => lang == 'ru' ? 'Нет аккаунта?' : lang == 'en' ? "Don't have account?" : 'Аккаунт надоред?';
   String get alreadyHaveAccount => lang == 'ru' ? 'Уже есть аккаунт?' : lang == 'en' ? 'Already have account?' : 'Аллакай аккаунт доред?';
-  String get signIn     => lang == 'ru' ? 'Войти'     : lang == 'en' ? 'Sign In'  : 'Ворид шавед';
+  String get signIn     => lang == 'ru' ? 'Войти'     : lang == 'en' ? 'Sign In'   : 'Ворид шавед';
   String get signUp     => lang == 'ru' ? 'Зарегистрироваться' : lang == 'en' ? 'Sign Up' : 'Бақайдгирӣ';
   String get editProfile => lang == 'ru' ? 'Редактировать профиль' : lang == 'en' ? 'Edit Profile' : 'Вироиши профил';
   String get myProducts => lang == 'ru' ? 'Мои товары' : lang == 'en' ? 'My Products' : 'Маҳсулотҳои ман';
