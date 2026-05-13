@@ -9,7 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
-import '../../main.dart' show _AppL10n;
+import '../../main.dart' show AppL10n;
 
 // ─── STEP 1: Рақами телефон ──────────────────────────────────────────────────
 class PhoneAuthScreen extends ConsumerStatefulWidget {
@@ -89,7 +89,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l = _AppL10n.of(context);
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       body: SafeArea(
