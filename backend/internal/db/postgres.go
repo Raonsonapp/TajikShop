@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS users (
 	email VARCHAR(255) UNIQUE,
 	phone VARCHAR(20) UNIQUE,
 	password_hash TEXT NOT NULL,
+	firebase_uid TEXT UNIQUE DEFAULT '',
+	phone_verified BOOLEAN DEFAULT false,
 	avatar_url TEXT DEFAULT '',
 	bio TEXT DEFAULT '',
 	role VARCHAR(20) DEFAULT 'buyer',
@@ -420,4 +422,15 @@ CREATE INDEX idx_notifications_user ON notifications(user_id);
 		log.Fatalf("❌ Schema migration failed: %v", err)
 	}
 	log.Println("✅ DB schema migrated")
+}
+
+// MigratePhoneVerify — adds new columns if not exist (safe for existing DB)
+func MigratePhoneVerify() {
+	queries := []string{
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS firebase_uid TEXT UNIQUE DEFAULT ''`,
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN DEFAULT false`,
+	}
+	for _, q := range queries {
+		DB.Exec(q)
+	}
 }
