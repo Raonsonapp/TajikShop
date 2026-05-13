@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -138,9 +137,6 @@ func verifyFirebaseIDToken(idToken, projectID string) (map[string]interface{}, e
 
 	phone, _ := user["phoneNumber"].(string)
 	uid, _   := user["localId"].(string)
-
-	ctx := context.Background()
-	_ = ctx
 
 	return map[string]interface{}{
 		"phone_number": phone,
