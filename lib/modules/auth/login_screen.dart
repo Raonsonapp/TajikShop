@@ -113,6 +113,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: const Text('Сабтном',
                       style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
               ]),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => context.go(RouteNames.phoneAuth),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.primary.withOpacity(0.4)),
+                    borderRadius: BorderRadius.circular(14),
+                    color: AppColors.primary.withOpacity(0.08)),
+                  child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Text('📱', style: TextStyle(fontSize: 18)),
+                    SizedBox(width: 8),
+                    Text('Бо рақами телефон ворид шавед',
+                        style: TextStyle(color: AppColors.primary,
+                            fontSize: 13, fontWeight: FontWeight.w600)),
+                  ]))),
+              const SizedBox(height: 24),
             ]),
           ),
         ),
