@@ -167,8 +167,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: AppButton(
-                  text: '🏪 ${l.becomeSeller}', // ← ИСЛОҲ: label → text
-                  onTap: _becomeSeller,           // ← ИСЛОҲ: onPressed → onTap
+                  label: '🏪 ${l.becomeSeller}',
+                  onPressed: _becomeSeller,
+                  gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
                 )),
 
             const SizedBox(height: 8),
