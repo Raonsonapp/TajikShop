@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/network_service.dart';
 import 'core/services/server_wakeup_service.dart';
@@ -14,7 +13,6 @@ import 'shared/widgets/offline_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -69,10 +67,8 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppL10n> {
 class AppL10n {
   final String lang;
   AppL10n(this.lang);
-
   static AppL10n of(BuildContext context) =>
       Localizations.of<AppL10n>(context, AppL10n) ?? AppL10n('tg');
-
   String get appName    => 'TajikShop';
   String get home       => lang == 'ru' ? 'Главная'   : lang == 'en' ? 'Home'      : 'Хона';
   String get discover   => lang == 'ru' ? 'Каталог'   : lang == 'en' ? 'Discover'  : 'Ёбед';
