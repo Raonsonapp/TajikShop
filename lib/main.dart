@@ -13,15 +13,19 @@ import 'shared/widgets/offline_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light));
-  await UserSession.loadCachedData();
-  NetworkService.instance.init();
-  ServerWakeupService.instance.wakeUp();
-  ServerWakeupService.instance.startKeepAlive();
+
+  // Ҳама инициализатсияро try/catch-да — барнома crash накунад
+  try { await UserSession.loadCachedData(); } catch (_) {}
+  try { NetworkService.instance.init(); } catch (_) {}
+  try { ServerWakeupService.instance.wakeUp(); } catch (_) {}
+  try { ServerWakeupService.instance.startKeepAlive(); } catch (_) {}
+
   runApp(const ProviderScope(child: TajikShopApp()));
 }
 
@@ -69,6 +73,7 @@ class AppL10n {
   AppL10n(this.lang);
   static AppL10n of(BuildContext context) =>
       Localizations.of<AppL10n>(context, AppL10n) ?? AppL10n('tg');
+
   String get appName    => 'TajikShop';
   String get home       => lang == 'ru' ? 'Главная'   : lang == 'en' ? 'Home'      : 'Хона';
   String get discover   => lang == 'ru' ? 'Каталог'   : lang == 'en' ? 'Discover'  : 'Ёбед';
