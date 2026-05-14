@@ -14,7 +14,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../routes/route_names.dart';
-import '../../main.dart' show AppL10n;
+import '../../core/l10n/app_l10n.dart';
 import '../../shared/widgets/app_button.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
