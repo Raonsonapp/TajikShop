@@ -16,7 +16,7 @@ import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../data/models/product_model.dart';
 import '../../data/models/category_model.dart';
-import '../../main.dart' show AppL10n; // ← ИЛОВА ШУД
+import '../../core/l10n/app_l10n.dart'; // ← ИЛОВА ШУД
 
 // ─── Notification count provider ──────────────────────────────────────────────
 final _notifCountProvider = FutureProvider<int>((ref) async {
