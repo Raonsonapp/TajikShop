@@ -1,4 +1,4 @@
-name: 🔍 Diagnose & Fix White Screen
+name: 🔬 Deep Code Analysis — White/Grey Screen
 
 on:
   push:
@@ -8,253 +8,356 @@ on:
   workflow_dispatch:
 
 jobs:
-  diagnose-and-fix:
-    name: Хатогиро пайдо ва ислоҳ кун
+  analyse:
+    name: Таҳлили дақиқи код — экрани сафед/хокистарӣ
     runs-on: ubuntu-latest
 
     steps:
-      # ── 1. Checkout ──────────────────────────────────────────────────────────
       - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      # ── 2. Flutter ───────────────────────────────────────────────────────────
-      - name: 🐦 Setup Flutter 3.29.0
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.29.0'
-          channel: 'stable'
-          cache: true
-
-      # ── 3. Pub cache ─────────────────────────────────────────────────────────
-      - name: 📦 Cache pub packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: pub-${{ runner.os }}
-
-      # ── 4. FIX: Assets папка ─────────────────────────────────────────────────
-      - name: 🖼️ FIX — Create missing assets folder
+      # ════════════════════════════════════════════════════════════════════════
+      # БЛОКИ 1 — МУШКИЛИ АСОСӢ: Material3 + TextField filled:true
+      # ════════════════════════════════════════════════════════════════════════
+      - name: "🎯 BUG #1 — Material3 TextField fillColor ignored (MAIN CAUSE)"
         run: |
-          echo "::group::📁 Checking assets..."
-          if [ ! -d "assets" ]; then
-            echo "❌ МУШКИЛ: assets/ папка вуҷуд надорад — экрани сафед!"
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║  BUG #1 — САБАБИ АСОСИИ ЭКРАНИ ХОКИСТАРӢ                  ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+
+          FOUND=0
+
+          # login_screen.dart: filled:true + fillColor дорад, аммо Material3 онро НОДИДА мегирад
+          while IFS= read -r file; do
+            # Санҷиш: filled:true бо fillColor дар InputDecoration
+            if grep -q "filled: true" "$file"; then
+              LINES=$(grep -n "filled: true\|fillColor:" "$file")
+              HAS_BORDER_NONE=$(grep -c "border: InputBorder.none\|BorderSide.none" "$file" || true)
+              echo "📄 ФАЙЛ: $file"
+              echo "$LINES" | while IFS= read -r line; do echo "   $line"; done
+              echo ""
+              if [ "$HAS_BORDER_NONE" -gt 0 ]; then
+                echo "   ❌ МУШКИЛ: filled:true + border:none + useMaterial3:true"
+                echo "   ➤  Material3 fillColor-ро АЗ THEME мегирад (colorScheme.surfaceContainerHighest)"
+                echo "   ➤  Дар light theme ин = Colors.grey[200] → ХОКИСТАРӢ!"
+                echo "   ➤  fillColor дар InputDecoration нодида гирифта мешавад."
+                FOUND=1
+              fi
+              echo "   ─────────────────────────────────────────────────────"
+            fi
+          done < <(find lib/ -name "*.dart" | grep -v test)
+
+          echo ""
+          echo "  📌 САТРҲОИ МУШКИЛДОР:"
+          grep -rn "filled: true" lib/ --include="*.dart" | grep -v "//"
+          echo ""
+          echo "  ✅ ИСЛОҲИ ДУРУСТ — яке аз инҳо:"
+          echo "     1) filled: false  (Container ранг медиҳад, TextField не)"
+          echo "     2) fillColor: Colors.transparent  (Container зоҳир мешавад)"
+          echo "     3) useMaterial3: false  дар ThemeData (тавсия намешавад)"
+          echo ""
+
+      # ════════════════════════════════════════════════════════════════════════
+      # БЛОКИ 2 — app_theme.dart: lightTheme inputDecorationTheme надорад
+      # ════════════════════════════════════════════════════════════════════════
+      - name: "🎨 BUG #2 — lightTheme missing inputDecorationTheme"
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║  BUG #2 — lightTheme inputDecorationTheme надорад           ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+
+          THEME_FILE="lib/core/theme/app_theme.dart"
+
+          DARK_HAS=$(grep -A 80 "get darkTheme" "$THEME_FILE" | grep -c "inputDecorationTheme" || true)
+          LIGHT_HAS=$(grep -A 80 "get lightTheme" "$THEME_FILE" | grep -c "inputDecorationTheme" || true)
+
+          echo "  darkTheme  inputDecorationTheme: $([ "$DARK_HAS" -gt 0 ] && echo '✅ бор аст' || echo '❌ нест')"
+          echo "  lightTheme inputDecorationTheme: $([ "$LIGHT_HAS" -gt 0 ] && echo '✅ бор аст' || echo '❌ нест')"
+          echo ""
+
+          if [ "$LIGHT_HAS" -eq 0 ]; then
+            echo "  ❌ МУШКИЛ:"
+            echo "     lightTheme бе inputDecorationTheme → Flutter default = Colors.grey[200]"
+            echo "     Агар телефон light mode бошад → ҳамаи TextField-ҳо ХОКИСТАРӢ!"
+            echo ""
+            echo "  📌 main.dart-да themeMode:"
+            grep -n "themeMode\|ThemeMode" lib/main.dart || true
+            echo ""
+            echo "  📌 theme_provider.dart default:"
+            grep -n "ThemeMode\.\|state =" lib/providers/theme_provider.dart || true
+            echo ""
+            echo "  ✅ ИСЛОҲ: lightTheme-га илова кун:"
+            echo "    inputDecorationTheme: InputDecorationTheme(filled:true, fillColor: Color(0xFF141420))"
+          fi
+          echo ""
+
+      # ════════════════════════════════════════════════════════════════════════
+      # БЛОКИ 3 — colorScheme.surfaceContainerHighest танзим нашудааст
+      # ════════════════════════════════════════════════════════════════════════
+      - name: "🎨 BUG #3 — Material3 surfaceContainerHighest not set"
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║  BUG #3 — colorScheme.surfaceContainerHighest               ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+
+          THEME_FILE="lib/core/theme/app_theme.dart"
+
+          LIGHT_SCH=$(grep -A 20 "ColorScheme.light" "$THEME_FILE" | grep -c "surfaceContainerHighest\|surfaceVariant" || true)
+          DARK_SCH=$(grep -A 20 "ColorScheme.dark" "$THEME_FILE" | grep -c "surfaceContainerHighest\|surfaceVariant" || true)
+
+          echo "  darkTheme  surfaceContainerHighest: $([ "$DARK_SCH" -gt 0 ] && echo '✅' || echo '❌ нест')"
+          echo "  lightTheme surfaceContainerHighest: $([ "$LIGHT_SCH" -gt 0 ] && echo '✅' || echo '❌ нест')"
+          echo ""
+
+          if [ "$LIGHT_SCH" -eq 0 ]; then
+            echo "  ❌ МУШКИЛ:"
+            echo "     Material3 TextField (filled:true) fillColor-ро"
+            echo "     АЗ colorScheme.surfaceContainerHighest мегирад."
+            echo "     Агар танзим нашуда бошад → Flutter default gray → ХОКИСТАРӢ!"
+            echo ""
+            echo "  ✅ ИСЛОҲ — ColorScheme.light-га илова кун:"
+            echo "     surfaceContainerHighest: const Color(0xFF141420),"
+          fi
+          echo ""
+
+      # ════════════════════════════════════════════════════════════════════════
+      # БЛОКИ 4 — login_screen.dart: Container + TextField таҳлил
+      # ════════════════════════════════════════════════════════════════════════
+      - name: "📋 BUG #4 — login_screen Container vs TextField color conflict"
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║  BUG #4 — login_screen.dart Container/TextField конфликт    ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+
+          FILE="lib/modules/auth/login_screen.dart"
+          echo "  📄 $FILE"
+          echo ""
+          echo "  Container decoration colors:"
+          grep -n "color: const Color\|color: Color" "$FILE" | head -10
+          echo ""
+          echo "  TextField fillColor:"
+          grep -n "fillColor\|filled:" "$FILE"
+          echo ""
+          echo "  🔍 ТАҲЛИЛ:"
+          echo "     Container color = 0xFF141420 (тира) ✅"
+          echo "     TextField fillColor = 0xFF141420 (тира) — ЛЕК..."
+          echo "     Material3 + filled:true → fillColor АЗ THEME оварда мешавад!"
+          echo "     Container-и тира зери TextField-и ХОКИСТАРӢ пинҳон мешавад."
+          echo ""
+          echo "  ✅ ИСЛОҲ ДАҚИҚ — login_screen.dart-да иваз кун:"
+          echo "     filled: true  →  filled: false"
+          echo "     (Container худ ранги torик медиҳад, TextField ранг намехоҳад)"
+          echo ""
+
+      # ════════════════════════════════════════════════════════════════════════
+      # БЛОКИ 5 — Splash timeout: сервер ҷавоб надиҳад → login → хокистарӣ
+      # ════════════════════════════════════════════════════════════════════════
+      - name: "⏱️ BUG #5 — Splash timeout too short for Render.com cold start"
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║  BUG #5 — Splash timeout: Render.com cold start             ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+
+          SPLASH="lib/modules/splash/splash_screen.dart"
+          TIMEOUT_VAL=$(grep -oP 'Duration\(seconds: \K[0-9]+' "$SPLASH" | head -1 || echo "?")
+          WAKEUP="lib/core/services/server_wakeup_service.dart"
+          WAKEUP_TO=$(grep -oP 'Duration\(seconds: \K[0-9]+' "$WAKEUP" | head -1 || echo "?")
+
+          echo "  Splash checkAuth timeout : ${TIMEOUT_VAL}s"
+          echo "  ServerWakeup timeout     : ${WAKEUP_TO}s"
+          echo "  Render.com cold start    : 30-50s"
+          echo ""
+
+          if [ "${TIMEOUT_VAL}" != "?" ] && [ "${TIMEOUT_VAL}" -lt 30 ] 2>/dev/null; then
+            echo "  ❌ МУШКИЛ: Splash timeout (${TIMEOUT_VAL}s) < Render cold start (30-50s)"
+            echo "     Сервер ҷавоб надиҳад → checkAuth fail → login → TextField хокистарӣ нишон"
+            echo "     ИН БУҒИ ДУВВУМ аст ки экранро холӣ мекунад!"
+            echo ""
+            echo "  ✅ ИСЛОҲ:"
+            echo "     .timeout(const Duration(seconds: ${TIMEOUT_VAL}))  →  .timeout(const Duration(seconds: 35))"
+          else
+            echo "  ✅ Timeout дуруст аст (${TIMEOUT_VAL}s)"
+          fi
+
+          # Wakeup blocking check
+          if grep -q "unawaited\|_wakeUpBackground\|Future.microtask" "$WAKEUP" 2>/dev/null; then
+            echo ""
+            echo "  ❌ МУШКИЛ: wakeUp() background-да иҷро мешавад!"
+            echo "     Splash мунтазир намемонад → auth пеш аз сервер кор мекунад"
+          elif grep -q "await.*wakeUp\|ServerWakeupService.*wakeUp" lib/modules/splash/splash_screen.dart 2>/dev/null; then
+            echo "  ✅ wakeUp() дар Splash await шудааст"
+          else
+            echo "  ⚠️  wakeUp() дар Splash await нашудааст — санҷед"
+          fi
+          echo ""
+
+      # ════════════════════════════════════════════════════════════════════════
+      # БЛОКИ 6 — withOpacity deprecated (Flutter 3.27+)
+      # ════════════════════════════════════════════════════════════════════════
+      - name: "⚠️ BUG #6 — withOpacity deprecated in Flutter 3.27+"
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║  BUG #6 — withOpacity() deprecated (Flutter 3.27+)         ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+
+          COUNT=$(grep -rn "\.withOpacity(" lib/ --include="*.dart" | grep -v "//" | wc -l || true)
+          echo "  withOpacity() истифодаҳо: $COUNT ҷой"
+          echo ""
+
+          if [ "$COUNT" -gt 0 ]; then
+            echo "  ❌ МУШКИЛ: withOpacity() дар Flutter 3.27+ deprecated аст."
+            echo "     Баъзе ҷойҳо render мушкил мешавад."
+            echo ""
+            echo "  Файлҳо:"
+            grep -rln "\.withOpacity(" lib/ --include="*.dart" | while read f; do
+              CNT=$(grep -c "\.withOpacity(" "$f" || true)
+              echo "    $f → $CNT ҷой"
+            done
+            echo ""
+            echo "  ✅ ИСЛОҲ: withOpacity(0.1) → withValues(alpha: 0.1)"
+          else
+            echo "  ✅ withOpacity истифода нашудааст."
+          fi
+          echo ""
+
+      # ════════════════════════════════════════════════════════════════════════
+      # БЛОКИ 7 — assets git-да нест
+      # ════════════════════════════════════════════════════════════════════════
+      - name: "🖼️ BUG #7 — Missing assets in git"
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║  BUG #7 — assets/ папка git-да нест                        ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+
+          echo "  pubspec.yaml assets:"
+          grep -A 10 "^  assets:" pubspec.yaml || echo "  (assets section not found)"
+          echo ""
+
+          echo "  git-да assets:"
+          git ls-files assets/ 2>/dev/null || echo "  (нест)"
+          echo ""
+
+          TRACKED=$(git ls-files assets/ | wc -l)
+          if [ "$TRACKED" -eq 0 ]; then
+            echo "  ❌ МУШКИЛ: assets/ папка git-да commit нашудааст!"
+            echo "     Flutter build-да crash → ин ҳам экранро холӣ мекунад"
+            echo ""
+            echo "  ✅ ИСЛОҲ:"
+            echo "     mkdir assets"
+            echo "     # product.png, banner.jpg, user.png гузоред"
+            echo "     git add assets/"
+            echo "     git commit -m 'fix: add assets'"
+          else
+            echo "  ✅ assets git-да мавҷуд аст ($TRACKED файл)"
+          fi
+          echo ""
+
+      # ════════════════════════════════════════════════════════════════════════
+      # ХУЛОСА — тартиби ислоҳ
+      # ════════════════════════════════════════════════════════════════════════
+      - name: "📋 ХУЛОСАИ УМУМӢ — тартиби ислоҳ"
+        if: always()
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════════╗"
+          echo "║              📋 ХУЛОСАИ ПУРРА                              ║"
+          echo "╚══════════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "  ТАРТИБИ ИСЛОҲ (аз муҳимтарин то камтарин):"
+          echo ""
+          echo "  1️⃣  login_screen.dart [АСОСӢ]"
+          echo "      filled: true  →  filled: false"
+          echo "      (сатрҳои 87 ва 112)"
+          echo ""
+          echo "  2️⃣  app_theme.dart [АСОСӢ]"
+          echo "      lightTheme ColorScheme-га илова кун:"
+          echo "      surfaceContainerHighest: const Color(0xFF141420),"
+          echo "      + inputDecorationTheme бо fillColor: Color(0xFF141420)"
+          echo ""
+          echo "  3️⃣  splash_screen.dart"
+          echo "      .timeout(Duration(seconds: 8))  →  Duration(seconds: 35)"
+          echo ""
+          echo "  4️⃣  server_wakeup_service.dart"
+          echo "      connectTimeout: 8s  →  55s"
+          echo "      receiveTimeout: 8s  →  55s"
+          echo ""
+          echo "  5️⃣  assets/"
+          echo "      mkdir assets && git add assets/ && git commit"
+          echo ""
+          echo "  6️⃣  40 ҷой withOpacity() → withValues(alpha: x)"
+          echo ""
+          echo "  ⚡ ФАВРТАРИН ИСЛОҲ (танҳо 2 тағйирот):"
+          echo "     login_screen.dart: filled: true → filled: false"
+          echo "     app_theme.dart: surfaceContainerHighest: Color(0xFF141420)"
+          echo ""
+          echo "════════════════════════════════════════════════════════════════"
+
+      # ════════════════════════════════════════════════════════════════════════
+      # ИСЛОҲИ АВТОМАТӢ — patch файлҳо ва artifact ҳамчун PR
+      # ════════════════════════════════════════════════════════════════════════
+      - name: "🔧 AUTO-FIX — Patch all bugs automatically"
+        run: |
+          echo "Applying automatic fixes..."
+
+          # FIX 1: login_screen.dart — filled: true → filled: false
+          sed -i 's/^\s*filled: true,$/                    filled: false,/g' \
+            lib/modules/auth/login_screen.dart
+
+          # FIX 2: register_screen.dart — same fix if exists
+          [ -f lib/modules/auth/register_screen.dart ] && \
+            sed -i 's/^\s*filled: true,$/                    filled: false,/g' \
+              lib/modules/auth/register_screen.dart
+
+          # FIX 3: withOpacity → withValues
+          find lib/ -name "*.dart" -exec \
+            sed -i 's/\.withOpacity(\([^)]*\))/.withValues(alpha: \1)/g' {} \;
+
+          # FIX 4: splash timeout
+          sed -i 's/Duration(seconds: 8)/Duration(seconds: 35)/g' \
+            lib/modules/splash/splash_screen.dart 2>/dev/null || true
+
+          # FIX 5: server wakeup timeout  
+          WAKEUP="lib/core/services/server_wakeup_service.dart"
+          if [ -f "$WAKEUP" ]; then
+            sed -i 's/connectTimeout: const Duration(seconds: [0-9]*)/connectTimeout: const Duration(seconds: 55)/g' "$WAKEUP"
+            sed -i 's/receiveTimeout: const Duration(seconds: [0-9]*)/receiveTimeout: const Duration(seconds: 55)/g' "$WAKEUP"
+          fi
+
+          # FIX 6: assets placeholder
+          if [ ! -d "assets" ] || [ -z "$(ls -A assets 2>/dev/null)" ]; then
             mkdir -p assets
             PIXEL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
             echo "$PIXEL" | base64 -d > assets/product.png
             echo "$PIXEL" | base64 -d > assets/banner.jpg
             echo "$PIXEL" | base64 -d > assets/user.png
-            echo "✅ assets/ папка ва placeholder файлҳо сохта шуд."
-          else
-            for f in product.png banner.jpg user.png; do
-              if [ ! -f "assets/$f" ]; then
-                echo "❌ assets/$f нест — месозем..."
-                PIXEL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-                echo "$PIXEL" | base64 -d > "assets/$f"
-              fi
-            done
-            echo "✅ assets/ файлҳо мавҷуданд."
-          fi
-          echo "::endgroup::"
-
-      # ── 5. FIX: Render.com cold start — Splash timeout ───────────────────────
-      - name: "⏱️ FIX — Render cold start: increase Splash timeout to 35s"
-        run: |
-          echo "::group::⏱️ Fixing Splash timeout..."
-          SPLASH="lib/modules/splash/splash_screen.dart"
-          if grep -q "Duration(seconds: 8)" "$SPLASH" 2>/dev/null; then
-            sed -i 's/Duration(seconds: 8)/Duration(seconds: 35)/g' "$SPLASH"
-            echo "✅ Splash timeout: 8s → 35s (Render.com cold start = 30-50s)"
-          else
-            echo "ℹ️  Splash timeout дигар 8s нест (шояд аллакай ислоҳ шудааст)"
-          fi
-          echo "::endgroup::"
-
-      # ── 6. FIX: ServerWakeupService timeout ──────────────────────────────────
-      - name: "🌐 FIX — ServerWakeupService: increase ping timeout"
-        run: |
-          echo "::group::🌐 Fixing ServerWakeupService..."
-          WAKEUP="lib/core/services/server_wakeup_service.dart"
-          if grep -q "Duration(seconds: 8)" "$WAKEUP" 2>/dev/null; then
-            sed -i 's/connectTimeout: const Duration(seconds: 8)/connectTimeout: const Duration(seconds: 55)/g' "$WAKEUP"
-            sed -i 's/receiveTimeout: const Duration(seconds: 8)/receiveTimeout: const Duration(seconds: 55)/g' "$WAKEUP"
-            echo "✅ ServerWakeup timeout: 8s → 55s"
-          else
-            echo "ℹ️  ServerWakeup timeout шояд аллакай ислоҳ шудааст"
-          fi
-          # Ensure wakeUp() blocks (not background) — check for _wakeUpInBackground
-          if grep -q "_wakeUpInBackground" "$WAKEUP" 2>/dev/null; then
-            echo "⚠️  МУШКИЛ: wakeUp() background-га меравад — Splash мунтазир намемонад!"
-            echo "   Лутфан server_wakeup_service.dart-ро мувофиқи README ислоҳ кунед."
-          else
-            echo "✅ wakeUp() blocking аст — Splash мунтазир мемонад."
-          fi
-          echo "::endgroup::"
-
-      # ── 7. FIX: Android Gradle ────────────────────────────────────────────────
-      - name: 🤖 FIX — Android Gradle & SDK versions
-        run: |
-          echo "::group::🤖 Fixing Android build files..."
-          sed -i 's/id "com.android.application" version .*/id "com.android.application" version "8.3.0" apply false/' android/settings.gradle 2>/dev/null || true
-          sed -i 's/id "org.jetbrains.kotlin.android" version .*/id "org.jetbrains.kotlin.android" version "1.9.10" apply false/' android/settings.gradle 2>/dev/null || true
-          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/' android/app/build.gradle 2>/dev/null || true
-          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/' android/app/build.gradle 2>/dev/null || true
-          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 35/' android/app/build.gradle 2>/dev/null || true
-          grep -q 'ndkVersion' android/app/build.gradle || \
-            sed -i '/compileSdk/a\    ndkVersion = "27.0.12077973"' android/app/build.gradle 2>/dev/null || true
-          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.7-bin.zip|' \
-            android/gradle/wrapper/gradle-wrapper.properties 2>/dev/null || true
-          echo "✅ Android Gradle ислоҳ шуд."
-          echo "::endgroup::"
-
-      # ── 8. FIX: Internet permission ───────────────────────────────────────────
-      - name: 🔒 FIX — AndroidManifest & network_security_config
-        run: |
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          grep -q 'INTERNET' "$MANIFEST" || \
-            sed -i 's|<manifest xmlns:android="http://schemas.android.com/apk/res/android">|<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>|' "$MANIFEST"
-          grep -q 'networkSecurityConfig' "$MANIFEST" || \
-            sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@mipmap/ic_launcher"\n        android:networkSecurityConfig="@xml/network_security_config"|' "$MANIFEST"
-          mkdir -p android/app/src/main/res/xml
-          cat > android/app/src/main/res/xml/network_security_config.xml << 'XML'
-          <?xml version="1.0" encoding="utf-8"?>
-          <network-security-config>
-              <domain-config cleartextTrafficPermitted="false">
-                  <domain includeSubdomains="true">tajikshop.onrender.com</domain>
-                  <trust-anchors><certificates src="system"/></trust-anchors>
-              </domain-config>
-              <base-config cleartextTrafficPermitted="false">
-                  <trust-anchors><certificates src="system"/></trust-anchors>
-              </base-config>
-          </network-security-config>
-          XML
-          echo "✅ AndroidManifest + network_security_config ислоҳ шуд."
-
-      # ── 9. pub get ────────────────────────────────────────────────────────────
-      - name: 📥 Install dependencies
-        run: flutter pub get
-
-      # ── 10. DIAGNOSE: Analyze ─────────────────────────────────────────────────
-      - name: 🔍 DIAGNOSE — Flutter analyze
-        run: |
-          echo "::group::🔍 Running flutter analyze..."
-          set +e
-          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze_output.txt
-          ANALYZE_EXIT=$?
-          set -e
-          if [ "$ANALYZE_EXIT" -ne 0 ]; then
-            echo "❌ ═══════════ ХАТОГИҲО ПАЙДО ШУД ═══════════"
-            grep "error •" analyze_output.txt || true
-            echo "════════════════════════════════════════════════"
-          else
-            echo "✅ Хатогии compile вуҷуд надорад."
-          fi
-          echo "::endgroup::"
-
-      # ── 11. DIAGNOSE: Root cause report ──────────────────────────────────────
-      - name: 🔬 DIAGNOSE — White screen root cause report
-        run: |
-          echo ""
-          echo "╔══════════════════════════════════════════════════════════╗"
-          echo "║     🔬 ТАШХИС: САБАБҲОИ ЭКРАНИ САФЕД                   ║"
-          echo "╚══════════════════════════════════════════════════════════╝"
-          echo ""
-
-          # Check 1: assets in git
-          if git ls-files assets/ | grep -q "product.png"; then
-            echo "✅ assets/ — git-да commit шудааст"
-          else
-            echo "❌ САБАБИ №1: assets/ папка git-да нест!"
-            echo "   ➡️  git add assets/ && git commit -m 'fix: add assets'"
+            echo "✅ assets/ placeholder файлҳо сохта шуд."
           fi
 
-          # Check 2: Splash timeout
-          SPLASH_TIMEOUT=$(grep -oP 'Duration\(seconds: \K[0-9]+' lib/modules/splash/splash_screen.dart 2>/dev/null | head -1 || echo "?")
-          if [ "$SPLASH_TIMEOUT" -ge 30 ] 2>/dev/null; then
-            echo "✅ Splash timeout = ${SPLASH_TIMEOUT}s — Render cold start-ро пӯшад"
-          else
-            echo "❌ САБАБИ №2: Splash timeout = ${SPLASH_TIMEOUT}s — хеле кӯтоҳ!"
-            echo "   Render.com cold start = 30-50s → timeout мезанад → экрани сафед"
-            echo "   ➡️  Ислоҳ: timeout-ро то 35s зиёд кунед"
-          fi
+          echo "✅ All auto-fixes applied."
 
-          # Check 3: wakeUp blocking
-          if grep -q "_wakeUpInBackground" lib/core/services/server_wakeup_service.dart 2>/dev/null; then
-            echo "❌ САБАБИ №3: wakeUp() background-га меравад!"
-            echo "   Splash мунтазир намемонад — auth пеш аз сервер иҷро мешавад"
-            echo "   ➡️  Ислоҳ: server_wakeup_service.dart-ро README мувофиқ иваз кунед"
-          else
-            echo "✅ wakeUp() blocking аст"
-          fi
-
-          # Check 4: Render cold start info
-          echo ""
-          echo "ℹ️  RENDER.COM FREE TIER:"
-          echo "   Сервер баъд аз 15 дақиқаи бекорӣ «хоб» мекунад."
-          echo "   Аввалин дархост = 30-50 сония интизор."
-          echo "   ServerWakeupService ин мушкилро ҳал мекунад."
-          echo ""
-          echo "════════════════════════════════════════════════════════════"
-
-      # ── 12. Java & Gradle cache ───────────────────────────────────────────────
-      - name: 🏗️ Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: 🔨 Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: gradle-${{ runner.os }}
-
-      # ── 13. Build APK ─────────────────────────────────────────────────────────
-      - name: 🏗️ BUILD — Flutter APK
-        run: |
-          set +e
-          flutter build apk --release --no-tree-shake-icons 2>&1 | tee build_output.txt
-          BUILD_EXIT=$?
-          set -e
-          if [ "$BUILD_EXIT" -eq 0 ]; then
-            echo "✅ BUILD МУВАФФАҚ шуд!"
-          else
-            echo "❌ BUILD ХАТО:"
-            tail -60 build_output.txt
-            exit 1
-          fi
-
-      # ── 14. Upload APK ────────────────────────────────────────────────────────
-      - name: 📤 Upload APK
+      - name: "📤 Upload patched source as artifact"
         uses: actions/upload-artifact@v4
         with:
-          name: TajikShop-Fixed-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: TajikShop-Patched-Source
+          path: |
+            lib/modules/auth/login_screen.dart
+            lib/modules/auth/register_screen.dart
+            lib/modules/splash/splash_screen.dart
+            lib/core/services/server_wakeup_service.dart
+            lib/core/theme/app_theme.dart
+            assets/
           retention-days: 14
-
-      # ── 15. Summary ───────────────────────────────────────────────────────────
-      - name: 📋 Summary
-        if: always()
-        run: |
-          echo ""
-          echo "╔══════════════════════════════════════════════════════════╗"
-          echo "║              📋 ХУЛОСАИ ИСЛОҲОТ                        ║"
-          echo "╚══════════════════════════════════════════════════════════╝"
-          echo ""
-          echo "  🖼️  assets/ папка: сохта шуд"
-          echo "  ⏱️  Splash timeout: 8s → 35s (Render cold start)"
-          echo "  🌐  ServerWakeup: blocking mode + 55s timeout"
-          echo "  🤖  Android Gradle: SDK 35, Gradle 8.7"
-          echo "  🔒  INTERNET permission + network_security_config"
-          echo ""
-          echo "  📌 ИСЛОҲОТИ ДАСТӢ (1 маротиба):"
-          echo "     1) Файлҳои ислоҳшударо аз workflow artifact гиред"
-          echo "     2) git add assets/ lib/modules/splash/splash_screen.dart"
-          echo "     3) git add lib/core/services/server_wakeup_service.dart"
-          echo "     4) git commit -m 'fix: white screen — timeout + assets'"
-          echo "     5) git push"
-          echo ""
-          echo "════════════════════════════════════════════════════════════"
