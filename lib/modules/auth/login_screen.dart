@@ -37,7 +37,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,7 +84,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     hintStyle: TextStyle(color: Color(0xFF6B6E82)),
                     prefixIcon: Icon(Icons.email_outlined,
                         color: Color(0xFF6B6E82)),
+                    filled: true,
+                    fillColor: Color(0xFF141420),
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
                         horizontal: 16, vertical: 16)))),
 
@@ -105,6 +109,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     hintStyle: const TextStyle(color: Color(0xFF6B6E82)),
                     prefixIcon: const Icon(Icons.lock_outline,
                         color: Color(0xFF6B6E82)),
+                    filled: true,
+                    fillColor: const Color(0xFF141420),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscure ? Icons.visibility_off_outlined
@@ -112,6 +118,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         color: const Color(0xFF6B6E82)),
                       onPressed: () => setState(() => _obscure = !_obscure)),
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 16)))),
 
