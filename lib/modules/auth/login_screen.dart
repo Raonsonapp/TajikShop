@@ -31,6 +31,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (ok && mounted) context.go(RouteNames.home);
   }
 
+  // TextField-ро бо Container wrap кун — filled:false
+  // FIX: Material3 filled:true fillColor-ро ignore мекунад дар light theme
+  Widget _field({
+    required TextEditingController ctrl,
+    required String hint,
+    required IconData icon,
+    bool obscure = false,
+    Widget? suffix,
+    TextInputType? keyboardType,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF141420),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF252538)),
+      ),
+      child: TextField(
+        controller: ctrl,
+        obscureText: obscure,
+        keyboardType: keyboardType,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: Color(0xFF6B6E82)),
+          prefixIcon: Icon(icon, color: const Color(0xFF6B6E82)),
+          suffixIcon: suffix,
+          filled: false,          // FIX: false — Container ранг медиҳад
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(authProvider);
@@ -70,56 +106,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 32),
 
               // Email
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF141420),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF252538))),
-                child: TextField(
-                  controller: _emailCtrl,
-                  keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Почтаи электронӣ',
-                    hintStyle: TextStyle(color: Color(0xFF6B6E82)),
-                    prefixIcon: Icon(Icons.email_outlined,
-                        color: Color(0xFF6B6E82)),
-                    filled: false,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 16)))),
+              _field(
+                ctrl: _emailCtrl,
+                hint: 'Почтаи электронӣ',
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+              ),
 
               const SizedBox(height: 14),
 
               // Password
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF141420),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF252538))),
-                child: TextField(
-                  controller: _passCtrl,
-                  obscureText: _obscure,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    hintText: 'Парол',
-                    hintStyle: const TextStyle(color: Color(0xFF6B6E82)),
-                    prefixIcon: const Icon(Icons.lock_outline,
-                        color: Color(0xFF6B6E82)),
-                    filled: false,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscure ? Icons.visibility_off_outlined
-                                 : Icons.visibility_outlined,
-                        color: const Color(0xFF6B6E82)),
-                      onPressed: () => setState(() => _obscure = !_obscure)),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 16)))),
+              _field(
+                ctrl: _passCtrl,
+                hint: 'Парол',
+                icon: Icons.lock_outline,
+                obscure: _obscure,
+                suffix: IconButton(
+                  icon: Icon(
+                    _obscure ? Icons.visibility_off_outlined
+                             : Icons.visibility_outlined,
+                    color: const Color(0xFF6B6E82)),
+                  onPressed: () => setState(() => _obscure = !_obscure)),
+              ),
 
               // Error
               if (state.error != null) ...[
@@ -127,10 +135,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF3B5C).withOpacity(0.1),
+                    color: const Color(0xFFFF3B5C).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: const Color(0xFFFF3B5C).withOpacity(0.3))),
+                        color: const Color(0xFFFF3B5C).withValues(alpha: 0.3))),
                   child: Text(state.error!,
                       style: const TextStyle(
                           color: Color(0xFFFF3B5C), fontSize: 13))),
