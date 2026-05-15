@@ -41,11 +41,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted) return;
 
     try {
-      // Timeout 5 seconds - if backend is sleeping, don't wait forever
+      // Timeout 8 seconds - 1 retry x 2s delay + server response time
       await ref
           .read(authProvider.notifier)
           .checkAuth()
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 8));
     } catch (_) {
       // Timeout or error - just go to login
     }
