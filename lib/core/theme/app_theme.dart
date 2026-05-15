@@ -116,37 +116,36 @@ class AppTheme {
       brightness: Brightness.light,
       scaffoldBackgroundColor: Colors.white,
       primaryColor: AppColors.primary,
-      colorScheme: const ColorScheme.light(
-        primary: AppColors.primary,
-        secondary: AppColors.accent,
-        surface: Colors.white,
-        // FIX: Material3 TextField fillColor = surfaceContainerHighest
-        // Агар танзим нашавад → Colors.grey[200] → экрани хокистарӣ!
-        surfaceContainerHighest: AppColors.bgCard,
-        error: AppColors.error,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: Colors.black87,
-      ),
-      // FIX: Экрани хокистарӣ — lightTheme-да ҳам inputDecorationTheme лозим аст.
-      // Бе ин, Flutter default fillColor = Colors.grey[200] мегузорад → хокистарӣ.
+
+      // FIX: Material3 TextField fillColor = Colors.grey[200] агар
+      // inputDecorationTheme нест → экрани хокистарӣ!
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF141420), // bgCard — тира барои login/register
+        fillColor: AppColors.bgCard,          // 0xFF141420 — тира
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF252538), width: 0.5),
+          borderSide: const BorderSide(color: AppColors.border, width: 0.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF00D084), width: 2),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
-        hintStyle: const TextStyle(color: Color(0xFF6B6E82)),
+        hintStyle: const TextStyle(color: AppColors.textMuted),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+      colorScheme: const ColorScheme.light(
+        primary: AppColors.primary,
+        secondary: AppColors.accent,
+        surface: Colors.white,
+        surfaceContainerHighest: AppColors.bgCard, // Material3 TextField fill
+        error: AppColors.error,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: Colors.black87,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
