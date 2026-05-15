@@ -84,8 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     hintStyle: TextStyle(color: Color(0xFF6B6E82)),
                     prefixIcon: Icon(Icons.email_outlined,
                         color: Color(0xFF6B6E82)),
-                    filled: true,
-                    fillColor: Color(0xFF141420),
+                    filled: false,
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
@@ -109,8 +108,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     hintStyle: const TextStyle(color: Color(0xFF6B6E82)),
                     prefixIcon: const Icon(Icons.lock_outline,
                         color: Color(0xFF6B6E82)),
-                    filled: true,
-                    fillColor: const Color(0xFF141420),
+                    filled: false,
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscure ? Icons.visibility_off_outlined
