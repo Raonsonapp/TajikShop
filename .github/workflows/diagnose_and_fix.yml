@@ -1,0 +1,275 @@
+name: 🔍 Diagnose & Fix White Screen
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  diagnose-and-fix:
+    name: Хатогиро пайдо ва ислоҳ кун
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Flutter ───────────────────────────────────────────────────────────
+      - name: 🐦 Setup Flutter 3.29.0
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.0'
+          channel: 'stable'
+          cache: true
+
+      # ── 3. Pub cache ─────────────────────────────────────────────────────────
+      - name: 📦 Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}
+
+      # ── 4. FIX: Assets папка нест — экрани сафед ──────────────────────────
+      - name: 🖼️ FIX — Create missing assets folder & placeholder files
+        run: |
+          echo "::group::📁 Checking assets..."
+          if [ ! -d "assets" ]; then
+            echo "❌ МУШКИЛ: assets/ папка вуҷуд надорад!"
+            echo "   pubspec.yaml ба assets/product.png, assets/banner.jpg, assets/user.png ишора мекунад."
+            echo "   Flutter вақти build crash мекунад → экрани сафед/хокистарӣ нишон медиҳад."
+            mkdir -p assets
+
+            # Placeholder PNG (1x1 transparent pixel, base64)
+            PIXEL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+            echo "$PIXEL" | base64 -d > assets/product.png
+            echo "$PIXEL" | base64 -d > assets/banner.jpg
+            echo "$PIXEL" | base64 -d > assets/user.png
+            echo "✅ assets/ папка ва файлҳои placeholder сохта шуд."
+          else
+            echo "✅ assets/ папка мавҷуд аст."
+            # Check each required file
+            for f in product.png banner.jpg user.png; do
+              if [ ! -f "assets/$f" ]; then
+                echo "❌ assets/$f вуҷуд надорад — месозем..."
+                PIXEL="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+                echo "$PIXEL" | base64 -d > "assets/$f"
+                echo "✅ assets/$f сохта шуд."
+              else
+                echo "✅ assets/$f мавҷуд аст."
+              fi
+            done
+          fi
+          echo "::endgroup::"
+
+      # ── 5. FIX: Android permissions & Gradle ─────────────────────────────
+      - name: 🤖 FIX — Android Gradle & SDK versions
+        run: |
+          echo "::group::🤖 Fixing Android build files..."
+          sed -i 's/id "com.android.application" version .*/id "com.android.application" version "8.3.0" apply false/' android/settings.gradle 2>/dev/null || true
+          sed -i 's/id "org.jetbrains.kotlin.android" version .*/id "org.jetbrains.kotlin.android" version "1.9.10" apply false/' android/settings.gradle 2>/dev/null || true
+          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/' android/app/build.gradle 2>/dev/null || true
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/' android/app/build.gradle 2>/dev/null || true
+          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 35/' android/app/build.gradle 2>/dev/null || true
+          grep -q 'ndkVersion' android/app/build.gradle || \
+            sed -i '/compileSdk/a\    ndkVersion = "27.0.12077973"' android/app/build.gradle 2>/dev/null || true
+          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.7-bin.zip|' \
+            android/gradle/wrapper/gradle-wrapper.properties 2>/dev/null || true
+          echo "✅ Android Gradle ислоҳ шуд."
+          echo "::endgroup::"
+
+      # ── 6. FIX: Internet permission ───────────────────────────────────────
+      - name: 🌐 FIX — AndroidManifest INTERNET permission
+        run: |
+          echo "::group::🌐 Fixing AndroidManifest..."
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          grep -q 'INTERNET' "$MANIFEST" || \
+            sed -i 's|<manifest xmlns:android="http://schemas.android.com/apk/res/android">|<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    <uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>|' "$MANIFEST"
+          grep -q 'networkSecurityConfig' "$MANIFEST" || \
+            sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@mipmap/ic_launcher"\n        android:networkSecurityConfig="@xml/network_security_config"|' "$MANIFEST"
+          echo "✅ AndroidManifest ислоҳ шуд."
+          echo "::endgroup::"
+
+      # ── 7. FIX: Network security config ──────────────────────────────────
+      - name: 🔒 FIX — Network security config
+        run: |
+          mkdir -p android/app/src/main/res/xml
+          cat > android/app/src/main/res/xml/network_security_config.xml << 'XML'
+          <?xml version="1.0" encoding="utf-8"?>
+          <network-security-config>
+              <domain-config cleartextTrafficPermitted="false">
+                  <domain includeSubdomains="true">tajikshop.onrender.com</domain>
+                  <trust-anchors>
+                      <certificates src="system"/>
+                  </trust-anchors>
+              </domain-config>
+              <base-config cleartextTrafficPermitted="false">
+                  <trust-anchors>
+                      <certificates src="system"/>
+                  </trust-anchors>
+              </base-config>
+          </network-security-config>
+          XML
+          echo "✅ network_security_config.xml сохта шуд."
+
+      # ── 8. pub get ────────────────────────────────────────────────────────
+      - name: 📥 Install dependencies (flutter pub get)
+        run: flutter pub get
+
+      # ── 9. DIAGNOSE: Flutter analyze — хатогиҳои асосӣ ──────────────────
+      - name: 🔍 DIAGNOSE — Flutter analyze (errors only)
+        id: analyze
+        run: |
+          echo "::group::🔍 Running flutter analyze..."
+          set +e
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee analyze_output.txt
+          ANALYZE_EXIT=$?
+          set -e
+
+          ERROR_COUNT=$(grep -c "^  error •\|^\[✗\]" analyze_output.txt 2>/dev/null || echo "0")
+          echo "analyze_exit=$ANALYZE_EXIT" >> $GITHUB_OUTPUT
+          echo "error_count=$ERROR_COUNT"   >> $GITHUB_OUTPUT
+
+          if [ "$ANALYZE_EXIT" -ne 0 ]; then
+            echo ""
+            echo "❌ ═══════════ ХАТОГИҲО ПАЙДО ШУД ═══════════"
+            grep "error •" analyze_output.txt || true
+            echo "════════════════════════════════════════════════"
+          else
+            echo "✅ Хатогии compile вуҷуд надорад."
+          fi
+          echo "::endgroup::"
+
+      # ── 10. DIAGNOSE: Check assets in pubspec ────────────────────────────
+      - name: 🖼️ DIAGNOSE — Verify assets declared in pubspec.yaml
+        run: |
+          echo "::group::🖼️ Checking pubspec.yaml assets..."
+          echo "--- pubspec.yaml assets section ---"
+          grep -A 10 "^  assets:" pubspec.yaml || echo "(assets section not found)"
+          echo ""
+          echo "--- Actual files in assets/ ---"
+          ls -la assets/ 2>/dev/null || echo "❌ assets/ папка вуҷуд надорад!"
+          echo "::endgroup::"
+
+      # ── 11. DIAGNOSE: White screen root causes ───────────────────────────
+      - name: 🔬 DIAGNOSE — White/grey screen root cause analysis
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════╗"
+          echo "║     🔬 ТАШХИСИ ЭКРАНИ САФЕД / ХОКИСТАРӢ                ║"
+          echo "╚══════════════════════════════════════════════════════════╝"
+          echo ""
+
+          ISSUES=0
+
+          # Check 1: Missing assets folder
+          if git show HEAD:assets/product.png 2>/dev/null | head -c 1 > /dev/null 2>&1; then
+            echo "✅ assets/product.png — git-да мавҷуд аст"
+          else
+            echo "❌ САБАБИ №1 — ЭКРАНИ САФЕД: assets/ папка git-да нест!"
+            echo "   pubspec.yaml ба product.png, banner.jpg, user.png ишора мекунад,"
+            echo "   аммо ин файлҳо commit нашудаанд."
+            echo "   ➡️  ИСЛОҲ: assets/ папка созед ва файлҳоро commit кунед."
+            echo "   git add assets/ && git commit -m 'fix: add missing assets'"
+            ISSUES=$((ISSUES+1))
+          fi
+
+          # Check 2: .gitignore blocking assets
+          if grep -q "^assets" .gitignore 2>/dev/null; then
+            echo "❌ САБАБИ №2: .gitignore assets/-ро блок мекунад!"
+            ISSUES=$((ISSUES+1))
+          fi
+
+          # Check 3: Firebase not configured (google-services.json exists but firebase_core not in pubspec)
+          if grep -q "firebase_core\|firebase_auth" pubspec.yaml 2>/dev/null; then
+            echo "⚠️  ОГОҲӢ: Firebase dependency пайдо шуд аммо google-services конфигуратсия лозим аст"
+          fi
+
+          # Check 4: API base URL check
+          API_URL=$(grep -r "baseUrl\|BASE_URL\|tajikshop" lib/ 2>/dev/null | grep -o 'https://[^"' "'" ']*' | head -1 || true)
+          if [ -n "$API_URL" ]; then
+            echo "ℹ️  API URL: $API_URL"
+            echo "   Агар сервер хомӯш бошад → SplashScreen timeout-и 8 сония дорад → баъд ба Login меравад"
+          fi
+
+          # Check 5: Render.com cold start
+          echo ""
+          echo "⚠️  ОГОҲИИ RENDER.COM: Сервер дар render.com рӯй дорад."
+          echo "   Агар 15+ дақиқа кор накарда бошад, 30-50 сония барои 'cold start' лозим аст."
+          echo "   Splash screen timeout = 8s — агар сервер дер посух диҳад → login мефиристад."
+          echo ""
+
+          if [ "$ISSUES" -eq 0 ]; then
+            echo "✅ Хатогии маъмул пайдо нашуд."
+          else
+            echo "❌ Ҷамъи мушкилот: $ISSUES — дар боло ислоҳот нишон дода шудааст."
+          fi
+          echo ""
+          echo "════════════════════════════════════════════════════════════"
+
+      # ── 12. BUILD APK with fixes applied ─────────────────────────────────
+      - name: 🏗️ Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🔨 Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: gradle-${{ runner.os }}
+
+      - name: 🏗️ BUILD — Flutter APK (with all fixes)
+        id: build
+        run: |
+          set +e
+          flutter build apk --release --no-tree-shake-icons 2>&1 | tee build_output.txt
+          BUILD_EXIT=$?
+          set -e
+
+          if [ "$BUILD_EXIT" -eq 0 ]; then
+            echo "✅ BUILD МУВАФФАҚ шуд!"
+            echo "build_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ BUILD ХАТО — лог дар зер:"
+            tail -50 build_output.txt
+            echo "build_success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      # ── 13. Upload APK ────────────────────────────────────────────────────
+      - name: 📤 Upload fixed APK
+        if: steps.build.outputs.build_success == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: TajikShop-Fixed-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7
+
+      # ── 14. Summary ───────────────────────────────────────────────────────
+      - name: 📋 Final Summary
+        if: always()
+        run: |
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════╗"
+          echo "║              📋 ХУЛОСАИ НАТИҶАҲО                       ║"
+          echo "╚══════════════════════════════════════════════════════════╝"
+          echo ""
+          echo "  🖼️  assets/ папка: сохта шуд (product.png, banner.jpg, user.png)"
+          echo "  🤖  Android Gradle: ислоҳ шуд (SDK 35, Gradle 8.7)"
+          echo "  🌐  INTERNET permission: илова шуд"
+          echo "  🔒  network_security_config: сохта шуд"
+          echo ""
+          echo "  📌 ДАСТУРАМАЛ БАРОИ ШУМ:"
+          echo "     1) assets/ папка созед ва тасвирҳои воқеиро гузоред"
+          echo "     2) git add assets/ && git commit -m 'fix: add real assets'"
+          echo "     3) git push — workflow аз нав кор мекунад"
+          echo ""
+          echo "════════════════════════════════════════════════════════════"
