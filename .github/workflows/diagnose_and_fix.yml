@@ -129,9 +129,11 @@ jobs:
           ANALYZE_EXIT=$?
           set -e
 
-          ERROR_COUNT=$(grep -c "^  error •\|^\[✗\]" analyze_output.txt 2>/dev/null || echo "0")
-          echo "analyze_exit=$ANALYZE_EXIT" >> $GITHUB_OUTPUT
-          echo "error_count=$ERROR_COUNT"   >> $GITHUB_OUTPUT
+          ERROR_COUNT=$(grep -c "error •" analyze_output.txt || true)
+          ERROR_COUNT="${ERROR_COUNT:-0}"
+
+          printf 'analyze_exit=%s\n' "$ANALYZE_EXIT"  >> "$GITHUB_OUTPUT"
+          printf 'error_count=%s\n'  "$ERROR_COUNT"   >> "$GITHUB_OUTPUT"
 
           if [ "$ANALYZE_EXIT" -ne 0 ]; then
             echo ""
@@ -189,7 +191,7 @@ jobs:
           fi
 
           # Check 4: API base URL check
-          API_URL=$(grep -r "baseUrl\|BASE_URL\|tajikshop" lib/ 2>/dev/null | grep -o 'https://[^"' "'" ']*' | head -1 || true)
+          API_URL=$(grep -r "baseUrl" lib/ 2>/dev/null | grep -oE 'https://[^ >"]+' | head -1 || true)
           if [ -n "$API_URL" ]; then
             echo "ℹ️  API URL: $API_URL"
             echo "   Агар сервер хомӯш бошад → SplashScreen timeout-и 8 сония дорад → баъд ба Login меравад"
@@ -236,11 +238,11 @@ jobs:
 
           if [ "$BUILD_EXIT" -eq 0 ]; then
             echo "✅ BUILD МУВАФФАҚ шуд!"
-            echo "build_success=true" >> $GITHUB_OUTPUT
+            printf 'build_success=true\n' >> "$GITHUB_OUTPUT"
           else
             echo "❌ BUILD ХАТО — лог дар зер:"
             tail -50 build_output.txt
-            echo "build_success=false" >> $GITHUB_OUTPUT
+            printf 'build_success=false\n' >> "$GITHUB_OUTPUT"
             exit 1
           fi
 
