@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/server_wakeup_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
 
@@ -17,6 +18,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   late AnimationController _controller;
   late Animation<double> _fadeAnim;
   late Animation<double> _scaleAnim;
+
+  // FIX: Render.com cold start 30-50s лозим дорад. Timeout зиёд шуд.
+  static const _authTimeout = Duration(seconds: 35);
 
   @override
   void initState() {
@@ -36,18 +40,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _init() async {
-    // Minimum splash time
-    await Future.delayed(const Duration(milliseconds: 1800));
+    await Future.delayed(const Duration(milliseconds: 1200));
+    if (!mounted) return;
+
+    // FIX: Аввал серверро бедор кун — баъд auth санҷ
+    await ServerWakeupService.instance.wakeUp();
     if (!mounted) return;
 
     try {
-      // Timeout 8 seconds - 1 retry x 2s delay + server response time
+      // FIX: 35s timeout — Render.com cold start-ро пӯшад
       await ref
           .read(authProvider.notifier)
           .checkAuth()
-          .timeout(const Duration(seconds: 8));
+          .timeout(_authTimeout);
     } catch (_) {
-      // Timeout or error - just go to login
+      // Timeout — checkAuth офлайн кэшро ҳам истифода мекунад
     }
 
     if (!mounted) return;
@@ -124,10 +131,45 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     valueColor: AlwaysStoppedAnimation(AppColors.primary),
                   ),
                 ),
+                const SizedBox(height: 16),
+                const _WakeupStatus(),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _WakeupStatus extends StatefulWidget {
+  const _WakeupStatus();
+  @override
+  State<_WakeupStatus> createState() => _WakeupStatusState();
+}
+
+class _WakeupStatusState extends State<_WakeupStatus> {
+  int _dots = 0;
+  late final _timer = Stream.periodic(
+    const Duration(milliseconds: 600),
+    (i) => i % 4,
+  ).listen((d) {
+    if (mounted) setState(() => _dots = d);
+  });
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'Пайваст мешавем${'.' * (_dots + 1)}',
+      style: const TextStyle(
+        color: AppColors.textSecondary,
+        fontSize: 12,
       ),
     );
   }
