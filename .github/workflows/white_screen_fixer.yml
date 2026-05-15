@@ -1,36 +1,27 @@
-name: 🤖 AI White Screen Bug Fixer
+name: 🔍 White Screen Bug Detector
 
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'lib/**/*.dart'
+    paths: [ 'lib/**/*.dart' ]
   pull_request:
     branches: [ main ]
-    paths:
-      - 'lib/**/*.dart'
+    paths: [ 'lib/**/*.dart' ]
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
   issues: write
 
 jobs:
-  ai-white-screen-fix:
-    name: Detect & Fix White Screen Bugs
+  detect:
     runs-on: ubuntu-latest
-
     steps:
-      # ── 1. Checkout ────────────────────────────────────────────────────────
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # ── 2. Gather key Dart files ───────────────────────────────────────────
-      - name: 📁 Collect Dart files for analysis
-        id: collect
+      - uses: actions/checkout@v4
+
+      - name: 🔍 Detect white screen bugs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           FILES=(
             "lib/core/theme/app_theme.dart"
@@ -40,247 +31,61 @@ jobs:
             "lib/shared/widgets/app_text_field.dart"
             "lib/core/api/interceptors.dart"
             "lib/modules/splash/splash_screen.dart"
-            "lib/main.dart"
           )
 
           PAYLOAD=""
           for f in "${FILES[@]}"; do
-            if [ -f "$f" ]; then
-              CONTENT=$(cat "$f")
-              PAYLOAD="${PAYLOAD}=== FILE: ${f} ===\n${CONTENT}\n\n"
-            fi
+            [ -f "$f" ] && PAYLOAD="${PAYLOAD}=== $f ===\n$(cat $f)\n\n"
           done
+          printf "%b" "$PAYLOAD" > /tmp/code.txt
 
-          # Save to temp file (avoids ARG_MAX limits)
-          printf "%b" "$PAYLOAD" > /tmp/dart_files.txt
-          echo "files_collected=true" >> $GITHUB_OUTPUT
-          echo "✅ Collected ${#FILES[@]} files for analysis"
-
-      # ── 3. Send to Claude AI ───────────────────────────────────────────────
-      - name: 🤖 Ask Claude AI to find & fix bugs
-        id: claude
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          DART_CODE=$(cat /tmp/dart_files.txt)
-
-          SYSTEM_PROMPT='Sen Flutter dark-theme white/grey screen bug detector va auto-fixer isan.
-
-VAZIFANG: Berilgan Flutter .dart fayllarni chuqur tahlil qil. "White screen" yoki "grey screen" muammosini keltirib chiqaradigan BARCHA xatolarni top va to'"'"'liq tuzat.
-
-MUHIM QOIDALAR:
-1. lightTheme ichida inputDecorationTheme bor va fillColor ochiq rang (masalan 0xFFF4F6FA) — BU BARCHA TextField-larni override qiladi. OLIB TASHLA.
-2. TextField/TextFormField ichida filled:true bor, lekin fillColor aniq belgilanmagan — theme-dan oq/kulrang rang oladi. fillColor qo'"'"'shish SHART.
-3. TextField border-lari: agar Container ichida bo'"'"'lsa — border, enabledBorder, focusedBorder hammasi InputBorder.none bo'"'"'lishi KERAK.
-4. ThemeMode.system — qurilma light bo'"'"'lsa, ilova ham light bo'"'"'ladi. Default ThemeMode.dark bo'"'"'lishi shart.
-5. SharedPreferences — theme saqlanmasa, har ochilganda tizim theme-ini oladi. Persist qilish kerak.
-6. RetryInterceptor — retries < 2 va dynamic delay (2*(retries+1)) = 11 soniya UI freeze. Max 1 retry, 2s fixed delay.
-7. Splash timeout — checkAuth timeout RetryInterceptor delay-dan katta bo'"'"'lishi shart.
-8. withOpacity() — deprecated, withValues(alpha:) ishlatish kerak.
-9. Column overflow — SafeArea ichida Column to'"'"'lib ketsa, pastki qism ko'"'"'rinmaydi. SingleChildScrollView qo'"'"'shish kerak.
-10. Scaffold backgroundColor belgilanmasa — theme-dan oladi.
-
-JAVOB FAQAT JSON formatida bo'"'"'lsin, hech qanday izoh yoki markdown yo'"'"'q:
-{
-  "has_bugs": true,
-  "summary": "Topilgan xatolar va ular haqida qisqa xulosa (Tojik tilida)",
-  "bugs": [
-    {
-      "file": "lib/path/file.dart",
-      "severity": "CRITICAL|WARNING|INFO",
-      "problem": "muammo tavsifi (Tojik tilida)",
-      "fix": "qanday tuzatildi (Tojik tilida)"
-    }
-  ],
-  "fixed_files": [
-    {
-      "filename": "lib/path/file.dart",
-      "content": "BUTUN FAYL KODI TO'"'"'LIQ"
-    }
-  ]
-}'
-
-          USER_MSG="Quyidagi TajikShop Flutter fayllarini tahlil qil va white/grey screen muammolarini tuzat:\n\n${DART_CODE}"
-
-          # Call Claude API
-          RESPONSE=$(curl -s -X POST "https://api.anthropic.com/v1/messages" \
+          RESPONSE=$(curl -s -X POST https://api.anthropic.com/v1/messages \
             -H "Content-Type: application/json" \
-            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
             -H "anthropic-version: 2023-06-01" \
             -d "$(jq -n \
-              --arg system "$SYSTEM_PROMPT" \
-              --arg user "$USER_MSG" \
+              --arg code "$(cat /tmp/code.txt)" \
               '{
                 model: "claude-sonnet-4-20250514",
-                max_tokens: 8000,
-                system: $system,
-                messages: [{ role: "user", content: $user }]
+                max_tokens: 2000,
+                system: "Sen Flutter white screen bug detector isan. Faqat JSON qaytarasan, boshqa hech narsa yoqmas.\n\nQOIDALAR:\n1. lightTheme.inputDecorationTheme.fillColor ochiq rang — CRITICAL\n2. TextField filled:true, fillColor yoq — CRITICAL\n3. TextField Container ichida, lekin enabledBorder/focusedBorder InputBorder.none emas — CRITICAL\n4. ThemeMode.system yoki default — CRITICAL\n5. SharedPreferences theme saqlanmasa — WARNING\n6. RetryInterceptor retries>=2 yoki dynamic delay — WARNING\n7. Column overflow, SingleChildScrollView yoq — WARNING\n8. withOpacity() ishlatilgan — INFO\n\nJSON format:\n{\"has_bugs\":true,\"bugs\":[{\"severity\":\"CRITICAL\",\"file\":\"...\",\"problem\":\"...\"}]}",
+                messages: [{
+                  role: "user",
+                  content: ("Quyidagi fayllarni tahlil qil:\n\n" + $code)
+                }]
               }')")
 
-          echo "$RESPONSE" > /tmp/claude_raw.json
+          echo "$RESPONSE" | jq -r '.content[0].text' > /tmp/result.json
+          cat /tmp/result.json
 
-          # Extract text content
-          AI_TEXT=$(echo "$RESPONSE" | jq -r '.content[0].text // empty')
+          HAS_BUGS=$(cat /tmp/result.json | jq -r '.has_bugs')
+          echo "has_bugs=$HAS_BUGS" >> $GITHUB_ENV
 
-          if [ -z "$AI_TEXT" ]; then
-            echo "❌ Claude API javobi bo'sh yoki xato:"
-            cat /tmp/claude_raw.json | jq '.error // .'
-            echo "has_bugs=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          echo "$AI_TEXT" > /tmp/claude_result.json
-          echo "✅ Claude AI javobi keldi"
-
-          # Parse has_bugs
-          HAS_BUGS=$(echo "$AI_TEXT" | jq -r '.has_bugs // false')
-          echo "has_bugs=${HAS_BUGS}" >> $GITHUB_OUTPUT
-
-          # Parse bug count
-          BUG_COUNT=$(echo "$AI_TEXT" | jq '.bugs | length // 0')
-          CRITICAL_COUNT=$(echo "$AI_TEXT" | jq '[.bugs[] | select(.severity=="CRITICAL")] | length')
-          echo "bug_count=${BUG_COUNT}" >> $GITHUB_OUTPUT
-          echo "critical_count=${CRITICAL_COUNT}" >> $GITHUB_OUTPUT
-
-          SUMMARY=$(echo "$AI_TEXT" | jq -r '.summary // "Хулоса йўқ"')
-          echo "summary=${SUMMARY}" >> $GITHUB_OUTPUT
-
-          echo "🐛 Топилган хатолар: ${BUG_COUNT} (Критикӣ: ${CRITICAL_COUNT})"
-
-      # ── 4. Apply fixes to files ────────────────────────────────────────────
-      - name: 🛠️ Apply AI fixes to files
-        id: apply
-        if: steps.claude.outputs.has_bugs == 'true'
+      - name: 📋 Print bug report
+        if: env.has_bugs == 'true'
         run: |
-          FIXED_COUNT=0
-
-          # Get number of fixed files
-          NUM_FILES=$(cat /tmp/claude_result.json | jq '.fixed_files | length')
-          echo "📝 Ислоҳ қилинадиган файллар: ${NUM_FILES}"
-
-          for i in $(seq 0 $((NUM_FILES - 1))); do
-            FILENAME=$(cat /tmp/claude_result.json | jq -r ".fixed_files[$i].filename")
-            CONTENT=$(cat /tmp/claude_result.json | jq -r ".fixed_files[$i].content")
-
-            if [ -n "$FILENAME" ] && [ -n "$CONTENT" ]; then
-              # Create directory if needed
-              mkdir -p "$(dirname "$FILENAME")"
-              echo "$CONTENT" > "$FILENAME"
-              echo "  ✅ Ислоҳ қилинди: $FILENAME"
-              FIXED_COUNT=$((FIXED_COUNT + 1))
-            fi
-          done
-
-          echo "fixed_count=${FIXED_COUNT}" >> $GITHUB_OUTPUT
-          echo "✅ Жами ${FIXED_COUNT} файл ислоҳ қилинди"
-
-      # ── 5. Check if files were changed ────────────────────────────────────
-      - name: 🔍 Check for changes
-        id: changes
-        if: steps.claude.outputs.has_bugs == 'true'
-        run: |
-          git diff --name-only > /tmp/changed_files.txt
-          CHANGED=$(cat /tmp/changed_files.txt | wc -l | tr -d ' ')
-          echo "changed=${CHANGED}" >> $GITHUB_OUTPUT
-          echo "📋 Ўзгарган файллар: ${CHANGED}"
-          cat /tmp/changed_files.txt
-
-      # ── 6. Build bug report markdown ──────────────────────────────────────
-      - name: 📝 Build bug report
-        id: report
-        if: steps.claude.outputs.has_bugs == 'true'
-        run: |
-          SUMMARY="${{ steps.claude.outputs.summary }}"
-          BUG_COUNT="${{ steps.claude.outputs.bug_count }}"
-          CRITICAL="${{ steps.claude.outputs.critical_count }}"
-          FIXED="${{ steps.apply.outputs.fixed_count }}"
-          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-          # Build bugs table
-          BUGS_TABLE=$(cat /tmp/claude_result.json | jq -r '
+          echo ""
+          echo "══════════════════════════════════════════"
+          echo "   🔴 WHITE SCREEN XATOLARI TOPILDI!"
+          echo "══════════════════════════════════════════"
+          cat /tmp/result.json | jq -r '
             .bugs[] |
-            "| " + (if .severity == "CRITICAL" then "🔴 КРИТИКӢ" elif .severity == "WARNING" then "🟡 ОГОҲӢ" else "🟢 МАЪЛУМОТ" end) +
-            " | `" + .file + "` | " + .problem + " | " + .fix + " |"
-          ')
+            "\n[\(.severity)] \(.file)\n→ \(.problem)"
+          '
+          echo ""
 
-          CHANGED_FILES=$(cat /tmp/changed_files.txt | sed 's/^/- `/' | sed 's/$/'\''/`/' | tr -d "'")
-
-          cat > /tmp/bug_report.md << EOF
-          ## 🤖 AI White Screen Bug Fixer — Натиҷа
-
-          > **Commit:** \`${{ github.sha }}\`
-          > **Branch:** \`${{ github.ref_name }}\`
-          > **Run:** [Actions #${{ github.run_number }}](${RUN_URL})
-
-          ### 📋 Хулоса
-          ${SUMMARY}
-
-          ### 📊 Статистика
-          | | Натиҷа |
-          |---|---|
-          | 🐛 Жами хатолар | **${BUG_COUNT}** |
-          | 🔴 Критикӣ | **${CRITICAL}** |
-          | 🛠️ Ислоҳ қилинди | **${FIXED}** файл |
-
-          ### 🐛 Топилган хатолар
-          | Дараҷа | Файл | Муаммо | Ислоҳ |
-          |---|---|---|---|
-          ${BUGS_TABLE}
-
-          ### 📁 Ислоҳ қилинган файллар
-          ${CHANGED_FILES}
-
-          ---
-          *Бу ислоҳлар [Claude AI](https://anthropic.com) томонидан автоматик қилинди*
-          EOF
-
-          echo "report_built=true" >> $GITHUB_OUTPUT
-
-      # ── 7. Commit & Push fixes as a PR ────────────────────────────────────
-      - name: 🚀 Create Pull Request with fixes
-        if: steps.claude.outputs.has_bugs == 'true' && steps.changes.outputs.changed != '0'
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: |
-            🤖 fix: AI auto-fixed ${{ steps.claude.outputs.critical_count }} white screen bug(s)
-
-            Fixed files:
-            ${{ steps.apply.outputs.fixed_count }} dart files patched by Claude AI
-            Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          branch: ai-fix/white-screen-${{ github.run_number }}
-          delete-branch: true
-          title: "🤖 AI Fix: ${{ steps.claude.outputs.critical_count }} white screen bug(s) patched"
-          body-path: /tmp/bug_report.md
-          labels: |
-            bug
-            ai-fix
-            white-screen
-
-      # ── 8. Open Issue if no files changed but bugs found ──────────────────
-      - name: 🐞 Open GitHub Issue if manual fix needed
-        if: steps.claude.outputs.has_bugs == 'true' && steps.changes.outputs.changed == '0'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const body = fs.readFileSync('/tmp/bug_report.md', 'utf8');
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `🤖 AI: White screen bug(s) detected — run #${context.runNumber}`,
-              body: body,
-              labels: ['bug', 'ai-detected', 'white-screen']
-            });
-            console.log('✅ Issue created');
-
-      # ── 9. All clear — no bugs ─────────────────────────────────────────────
-      - name: ✅ All clear — no white screen bugs
-        if: steps.claude.outputs.has_bugs == 'false'
+      - name: ✅ No bugs found
+        if: env.has_bugs == 'false'
         run: |
           echo ""
-          echo "╔══════════════════════════════════════╗"
-          echo "║  ✅  ЭКРАНИ САФЕД МУШКИЛИ ЙЎҚ!       ║"
-          echo "║  Барча файллар тозадир.               ║"
-          echo "╚══════════════════════════════════════╝"
+          echo "══════════════════════════════════════════"
+          echo "   ✅ WHITE SCREEN МУШКИЛИ ЙЎҚ!"
+          echo "══════════════════════════════════════════"
           echo ""
+
+      - name: ❌ Fail if critical bugs exist
+        if: env.has_bugs == 'true'
+        run: |
+          CRITICAL=$(cat /tmp/result.json | jq '[.bugs[] | select(.severity=="CRITICAL")] | length')
+          echo "🔴 Критикӣ хатолар: $CRITICAL"
+          [ "$CRITICAL" -gt 0 ] && exit 1 || exit 0
