@@ -8,13 +8,13 @@ class RetryInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) async {
     final opts = err.requestOptions;
     final retries = (opts.extra['retries'] as int?) ?? 0;
-    if (retries < 2 &&
+    if (retries < 1 &&
         (err.type == DioExceptionType.connectionTimeout ||
             err.type == DioExceptionType.receiveTimeout ||
             err.type == DioExceptionType.sendTimeout ||
             err.type == DioExceptionType.connectionError)) {
       opts.extra['retries'] = retries + 1;
-      await Future.delayed(Duration(seconds: 2 * (retries + 1)));
+      await Future.delayed(const Duration(seconds: 2));
       try {
         return handler.resolve(await dio.fetch(opts));
       } catch (_) {}
