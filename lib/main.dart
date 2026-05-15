@@ -9,7 +9,7 @@ import 'core/services/user_session.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'routes/app_router.dart';
-import 'core/l10n/app_l10n.dart';
+import 'core/app_l10n.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
