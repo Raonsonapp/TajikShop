@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../routes/route_names.dart';
-import '../../core/l10n/app_l10n.dart';
+import '../../core/app_l10n.dart';
 
 // SMS верификация — Firebase тайёр шавад баъд фаъол мешавад
 // Ҳозир барои email/password login истифода кунед
