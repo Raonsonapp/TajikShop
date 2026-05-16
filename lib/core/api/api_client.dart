@@ -16,9 +16,11 @@ class ApiClient {
   void _setup() {
     dio = Dio(BaseOptions(
       baseUrl:        AppStrings.baseUrl,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 30),
-      sendTimeout:    const Duration(minutes: 3),
+      // FIX: Timeout кам шуд — ANR (Application Not Responding) ислоҳ
+      // receiveTimeout 30s → 8s: Dio 30s block мекард → Android freeze
+      connectTimeout: const Duration(seconds: 8),
+      receiveTimeout: const Duration(seconds: 8),
+      sendTimeout:    const Duration(seconds: 15),
       headers: {'Accept': 'application/json'},
     ));
     dio.interceptors.addAll([
