@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/storage/token_storage.dart';
+import '../../core/services/user_session.dart';
 import '../../providers/auth_provider.dart';
+import '../../data/models/user_model.dart';
 import '../../routes/route_names.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -33,26 +36,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 1500));
     if (!mounted) return;
 
-    // FIX 1: Максимум 5 сония — баъд login-га бор
-    // FIX 2: checkAuth() ва Future.delayed race мекунанд — кӣ аввал тамом шавад
-    await Future.any([
-      _tryCheckAuth(),
-      Future.delayed(const Duration(seconds: 5)),
-    ]);
+    // FIX: Серверга запрос НЕСТ — танҳо local token санҷ
+    // _fetchMe() сабаби freeze буд — сервер 4 дақиқа ҷавоб намедод
+    await UserSession.loadCachedData();
+    final token = await TokenStorage.getAccessToken();
+    final userId = UserSession.userId;
 
-    if (!mounted) return;
-    final auth = ref.read(authProvider).isAuthenticated;
-    context.go(auth ? RouteNames.home : RouteNames.login);
-  }
-
-  Future<void> _tryCheckAuth() async {
-    try {
-      await ref
-          .read(authProvider.notifier)
-          .checkAuth()
-          .timeout(const Duration(seconds: 5));
-    } catch (_) {
-      // Timeout ё хато — login-га меравем
+    if (token != null && token.isNotEmpty && userId != null && userId.isNotEmpty) {
+      // Token ва кэш мавҷуд — офлайн HOME-га бор, фон дар background синхрон мекунад
+      ref.read(authProvider.notifier).setOfflineUser(UserModel(
+        id: userId,
+        email: UserSession.email ?? '',
+        fullName: UserSession.fullName ?? 'Корбар',
+        avatar: UserSession.avatar,
+        role: UserSession.role,
+        isSeller: UserSession.role == 'seller' || UserSession.role == 'admin',
+        isVerified: false,
+        createdAt: DateTime.now(),
+      ));
+      if (!mounted) return;
+      context.go(RouteNames.home);
+    } else {
+      // Token нест — login-га бор
+      if (!mounted) return;
+      context.go(RouteNames.login);
     }
   }
 
@@ -75,52 +82,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 100,
-                  height: 100,
+                  width: 100, height: 100,
                   decoration: BoxDecoration(
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        spreadRadius: 5,
-                      )
-                    ],
-                  ),
+                    boxShadow: [BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      blurRadius: 30, spreadRadius: 5)]),
                   child: const Icon(Icons.shopping_bag_rounded,
-                      color: Colors.white, size: 52),
-                ),
+                      color: Colors.white, size: 52)),
                 const SizedBox(height: 24),
                 ShaderMask(
-                  shaderCallback: (b) =>
-                      AppColors.primaryGradient.createShader(b),
-                  child: const Text(
-                    'TajikShop',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 38,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1,
-                    ),
-                  ),
-                ),
+                  shaderCallback: (b) => AppColors.primaryGradient.createShader(b),
+                  child: const Text('TajikShop',
+                      style: TextStyle(color: Colors.white,
+                          fontSize: 38, fontWeight: FontWeight.w800,
+                          letterSpacing: -1))),
                 const SizedBox(height: 8),
-                const Text(
-                  'Бозори Тоҷикистон',
-                  style: TextStyle(
-                      color: AppColors.textSecondary, fontSize: 16),
-                ),
+                const Text('Бозори Тоҷикистон',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
                 const SizedBox(height: 60),
-                const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor:
-                        AlwaysStoppedAnimation(AppColors.primary),
-                  ),
-                ),
+                const SizedBox(width: 28, height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation(AppColors.primary))),
                 const SizedBox(height: 16),
                 const _Dots(),
               ],
@@ -141,21 +125,11 @@ class _Dots extends StatefulWidget {
 class _DotsState extends State<_Dots> {
   int _i = 0;
   late final _t = Stream.periodic(
-          const Duration(milliseconds: 500), (i) => i % 4)
-      .listen((v) {
-    if (mounted) setState(() => _i = v);
-  });
-
-  @override
-  void dispose() {
-    _t.cancel();
-    super.dispose();
-  }
-
+      const Duration(milliseconds: 500), (i) => i % 4)
+      .listen((v) { if (mounted) setState(() => _i = v); });
+  @override void dispose() { _t.cancel(); super.dispose(); }
   @override
   Widget build(BuildContext context) => Text(
-        'Пайваст мешавем${'.' * (_i + 1)}',
-        style: const TextStyle(
-            color: AppColors.textSecondary, fontSize: 12),
-      );
+    'Пайваст мешавем${'.' * (_i + 1)}',
+    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12));
 }
