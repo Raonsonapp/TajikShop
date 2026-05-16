@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/user_session.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'routes/app_router.dart';
 import 'core/app_l10n.dart';
+
+// Global SharedPreferences — 1 маротиба init, ҳама ҷо истифода
+late SharedPreferences sharedPrefs;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,12 +22,11 @@ void main() async {
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light));
 
-  // FIX: UserSession local — OK
-  try { await UserSession.loadCachedData(); } catch (_) {}
-
-  // FIX: NetworkService ва ServerWakeupService-ро ХОРИҶ кардем
-  // NetworkService: InternetAddress.lookup('google.com') → DNS блок мекард → ANR
-  // ServerWakeupService: Splash-да лозим нест — Splash бевосита login-га мебарад
+  // FIX: SharedPreferences-ро 1 маротиба init кун
+  // Пеш ThemeNotifier ва LocaleNotifier ҳар яке алоҳида getInstance() мекарданд
+  // → disk I/O блок → ANR
+  sharedPrefs = await SharedPreferences.getInstance();
+  await UserSession.loadCachedData();
 
   runApp(const ProviderScope(child: TajikShopApp()));
 }
