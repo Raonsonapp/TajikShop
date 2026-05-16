@@ -20,26 +20,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     super.initState();
     _ctrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 800));
-    _fade = Tween<double>(begin: 0, end: 1).animate(
+    _fade  = Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _scale = Tween<double>(begin: 0.85, end: 1).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-    _ctrl.forward().then((_) {
-      // Анимация тамом шуд — 1 сония сабр кун → login
-      Future.delayed(const Duration(seconds: 1), _navigate);
-    });
+    // Анимация тамом → 1s сабр → login
+    _ctrl.forward().then((_) =>
+        Future.delayed(const Duration(seconds: 1), _go));
   }
 
-  void _navigate() {
-    if (!mounted) return;
-    GoRouter.of(context).go(RouteNames.login);
+  void _go() {
+    if (mounted) GoRouter.of(context).go(RouteNames.login);
   }
 
   @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -59,9 +54,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.4),
-                      blurRadius: 30,
-                      spreadRadius: 5)]),
+                        color: AppColors.primary.withValues(alpha: 0.4),
+                        blurRadius: 30, spreadRadius: 5)]),
                   child: const Icon(Icons.shopping_bag_rounded,
                       color: Colors.white, size: 52)),
                 const SizedBox(height: 24),
@@ -69,10 +63,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   shaderCallback: (b) =>
                       AppColors.primaryGradient.createShader(b),
                   child: const Text('TajikShop',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 38,
-                          fontWeight: FontWeight.w800,
+                      style: TextStyle(color: Colors.white,
+                          fontSize: 38, fontWeight: FontWeight.w800,
                           letterSpacing: -1))),
                 const SizedBox(height: 8),
                 const Text('Бозори Тоҷикистон',
