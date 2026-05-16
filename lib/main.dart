@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
-import 'core/services/network_service.dart';
-import 'core/services/server_wakeup_service.dart';
 import 'core/services/user_session.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
@@ -13,15 +11,20 @@ import 'core/app_l10n.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light));
+
+  // FIX: UserSession local — OK
   try { await UserSession.loadCachedData(); } catch (_) {}
-  try { NetworkService.instance.init(); } catch (_) {}
-  try { ServerWakeupService.instance.wakeUp(); } catch (_) {}
-  try { ServerWakeupService.instance.startKeepAlive(); } catch (_) {}
+
+  // FIX: NetworkService ва ServerWakeupService-ро ХОРИҶ кардем
+  // NetworkService: InternetAddress.lookup('google.com') → DNS блок мекард → ANR
+  // ServerWakeupService: Splash-да лозим нест — Splash бевосита login-га мебарад
+
   runApp(const ProviderScope(child: TajikShopApp()));
 }
 
