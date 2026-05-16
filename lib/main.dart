@@ -2,38 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
-import 'core/services/user_session.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'routes/app_router.dart';
 import 'core/app_l10n.dart';
 
-// Global SharedPreferences — 1 маротиба init, ҳама ҷо истифода
-late SharedPreferences sharedPrefs;
-
-void main() async {
+void main() {
+  // FIX: ҳеҷ await нест — ANR нест!
   WidgetsFlutterBinding.ensureInitialized();
-
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light));
-
-  // FIX: SharedPreferences-ро 1 маротиба init кун
-  // Пеш ThemeNotifier ва LocaleNotifier ҳар яке алоҳида getInstance() мекарданд
-  // → disk I/O блок → ANR
-  sharedPrefs = await SharedPreferences.getInstance();
-  await UserSession.loadCachedData();
-
   runApp(const ProviderScope(child: TajikShopApp()));
 }
 
 class TajikShopApp extends ConsumerWidget {
   const TajikShopApp({super.key});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router    = ref.watch(routerProvider);
@@ -42,10 +29,10 @@ class TajikShopApp extends ConsumerWidget {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'TajikShop',
-      theme:     AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
-      locale:    locale,
+      theme:        AppTheme.lightTheme,
+      darkTheme:    AppTheme.darkTheme,
+      themeMode:    themeMode,
+      locale:       locale,
       routerConfig: router,
       localizationsDelegates: const [
         AppLocalizationsDelegate(),
