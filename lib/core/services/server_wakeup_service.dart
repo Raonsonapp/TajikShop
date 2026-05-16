@@ -1,6 +1,7 @@
-// lib/core/services/server_wakeup_service.dart
-// FIX: Render.com free tier — cold start то 50 сония тӯл мекашад.
-// Timeout аз 8s то 55s зиёд шуд + retry 10 маротиба.
+// FIX: ANR (Application Not Responding) ислоҳ шуд
+// Сабаб: 10 retry × 10s = 100s блок → Android freeze → барнома мекушад
+// Ислоҳ: wakeUp() дар isolate/compute нест — танҳо BACKGROUND fire-and-forget
+//         Splash checkAuth() timeout 6s дорад — мунтазир намемонад
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
@@ -9,53 +10,51 @@ class ServerWakeupService {
   ServerWakeupService._();
   static final instance = ServerWakeupService._();
 
-  static const _serverUrl  = 'https://tajikshop.onrender.com';
-  static const _healthPath = '/health';
+  static const _base   = 'https://tajikshop.onrender.com';
+  static const _health = '/health';
 
-  bool _isAwake = false;
-  bool get isAwake => _isAwake;
+  bool _awake = false;
+  bool get isAwake => _awake;
 
   final _dio = Dio(BaseOptions(
-    // FIX: timeout аз 8s то 55s — cold start-ро пӯшад
-    connectTimeout: const Duration(seconds: 55),
-    receiveTimeout: const Duration(seconds: 55),
+    // FIX: 8s — агар дертар ҷавоб диҳад Splash timeout мезанад ва login га мебарад
+    connectTimeout: const Duration(seconds: 8),
+    receiveTimeout: const Duration(seconds: 8),
   ));
 
-  /// Серверро бедор кун — SplashScreen-ро block мекунад то ки сервер ҷавоб диҳад.
-  /// FIX: Дигар background-га намеравад — Splash мунтазир мемонад.
-  Future<void> wakeUp() async {
-    if (_isAwake) return;
-    debugPrint('[ServerWakeup] 🔄 Pinging server (cold start possible ~30-50s)...');
-    
-    // FIX: 10 маротиба кӯшиш, ҳар 5 сония
-    for (int i = 0; i < 10; i++) {
+  // FIX: BACKGROUND — await НЕСТ, ANR намедиҳад!
+  // Splash checkAuth() бо 6s timeout мунтазир мемонад
+  // wakeUp() дар фон кор мекунад
+  void wakeUp() {
+    if (_awake) return;
+    debugPrint('[Wakeup] 🔄 Background ping...');
+    _pingOnce();
+  }
+
+  Future<void> _pingOnce() async {
+    for (int i = 0; i < 3; i++) {
       try {
-        final res = await _dio
-            .get('$_serverUrl$_healthPath')
-            .timeout(const Duration(seconds: 10));
-        if ((res.statusCode ?? 500) < 500) {
-          _isAwake = true;
-          debugPrint('[ServerWakeup] ✅ Server awake after ${i + 1} ping(s)');
+        final r = await _dio.get('$_base$_health');
+        if ((r.statusCode ?? 0) < 500) {
+          _awake = true;
+          debugPrint('[Wakeup] ✅ Server awake (try ${i+1})');
           return;
         }
       } catch (e) {
-        debugPrint('[ServerWakeup] ⏳ Try ${i + 1}/10 failed: $e');
-        if (i < 9) await Future.delayed(const Duration(seconds: 4));
+        debugPrint('[Wakeup] ⏳ Try ${i+1}/3: $e');
+        if (i < 2) await Future.delayed(const Duration(seconds: 3));
       }
     }
-    // 10 retry баъд ҳам нашуд — бигузор ба login равад
-    debugPrint('[ServerWakeup] ⚠️ Server not reachable after 10 tries — continuing offline');
+    debugPrint('[Wakeup] ⚠️ Server offline — app continues');
   }
 
-  /// Keep-alive: ҳар 10 дақиқа ping — сервер нахобад
+  // Keep-alive: ҳар 12 дақиқа
   void startKeepAlive() {
-    Timer.periodic(const Duration(minutes: 10), (_) async {
+    Timer.periodic(const Duration(minutes: 12), (_) async {
       try {
-        await _dio.get('$_serverUrl$_healthPath');
-        _isAwake = true;
-      } catch (_) {
-        _isAwake = false;
-      }
+        await _dio.get('$_base$_health');
+        _awake = true;
+      } catch (_) { _awake = false; }
     });
   }
 }
