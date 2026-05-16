@@ -19,21 +19,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 900));
+        vsync: this, duration: const Duration(milliseconds: 800));
     _fade = Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _scale = Tween<double>(begin: 0.85, end: 1).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _ctrl.forward();
-    _init();
-  }
 
-  Future<void> _init() async {
-    // ТАНХО 2 сония анимация нишон деҳ — баъд ФАВРАН login-га бор
-    // Ҳеҷ гуна сервер, ҳеҷ гуна token санҷ — танҳо navigation
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    context.go(RouteNames.login);
+    // Router тайёр шуд → navigate
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) context.go(RouteNames.login);
+      });
+    });
   }
 
   @override
@@ -55,47 +53,27 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 100,
-                  height: 100,
+                  width: 100, height: 100,
                   decoration: BoxDecoration(
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        spreadRadius: 5,
-                      )
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.shopping_bag_rounded,
-                    color: Colors.white,
-                    size: 52,
-                  ),
-                ),
+                    boxShadow: [BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      blurRadius: 30, spreadRadius: 5)]),
+                  child: const Icon(Icons.shopping_bag_rounded,
+                      color: Colors.white, size: 52)),
                 const SizedBox(height: 24),
                 ShaderMask(
                   shaderCallback: (b) =>
                       AppColors.primaryGradient.createShader(b),
-                  child: const Text(
-                    'TajikShop',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 38,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1,
-                    ),
-                  ),
-                ),
+                  child: const Text('TajikShop',
+                      style: TextStyle(color: Colors.white,
+                          fontSize: 38, fontWeight: FontWeight.w800,
+                          letterSpacing: -1))),
                 const SizedBox(height: 8),
-                const Text(
-                  'Бозори Тоҷикистон',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 16,
-                  ),
-                ),
+                const Text('Бозори Тоҷикистон',
+                    style: TextStyle(
+                        color: AppColors.textSecondary, fontSize: 16)),
               ],
             ),
           ),
