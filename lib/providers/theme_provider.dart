@@ -1,24 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../main.dart';
 
 class ThemeNotifier extends StateNotifier<ThemeMode> {
   static const _key = 'app_theme_mode';
 
   ThemeNotifier() : super(ThemeMode.dark) {
-    _loadSaved();
-  }
-
-  Future<void> _loadSaved() async {
+    // FIX: sharedPrefs аллакай дар main() init шудааст — await нест!
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString(_key);
-      if (saved == 'light') {
-        state = ThemeMode.light;
-      } else {
-        // Default: dark — экрани сиёҳ ҳамеша
-        state = ThemeMode.dark;
-      }
+      final saved = sharedPrefs.getString(_key);
+      state = saved == 'light' ? ThemeMode.light : ThemeMode.dark;
     } catch (_) {
       state = ThemeMode.dark;
     }
@@ -29,25 +20,15 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
     _persist(state);
   }
 
-  void setDark() {
-    state = ThemeMode.dark;
-    _persist(state);
-  }
+  void setDark() { state = ThemeMode.dark; _persist(state); }
+  void setLight() { state = ThemeMode.light; _persist(state); }
 
-  void setLight() {
-    state = ThemeMode.light;
-    _persist(state);
-  }
-
-  Future<void> _persist(ThemeMode mode) async {
+  void _persist(ThemeMode mode) {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_key, mode == ThemeMode.dark ? 'dark' : 'light');
+      sharedPrefs.setString(_key, mode == ThemeMode.dark ? 'dark' : 'light');
     } catch (_) {}
   }
 }
 
 final themeProvider =
-    StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) {
-  return ThemeNotifier();
-});
+    StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) => ThemeNotifier());
