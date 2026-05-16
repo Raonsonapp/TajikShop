@@ -9,7 +9,6 @@ import 'routes/app_router.dart';
 import 'core/app_l10n.dart';
 
 void main() {
-  // FIX: ҳеҷ await нест — ANR нест!
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
