@@ -24,14 +24,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _scale = Tween<double>(begin: 0.85, end: 1).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-    _ctrl.forward();
-
-    // Router тайёр шуд → navigate
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) context.go(RouteNames.login);
-      });
+    _ctrl.forward().then((_) {
+      // Анимация тамом шуд — 1 сония сабр кун → login
+      Future.delayed(const Duration(seconds: 1), _navigate);
     });
+  }
+
+  void _navigate() {
+    if (!mounted) return;
+    GoRouter.of(context).go(RouteNames.login);
   }
 
   @override
@@ -59,7 +60,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     borderRadius: BorderRadius.circular(28),
                     boxShadow: [BoxShadow(
                       color: AppColors.primary.withValues(alpha: 0.4),
-                      blurRadius: 30, spreadRadius: 5)]),
+                      blurRadius: 30,
+                      spreadRadius: 5)]),
                   child: const Icon(Icons.shopping_bag_rounded,
                       color: Colors.white, size: 52)),
                 const SizedBox(height: 24),
@@ -67,8 +69,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   shaderCallback: (b) =>
                       AppColors.primaryGradient.createShader(b),
                   child: const Text('TajikShop',
-                      style: TextStyle(color: Colors.white,
-                          fontSize: 38, fontWeight: FontWeight.w800,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 38,
+                          fontWeight: FontWeight.w800,
                           letterSpacing: -1))),
                 const SizedBox(height: 8),
                 const Text('Бозори Тоҷикистон',
