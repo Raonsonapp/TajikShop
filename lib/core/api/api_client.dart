@@ -1,56 +1,90 @@
-import 'package:dio/dio.dart';
-import 'interceptors.dart';
-import '../storage/token_storage.dart';
-import '../constants/app_strings.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import '../../app/app_config.dart';
 
-/// TajikShop API Client
-/// _TokenInjector reads token from SharedPreferences before EVERY request.
-/// This guarantees token is sent even after app restart or hot-reload.
 class ApiClient {
-  static final ApiClient _instance = ApiClient._internal();
-  factory ApiClient() => _instance;
-  ApiClient._internal() { _setup(); }
+  ApiClient._();
+  static final ApiClient instance = ApiClient._();
 
-  late Dio dio;
+  static final http.Client _client = http.Client();
 
-  void _setup() {
-    dio = Dio(BaseOptions(
-      baseUrl:        AppStrings.baseUrl,
-      // FIX: Timeout кам шуд — ANR (Application Not Responding) ислоҳ
-      // receiveTimeout 30s → 8s: Dio 30s block мекард → Android freeze
-      connectTimeout: const Duration(seconds: 8),
-      receiveTimeout: const Duration(seconds: 8),
-      sendTimeout:    const Duration(seconds: 15),
-      headers: {'Accept': 'application/json'},
-    ));
-    dio.interceptors.addAll([
-      _TokenInjector(),  // ← reads token fresh every request
-      RetryInterceptor(dio),
-      ErrorInterceptor(),
-      LoggingInterceptor(),
-    ]);
+  String? _authToken;
+  void setAuthToken(String? token) => _authToken = token;
+  String? get authToken => _authToken;
+
+  Map<String, String> _headers() {
+    final h = <String, String>{'Content-Type': 'application/json'};
+    if (_authToken != null) h['Authorization'] = 'Bearer $_authToken';
+    return h;
   }
 
-  /// Called after login/register - now just saves token, no need to rebuild dio
-  void init({String? token}) {
-    if (token != null && token.isNotEmpty) {
-      TokenStorage.saveTokens(accessToken: token);
+  Uri _uri(String path, [Map<String, String>? q]) =>
+      Uri.parse('${AppConfig.apiBaseUrl}$path').replace(queryParameters: q);
+
+  // ✅ Timeout кӯтоҳ — корбар зиёд мунтазир намемонад
+  static const _timeout     = Duration(seconds: 8);
+  static const _longTimeout = Duration(seconds: 30);
+
+  // ✅ Smart GET: 2 кӯшиш, timeout кӯтоҳ
+  Future<http.Response> get(String path, {Map<String, String>? query}) async {
+    return _withRetry(() =>
+        _client.get(_uri(path, query), headers: _headers()).timeout(_timeout));
+  }
+
+  // ── External API (iTunes, etc.) — без Authorization header ──
+  Future<http.Response> rawGet(String fullUrl) async {
+    return _client.get(Uri.parse(fullUrl)).timeout(_timeout);
+  }
+
+  Future<http.Response> post(String path, {Map<String, dynamic>? body}) async {
+    return _withRetry(() =>
+        _client.post(_uri(path), headers: _headers(),
+            body: body != null ? jsonEncode(body) : null).timeout(_timeout));
+  }
+
+  Future<http.Response> put(String path, {Map<String, dynamic>? body}) async {
+    return _withRetry(() =>
+        _client.put(_uri(path), headers: _headers(),
+            body: body != null ? jsonEncode(body) : null).timeout(_timeout));
+  }
+
+  Future<http.Response> delete(String path) async {
+    return _withRetry(() =>
+        _client.delete(_uri(path), headers: _headers()).timeout(_timeout));
+  }
+
+  Future<http.Response> upload(String path, {Map<String, dynamic>? body}) =>
+      _client.post(_uri(path), headers: _headers(),
+          body: body != null ? jsonEncode(body) : null).timeout(_longTimeout);
+
+  // ✅ Retry: 2 кӯшиш бо 1 сония фосила
+  Future<http.Response> _withRetry(
+      Future<http.Response> Function() request) async {
+    for (int i = 0; i < 2; i++) {
+      try {
+        return await request();
+      } on SocketException {
+        if (i == 1) rethrow;
+        await Future.delayed(const Duration(seconds: 1));
+      } on TimeoutException {
+        if (i == 1) rethrow;
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (e) {
+        rethrow;
+      }
     }
+    throw const SocketException('No internet');
   }
 
-  static ApiClient get instance => _instance;
-}
-
-/// Reads Authorization token from SharedPreferences before EVERY request.
-/// Fixes 401 after hot-restart, app reopen, or navigation.
-class _TokenInjector extends Interceptor {
-  @override
-  void onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
-    final token = await TokenStorage.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      options.headers['Authorization'] = 'Bearer $token';
-    }
-    handler.next(options);
-  }
+  // Aliases
+  Future<http.Response> getRequest(String path, {Map<String, String>? query}) =>
+      get(path, query: query);
+  Future<http.Response> postRequest(String path, {Map<String, dynamic>? body}) =>
+      post(path, body: body);
+  Future<http.Response> putRequest(String path, {Map<String, dynamic>? body}) =>
+      put(path, body: body);
+  Future<http.Response> deleteRequest(String path) => delete(path);
 }
