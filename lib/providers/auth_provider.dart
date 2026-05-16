@@ -49,6 +49,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // ── Сессияро вақти кушодани барнома барқарор кун ────────────────────────
+  // ── Офлайн режим: Splash токенро санҷид ва HOME-га фиристод ─────────────
+  void setOfflineUser(UserModel user) {
+    state = AuthState(user: user, isAuthenticated: true);
+    // Фон: сервер бедор шавад → маълумотро навсоз
+    Future.delayed(const Duration(seconds: 3), () async {
+      try {
+        final fresh = await _fetchMe().timeout(const Duration(seconds: 10));
+        await _persistSession(fresh);
+        state = AuthState(user: fresh, isAuthenticated: true);
+      } catch (_) { /* Офлайн — кэш кор мекунад */ }
+    });
+  }
+
   Future<void> checkAuth() async {
     // Аввал кэшро бор кун — UI фавран нишон медиҳад
     await UserSession.loadCachedData();
