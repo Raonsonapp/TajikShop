@@ -6,22 +6,19 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
   static const _key = 'app_theme_mode';
 
   ThemeNotifier() : super(ThemeMode.dark) {
+    // FIX: async — main thread блок намекунад
     _loadSaved();
   }
 
   Future<void> _loadSaved() async {
     try {
+      // FIX: getInstance() async аст — main thread блок намекунад
       final prefs = await SharedPreferences.getInstance();
       final saved = prefs.getString(_key);
-      if (saved == 'light') {
-        state = ThemeMode.light;
-      } else {
-        // Default: dark — экрани сиёҳ ҳамеша
-        state = ThemeMode.dark;
+      if (mounted) {
+        state = saved == 'light' ? ThemeMode.light : ThemeMode.dark;
       }
-    } catch (_) {
-      state = ThemeMode.dark;
-    }
+    } catch (_) {}
   }
 
   void toggle() {
@@ -29,15 +26,8 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
     _persist(state);
   }
 
-  void setDark() {
-    state = ThemeMode.dark;
-    _persist(state);
-  }
-
-  void setLight() {
-    state = ThemeMode.light;
-    _persist(state);
-  }
+  void setDark()  { state = ThemeMode.dark;  _persist(state); }
+  void setLight() { state = ThemeMode.light; _persist(state); }
 
   Future<void> _persist(ThemeMode mode) async {
     try {
@@ -48,6 +38,4 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
 }
 
 final themeProvider =
-    StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) {
-  return ThemeNotifier();
-});
+    StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) => ThemeNotifier());
