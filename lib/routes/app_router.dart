@@ -20,8 +20,8 @@ import '../modules/admin/admin_dashboard_screen.dart';
 import '../shared/widgets/main_scaffold.dart';
 import 'route_names.dart';
 
-final routerProvider = Provider<GoRouter>((ref) {
-  return GoRouter(
+// FIX: GoRouter singleton — ҳар build аз нав сохта намешавад
+final _goRouter = GoRouter(
     initialLocation: RouteNames.splash,
     errorBuilder: (_, __) => const Scaffold(
       backgroundColor: Color(0xFF0A0A0F),
@@ -60,4 +60,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
-});
+);
+
+
+final routerProvider = Provider<GoRouter>((ref) => _goRouter);
