@@ -5,7 +5,7 @@ class RetryInterceptor extends Interceptor {
   RetryInterceptor(this.dio);
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
+  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
     final opts = err.requestOptions;
     final retries = (opts.extra['retries'] as int?) ?? 0;
     if (retries < 1 &&
@@ -14,9 +14,10 @@ class RetryInterceptor extends Interceptor {
             err.type == DioExceptionType.sendTimeout ||
             err.type == DioExceptionType.connectionError)) {
       opts.extra['retries'] = retries + 1;
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(milliseconds: 500));
       try {
-        return handler.resolve(await dio.fetch(opts));
+        handler.resolve(await dio.fetch(opts));
+        return;
       } catch (_) {}
     }
     handler.next(err);
@@ -24,7 +25,6 @@ class RetryInterceptor extends Interceptor {
 }
 
 class ErrorInterceptor extends Interceptor {
-  // Server returns: {"success": false, "error": "message text"}
   String _extractMsg(dynamic data, String fallback) {
     if (data is Map) {
       return data['error']?.toString() ??
