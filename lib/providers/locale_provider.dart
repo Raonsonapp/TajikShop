@@ -2,29 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ThemeNotifier extends StateNotifier<ThemeMode> {
-  static const _key = 'app_theme_mode';
-  ThemeNotifier() : super(ThemeMode.dark) {
+const _kLangKey = 'app_language';
+
+class LocaleNotifier extends StateNotifier<Locale> {
+  LocaleNotifier() : super(const Locale('tg')) {
     _load();
   }
+
   Future<void> _load() async {
-    try {
-      final p = await SharedPreferences.getInstance();
-      state = p.getString(_key) == 'light' ? ThemeMode.light : ThemeMode.dark;
-    } catch (_) {}
+    final prefs = await SharedPreferences.getInstance();
+    final code = prefs.getString(_kLangKey) ?? 'tg';
+    state = Locale(code);
   }
-  void toggle() {
-    state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-    _save();
+
+  Future<void> setLocale(Locale locale) async {
+    state = locale;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kLangKey, locale.languageCode);
   }
-  void setDark()  { state = ThemeMode.dark;  _save(); }
-  void setLight() { state = ThemeMode.light; _save(); }
-  Future<void> _save() async {
-    try {
-      final p = await SharedPreferences.getInstance();
-      await p.setString(_key, state == ThemeMode.dark ? 'dark' : 'light');
-    } catch (_) {}
+
+  static const supported = [
+    Locale('tg'), // Тоҷикӣ
+    Locale('ru'), // Русский
+    Locale('en'), // English
+  ];
+
+  static String langName(String code) {
+    switch (code) {
+      case 'tg': return '🇹🇯 Тоҷикӣ';
+      case 'ru': return '🇷🇺 Русский';
+      case 'en': return '🇬🇧 English';
+      default:   return code;
+    }
   }
 }
-final themeProvider =
-    StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) => ThemeNotifier());
+
+final localeProvider =
+    StateNotifierProvider<LocaleNotifier, Locale>((ref) => LocaleNotifier());
