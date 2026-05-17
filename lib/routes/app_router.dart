@@ -1,70 +1,84 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../modules/splash/splash_screen.dart';
-import '../modules/auth/login_screen.dart';
-import '../modules/auth/register_screen.dart';
-import '../modules/auth/phone_auth_screen.dart';
-import '../modules/home/home_screen.dart';
-import '../modules/upload/upload_screen.dart';
-import '../modules/categories/categories_screen.dart';
-import '../modules/product/product_detail_screen.dart';
-import '../modules/cart/cart_screen.dart';
-import '../modules/orders/orders_screen.dart';
-import '../modules/favorites/favorites_screen.dart';
-import '../modules/notifications/notifications_screen.dart';
-import '../modules/profile/profile_screen.dart';
-import '../modules/seller/seller_dashboard_screen.dart';
-import '../modules/seller/add_product_screen.dart';
-import '../modules/admin/admin_dashboard_screen.dart';
-import '../shared/widgets/main_scaffold.dart';
-import 'route_names.dart';
+import 'package:dio/dio.dart';
 
-// FIX: singleton — ҳар build аз нав сохта намешавад → freeze нест
-final _goRouter = GoRouter(
-  initialLocation: RouteNames.splash,
-  errorBuilder: (_, __) => const Scaffold(
-    backgroundColor: Color(0xFF0A0A0F),
-    body: Center(
-      child: Text('Саҳифа ёфт нашуд',
-          style: TextStyle(color: Colors.white)))),
-  routes: [
-    GoRoute(path: RouteNames.splash,   builder: (_, __) => const SplashScreen()),
-    GoRoute(path: RouteNames.login,    builder: (_, __) => const LoginScreen()),
-    GoRoute(path: RouteNames.register, builder: (_, __) => const RegisterScreen()),
-    GoRoute(path: RouteNames.phoneAuth, builder: (_, __) => const PhoneAuthScreen()),
-    GoRoute(path: RouteNames.phoneOtp, builder: (_, s) {
-      final extra = s.extra as Map<String, dynamic>? ?? {};
-      return PhoneOtpScreen(
-        verificationId: extra['verificationId'] as String? ?? '',
-        phone: extra['phone'] as String? ?? '',
-      );
-    }),
-    GoRoute(path: '/product/:id',
-        builder: (_, s) => ProductDetailScreen(id: s.pathParameters['id']!)),
-    GoRoute(path: RouteNames.orders,        builder: (_, __) => const OrdersScreen()),
-    GoRoute(path: RouteNames.notifications, builder: (_, __) => const NotificationsScreen()),
-    GoRoute(path: RouteNames.categories,    builder: (_, __) => const CategoriesScreen()),
-    GoRoute(path: RouteNames.sellerDashboard, builder: (_, __) => const SellerDashboardScreen()),
-    GoRoute(path: RouteNames.seller,        builder: (_, __) => const SellerDashboardScreen()),
-    GoRoute(path: RouteNames.addProduct,    builder: (_, __) => const AddProductScreen()),
-    GoRoute(path: RouteNames.admin,         builder: (_, __) => const AdminDashboardScreen()),
-    ShellRoute(
-      builder: (context, state, child) => MainScaffold(child: child),
-      routes: [
-        GoRoute(path: RouteNames.home,
-            pageBuilder: (_, __) => const NoTransitionPage(child: HomeScreen())),
-        GoRoute(path: RouteNames.favorites,
-            pageBuilder: (_, __) => const NoTransitionPage(child: FavoritesScreen())),
-        GoRoute(path: RouteNames.upload,
-            pageBuilder: (_, __) => const NoTransitionPage(child: UploadScreen())),
-        GoRoute(path: RouteNames.cart,
-            pageBuilder: (_, __) => const NoTransitionPage(child: CartScreen())),
-        GoRoute(path: RouteNames.profile,
-            pageBuilder: (_, __) => const NoTransitionPage(child: ProfileScreen())),
-      ],
-    ),
-  ],
-);
+class RetryInterceptor extends Interceptor {
+  final Dio dio;
+  RetryInterceptor(this.dio);
 
-final routerProvider = Provider<GoRouter>((ref) => _goRouter);
+  @override
+  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+    final opts = err.requestOptions;
+    final retries = (opts.extra['retries'] as int?) ?? 0;
+    if (retries < 1 &&
+        (err.type == DioExceptionType.connectionTimeout ||
+            err.type == DioExceptionType.receiveTimeout ||
+            err.type == DioExceptionType.sendTimeout ||
+            err.type == DioExceptionType.connectionError)) {
+      opts.extra['retries'] = retries + 1;
+      await Future.delayed(const Duration(milliseconds: 500));
+      try {
+        handler.resolve(await dio.fetch(opts));
+        return;
+      } catch (_) {}
+    }
+    handler.next(err);
+  }
+}
+
+class ErrorInterceptor extends Interceptor {
+  String _extractMsg(dynamic data, String fallback) {
+    if (data is Map) {
+      return data['error']?.toString() ??
+          data['message']?.toString() ??
+          fallback;
+    }
+    return fallback;
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    String msg;
+    final d = err.response?.data;
+    switch (err.response?.statusCode) {
+      case 400: msg = _extractMsg(d, 'Дархости нодуруст'); break;
+      case 401: msg = _extractMsg(d, 'Email ё парол нодуруст'); break;
+      case 403: msg = 'Дастрасӣ манъ аст'; break;
+      case 404: msg = 'Ёфт нашуд'; break;
+      case 409: msg = 'Ин email аллакай вуҷуд дорад'; break;
+      case 422: msg = _extractMsg(d, 'Маълумоти нодуруст'); break;
+      case 429: msg = 'Хеле зиёд дархост. Каме сабр кунед'; break;
+      case 500: msg = 'Хатои сервер. Баъдтар кӯшиш кунед'; break;
+      default:
+        if (err.type == DioExceptionType.connectionTimeout ||
+            err.type == DioExceptionType.receiveTimeout ||
+            err.type == DioExceptionType.sendTimeout) {
+          msg = 'Интернет суст аст. Дубора кӯшиш кунед';
+        } else if (err.type == DioExceptionType.connectionError) {
+          msg = 'Пайвастшавӣ нест. Интернетро санҷед';
+        } else {
+          msg = _extractMsg(d, err.message ?? 'Хатои номаълум');
+        }
+    }
+    handler.next(DioException(
+        requestOptions: err.requestOptions,
+        response: err.response,
+        type: err.type,
+        error: msg,
+        message: msg));
+  }
+}
+
+class LoggingInterceptor extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    // ignore: avoid_print
+    print('→ ${options.method} ${options.path}  auth:${options.headers['Authorization'] != null ? "✓" : "✗"}');
+    handler.next(options);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    // ignore: avoid_print
+    print('✗ ${err.response?.statusCode} ${err.requestOptions.path}: ${err.message}');
+    handler.next(err);
+  }
+}
