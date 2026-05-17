@@ -20,6 +20,7 @@ void main() {
 
 class TajikShopApp extends ConsumerWidget {
   const TajikShopApp({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router    = ref.watch(routerProvider);
