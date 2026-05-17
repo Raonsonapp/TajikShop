@@ -9,23 +9,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/product_provider.dart';
-import '../../providers/search_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
-import '../../data/models/product_model.dart';
-import '../../data/models/category_model.dart';
-import '../../core/app_l10n.dart'; // ← ИЛОВА ШУД
-
-// ─── Notification count provider ──────────────────────────────────────────────
-final _notifCountProvider = FutureProvider<int>((ref) async {
-  try {
-    final auth = ref.watch(authProvider);
-    if (!auth.isAuthenticated) return 0;
-    return 0;
-  } catch (_) { return 0; }
-});
+import '../../core/app_l10n.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -43,8 +31,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Timer? _bannerTimer;
   late AnimationController _fadeCtrl;
   late Animation<double>   _fadeAnim;
-
-  String? _selectedCatId;
 
   static const _banners = [
     _Banner('🛍️ TajikShop',   'Бозори Тоҷикистон — харед ва бифурӯшед',
@@ -94,24 +80,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     super.dispose();
   }
 
-  void _search(String q) {
-    if (q.trim().isEmpty) return;
-    setState(() => _searchActive = false);
-    _searchCtrl.clear();
-    context.push('${RouteNames.search}?q=${Uri.encodeComponent(q.trim())}');
-  }
-
-  void _selectCat(String? id) {
-    setState(() => _selectedCatId = id);
-    ref.read(productsProvider.notifier).loadProducts(refresh: true, categoryId: id);
-  }
-
   @override
   Widget build(BuildContext context) {
     final ps   = ref.watch(productsProvider);
-    final cats = ref.watch(categoriesProvider);
     final auth = ref.watch(authProvider);
-    final l    = AppL10n.of(context); // ← ИСЛОҲ: context аз build гирифта мешавад
+    final l    = AppL10n.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
@@ -121,17 +94,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           controller: _scroll,
           physics: const BouncingScrollPhysics(),
           slivers: [
-
-            // ════════════════════════════════════════════════════
             // APP BAR
-            // ════════════════════════════════════════════════════
             SliverAppBar(
               backgroundColor: AppColors.bgDark,
               surfaceTintColor: Colors.transparent,
               floating: true, snap: true, pinned: false, elevation: 0,
               systemOverlayStyle: SystemUiOverlayStyle.light,
               title: _searchActive
-                  ? _SearchField(ctrl: _searchCtrl, onSubmit: _search,
+                  ? _SearchField(ctrl: _searchCtrl, onSubmit: (_) {},
                       onClose: () { setState(() => _searchActive = false); _searchCtrl.clear(); })
                   : Row(children: [
                       Container(width: 36, height: 36,
@@ -149,9 +119,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               actions: _searchActive ? [] : [
                 _AppBarBtn(icon: Icons.search_rounded,
                     onTap: () => setState(() => _searchActive = true)),
-                _NotifBtn(),
                 GestureDetector(
-                  onTap: () => context.push(RouteNames.profile),
+                  onTap: () => context.go(RouteNames.profile),
                   child: Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: CircleAvatar(radius: 16,
@@ -164,10 +133,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
 
             SliverToBoxAdapter(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
-              // ══════════════════════════════════════════════════
               // SEARCH BAR
-              // ══════════════════════════════════════════════════
               if (!_searchActive)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(14, 6, 14, 0),
@@ -183,7 +149,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         const SizedBox(width: 12),
                         const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 20),
                         const SizedBox(width: 8),
-                        // ← ИСЛОҲ: const хорӣ шуд, l.searchHint аз build() гирифта мешавад
                         Expanded(child: Text(l.searchHint,
                             style: const TextStyle(color: AppColors.textMuted, fontSize: 13))),
                         Container(margin: const EdgeInsets.all(6),
@@ -195,9 +160,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                               style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700))),
                       ])))),
 
-              // ══════════════════════════════════════════════════
               // BANNER CAROUSEL
-              // ══════════════════════════════════════════════════
               const SizedBox(height: 12),
               SizedBox(
                 height: 170,
@@ -219,9 +182,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         color: _bannerIdx == i ? null : AppColors.textMuted.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(3)))))),
 
-              // ══════════════════════════════════════════════════
               // PROMO CHIPS
-              // ══════════════════════════════════════════════════
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 4, 14, 0),
                 child: Row(children: [
@@ -233,73 +194,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   const SizedBox(width: 8),
                   _PromoChip(icon: Icons.replay_rounded,
                       label: 'Бозгашт', color: const Color(0xFFFF6B2C)),
-                  const SizedBox(width: 8),
-                  _PromoChip(icon: Icons.headset_mic_rounded,
-                      label: 'Дастгирӣ', color: const Color(0xFFE040FB)),
                 ])),
 
-              // ══════════════════════════════════════════════════
-              // CATEGORIES
-              // ══════════════════════════════════════════════════
-              _SectionHeader(title: l.categories,
-                  onSeeAll: () => context.push(RouteNames.categories)),
-              SizedBox(height: 100,
-                child: cats.when(
-                  loading: () => _catShimmer(),
-                  error: (_, __) => const SizedBox(),
-                  data: (list) => ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    itemCount: list.length + 1,
-                    itemBuilder: (_, i) {
-                      if (i == 0) return _CatChip(
-                        id: null, name: 'Ҳама', emoji: '🏪',
-                        selected: _selectedCatId == null,
-                        onTap: () => _selectCat(null));
-                      final c = list[i - 1];
-                      return _CatChip(
-                        id: c.id, name: c.name, emoji: _catEmoji(c.name),
-                        selected: _selectedCatId == c.id,
-                        onTap: () => _selectCat(c.id));
-                    }))),
-
-              // ══════════════════════════════════════════════════
-              // TRENDING
-              // ══════════════════════════════════════════════════
-              if (ps.trending.isNotEmpty) ...[
-                _SectionHeader(title: l.trending, onSeeAll: null),
-                SizedBox(height: 250,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-                    itemCount: ps.trending.length,
-                    itemBuilder: (_, i) => SizedBox(width: 160,
-                      child: Padding(padding: const EdgeInsets.only(right: 12),
-                        child: ProductCard(product: ps.trending[i]))))),
-              ],
-
-              // ══════════════════════════════════════════════════
-              // FLASH SALE
-              // ══════════════════════════════════════════════════
-              Builder(builder: (_) {
-                final sale = ps.products.where((p) => p.computedDiscount > 0).toList();
-                if (sale.isEmpty) return const SizedBox();
-                return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  _SectionHeader(title: l.flashSale, onSeeAll: null),
-                  SizedBox(height: 250,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
-                      itemCount: sale.take(10).length,
-                      itemBuilder: (_, i) => SizedBox(width: 160,
-                        child: Padding(padding: const EdgeInsets.only(right: 12),
-                          child: ProductCard(product: sale[i]))))),
-                ]);
-              }),
-
-              // ══════════════════════════════════════════════════
               // ALL PRODUCTS header
-              // ══════════════════════════════════════════════════
               _SectionHeader(title: l.allProducts, onSeeAll: null),
               if (ps.error != null)
                 Padding(padding: const EdgeInsets.all(20),
@@ -316,9 +213,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ]))),
             ])),
 
-            // ══════════════════════════════════════════════════
             // PRODUCTS GRID
-            // ══════════════════════════════════════════════════
             ps.isLoading && ps.products.isEmpty
                 ? SliverPadding(
                     padding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
@@ -351,43 +246,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
     );
   }
-
-  Widget _catShimmer() => ListView.builder(
-    scrollDirection: Axis.horizontal,
-    padding: const EdgeInsets.symmetric(horizontal: 14),
-    itemCount: 7,
-    itemBuilder: (_, __) => Padding(padding: const EdgeInsets.only(right: 10),
-      child: Column(children: [
-        ShimmerCard(width: 60, height: 60, radius: 18),
-        const SizedBox(height: 6),
-        ShimmerCard(width: 48, height: 10, radius: 4)])));
-
-  String _catEmoji(String name) {
-    final n = name.toLowerCase();
-    if (n.contains('телефон') || n.contains('техника') || n.contains('электр')) return '📱';
-    if (n.contains('кийим') || n.contains('либос') || n.contains('мода')) return '👗';
-    if (n.contains('хона') || n.contains('хонагӣ') || n.contains('мебел')) return '🏠';
-    if (n.contains('бозӣ') || n.contains('game')) return '🎮';
-    if (n.contains('китоб') || n.contains('таълим')) return '📚';
-    if (n.contains('косметик') || n.contains('зебоӣ')) return '💄';
-    if (n.contains('ғизо') || n.contains('хурок')) return '🍎';
-    if (n.contains('мошин') || n.contains('авто')) return '🚗';
-    if (n.contains('варзиш') || n.contains('спорт')) return '⚽';
-    if (n.contains('тилло') || n.contains('зевар')) return '💍';
-    if (n.contains('кӯдак') || n.contains('бача')) return '🧸';
-    if (n.contains('боғ') || n.contains('растан')) return '🌱';
-    return '🛍️';
-  }
 }
 
-// ─── Banner model ─────────────────────────────────────────────────────────────
 class _Banner {
   final String title, sub;
   final Color c1, c2;
   const _Banner(this.title, this.sub, this.c1, this.c2);
 }
 
-// ─── Banner Card ──────────────────────────────────────────────────────────────
 class _BannerCard extends StatelessWidget {
   final _Banner banner;
   const _BannerCard({super.key, required this.banner});
@@ -437,44 +303,6 @@ class _BannerCard extends StatelessWidget {
     ]));
 }
 
-// ─── Category Chip ────────────────────────────────────────────────────────────
-class _CatChip extends StatelessWidget {
-  final String? id;
-  final String name, emoji;
-  final bool selected;
-  final VoidCallback onTap;
-  const _CatChip({this.id, required this.name, required this.emoji,
-      required this.selected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      margin: const EdgeInsets.only(right: 10),
-      width: 72,
-      child: Column(children: [
-        AnimatedContainer(duration: const Duration(milliseconds: 220),
-          width: 62, height: 62,
-          decoration: BoxDecoration(
-            gradient: selected ? AppColors.primaryGradient : null,
-            color: selected ? null : AppColors.bgCard,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-                color: selected ? Colors.transparent : AppColors.border, width: 0.8),
-            boxShadow: selected ? [BoxShadow(
-                color: AppColors.primary.withOpacity(0.4), blurRadius: 10)] : [
-              BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 6)]),
-          child: Center(child: Text(emoji, style: const TextStyle(fontSize: 26)))),
-        const SizedBox(height: 6),
-        Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: selected ? AppColors.primary : AppColors.textSecondary,
-              fontSize: 10, fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
-      ])));
-}
-
-// ─── Promo Chip ───────────────────────────────────────────────────────────────
 class _PromoChip extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -497,7 +325,6 @@ class _PromoChip extends StatelessWidget {
       ])));
 }
 
-// ─── Section Header ───────────────────────────────────────────────────────────
 class _SectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback? onSeeAll;
@@ -519,7 +346,6 @@ class _SectionHeader extends StatelessWidget {
     ]));
 }
 
-// ─── AppBar Button ────────────────────────────────────────────────────────────
 class _AppBarBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -530,26 +356,6 @@ class _AppBarBtn extends StatelessWidget {
     icon: Icon(icon, color: Colors.white, size: 24), onPressed: onTap);
 }
 
-// ─── Notification Bell ────────────────────────────────────────────────────────
-class _NotifBtn extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(_notifCountProvider).value ?? 0;
-    return Stack(children: [
-      IconButton(
-        icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
-        onPressed: () => context.push(RouteNames.notifications)),
-      if (count > 0)
-        Positioned(top: 8, right: 8,
-          child: Container(
-            width: 8, height: 8,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFF3B5C), shape: BoxShape.circle))),
-    ]);
-  }
-}
-
-// ─── Search Field ─────────────────────────────────────────────────────────────
 class _SearchField extends StatelessWidget {
   final TextEditingController ctrl;
   final ValueChanged<String> onSubmit;
@@ -582,7 +388,6 @@ class _SearchField extends StatelessWidget {
   ]);
 }
 
-// ─── Empty State ──────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
   @override
