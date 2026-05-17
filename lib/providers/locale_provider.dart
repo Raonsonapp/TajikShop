@@ -4,9 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _kLangKey = 'app_language';
 
+final localeProvider = StateNotifierProvider<LocaleNotifier, Locale>(
+    (ref) => LocaleNotifier());
+
 class LocaleNotifier extends StateNotifier<Locale> {
   LocaleNotifier() : super(const Locale('tg')) {
-    // FIX: async — main thread блок намекунад
     _load();
   }
 
@@ -26,11 +28,7 @@ class LocaleNotifier extends StateNotifier<Locale> {
     } catch (_) {}
   }
 
-  static const supported = [
-    Locale('tg'),
-    Locale('ru'),
-    Locale('en'),
-  ];
+  static const supported = [Locale('tg'), Locale('ru'), Locale('en')];
 
   static String langName(String code) {
     switch (code) {
@@ -41,6 +39,3 @@ class LocaleNotifier extends StateNotifier<Locale> {
     }
   }
 }
-
-final localeProvider =
-    StateNotifierProvider<LocaleNotifier, Locale>((ref) => LocaleNotifier());
