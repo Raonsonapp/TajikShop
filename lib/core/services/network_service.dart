@@ -1,6 +1,6 @@
-// lib/core/services/network_service.dart
+// FIX: DNS lookup (InternetAddress.lookup) хориҷ шуд — ANR сабаб буд
+// Акнун танҳо connectivity_plus истифода мешавад — блок намекунад
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -12,25 +12,13 @@ class NetworkService {
   bool get isOnline => isOnlineNotifier.value;
 
   StreamSubscription? _sub;
-  Timer? _checkTimer;
 
   void init() {
-    _sub = Connectivity().onConnectivityChanged.listen((results) async {
-      if (results.contains(ConnectivityResult.none)) {
-        _setOnline(false);
-      } else {
-        final online = await _checkInternet();
-        _setOnline(online);
-      }
-    });
-
-    // Ҳар 15 сония санҷед
-    _checkTimer = Timer.periodic(const Duration(seconds: 15), (_) async {
-      final online = await _checkInternet();
+    // FIX: танҳо connectivity — DNS lookup нест, ANR нест
+    _sub = Connectivity().onConnectivityChanged.listen((results) {
+      final online = !results.contains(ConnectivityResult.none);
       _setOnline(online);
     });
-
-    _checkInternet().then(_setOnline);
   }
 
   void _setOnline(bool online) {
@@ -40,18 +28,7 @@ class NetworkService {
     }
   }
 
-  Future<bool> _checkInternet() async {
-    try {
-      final result = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 4));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
-  }
-
   void dispose() {
     _sub?.cancel();
-    _checkTimer?.cancel();
   }
 }
