@@ -4,27 +4,50 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeNotifier extends StateNotifier<ThemeMode> {
   static const _key = 'app_theme_mode';
+
   ThemeNotifier() : super(ThemeMode.dark) {
-    _load();
+    _loadSaved();
   }
-  Future<void> _load() async {
+
+  Future<void> _loadSaved() async {
     try {
-      final p = await SharedPreferences.getInstance();
-      state = p.getString(_key) == 'light' ? ThemeMode.light : ThemeMode.dark;
-    } catch (_) {}
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_key);
+      if (saved == 'light') {
+        state = ThemeMode.light;
+      } else {
+        // Default: dark — экрани сиёҳ ҳамеша
+        state = ThemeMode.dark;
+      }
+    } catch (_) {
+      state = ThemeMode.dark;
+    }
   }
+
   void toggle() {
     state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-    _save();
+    _persist(state);
   }
-  void setDark()  { state = ThemeMode.dark;  _save(); }
-  void setLight() { state = ThemeMode.light; _save(); }
-  Future<void> _save() async {
+
+  void setDark() {
+    state = ThemeMode.dark;
+    _persist(state);
+  }
+
+  void setLight() {
+    state = ThemeMode.light;
+    _persist(state);
+  }
+
+  Future<void> _persist(ThemeMode mode) async {
     try {
-      final p = await SharedPreferences.getInstance();
-      await p.setString(_key, state == ThemeMode.dark ? 'dark' : 'light');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_key, mode == ThemeMode.dark ? 'dark' : 'light');
     } catch (_) {}
   }
 }
+
 final themeProvider =
-    StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) => ThemeNotifier());
+    StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) {
+  return ThemeNotifier();
+});
