@@ -6,25 +6,30 @@ const _kLangKey = 'app_language';
 
 class LocaleNotifier extends StateNotifier<Locale> {
   LocaleNotifier() : super(const Locale('tg')) {
+    // FIX: async — main thread блок намекунад
     _load();
   }
 
   Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final code = prefs.getString(_kLangKey) ?? 'tg';
-    state = Locale(code);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final code = prefs.getString(_kLangKey) ?? 'tg';
+      if (mounted) state = Locale(code);
+    } catch (_) {}
   }
 
   Future<void> setLocale(Locale locale) async {
     state = locale;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kLangKey, locale.languageCode);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kLangKey, locale.languageCode);
+    } catch (_) {}
   }
 
   static const supported = [
-    Locale('tg'), // Тоҷикӣ
-    Locale('ru'), // Русский
-    Locale('en'), // English
+    Locale('tg'),
+    Locale('ru'),
+    Locale('en'),
   ];
 
   static String langName(String code) {
