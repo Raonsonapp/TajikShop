@@ -18,8 +18,8 @@ class ApiClient {
       baseUrl:        AppStrings.baseUrl,
       // FIX: Timeout кам шуд — ANR (Application Not Responding) ислоҳ
       // receiveTimeout 30s → 8s: Dio 30s block мекард → Android freeze
-      connectTimeout: const Duration(seconds: 8),
-      receiveTimeout: const Duration(seconds: 8),
+      connectTimeout: const Duration(seconds: 5),
+      receiveTimeout: const Duration(seconds: 5),
       sendTimeout:    const Duration(seconds: 15),
       headers: {'Accept': 'application/json'},
     ));
