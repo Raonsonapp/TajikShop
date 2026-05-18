@@ -1,45 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'core/theme/app_theme.dart';
-import 'providers/theme_provider.dart';
-import 'providers/locale_provider.dart';
-import 'routes/app_router.dart';
-import 'core/app_l10n.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light));
-  runApp(const ProviderScope(child: TajikShopApp()));
+      statusBarColor: Colors.transparent));
+  runApp(const MyApp());
 }
 
-class TajikShopApp extends ConsumerWidget {
-  const TajikShopApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final router    = ref.watch(routerProvider);
-    final themeMode = ref.watch(themeProvider);
-    final locale    = ref.watch(localeProvider);
-    return MaterialApp.router(
+  Widget build(BuildContext context) {
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'TajikShop',
-      theme:        AppTheme.lightTheme,
-      darkTheme:    AppTheme.darkTheme,
-      themeMode:    themeMode,
-      locale:       locale,
-      routerConfig: router,
-      localizationsDelegates: const [
-        AppLocalizationsDelegate(),
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: LocaleNotifier.supported,
+      theme: ThemeData.dark(),
+      home: const SplashPage(),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════
+// SPLASH
+// ═══════════════════════════════════════════
+class SplashPage extends StatefulWidget {
+  const SplashPage({super.key});
+  @override
+  State<SplashPage> createState() => _SplashPageState();
+}
+
+class _SplashPageState extends State<SplashPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (_) => const LoginPage()));
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFF0A0A0F),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.shopping_bag_rounded,
+                color: Color(0xFF00D084), size: 80),
+            SizedBox(height: 16),
+            Text('TajikShop',
+                style: TextStyle(color: Color(0xFF00D084),
+                    fontSize: 32, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text('Бозори Тоҷикистон',
+                style: TextStyle(color: Colors.white54, fontSize: 16)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A0F),
+      body: const SafeArea(
+        child: Center(
+          child: Text('Login Screen',
+              style: TextStyle(color: Colors.white, fontSize: 24)),
+        ),
+      ),
     );
   }
 }
