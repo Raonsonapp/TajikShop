@@ -16,11 +16,9 @@ class ApiClient {
   void _setup() {
     dio = Dio(BaseOptions(
       baseUrl:        AppStrings.baseUrl,
-      // FIX: Timeout кам шуд — ANR (Application Not Responding) ислоҳ
-      // receiveTimeout 30s → 8s: Dio 30s block мекард → Android freeze
-      connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 5),
-      sendTimeout:    const Duration(seconds: 15),
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout:    const Duration(minutes: 3),
       headers: {'Accept': 'application/json'},
     ));
     dio.interceptors.addAll([
@@ -45,7 +43,7 @@ class ApiClient {
 /// Fixes 401 after hot-restart, app reopen, or navigation.
 class _TokenInjector extends Interceptor {
   @override
-  void onRequest(
+  Future<void> onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
     final token = await TokenStorage.getAccessToken();
     if (token != null && token.isNotEmpty) {
