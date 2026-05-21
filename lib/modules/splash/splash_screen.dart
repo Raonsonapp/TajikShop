@@ -20,21 +20,28 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     super.initState();
     _ctrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 800));
-    _fade  = Tween<double>(begin: 0, end: 1).animate(
+    _fade = Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _scale = Tween<double>(begin: 0.85, end: 1).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-    // Анимация тамом → 1s сабр → login
-    _ctrl.forward().then((_) =>
-        Future.delayed(const Duration(seconds: 1), _go));
+    _ctrl.forward();
+
+    // FIX: addPostFrameCallback — GoRouter mount шудааст
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 1800), _go);
+    });
   }
 
   void _go() {
-    if (mounted) GoRouter.of(context).go(RouteNames.login);
+    if (!mounted) return;
+    context.go(RouteNames.login);
   }
 
   @override
-  void dispose() { _ctrl.dispose(); super.dispose(); }
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
