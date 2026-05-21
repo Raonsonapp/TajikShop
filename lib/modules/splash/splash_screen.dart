@@ -25,23 +25,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _scale = Tween<double>(begin: 0.85, end: 1).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _ctrl.forward();
-
-    // FIX: addPostFrameCallback — GoRouter mount шудааст
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 1800), _go);
+    // FIX: Timer — GoRouter mount шудааст, context дуруст аст
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      if (mounted) context.go(RouteNames.login);
     });
   }
 
-  void _go() {
-    if (!mounted) return;
-    context.go(RouteNames.login);
-  }
-
   @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
