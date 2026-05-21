@@ -4,20 +4,17 @@ class RouteNames {
   static const register        = '/register';
   static const home            = '/home';
   static const profile         = '/profile';
-  // MVP: ин route-ҳо удалит шуданд аммо
-  // home_screen ва profile_screen ба онҳо ишора мекунанд
-  // Ислоҳ: ба home redirect мекунем
-  static const search          = '/home';
-  static const categories      = '/home';
-  static const notifications   = '/home';
-  static const favorites       = '/home';
-  static const orders          = '/home';
-  static const sellerDashboard = '/home';
-  static const cart            = '/home';
-  static const upload          = '/home';
-  static const seller          = '/home';
-  static const addProduct      = '/home';
-  static const admin           = '/home';
+  static const favorites       = '/favorites';
+  static const cart            = '/cart';
+  static const upload          = '/upload';
+  static const search          = '/search';
+  static const categories      = '/categories';
+  static const notifications   = '/notifications';
+  static const orders          = '/orders';
+  static const sellerDashboard = '/seller-dashboard';
+  static const seller          = '/seller';
+  static const addProduct      = '/add-product';
+  static const admin           = '/admin';
   static const phoneAuth       = '/phone-auth';
   static const phoneOtp        = '/phone-otp';
 }
