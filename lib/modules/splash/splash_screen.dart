@@ -20,12 +20,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     super.initState();
     _ctrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 800));
-    _fade = Tween<double>(begin: 0, end: 1).animate(
+    _fade  = Tween<double>(begin: 0, end: 1).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _scale = Tween<double>(begin: 0.85, end: 1).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _ctrl.forward();
-    // FIX: Timer — GoRouter mount шудааст, context дуруст аст
     Future.delayed(const Duration(milliseconds: 2000), () {
       if (mounted) context.go(RouteNames.login);
     });
