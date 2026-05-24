@@ -2,7 +2,7 @@ name: Sync to Hugging Face Spaces
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ] # агар веткаат master бошад, master навис
 
 jobs:
   deploy:
@@ -13,7 +13,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.HF_SSH_KEY }}
+          known_hosts: ${{ secrets.HF_KNOWN_HOSTS }}
+
       - name: Push to Hugging Face
         run: |
-          git remote add hf https://github.com/Mahmadmurodov/TajikShop.git
-          git push --force https://${{ secrets.GH_TOKEN }}@huggingface.co/spaces/Mahmadmurodov/TajikShop main
+          git remote add hf git@huggingface.co:spaces/Mahmadmurodov/TajikShop.git
+          git push --force hf main
