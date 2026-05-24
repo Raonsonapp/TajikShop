@@ -126,7 +126,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(authProvider);
+    final screenHeight = MediaQuery.sizeOf(context).height;
 
+    // ✅ МУҲИМ: Ҳатто агар state хатогӣ дошта бошад, UI бояд нишон дода шавад
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
       body: SafeArea(
@@ -141,11 +143,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(height: 40),
-                    Row(children: [
-                      Container(
+
+                    // Logo
+                    Row(children: [                      Container(
                         width: 44,
                         height: 44,
-                        decoration: BoxDecoration(                          gradient: const LinearGradient(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
                               colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -159,6 +163,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               fontSize: 24,
                               fontWeight: FontWeight.w800)),
                     ]),
+
                     const SizedBox(height: 40),
                     const Text('Хуш омадед! 👋',
                         style: TextStyle(
@@ -170,6 +175,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style:
                             TextStyle(color: Color(0xFFAAADBE), fontSize: 14)),
                     const SizedBox(height: 32),
+
+                    // ✅ ХАТОГИИ AUTH-РО НИШОН ДИҲЕД (агар бошад)
+                    if (state.error != null && !state.isLoading) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.orange),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.info_outline,
+                              color: Colors.orange, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(state.error!,
+                                style: const TextStyle(
+                                    color: Colors.orange, fontSize: 12)),                          ),
+                        ]),
+                      ),
+                    ],
+
+                    // Email
                     _buildField(
                       ctrl: _emailCtrl,
                       hint: 'Почтаи электронӣ',
@@ -177,6 +207,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       keyboard: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 14),
+
+                    // Password
                     _buildField(
                       ctrl: _passCtrl,
                       hint: 'Парол',
@@ -192,27 +224,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
-                    if (state.error != null) ...[
-                      const SizedBox(height: 12),
-                      Container(                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.red),
-                        ),
-                        child: Row(children: [
-                          const Icon(Icons.error_outline,
-                              color: Colors.red, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(state.error!,
-                                style: const TextStyle(
-                                    color: Colors.red, fontSize: 13)),
-                          ),
-                        ]),
-                      ),
-                    ],
+
                     const SizedBox(height: 24),
+
+                    // Login button
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -228,8 +243,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ? const SizedBox(
                                 width: 22,
                                 height: 22,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2.5, color: Colors.white),
+                                child: CircularProgressIndicator(                                    strokeWidth: 2.5, color: Colors.white),
                               )
                             : const Text('Ворид шавед',
                                 style: TextStyle(
@@ -238,12 +252,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     fontWeight: FontWeight.w700)),
                       ),
                     ),
+
                     const SizedBox(height: 20),
+
+                    // Register link
                     Center(
                       child: GestureDetector(
                         onTap: () => context.go(RouteNames.register),
                         child: RichText(
-                          text: const TextSpan(                            text: 'Ҳисоб надоред?  ',
+                          text: const TextSpan(
+                            text: 'Ҳисоб надоред?  ',
                             style: TextStyle(
                                 color: Color(0xFFAAADBE), fontSize: 14),
                             children: [
@@ -258,7 +276,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 24),
+
+                    // Debug Panel
                     if (kDebugMode && _showDebug)
                       Container(
                         width: double.infinity,
@@ -271,8 +292,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(children: [
-                              const Icon(Icons.bug_report,
+                            Row(children: [                              const Icon(Icons.bug_report,
                                   color: Colors.red, size: 14),
                               const SizedBox(width: 6),
                               const Text('🔴 DEBUG LOG',
@@ -292,7 +312,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             const Divider(color: Colors.red, height: 1),
                             const SizedBox(height: 8),
                             ..._logs.reversed.map((l) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 3),                                  child: Text(l,
+                                  padding: const EdgeInsets.only(bottom: 3),
+                                  child: Text(l,
                                       style: TextStyle(
                                           color: l.contains('❌')
                                               ? Colors.red
@@ -305,6 +326,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ],
                         ),
                       ),
+
                     const SizedBox(height: 40),
                   ],
                 ),
