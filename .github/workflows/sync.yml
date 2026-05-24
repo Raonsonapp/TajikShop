@@ -15,25 +15,5 @@ jobs:
 
       - name: Push clean backend to Hugging Face
         run: |
-          # Сохтани веткаи тозаи сирф барои Hugging Face
           git config --global user.email "ehsonmahmadmurodov@gmail.com"
-          git config --global user.name "Mahmadmurodov"
-          
-          # Омода кардани папкаи тоза
-          mkdir ../hf_space
-          
-          # Нусха бардоштани танҳо файлҳои кории Backend
-          cp -r main.go go.mod go.sum Dockerfile ../hf_space/
-          # Агар папкаҳои backend, internal ё templates дошта бошӣ, ин сатри поёнро аз коммент бардор:
-          # cp -r internal templates ../hf_space/ 2>/dev/null || true
-
-          # Гузаштан ба папкаи тоза ва сохтани репозиторияи нав бе суратҳо
-          cd ../hf_space
-          git init
-          git checkout -b main
-          git add .
-          git commit -m "Deploy clean backend"
-          
-          # Фиристодани коди тоза бо токени аслӣ
-          git remote add hf https://Mahmadmurodov:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Mahmadmurodov/TajikShop
-          git push --force hf main
+          git config --global user.name "Mah
