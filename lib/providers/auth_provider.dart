@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../core/api/api_client.dart';
@@ -29,7 +30,7 @@ class AuthState {
       AuthState(
         user: user ?? this.user,
         isLoading: isLoading ?? this.isLoading,
-        error: error,
+        error: error ?? this.error,
         isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       );
 }
@@ -47,39 +48,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
     return <String, dynamic>{};
   }
-
   // ── Сессияро вақти кушодани барнома барқарор кун ────────────────────────
-  // ── Офлайн режим: Splash токенро санҷид ва HOME-га фиристод ─────────────
   void setOfflineUser(UserModel user) {
     state = AuthState(user: user, isAuthenticated: true);
-    // Фон: сервер бедор шавад → маълумотро навсоз
     Future.delayed(const Duration(seconds: 3), () async {
       try {
-        final fresh = await _fetchMe().timeout(const Duration(seconds: 10));
+        final fresh = await _fetchMe().timeout(const Duration(seconds: 60));
         await _persistSession(fresh);
         state = AuthState(user: fresh, isAuthenticated: true);
-      } catch (_) { /* Офлайн — кэш кор мекунад */ }
+      } catch (_) {}
     });
   }
 
+  // ✅ ИСЛОҲШУДА: Timeout 60с + Error handling дуруст
   Future<void> checkAuth() async {
-    // Аввал кэшро бор кун — UI фавран нишон медиҳад
-    await UserSession.loadCachedData();
-
-    final token = await TokenStorage.getAccessToken();
-    if (token == null || token.isEmpty) {
-      state = const AuthState();
-      return;
-    }
     try {
-      final user = await _fetchMe();
+      await UserSession.loadCachedData();
+      final token = await TokenStorage.getAccessToken();
+      if (token == null || token.isEmpty) {
+        state = const AuthState();
+        return;
+      }
+      final user = await _fetchMe().timeout(
+        const Duration(seconds: 60),
+        onTimeout: () => throw Exception(
+            'Сервер дер ҷавоб дод. Лутфан каме сабр кунед.'),
+      );
       await _persistSession(user);
       state = AuthState(user: user, isAuthenticated: true);
-    } catch (_) {
-      // Агар сервер нест — кэшро нишон деҳ
+    } catch (e) {
+      debugPrint('❌ checkAuth ERROR: $e');
       final cached = UserSession.userId;
       if (cached != null && cached.isNotEmpty) {
-        // Офлайн режим: ба Home бур
         state = AuthState(
           user: UserModel(
             id: cached,
@@ -87,15 +87,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
             fullName: UserSession.fullName ?? 'Корбар',
             avatar: UserSession.avatar,
             role: UserSession.role,
-            isSeller: UserSession.role == 'seller' || UserSession.role == 'admin',
+            isSeller:
+                UserSession.role == 'seller' || UserSession.role == 'admin',
             isVerified: false,
             createdAt: DateTime.now(),
           ),
           isAuthenticated: true,
+          error: e.toString().replaceAll('Exception: ', ''),
         );
       } else {
-        state = const AuthState();
-      }
+        state = AuthState(error: e.toString().replaceAll('Exception: ', ''));      }
     }
   }
 
@@ -106,7 +107,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final res = await _dio.post(ApiEndpoints.login,
           data: {'email': email, 'password': password});
       final data = _unwrap(res.data);
-      final token   = data['access_token']?.toString() ?? '';
+      final token = data['access_token']?.toString() ?? '';
       final refresh = data['refresh_token']?.toString();
       if (token.isEmpty) throw Exception('Token гирифта нашуд');
       await TokenStorage.saveTokens(accessToken: token, refreshToken: refresh);
@@ -133,7 +134,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final res = await _dio.post(ApiEndpoints.register,
           data: {'name': fullName, 'email': email, 'password': password});
       final data = _unwrap(res.data);
-      final token   = data['access_token']?.toString() ?? '';
+      final token = data['access_token']?.toString() ?? '';
       final refresh = data['refresh_token']?.toString();
       if (token.isEmpty) throw Exception('Token гирифта нашуд');
       await TokenStorage.saveTokens(accessToken: token, refreshToken: refresh);
@@ -143,8 +144,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return true;
     } on DioException catch (e) {
       final msg = _unwrap(e.response?.data)['error']?.toString() ??
-          e.message ?? 'Хатои пайвастшавӣ';
-      state = state.copyWith(isLoading: false, error: msg);
+          e.message ??
+          'Хатои пайвастшавӣ';      state = state.copyWith(isLoading: false, error: msg);
       return false;
     } catch (e) {
       state = state.copyWith(
@@ -155,13 +156,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // ── Login with Firebase Phone ─────────────────────────────────────────────
-  Future<bool> loginWithPhone(String firebaseIdToken, {String name = ''}) async {
+  Future<bool> loginWithPhone(String firebaseIdToken,
+      {String name = ''}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
       final res = await _dio.post('/auth/phone-verify',
           data: {'id_token': firebaseIdToken, 'name': name});
       final data = _unwrap(res.data);
-      final token   = data['access_token']?.toString() ?? '';
+      final token = data['access_token']?.toString() ?? '';
       final refresh = data['refresh_token']?.toString();
       if (token.isEmpty) throw Exception('Token нест');
       await TokenStorage.saveTokens(accessToken: token, refreshToken: refresh);
@@ -176,25 +178,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return false;
     }
   }
+
   Future<bool> becomeSeller() async {
     try {
       final res = await _dio.post(ApiEndpoints.becomeSeller);
       final data = _unwrap(res.data);
-      // Backend нав токен медиҳад — захира кун
-      final newAccess  = data['access_token']?.toString();
+      final newAccess = data['access_token']?.toString();
       final newRefresh = data['refresh_token']?.toString();
       if (newAccess != null && newAccess.isNotEmpty) {
         await TokenStorage.saveTokens(
             accessToken: newAccess, refreshToken: newRefresh);
       }
-      // Маълумоти корбарро аз сервер навсоз
       final user = await _fetchMe();
       await _persistSession(user);
       state = AuthState(user: user, isAuthenticated: true);
       return true;
     } catch (_) {
-      return false;
-    }
+      return false;    }
   }
 
   // ── Logout ───────────────────────────────────────────────────────────────
@@ -208,18 +208,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<UserModel> _fetchMe() async {
     final res = await _dio.get(ApiEndpoints.me);
     final body = _unwrap(res.data);
-    final map  = body['user'] as Map<String, dynamic>? ?? body;
+    final map = body['user'] as Map<String, dynamic>? ?? body;
     return UserModel.fromJson(map);
   }
 
   // ── Маълумоти корбарро кэш кун ──────────────────────────────────────────
   Future<void> _persistSession(UserModel user) async {
     await UserSession.saveAll(
-      id:        user.id,
+      id: user.id,
       userEmail: user.email,
-      name:      user.fullName,
+      name: user.fullName,
       avatarUrl: user.avatar ?? '',
-      userRole:  user.role,
+      userRole: user.role,
     );
     await TokenStorage.saveUserId(user.id);
   }
