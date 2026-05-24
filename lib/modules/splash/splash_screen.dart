@@ -26,19 +26,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _scale = Tween<double>(begin: 0.85, end: 1).animate(
         CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _ctrl.forward();
-
-    // ✅ ИСЛОҲ: checkAuth()-ро иҷро кунед, на танҳо delay
     _initApp();
   }
 
   Future<void> _initApp() async {
-    // Анимация ҳадди ақал 2 сония нишон дода шавад
+    // Анимация ҳадди ақал 2 сония
     final minDelay = Future.delayed(const Duration(seconds: 2));
 
-    // checkAuth() метавонад 30-60с вақт гирад (Render cold start)
-    final authCheck = ref.read(authProvider.notifier).checkAuth();
+    // checkAuth бо timeout 30с — HuggingFace учун кофӣ
+    final authCheck = ref
+        .read(authProvider.notifier)
+        .checkAuth()
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {},
+        )
+        .catchError((_) {});
 
-    // Ҳардоро параллелӣ интизор шавед
     await Future.wait([minDelay, authCheck]);
 
     if (!mounted) return;
@@ -47,7 +51,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (authState.isAuthenticated) {
       context.go(RouteNames.home);
     } else {
-      context.go(RouteNames.login);    }
+      context.go(RouteNames.login);
+    }
   }
 
   @override
@@ -69,8 +74,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 100,
-                  height: 100,
+                  width: 100, height: 100,
                   decoration: BoxDecoration(
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(28),
@@ -96,14 +100,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           fontWeight: FontWeight.w800,
                           letterSpacing: -1)),
                 ),
-                const SizedBox(height: 8),                const Text('Бозори Тоҷикистон',
+                const SizedBox(height: 8),
+                const Text('Бозори Тоҷикистон',
                     style: TextStyle(
                         color: AppColors.textSecondary, fontSize: 16)),
-                // ✅ Индикатори боргирӣ ҳангоми cold start
                 const SizedBox(height: 24),
                 const SizedBox(
-                  width: 24,
-                  height: 24,
+                  width: 24, height: 24,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: AppColors.primary,
