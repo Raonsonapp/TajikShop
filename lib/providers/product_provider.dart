@@ -68,7 +68,8 @@ class ProductsNotifier extends StateNotifier<ProductsState> {
         page: page,
         categoryId: categoryId,
         search: search,
-      );
+      ).timeout(const Duration(seconds: 10),
+          onTimeout: () => throw Exception('Вақт гузашт. Дубора кӯшиш кунед'));
       state = state.copyWith(
         products: refresh ? products : [...state.products, ...products],
         isLoading: false,
@@ -82,7 +83,8 @@ class ProductsNotifier extends StateNotifier<ProductsState> {
 
   Future<void> loadTrending() async {
     try {
-      final trending = await _repo.getTrending();
+      final trending = await _repo.getTrending()
+          .timeout(const Duration(seconds: 8), onTimeout: () => []);
       state = state.copyWith(trending: trending);
     } catch (_) {}
   }
