@@ -88,15 +88,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         style: const TextStyle(color: Colors.white, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: Color(0xFF6B6E82)),
-          prefixIcon: Icon(icon, color: const Color(0xFF6B6E82)),
+          hintStyle: const TextStyle(color: Color(0xFF6B6E82), fontSize: 15),
+          prefixIcon: Icon(icon, color: const Color(0xFF6B6E82), size: 20),
           suffixIcon: suffix,
-          filled: false,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
+          // ✅ ҲАМАИ border-ҳоро нест кунед — theme-и глобалиро override мекунад
+          filled: true,
+          fillColor: const Color(0xFF141420), // ✅ Ранги дохилӣ = ранги Container
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          disabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),        ),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
       ),
     );
   }
@@ -104,7 +127,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(authProvider);
-    // ✅ Баландии экранро мегирем барои ConstrainedBox
     final screenHeight = MediaQuery.sizeOf(context).height;
 
     return Scaffold(
@@ -112,20 +134,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          // ✅ ИСЛОҲ: Кафолат медиҳад, ки Column тамоми экранро мегирад
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: screenHeight - 48),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min, // ✅ МУҲИМ! Барои дуруст кор кардани scroll
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 40),
 
                 // Logo
                 Row(children: [
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 44,                    height: 44,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                           colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
@@ -145,7 +165,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 40),
                 const Text('Хуш омадед! 👋',
                     style: TextStyle(
-                        color: Colors.white,                        fontSize: 26,
+                        color: Colors.white,
+                        fontSize: 26,
                         fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
                 const Text('Ба ҳисоби худ ворид шавед',
@@ -173,8 +194,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
                       color: const Color(0xFF6B6E82),
-                    ),
-                    onPressed: () => setState(() => _obscure = !_obscure),
+                    ),                    onPressed: () => setState(() => _obscure = !_obscure),
                   ),
                 ),
 
@@ -194,7 +214,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(state.error!,
-                            style: const TextStyle(                                color: Colors.red, fontSize: 13)),
+                            style: const TextStyle(
+                                color: Colors.red, fontSize: 13)),
                       ),
                     ]),
                   ),
@@ -222,8 +243,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 strokeWidth: 2.5, color: Colors.white),
                           )
                         : const Text('Ворид шавед',
-                            style: TextStyle(
-                                color: Colors.white,
+                            style: TextStyle(                                color: Colors.white,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700)),
                   ),
@@ -243,7 +263,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         children: [
                           TextSpan(
                             text: 'Сабтном',
-                            style: TextStyle(                                color: Color(0xFF00D084),
+                            style: TextStyle(
+                                color: Color(0xFF00D084),
                                 fontWeight: FontWeight.w700),
                           ),
                         ],
@@ -254,7 +275,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: 24),
 
-                // Debug Panel (танҳо дар kDebugMode)
+                // Debug Panel
                 if (kDebugMode && _showDebug)
                   Container(
                     width: double.infinity,
@@ -271,8 +292,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const Icon(Icons.bug_report,
                               color: Colors.red, size: 14),
                           const SizedBox(width: 6),
-                          const Text('🔴 DEBUG LOG',
-                              style: TextStyle(
+                          const Text('🔴 DEBUG LOG',                              style: TextStyle(
                                   color: Colors.red,
                                   fontWeight: FontWeight.w800,
                                   fontSize: 12)),
@@ -292,7 +312,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               child: Text(l,
                                   style: TextStyle(
                                       color: l.contains('❌')
-                                          ? Colors.red                                          : l.contains('⚠️')
+                                          ? Colors.red
+                                          : l.contains('⚠️')
                                               ? Colors.orange
                                               : Colors.white70,
                                       fontSize: 9.5,
