@@ -29,6 +29,7 @@ class ErrorInterceptor extends Interceptor {
     if (data is Map) {
       return data['error']?.toString() ??
           data['message']?.toString() ??
+          data['detail']?.toString() ??
           fallback;
     }
     return fallback;
@@ -46,7 +47,9 @@ class ErrorInterceptor extends Interceptor {
       case 409: msg = 'Ин email аллакай вуҷуд дорад'; break;
       case 422: msg = _extractMsg(d, 'Маълумоти нодуруст'); break;
       case 429: msg = 'Хеле зиёд дархост. Каме сабр кунед'; break;
-      case 500: msg = 'Хатои сервер. Баъдтар кӯшиш кунед'; break;
+      case 500:
+      case 502:
+      case 503: msg = 'Хатои сервер. Баъдтар кӯшиш кунед'; break;
       default:
         if (err.type == DioExceptionType.connectionTimeout ||
             err.type == DioExceptionType.receiveTimeout ||
