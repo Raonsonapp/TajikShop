@@ -25,17 +25,6 @@ jobs:
             cp -r $dir/* ../hf_space/ 2>/dev/null || true
           done
           
-          # Ҳатман нусхабардории README.md ва Dockerfile аз папкаи асосӣ
+          # Нусхабардории README.md ва Dockerfile аз папкаи асосӣ
           cp README.md ../hf_space/ 2>/dev/null || true
-          cp Dockerfile ../hf_space/ 2>/dev/null || true
-          
-          cd ../hf_space
-          rm -rf android ios macos windows linux .github
-          
-          git init
-          git checkout -b main
-          git add .
-          git commit -m "Deploy clean backend with metadata"
-          
-          git remote add hf https://Mahmadmurodov:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Mahmadmurodov/TailkShop
-          git push --force hf main
+          cp Docker
