@@ -65,13 +65,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
   }
 
+  Timer? _scrollDebounce;
   void _onScroll() {
-    if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 300)
-      ref.read(productsProvider.notifier).loadProducts();
+    _scrollDebounce?.cancel();
+    _scrollDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      final ps = ref.read(productsProvider);
+      if (ps.isLoading || !ps.hasMore) return;
+      if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 400) {
+        ref.read(productsProvider.notifier).loadProducts();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _scrollDebounce?.cancel();
     _scroll.dispose();
     _bannerCtrl.dispose();
     _bannerTimer?.cancel();
