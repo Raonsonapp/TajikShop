@@ -1,8 +1,8 @@
 FROM golang:1.22-alpine AS builder
 WORKDIR /app
 
-# Нусхабардории файлҳои вобастагӣ
-COPY go.mod go.sum ./
+# Нусхабардории файлҳои вобастагӣ (агар go.sum бошад мегирад, набошад ҳам хато намекунад)
+COPY go.mod go.sum* ./
 RUN go mod download
 
 # Нусхабардории тамоми код
@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o tajikshop-api ./cmd/api/main.go
 FROM alpine:3.19
 WORKDIR /app
 
-# Нусхабардории файли бинарӣ ба сервери асосӣ
+# Нусхабардории файли бинарӣ
 COPY --from=builder /app/tajikshop-api .
 
 RUN chmod +x tajikshop-api
