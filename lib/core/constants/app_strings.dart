@@ -1,6 +1,8 @@
 class AppStrings {
   static const appName = 'TajikShop';
-  static const baseUrl = 'https://tajikshop.onrender.com/api/v1';
+
+  // ✅ Render → Hugging Face
+  static const baseUrl = 'https://mahmadmurodov-tajikshop.hf.space/api/v1';
 
   // Auth
   static const login = 'Воридшавӣ';
