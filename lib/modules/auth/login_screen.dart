@@ -1,19 +1,8 @@
-import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
-
-final _logs = <String>[];
-void _log(String msg) {
-  final t = DateTime.now().toString().substring(11, 19);
-  _logs.add('[$t] $msg');
-  if (_logs.length > 40) _logs.removeAt(0);
-  debugPrint('🔴 $msg');
-}
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -23,23 +12,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailCtrl = TextEditingController();
-  final _passCtrl = TextEditingController();
-  bool _obscure = true;
-  final bool _showDebug = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _log('=== LoginScreen INIT ===');
-    final prev = FlutterError.onError;
-    FlutterError.onError = (details) {
-      _log('❌ FlutterError: ${details.exception}');
-      for (final line in details.stack.toString().split('\n').take(4)) {
-        _log('   $line');
-      }
-      prev?.call(details);
-    };
-  }
+  final _passCtrl  = TextEditingController();
+  bool _obscure    = true;
 
   @override
   void dispose() {
@@ -47,27 +21,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _passCtrl.dispose();
     super.dispose();
   }
+
   Future<void> _login() async {
-    _log('--- Login started ---');
     final email = _emailCtrl.text.trim();
-    final pass = _passCtrl.text.trim();
-    if (email.isEmpty || pass.isEmpty) {
-      _log('⚠️ Email or password empty');
-      return;
-    }
-    try {
-      _log('API request...');
-      final ok = await ref.read(authProvider.notifier).login(email, pass);
-      _log('Result: $ok');
-      if (ok && mounted) context.go(RouteNames.home);
-    } catch (e, st) {
-      _log('❌ Login error: $e');
-      _log('Stack: ${st.toString().split('\n').take(2).join(' ')}');
-      if (mounted) setState(() {});
-    }
+    final pass  = _passCtrl.text.trim();
+    if (email.isEmpty || pass.isEmpty) return;
+    final ok = await ref.read(authProvider.notifier).login(email, pass);
+    if (ok && mounted) context.go(RouteNames.home);
   }
 
-  Widget _buildField({
+  Widget _field({
     required TextEditingController ctrl,
     required String hint,
     required IconData icon,
@@ -91,13 +54,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           hintStyle: const TextStyle(color: Color(0xFF6B6E82), fontSize: 15),
           prefixIcon: Icon(icon, color: const Color(0xFF6B6E82), size: 20),
           suffixIcon: suffix,
-          filled: false,
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
-          errorBorder: InputBorder.none,
-          focusedErrorBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
@@ -108,213 +67,154 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(authProvider);
-    final screenHeight = MediaQuery.sizeOf(context).height;
 
-    // ✅ МУҲИМ: Ҳатто агар state хатогӣ дошта бошад, UI бояд нишон дода шавад
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 40),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 40),
 
-                    // Logo
-                    Row(children: [                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                              colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.shopping_bag_rounded,
-                            color: Colors.white, size: 24),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text('TajikShop',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800)),
-                    ]),
+              // Logo
+              Row(children: [
+                Container(
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                        colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.shopping_bag_rounded,
+                      color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 10),
+                const Text('TajikShop',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800)),
+              ]),
 
-                    const SizedBox(height: 40),
-                    const Text('Хуш омадед! 👋',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 26,
-                            fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 6),
-                    const Text('Ба ҳисоби худ ворид шавед',
-                        style:
-                            TextStyle(color: Color(0xFFAAADBE), fontSize: 14)),
-                    const SizedBox(height: 32),
+              const SizedBox(height: 40),
+              const Text('Хуш омадед! 👋',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              const Text('Ба ҳисоби худ ворид шавед',
+                  style: TextStyle(color: Color(0xFFAAADBE), fontSize: 14)),
+              const SizedBox(height: 32),
 
-                    // ✅ ХАТОГИИ AUTH-РО НИШОН ДИҲЕД (агар бошад)
-                    if (state.error != null && !state.isLoading) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.orange),
-                        ),
-                        child: Row(children: [
-                          const Icon(Icons.info_outline,
-                              color: Colors.orange, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(state.error!,
-                                style: const TextStyle(
-                                    color: Colors.orange, fontSize: 12)),                          ),
-                        ]),
-                      ),
-                    ],
-
-                    // Email
-                    _buildField(
-                      ctrl: _emailCtrl,
-                      hint: 'Почтаи электронӣ',
-                      icon: Icons.email_outlined,
-                      keyboard: TextInputType.emailAddress,
+              // Хатогӣ
+              if (state.error != null && !state.isLoading)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.redAccent),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.error_outline,
+                        color: Colors.redAccent, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(state.error!,
+                          style: const TextStyle(
+                              color: Colors.redAccent, fontSize: 13)),
                     ),
-                    const SizedBox(height: 14),
+                  ]),
+                ),
 
-                    // Password
-                    _buildField(
-                      ctrl: _passCtrl,
-                      hint: 'Парол',
-                      icon: Icons.lock_outline,
-                      obscure: _obscure,
-                      suffix: IconButton(
-                        icon: Icon(
-                          _obscure
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          color: const Color(0xFF6B6E82),
-                        ),
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                      ),
-                    ),
+              // Email
+              _field(
+                ctrl: _emailCtrl,
+                hint: 'Почтаи электронӣ',
+                icon: Icons.email_outlined,
+                keyboard: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 14),
 
-                    const SizedBox(height: 24),
-
-                    // Login button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: state.isLoading ? null : _login,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00D084),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          elevation: 0,
-                        ),
-                        child: state.isLoading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(                                    strokeWidth: 2.5, color: Colors.white),
-                              )
-                            : const Text('Ворид шавед',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700)),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Register link
-                    Center(
-                      child: GestureDetector(
-                        onTap: () => context.go(RouteNames.register),
-                        child: RichText(
-                          text: const TextSpan(
-                            text: 'Ҳисоб надоред?  ',
-                            style: TextStyle(
-                                color: Color(0xFFAAADBE), fontSize: 14),
-                            children: [
-                              TextSpan(
-                                text: 'Сабтном',
-                                style: TextStyle(
-                                    color: Color(0xFF00D084),
-                                    fontWeight: FontWeight.w700),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Debug Panel
-                    if (kDebugMode && _showDebug)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A0000),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.red, width: 1.5),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(children: [                              const Icon(Icons.bug_report,
-                                  color: Colors.red, size: 14),
-                              const SizedBox(width: 6),
-                              const Text('🔴 DEBUG LOG',
-                                  style: TextStyle(
-                                      color: Colors.red,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 12)),
-                              const Spacer(),
-                              GestureDetector(
-                                onTap: () => setState(() => _logs.clear()),
-                                child: const Text('тоза',
-                                    style: TextStyle(
-                                        color: Colors.orange, fontSize: 11)),
-                              ),
-                            ]),
-                            const SizedBox(height: 8),
-                            const Divider(color: Colors.red, height: 1),
-                            const SizedBox(height: 8),
-                            ..._logs.reversed.map((l) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 3),
-                                  child: Text(l,
-                                      style: TextStyle(
-                                          color: l.contains('❌')
-                                              ? Colors.red
-                                              : l.contains('⚠️')
-                                                  ? Colors.orange
-                                                  : Colors.white70,
-                                          fontSize: 9.5,
-                                          fontFamily: 'monospace')),
-                                )),
-                          ],
-                        ),
-                      ),
-
-                    const SizedBox(height: 40),
-                  ],
+              // Парол
+              _field(
+                ctrl: _passCtrl,
+                hint: 'Парол',
+                icon: Icons.lock_outline,
+                obscure: _obscure,
+                suffix: IconButton(
+                  icon: Icon(
+                    _obscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: const Color(0xFF6B6E82),
+                  ),
+                  onPressed: () => setState(() => _obscure = !_obscure),
                 ),
               ),
-            );
-          },
+
+              const SizedBox(height: 28),
+
+              // Тугма
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: state.isLoading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00D084),
+                    disabledBackgroundColor:
+                        const Color(0xFF00D084).withValues(alpha: 0.5),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: state.isLoading
+                      ? const SizedBox(
+                          width: 22, height: 22,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2.5, color: Colors.white),
+                        )
+                      : const Text('Ворид шавед',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700)),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              Center(
+                child: GestureDetector(
+                  onTap: () => context.go(RouteNames.register),
+                  child: RichText(
+                    text: const TextSpan(
+                      text: 'Ҳисоб надоред?  ',
+                      style:
+                          TextStyle(color: Color(0xFFAAADBE), fontSize: 14),
+                      children: [
+                        TextSpan(
+                          text: 'Сабтном',
+                          style: TextStyle(
+                              color: Color(0xFF00D084),
+                              fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
