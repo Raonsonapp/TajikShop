@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart'; // ✅ ИЛОВА ШУД
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,14 +8,14 @@ import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
 
 // ══════════════════════════════════════════════════
-// DEBUG — ҳамаи хатогиҳоро дар экран нишон медиҳад
+// DEBUG — танҳо дар консол, НА дар build()
 // ══════════════════════════════════════════════════
 final _logs = <String>[];
 void _log(String msg) {
   final t = DateTime.now().toString().substring(11, 19);
   _logs.add('[$t] $msg');
   if (_logs.length > 40) _logs.removeAt(0);
-  debugPrint('🔴 $msg');
+  debugPrint('🔴 $msg'); // ✅ Танҳо консол, setState НЕСТ
 }
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -25,36 +26,28 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
-  bool _obscure   = true;
-  bool _showDebug = true; // DEBUG ФАЪОЛ АСТ
+  final _passCtrl = TextEditingController();
+  bool _obscure = true;
+  bool _showDebug = true;
 
   @override
   void initState() {
     super.initState();
     _log('=== LoginScreen INIT ===');
-    _log('Brightness: ${WidgetsBinding.instance.platformDispatcher.platformBrightness}');
 
-    // Ҳамаи Flutter хатогиҳоро сайд кун
+    // ✅ Хатогиҳоро танҳо ба консол нависед, setState НЕКУНЕД
     final prev = FlutterError.onError;
     FlutterError.onError = (details) {
       _log('❌ FlutterError: ${details.exception}');
       for (final line in details.stack.toString().split('\n').take(4)) {
         _log('   $line');
       }
-      if (mounted) setState(() {});
+      // ❌ НЕСТ ШУД: if (mounted) setState(() {});
       prev?.call(details);
     };
-
-    // Zone хатогиҳо
-    runZonedGuarded(() {}, (e, st) {
-      _log('❌ Zone: $e');
-      if (mounted) setState(() {});
-    });
   }
 
-  @override
-  void dispose() {
+  @override  void dispose() {
     _emailCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
@@ -63,7 +56,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _login() async {
     _log('--- Login boshlandi ---');
     final email = _emailCtrl.text.trim();
-    final pass  = _passCtrl.text.trim();
+    final pass = _passCtrl.text.trim();
     _log('Email: $email | Pass: ${pass.isEmpty ? "BOŠ" : "***"}');
     if (email.isEmpty || pass.isEmpty) {
       _log('⚠️ Email ё парол холист');
@@ -77,11 +70,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e, st) {
       _log('❌ Login xato: $e');
       _log('Stack: ${st.toString().split('\n').take(2).join(' ')}');
+      // ✅ setState танҳо барои нишон додани хато, на барои лог
       if (mounted) setState(() {});
     }
   }
 
-  // TextField — filled:false (FIX Material3 grey bug)
   Widget _field({
     required TextEditingController ctrl,
     required String hint,
@@ -103,10 +96,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         style: const TextStyle(color: Colors.white, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: Color(0xFF6B6E82)),
-          prefixIcon: Icon(icon, color: const Color(0xFF6B6E82)),
+          hintStyle: const TextStyle(color: Color(0xFF6B6E82)),          prefixIcon: Icon(icon, color: const Color(0xFF6B6E82)),
           suffixIcon: suffix,
-          filled: false, // FIX: Material3 fillColor-ро ignore мекунад
+          filled: false,
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
@@ -119,10 +111,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // BUILD ЛОГЛАР
-    _log('build() — theme: ${Theme.of(context).brightness}');
-    _log('scaffoldBg: #${Theme.of(context).scaffoldBackgroundColor.value.toRadixString(16)}');
-    _log('inputFillColor: #${Theme.of(context).inputDecorationTheme.fillColor?.value.toRadixString(16) ?? "NULL"}');
+    // ✅ ЛОГҲО АЗ BUILD НЕСТ ШУДАНД!
+    // ❌ НЕСТ: _log('build()...')
+    // ❌ НЕСТ: _log('scaffoldBg...')
+    // ❌ НЕСТ: _log('inputFillColor...')
 
     final state = ref.watch(authProvider);
 
@@ -135,33 +127,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 40),
-
-              // Logo
               Row(children: [
                 Container(
-                  width: 44, height: 44,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                         colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
-                    borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: const Icon(Icons.shopping_bag_rounded,
-                      color: Colors.white, size: 24)),
+                      color: Colors.white, size: 24),
+                ),
                 const SizedBox(width: 10),
                 const Text('TajikShop',
-                    style: TextStyle(color: Colors.white,
-                        fontSize: 24, fontWeight: FontWeight.w800)),
-              ]),
-
-              const SizedBox(height: 40),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800)),
+              ]),              const SizedBox(height: 40),
               const Text('Хуш омадед! 👋',
-                  style: TextStyle(color: Colors.white,
-                      fontSize: 26, fontWeight: FontWeight.w700)),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700)),
               const SizedBox(height: 6),
               const Text('Ба ҳисоби худ ворид шавед',
                   style: TextStyle(color: Color(0xFFAAADBE), fontSize: 14)),
               const SizedBox(height: 32),
-
-              // Email
               _field(
                 ctrl: _emailCtrl,
                 hint: 'Почтаи электронӣ',
@@ -169,8 +162,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 keyboard: TextInputType.emailAddress,
               ),
               const SizedBox(height: 14),
-
-              // Password
               _field(
                 ctrl: _passCtrl,
                 hint: 'Парол',
@@ -178,13 +169,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 obscure: _obscure,
                 suffix: IconButton(
                   icon: Icon(
-                    _obscure ? Icons.visibility_off_outlined
-                             : Icons.visibility_outlined,
-                    color: const Color(0xFF6B6E82)),
-                  onPressed: () => setState(() => _obscure = !_obscure)),
+                    _obscure
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: const Color(0xFF6B6E82),
+                  ),
+                  onPressed: () => setState(() => _obscure = !_obscure),
+                ),
               ),
-
-              // Auth error
               if (state.error != null) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -192,105 +184,50 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.red)),
+                    border: Border.all(color: Colors.red),
+                  ),
                   child: Row(children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 16),
+                    const Icon(Icons.error_outline,
+                        color: Colors.red, size: 16),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(state.error!,
-                        style: const TextStyle(color: Colors.red, fontSize: 13))),
-                  ])),
+                    Expanded(
+                      child: Text(state.error!,
+                          style: const TextStyle(
+                              color: Colors.red, fontSize: 13)),
+                    ),                  ]),
+                ),
               ],
-
               const SizedBox(height: 24),
-
-              // Login button
               SizedBox(
-                width: double.infinity, height: 52,
+                width: double.infinity,
+                height: 52,
                 child: ElevatedButton(
                   onPressed: state.isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00D084),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
-                    elevation: 0),
+                    elevation: 0,
+                  ),
                   child: state.isLoading
-                      ? const SizedBox(width: 22, height: 22,
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
                           child: CircularProgressIndicator(
                               strokeWidth: 2.5, color: Colors.white))
                       : const Text('Ворид шавед',
-                          style: TextStyle(color: Colors.white,
-                              fontSize: 15, fontWeight: FontWeight.w700)))),
-
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700)),
+                ),
+              ),
               const SizedBox(height: 20),
-
-              // Register
-              Center(child: GestureDetector(
-                onTap: () => context.go(RouteNames.register),
-                child: RichText(text: const TextSpan(
-                  text: 'Ҳисоб надоред?  ',
-                  style: TextStyle(color: Color(0xFFAAADBE), fontSize: 14),
-                  children: [TextSpan(
-                    text: 'Сабтном',
-                    style: TextStyle(color: Color(0xFF00D084),
-                        fontWeight: FontWeight.w700))])))),
-
-              const SizedBox(height: 24),
-
-              // ════════════════════════════════════════
-              // 🔴 DEBUG ПАНЕЛ — хатогиҳо дар экран
-              // ════════════════════════════════════════
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A0000),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.red, width: 1.5)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      const Icon(Icons.bug_report, color: Colors.red, size: 14),
-                      const SizedBox(width: 6),
-                      const Text('🔴 DEBUG LOG',
-                          style: TextStyle(color: Colors.red,
-                              fontWeight: FontWeight.w800, fontSize: 12)),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: () => setState(() => _logs.clear()),
-                        child: const Text('тоза',
-                            style: TextStyle(color: Colors.orange, fontSize: 11))),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () => setState(() => _showDebug = !_showDebug),
-                        child: Text(_showDebug ? 'пинҳон' : 'нишон',
-                            style: const TextStyle(
-                                color: Colors.orange, fontSize: 11))),
-                    ]),
-
-                    if (_showDebug) ...[
-                      const SizedBox(height: 8),
-                      const Divider(color: Colors.red, height: 1),
-                      const SizedBox(height: 8),
-                      ..._logs.reversed.map((l) => Padding(
-                        padding: const EdgeInsets.only(bottom: 3),
-                        child: Text(l,
-                            style: TextStyle(
-                                color: l.contains('❌')
-                                    ? Colors.red
-                                    : l.contains('⚠️')
-                                        ? Colors.orange
-                                        : Colors.white70,
-                                fontSize: 9.5,
-                                fontFamily: 'monospace')))),
-                    ],
-                  ])),
-
-              const SizedBox(height: 40),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+              Center(
+                child: GestureDetector(
+                  onTap: () => context.go(RouteNames.register),
+                  child: RichText(
+                    text: const TextSpan(
+                      text: 'Ҳисоб надоред?  ',
+                      style:
+                          TextStyle(color: Color(0xFFAAADBE), fontSize: 1
