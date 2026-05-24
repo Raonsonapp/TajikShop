@@ -15,11 +15,14 @@ class ApiClient {
   void _setup() {
     dio = Dio(BaseOptions(
       baseUrl: AppStrings.baseUrl,
-      // ✅ ИСЛОҲ: Timeout барои Render cold start (30-60с)
-      connectTimeout: const Duration(seconds: 60),
-      receiveTimeout: const Duration(seconds: 60),
-      sendTimeout: const Duration(minutes: 3),
-      headers: {'Accept': 'application/json'},
+      // ✅ HuggingFace: 30с кофӣ аст
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(seconds: 30),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
     ));
     dio.interceptors.addAll([
       _TokenInjector(),
