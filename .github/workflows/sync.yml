@@ -16,4 +16,23 @@ jobs:
       - name: Push clean backend to Hugging Face
         run: |
           git config --global user.email "ehsonmahmadmurodov@gmail.com"
-          git config --global user.name "Mah
+          git config --global user.name "Mahmadmurodov"
+          
+          mkdir ../hf_space
+          
+          find . -maxdepth 3 -name "go.mod" -exec dirname {} \; | while read dir; do
+            cp -r $dir/* ../hf_space/ 2>/dev/null || true
+          done
+          
+          cp Dockerfile ../hf_space/ 2>/dev/null || true
+          
+          cd ../hf_space
+          rm -rf android ios macos windows linux .github
+          
+          git init
+          git checkout -b main
+          git add .
+          git commit -m "Deploy clean backend without mobile binaries"
+          
+          git remote add hf https://Mahmadmurodov:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Mahmadmurodov/TajikShop
+          git push --force hf main
