@@ -11,9 +11,11 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
-  bool _obscure    = true;
+  final _emailCtrl    = TextEditingController();
+  final _passCtrl     = TextEditingController();
+  bool  _obscure      = true;
+  bool  _isSubmitting = false;
+  String? _localError;
 
   @override
   void dispose() {
@@ -25,196 +27,257 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _login() async {
     final email = _emailCtrl.text.trim();
     final pass  = _passCtrl.text.trim();
-    if (email.isEmpty || pass.isEmpty) return;
-    final ok = await ref.read(authProvider.notifier).login(email, pass);
-    if (ok && mounted) context.go(RouteNames.home);
-  }
 
-  Widget _field({
-    required TextEditingController ctrl,
-    required String hint,
-    required IconData icon,
-    bool obscure = false,
-    Widget? suffix,
-    TextInputType? keyboard,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF141420),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF252538)),
-      ),
-      child: TextField(
-        controller: ctrl,
-        obscureText: obscure,
-        keyboardType: keyboard,
-        style: const TextStyle(color: Colors.white, fontSize: 15),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: Color(0xFF6B6E82), fontSize: 15),
-          prefixIcon: Icon(icon, color: const Color(0xFF6B6E82), size: 20),
-          suffixIcon: suffix,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        ),
-      ),
-    );
+    if (email.isEmpty || pass.isEmpty) {
+      setState(() => _localError = 'Лутфан email ва паролро ворид кунед');
+      return;
+    }
+
+    setState(() { _isSubmitting = true; _localError = null; });
+
+    try {
+      final ok = await ref.read(authProvider.notifier).login(email, pass);
+      if (!mounted) return;
+      if (ok) {
+        context.go(RouteNames.home);
+      } else {
+        setState(() {
+          _isSubmitting = false;
+          _localError = ref.read(authProvider).error ?? 'Хатои номаълум';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _localError = 'Хатои пайвастшавӣ. Интернетро санҷед.';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(authProvider);
+    final isLoading = _isSubmitting || ref.watch(authProvider).isLoading;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 64),
 
               // Logo
-              Row(children: [
-                Container(
-                  width: 44, height: 44,
+              Center(
+                child: Container(
+                  width: 90, height: 90,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                         colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF00D084).withValues(alpha: 0.35),
+                        blurRadius: 24,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
                   child: const Icon(Icons.shopping_bag_rounded,
-                      color: Colors.white, size: 24),
+                      color: Colors.white, size: 48),
                 ),
-                const SizedBox(width: 10),
-                const Text('TajikShop',
+              ),
+              const SizedBox(height: 16),
+
+              // Сарлавҳа
+              const Center(
+                child: Text('TajikShop',
                     style: TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800)),
-              ]),
-
-              const SizedBox(height: 40),
-              const Text('Хуш омадед! 👋',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700)),
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5)),
+              ),
               const SizedBox(height: 6),
-              const Text('Ба ҳисоби худ ворид шавед',
-                  style: TextStyle(color: Color(0xFFAAADBE), fontSize: 14)),
-              const SizedBox(height: 32),
+              const Center(
+                child: Text('Ба ҳисоби худ ворид шавед',
+                    style: TextStyle(
+                        color: Color(0xFFAAADBE), fontSize: 14)),
+              ),
+              const SizedBox(height: 48),
+
+              // Email
+              _Field(
+                controller: _emailCtrl,
+                label: 'Почтаи электронӣ',
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+
+              // Парол
+              _Field(
+                controller: _passCtrl,
+                label: 'Парол',
+                icon: Icons.lock_outline,
+                obscure: _obscure,
+                suffix: IconButton(
+                  icon: Icon(
+                    _obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: const Color(0xFF6B6E82), size: 20,
+                  ),
+                  onPressed: () => setState(() => _obscure = !_obscure),
+                ),
+              ),
+              const SizedBox(height: 12),
 
               // Хатогӣ
-              if (state.error != null && !state.isLoading)
+              if (_localError != null)
                 Container(
-                  width: double.infinity,
                   padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 16),
+                  margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.redAccent),
                   ),
                   child: Row(children: [
-                    const Icon(Icons.error_outline,
-                        color: Colors.redAccent, size: 16),
+                    const Icon(Icons.error_outline, color: Colors.redAccent, size: 16),
                     const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(state.error!,
-                          style: const TextStyle(
-                              color: Colors.redAccent, fontSize: 13)),
-                    ),
+                    Expanded(child: Text(_localError!,
+                        style: const TextStyle(color: Colors.redAccent, fontSize: 13))),
                   ]),
                 ),
 
-              // Email
-              _field(
-                ctrl: _emailCtrl,
-                hint: 'Почтаи электронӣ',
-                icon: Icons.email_outlined,
-                keyboard: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 14),
-
-              // Парол
-              _field(
-                ctrl: _passCtrl,
-                hint: 'Парол',
-                icon: Icons.lock_outline,
-                obscure: _obscure,
-                suffix: IconButton(
-                  icon: Icon(
-                    _obscure
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: const Color(0xFF6B6E82),
-                  ),
-                  onPressed: () => setState(() => _obscure = !_obscure),
-                ),
-              ),
-
-              const SizedBox(height: 28),
+              const SizedBox(height: 16),
 
               // Тугма
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: state.isLoading ? null : _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00D084),
-                    disabledBackgroundColor:
-                        const Color(0xFF00D084).withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
-                  ),
-                  child: state.isLoading
-                      ? const SizedBox(
-                          width: 22, height: 22,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2.5, color: Colors.white),
-                        )
-                      : const Text('Ворид шавед',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700)),
-                ),
+              _LoginButton(
+                isLoading: isLoading,
+                onTap: isLoading ? null : _login,
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 32),
+              const Divider(color: Colors.white12),
+              const SizedBox(height: 16),
 
-              Center(
-                child: GestureDetector(
-                  onTap: () => context.go(RouteNames.register),
-                  child: RichText(
-                    text: const TextSpan(
-                      text: 'Ҳисоб надоред?  ',
-                      style:
-                          TextStyle(color: Color(0xFFAAADBE), fontSize: 14),
-                      children: [
-                        TextSpan(
-                          text: 'Сабтном',
-                          style: TextStyle(
-                              color: Color(0xFF00D084),
-                              fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    ),
+              // Сабтном
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Ҳисоб надоред?  ',
+                      style: TextStyle(color: Color(0xFFAAADBE), fontSize: 14)),
+                  GestureDetector(
+                    onTap: () => context.go(RouteNames.register),
+                    child: const Text('Сабтном',
+                        style: TextStyle(
+                            color: Color(0xFF00D084),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14)),
                   ),
-                ),
+                ],
               ),
-
               const SizedBox(height: 40),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Майдони ворид ───────────────────────────────────────────────────────────
+class _Field extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final bool obscure;
+  final TextInputType? keyboardType;
+  final Widget? suffix;
+
+  const _Field({
+    required this.controller,
+    required this.label,
+    required this.icon,
+    this.obscure = false,
+    this.keyboardType,
+    this.suffix,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF141420),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF252538)),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscure,
+        keyboardType: keyboardType,
+        style: const TextStyle(color: Colors.white, fontSize: 15),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Color(0xFF6B6E82)),
+          prefixIcon: Icon(icon, color: const Color(0xFF6B6E82), size: 20),
+          suffixIcon: suffix,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: InputBorder.none,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF00D084), width: 1.5),
+          ),
+          enabledBorder: InputBorder.none,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Тугмаи воридшавӣ ────────────────────────────────────────────────────────
+class _LoginButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback? onTap;
+
+  const _LoginButton({required this.isLoading, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 52,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: onTap != null
+              ? const Color(0xFF00D084)
+              : const Color(0xFF252538),
+          boxShadow: onTap != null
+              ? [BoxShadow(
+                  color: const Color(0xFF00D084).withValues(alpha: 0.35),
+                  blurRadius: 16,
+                  spreadRadius: 1,
+                )]
+              : null,
+        ),
+        child: Center(
+          child: isLoading
+              ? const SizedBox(
+                  width: 24, height: 24,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2.5, color: Colors.white),
+                )
+              : const Text('Ворид шавед',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
         ),
       ),
     );
