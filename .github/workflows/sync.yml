@@ -2,7 +2,7 @@ name: Sync to Hugging Face Spaces
 
 on:
   push:
-    branches: [ main ] # агар номи веткаи асосиат master бошад, master навис
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -12,8 +12,9 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          lfs: true
 
       - name: Push to Hugging Face
         run: |
-          git remote add hf https://github-actions:${{ secrets.GH_TOKEN }}@huggingface.co/spaces/Mahmadmurodov/TajikShop
+          git remote add hf https://Mahmadmurodov:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Mahmadmurodov/TajikShop
           git push --force hf main
