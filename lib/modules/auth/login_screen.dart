@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart'; // ✅ ИЛОВА ШУД
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,15 +7,12 @@ import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
 
-// ══════════════════════════════════════════════════
-// DEBUG — танҳо дар консол, НА дар build()
-// ══════════════════════════════════════════════════
 final _logs = <String>[];
 void _log(String msg) {
   final t = DateTime.now().toString().substring(11, 19);
   _logs.add('[$t] $msg');
   if (_logs.length > 40) _logs.removeAt(0);
-  debugPrint('🔴 $msg'); // ✅ Танҳо консол, setState НЕСТ
+  debugPrint('🔴 $msg');
 }
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -28,49 +25,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _obscure = true;
-  bool _showDebug = true;
+  final bool _showDebug = true;
 
   @override
   void initState() {
     super.initState();
     _log('=== LoginScreen INIT ===');
-
-    // ✅ Хатогиҳоро танҳо ба консол нависед, setState НЕКУНЕД
     final prev = FlutterError.onError;
     FlutterError.onError = (details) {
       _log('❌ FlutterError: ${details.exception}');
       for (final line in details.stack.toString().split('\n').take(4)) {
         _log('   $line');
       }
-      // ❌ НЕСТ ШУД: if (mounted) setState(() {});
       prev?.call(details);
     };
   }
 
-  @override  void dispose() {
+  @override
+  void dispose() {
     _emailCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
   }
-
   Future<void> _login() async {
-    _log('--- Login boshlandi ---');
+    _log('--- Login started ---');
     final email = _emailCtrl.text.trim();
     final pass = _passCtrl.text.trim();
-    _log('Email: $email | Pass: ${pass.isEmpty ? "BOŠ" : "***"}');
     if (email.isEmpty || pass.isEmpty) {
-      _log('⚠️ Email ё парол холист');
+      _log('⚠️ Email or password empty');
       return;
     }
     try {
-      _log('API ga so\'rov...');
+      _log('API request...');
       final ok = await ref.read(authProvider.notifier).login(email, pass);
-      _log('Natija: $ok');
+      _log('Result: $ok');
       if (ok && mounted) context.go(RouteNames.home);
     } catch (e, st) {
-      _log('❌ Login xato: $e');
+      _log('❌ Login error: $e');
       _log('Stack: ${st.toString().split('\n').take(2).join(' ')}');
-      // ✅ setState танҳо барои нишон додани хато, на барои лог
       if (mounted) setState(() {});
     }
   }
@@ -96,26 +88,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         style: const TextStyle(color: Colors.white, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: Color(0xFF6B6E82)),          prefixIcon: Icon(icon, color: const Color(0xFF6B6E82)),
+          hintStyle: const TextStyle(color: Color(0xFF6B6E82)),
+          prefixIcon: Icon(icon, color: const Color(0xFF6B6E82)),
           suffixIcon: suffix,
           filled: false,
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        ),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ ЛОГҲО АЗ BUILD НЕСТ ШУДАНД!
-    // ❌ НЕСТ: _log('build()...')
-    // ❌ НЕСТ: _log('scaffoldBg...')
-    // ❌ НЕСТ: _log('inputFillColor...')
-
     final state = ref.watch(authProvider);
 
     return Scaffold(
@@ -145,7 +132,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.w800)),
-              ]),              const SizedBox(height: 40),
+              ]),
+              const SizedBox(height: 40),
               const Text('Хуш омадед! 👋',
                   style: TextStyle(
                       color: Colors.white,
@@ -157,8 +145,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 32),
               _field(
                 ctrl: _emailCtrl,
-                hint: 'Почтаи электронӣ',
-                icon: Icons.email_outlined,
+                hint: 'Почтаи электронӣ',                icon: Icons.email_outlined,
                 keyboard: TextInputType.emailAddress,
               ),
               const SizedBox(height: 14),
@@ -194,7 +181,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: Text(state.error!,
                           style: const TextStyle(
                               color: Colors.red, fontSize: 13)),
-                    ),                  ]),
+                    ),
+                  ]),
                 ),
               ],
               const SizedBox(height: 24),
@@ -206,15 +194,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00D084),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    elevation: 0,
+                        borderRadius: BorderRadius.circular(14)),                    elevation: 0,
                   ),
                   child: state.isLoading
                       ? const SizedBox(
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2.5, color: Colors.white))
+                              strokeWidth: 2.5, color: Colors.white),
+                        )
                       : const Text('Ворид шавед',
                           style: TextStyle(
                               color: Colors.white,
@@ -230,4 +218,71 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     text: const TextSpan(
                       text: 'Ҳисоб надоред?  ',
                       style:
-                          TextStyle(color: Color(0xFFAAADBE), fontSize: 1
+                          TextStyle(color: Color(0xFFAAADBE), fontSize: 14),
+                      children: [
+                        TextSpan(
+                          text: 'Сабтном',
+                          style: TextStyle(
+                              color: Color(0xFF00D084),
+                              fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              if (kDebugMode && _showDebug)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A0000),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.red, width: 1.5),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [                      Row(children: [
+                        const Icon(Icons.bug_report,
+                            color: Colors.red, size: 14),
+                        const SizedBox(width: 6),
+                        const Text('🔴 DEBUG LOG',
+                            style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12)),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => setState(() => _logs.clear()),
+                          child: const Text('тоза',
+                              style: TextStyle(
+                                  color: Colors.orange, fontSize: 11)),
+                        ),
+                      ]),
+                      const SizedBox(height: 8),
+                      const Divider(color: Colors.red, height: 1),
+                      const SizedBox(height: 8),
+                      ..._logs.reversed.map((l) => Padding(
+                            padding: const EdgeInsets.only(bottom: 3),
+                            child: Text(l,
+                                style: TextStyle(
+                                    color: l.contains('❌')
+                                        ? Colors.red
+                                        : l.contains('⚠️')
+                                            ? Colors.orange
+                                            : Colors.white70,
+                                    fontSize: 9.5,
+                                    fontFamily: 'monospace')),
+                          )),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
