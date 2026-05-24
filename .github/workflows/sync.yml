@@ -20,10 +20,13 @@ jobs:
           
           mkdir ../hf_space
           
+          # Нусхабардории лоиҳаи Go
           find . -maxdepth 3 -name "go.mod" -exec dirname {} \; | while read dir; do
             cp -r $dir/* ../hf_space/ 2>/dev/null || true
           done
           
+          # Ҳатман нусхабардории README.md ва Dockerfile аз папкаи асосӣ
+          cp README.md ../hf_space/ 2>/dev/null || true
           cp Dockerfile ../hf_space/ 2>/dev/null || true
           
           cd ../hf_space
@@ -32,7 +35,7 @@ jobs:
           git init
           git checkout -b main
           git add .
-          git commit -m "Deploy clean backend without mobile binaries"
+          git commit -m "Deploy clean backend with metadata"
           
-          git remote add hf https://Mahmadmurodov:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Mahmadmurodov/TajikShop
+          git remote add hf https://Mahmadmurodov:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/Mahmadmurodov/TailkShop
           git push --force hf main
