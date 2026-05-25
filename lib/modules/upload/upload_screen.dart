@@ -369,7 +369,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       TextField(controller: c, keyboardType: type, inputFormatters: formatters,
         style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
         decoration: InputDecoration(hintText: hint, hintStyle: const TextStyle(color: AppColors.textMuted),
-          filled: true, fillColor: AppColors.bgCard,
+          filled: false,
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: AppColors.border, width: 0.5)),
