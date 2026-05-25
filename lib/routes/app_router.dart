@@ -22,45 +22,24 @@ import '../shared/widgets/main_scaffold.dart';
 import '../providers/auth_provider.dart';
 import 'route_names.dart';
 
-// ✅ ИСЛОҲ: GoRouter бо listenable — auth state иваз шавад, router refresh мешавад
 final routerProvider = Provider<GoRouter>((ref) {
-  final authNotifier = _AuthListenable(ref);
-
   return GoRouter(
     initialLocation: RouteNames.splash,
-    refreshListenable: authNotifier,
-    redirect: (context, state) {
-      // Splash ва auth routes ҳамеша озоданд
-      final isSplash = state.matchedLocation == RouteNames.splash;
-      final isAuth   = state.matchedLocation == RouteNames.login ||
-                       state.matchedLocation == RouteNames.register ||
-                       state.matchedLocation == RouteNames.phoneAuth;
-
-      if (isSplash) return null; // Splash — ҳеҷ гоҳ redirect нест
-      return null;               // Redirect-ро splash худаш идора мекунад
-    },
     routes: [
       GoRoute(path: RouteNames.splash,    builder: (_, __) => const SplashScreen()),
       GoRoute(path: RouteNames.login,     builder: (_, __) => const LoginScreen()),
       GoRoute(path: RouteNames.register,  builder: (_, __) => const RegisterScreen()),
       GoRoute(path: RouteNames.phoneAuth, builder: (_, __) => const PhoneAuthScreen()),
-      GoRoute(path: RouteNames.phoneOtp,  builder: (_, s) {
-        final e = s.extra as Map<String, dynamic>? ?? {};
-        return PhoneOtpScreen(
-          verificationId: e['verificationId'] as String? ?? '',
-          phone: e['phone'] as String? ?? '',
-        );
-      }),
       GoRoute(path: '/product/:id',
           builder: (_, s) => ProductDetailScreen(id: s.pathParameters['id']!)),
-      GoRoute(path: RouteNames.orders,         builder: (_, __) => const OrdersScreen()),
-      GoRoute(path: RouteNames.notifications,  builder: (_, __) => const NotificationsScreen()),
-      GoRoute(path: RouteNames.categories,     builder: (_, __) => const CategoriesScreen()),
-      GoRoute(path: RouteNames.search,         builder: (_, __) => const SearchScreen()),
-      GoRoute(path: RouteNames.sellerDashboard,builder: (_, __) => const SellerDashboardScreen()),
-      GoRoute(path: RouteNames.seller,         builder: (_, __) => const SellerDashboardScreen()),
-      GoRoute(path: RouteNames.addProduct,     builder: (_, __) => const AddProductScreen()),
-      GoRoute(path: RouteNames.admin,          builder: (_, __) => const AdminDashboardScreen()),
+      GoRoute(path: RouteNames.orders,          builder: (_, __) => const OrdersScreen()),
+      GoRoute(path: RouteNames.notifications,   builder: (_, __) => const NotificationsScreen()),
+      GoRoute(path: RouteNames.categories,      builder: (_, __) => const CategoriesScreen()),
+      GoRoute(path: RouteNames.search,          builder: (_, __) => const SearchScreen()),
+      GoRoute(path: RouteNames.sellerDashboard, builder: (_, __) => const SellerDashboardScreen()),
+      GoRoute(path: RouteNames.seller,          builder: (_, __) => const SellerDashboardScreen()),
+      GoRoute(path: RouteNames.addProduct,      builder: (_, __) => const AddProductScreen()),
+      GoRoute(path: RouteNames.admin,           builder: (_, __) => const AdminDashboardScreen()),
       ShellRoute(
         builder: (context, state, child) => MainScaffold(child: child),
         routes: [
@@ -79,10 +58,3 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
-
-// ✅ Auth state-ро GoRouter-га listenable қилади
-class _AuthListenable extends ChangeNotifier {
-  _AuthListenable(Ref ref) {
-    ref.listen(authProvider, (_, __) => notifyListeners());
-  }
-}
