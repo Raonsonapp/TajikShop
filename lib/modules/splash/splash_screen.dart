@@ -32,29 +32,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Future<void> _initApp() async {
     final minDelay = Future.delayed(const Duration(seconds: 2));
 
-    // ✅ TIMEOUT 10с — агар сервер ҷавоб надиҳад, ба login меравад
+    // ✅ TIMEOUT 10с — на 60с! Агар сервер ҷавоб надиҳад, ба login меравад
     final authCheck = ref
         .read(authProvider.notifier)
         .checkAuth()
-        .timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {},
-        )
+        .timeout(const Duration(seconds: 10), onTimeout: () {})
         .catchError((_) {});
 
     await Future.wait([minDelay, authCheck]);
 
     if (!mounted) return;
-
     final s = ref.read(authProvider);
     context.go(s.isAuthenticated ? RouteNames.home : RouteNames.login);
   }
 
   @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _ctrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -69,46 +62,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 100,
-                  height: 100,
+                  width: 100, height: 100,
                   decoration: BoxDecoration(
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        spreadRadius: 5,
-                      )
-                    ],
+                    boxShadow: [BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      blurRadius: 30, spreadRadius: 5,
+                    )],
                   ),
-                  child: const Icon(Icons.shopping_bag_rounded,
-                      color: Colors.white, size: 52),
+                  child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 52),
                 ),
                 const SizedBox(height: 24),
                 ShaderMask(
-                  shaderCallback: (b) =>
-                      AppColors.primaryGradient.createShader(b),
-                  child: const Text('TajikShop',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 38,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -1)),
+                  shaderCallback: (b) => AppColors.primaryGradient.createShader(b),
+                  child: const Text('TajikShop', style: TextStyle(
+                      color: Colors.white, fontSize: 38,
+                      fontWeight: FontWeight.w800, letterSpacing: -1)),
                 ),
                 const SizedBox(height: 8),
-                const Text('Бозори Тоҷикистон',
-                    style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 16)),
+                const Text('Бозори Тоҷикистон', style: TextStyle(
+                    color: AppColors.textSecondary, fontSize: 16)),
                 const SizedBox(height: 24),
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.primary,
-                  ),
-                ),
+                const SizedBox(width: 24, height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
               ],
             ),
           ),
