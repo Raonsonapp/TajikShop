@@ -30,15 +30,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _initApp() async {
-    // Анимация ҳадди ақал 2 сония
     final minDelay = Future.delayed(const Duration(seconds: 2));
 
-    // checkAuth бо timeout 30с — HuggingFace учун кофӣ
+    // ✅ TIMEOUT 10с — агар сервер ҷавоб надиҳад, ба login меравад
     final authCheck = ref
         .read(authProvider.notifier)
         .checkAuth()
         .timeout(
-          const Duration(seconds: 30),
+          const Duration(seconds: 10),
           onTimeout: () {},
         )
         .catchError((_) {});
@@ -47,12 +46,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     if (!mounted) return;
 
-    final authState = ref.read(authProvider);
-    if (authState.isAuthenticated) {
-      context.go(RouteNames.home);
-    } else {
-      context.go(RouteNames.login);
-    }
+    final s = ref.read(authProvider);
+    context.go(s.isAuthenticated ? RouteNames.home : RouteNames.login);
   }
 
   @override
@@ -74,7 +69,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 100, height: 100,
+                  width: 100,
+                  height: 100,
                   decoration: BoxDecoration(
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(28),
@@ -106,7 +102,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         color: AppColors.textSecondary, fontSize: 16)),
                 const SizedBox(height: 24),
                 const SizedBox(
-                  width: 24, height: 24,
+                  width: 24,
+                  height: 24,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: AppColors.primary,
