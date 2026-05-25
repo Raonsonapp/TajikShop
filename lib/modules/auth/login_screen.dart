@@ -48,22 +48,67 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  // ✅ MIUI fix: filled:false, decoration бо Stack
+  Widget _buildField({
+    required TextEditingController ctrl,
+    required String hint,
+    required IconData icon,
+    bool obscure = false,
+    TextInputType? keyboard,
+  }) {
+    return Stack(
+      children: [
+        // Фон — Container (MIUI TextField-ро иваз намекунад)
+        Container(
+          height: 56,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1C1C2E),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF3A3A5C), width: 1),
+          ),
+        ),
+        TextField(
+          controller: ctrl,
+          obscureText: obscure,
+          keyboardType: keyboard,
+          style: const TextStyle(color: Colors.white, fontSize: 15),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(color: Color(0xFF6B6E82)),
+            prefixIcon: Icon(icon, color: const Color(0xFF6B6E82), size: 20),
+            // ✅ filled: false — MIUI рангро иваз карда наметавонад
+            filled: false,
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0F),
       resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo
+              const SizedBox(height: 48),
+
               const Icon(Icons.shopping_bag_rounded,
                   color: Color(0xFF00D084), size: 72),
               const SizedBox(height: 16),
+
               const Text('TajikShop',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -71,72 +116,57 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       fontSize: 32,
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
+
               const Text('Ба ҳисоби худ ворид шавед',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white54, fontSize: 14)),
               const SizedBox(height: 40),
 
-              // Хато
               if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.redAccent),
+                  ),
                   child: Text(_error!,
-                      textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.redAccent)),
                 ),
 
-              // Email
-              TextField(
-                controller: _emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  labelStyle: const TextStyle(color: Colors.white54),
-                  filled: true,
-                  fillColor: const Color(0xFF1C1C2E),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  prefixIcon: const Icon(Icons.email_outlined,
-                      color: Colors.white54),
-                ),
+              _buildField(
+                ctrl: _emailCtrl,
+                hint: 'Почтаи электронӣ',
+                icon: Icons.email_outlined,
+                keyboard: TextInputType.emailAddress,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-              // Парол
-              TextField(
-                controller: _passCtrl,
-                obscureText: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: 'Парол',
-                  labelStyle: const TextStyle(color: Colors.white54),
-                  filled: true,
-                  fillColor: const Color(0xFF1C1C2E),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  prefixIcon: const Icon(Icons.lock_outline,
-                      color: Colors.white54),
-                ),
+              _buildField(
+                ctrl: _passCtrl,
+                hint: 'Парол',
+                icon: Icons.lock_outline,
+                obscure: true,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
-              // Тугма
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
                   onPressed: _loading ? null : _login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00D084),
+                    disabledBackgroundColor: Colors.grey,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
                   ),
                   child: _loading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const SizedBox(
+                          width: 24, height: 24,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
                       : const Text('Ворид шавед',
                           style: TextStyle(
                               color: Colors.white,
@@ -146,7 +176,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Сабтном
               TextButton(
                 onPressed: () => context.go(RouteNames.register),
                 child: const Text('Ҳисоб надоред? Сабтном',
