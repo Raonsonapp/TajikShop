@@ -247,14 +247,20 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     ]),
     const SizedBox(height: 20),
     _sec('3. Тавсиф', null),
-    Container(decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border, width: 0.5)),
-      child: TextField(controller: _descCtrl, maxLines: 4, maxLength: 500,
+    Container(
+      height: 120,
+      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border, width: 0.5)),
+      padding: const EdgeInsets.all(12),
+      child: EditableText(
+        controller: _descCtrl,
+        focusNode: FocusNode(),
+        maxLines: 5,
         style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-        decoration: const InputDecoration(hintText: 'Тавсифи кӯтоҳ...',
-          hintStyle: TextStyle(color: AppColors.textMuted), border: InputBorder.none,
-          contentPadding: EdgeInsets.all(12),
-          counterStyle: TextStyle(color: AppColors.textMuted, fontSize: 11)))),
+        cursorColor: AppColors.primary,
+        backgroundCursorColor: Colors.grey,
+      ),
+    ),
   ]);
 
   Widget _step2() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -373,19 +379,16 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border, width: 0.5),
         ),
-        child: Row(children: [
-          const SizedBox(width: 14),
-          Expanded(child: EditableText(
-            controller: c,
-            focusNode: FocusNode(),
-            keyboardType: type,
-            inputFormatters: formatters,
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-            cursorColor: AppColors.primary,
-            backgroundCursorColor: Colors.grey,
-          )),
-          const SizedBox(width: 8),
-        ]),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: EditableText(
+          controller: c,
+          focusNode: FocusNode(),
+          keyboardType: type,
+          inputFormatters: formatters,
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+          cursorColor: AppColors.primary,
+          backgroundCursorColor: Colors.grey,
+        ),
       ),
     ]);
 
