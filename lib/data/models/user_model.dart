@@ -9,18 +9,12 @@ class UserModel {
   final DateTime createdAt;
 
   const UserModel({
-    required this.id,
-    required this.email,
-    required this.fullName,
-    this.avatar,
-    required this.role,
-    required this.isSeller,
-    required this.isVerified,
-    required this.createdAt,
+    required this.id, required this.email, required this.fullName,
+    this.avatar, required this.role, required this.isSeller,
+    required this.isVerified, required this.createdAt,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> j) {
-    // ✅ Сервер "name" ё "full_name" ё "username" мефиристад
     final name = j['full_name']?.toString() ??
         j['name']?.toString() ??
         j['username']?.toString() ??
@@ -42,13 +36,8 @@ class UserModel {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'email': email,
-    'full_name': fullName,
-    'avatar_url': avatar,
-    'role': role,
-    'is_seller': isSeller,
-    'is_verified': isVerified,
-    'created_at': createdAt.toIso8601String(),
+    'id': id, 'email': email, 'full_name': fullName,
+    'avatar_url': avatar, 'role': role, 'is_seller': isSeller,
+    'is_verified': isVerified, 'created_at': createdAt.toIso8601String(),
   };
 }
