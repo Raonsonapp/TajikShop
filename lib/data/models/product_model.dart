@@ -43,11 +43,11 @@ class ProductModel {
     if (rawImages is List) {
       imgs = rawImages.where((e) => e != null && e.toString().isNotEmpty).map((e) {
         final s = e.toString();
-        return s.startsWith('http') ? s : 'https://tajikshop.onrender.com$s';
+        return s.startsWith('http') ? s : 'https://mahmadmurodov-tajikshop.hf.space$s';
       }).toList();
     } else if (json['image_url'] != null && json['image_url'].toString().isNotEmpty) {
       final s = json['image_url'].toString();
-      imgs = [s.startsWith('http') ? s : 'https://tajikshop.onrender.com$s'];
+      imgs = [s.startsWith('http') ? s : 'https://mahmadmurodov-tajikshop.hf.space$s'];
     }
 
     final discPct  = (json['discount_percent'] as num?)?.toInt() ?? 0;
