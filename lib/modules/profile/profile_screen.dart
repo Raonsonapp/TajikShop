@@ -147,9 +147,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ])),
                 const SizedBox(width: 16),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(user?.fullName ?? 'Корбар',
-                      style: const TextStyle(color: Colors.white,
-                          fontSize: 18, fontWeight: FontWeight.w700)),
+                  Row(children: [
+                    Expanded(
+                      child: Text(
+                        user?.fullName?.isNotEmpty == true ? user!.fullName : (user?.email?.split('@').first ?? 'Корбар'),
+                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // ✅ Verified badge барои tajikshop
+                    if (user?.isVerified == true || user?.fullName == 'tajikshop')
+                      Container(
+                        margin: const EdgeInsets.only(left: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1DA1F2).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF1DA1F2).withOpacity(0.4)),
+                        ),
+                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.verified_rounded, color: Color(0xFF1DA1F2), size: 12),
+                          SizedBox(width: 3),
+                          Text('Тасдиқ', style: TextStyle(color: Color(0xFF1DA1F2), fontSize: 9, fontWeight: FontWeight.w700)),
+                        ]),
+                      ),
+                  ]),
                   const SizedBox(height: 4),
                   Text(user?.email ?? '',
                       style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
