@@ -366,17 +366,27 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
       const SizedBox(height: 5),
-      TextField(controller: c, keyboardType: type, inputFormatters: formatters,
-        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-        decoration: InputDecoration(hintText: hint, hintStyle: const TextStyle(color: AppColors.textMuted),
-          filled: false,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border, width: 0.5)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.border, width: 0.5)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary, width: 1.5)))),
+      Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: AppColors.bgCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border, width: 0.5),
+        ),
+        child: Row(children: [
+          const SizedBox(width: 14),
+          Expanded(child: EditableText(
+            controller: c,
+            focusNode: FocusNode(),
+            keyboardType: type,
+            inputFormatters: formatters,
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+            cursorColor: AppColors.primary,
+            backgroundCursorColor: Colors.grey,
+          )),
+          const SizedBox(width: 8),
+        ]),
+      ),
     ]);
 
   Widget _drop<T>({required String label, required T? value, required String hint,
