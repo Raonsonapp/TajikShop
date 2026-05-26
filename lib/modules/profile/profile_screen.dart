@@ -121,7 +121,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                    colors: [AppColors.primary.withOpacity(0.15), AppColors.bgCard],
+                    colors: [AppColors.primary.withValues(alpha: 0.15), AppColors.bgCard],
                     begin: Alignment.topLeft, end: Alignment.bottomRight),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: AppColors.border)),
@@ -147,31 +147,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ])),
                 const SizedBox(width: 16),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Expanded(
-                      child: Text(
-                        user?.fullName?.isNotEmpty == true ? user!.fullName : (user?.email?.split('@').first ?? 'Корбар'),
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    // ✅ Verified badge барои tajikshop
-                    if (user?.isVerified == true || user?.fullName == 'tajikshop')
-                      Container(
-                        margin: const EdgeInsets.only(left: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1DA1F2).withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF1DA1F2).withOpacity(0.4)),
-                        ),
-                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.verified_rounded, color: Color(0xFF1DA1F2), size: 12),
-                          SizedBox(width: 3),
-                          Text('Тасдиқ', style: TextStyle(color: Color(0xFF1DA1F2), fontSize: 9, fontWeight: FontWeight.w700)),
-                        ]),
-                      ),
-                  ]),
+                  Text(user != null && user.fullName.isNotEmpty ? user.fullName : (user?.email?.split('@').first ?? 'Корбар'),
+                      style: const TextStyle(color: Colors.white,
+                          fontSize: 18, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
                   Text(user?.email ?? '',
                       style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
@@ -230,7 +208,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
               child: ListTile(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                tileColor: const Color(0xFFFF3B5C).withOpacity(0.1),
+                tileColor: const Color(0xFFFF3B5C).withValues(alpha: 0.1),
                 leading: const Icon(Icons.logout_rounded, color: Color(0xFFFF3B5C)),
                 title: Text(l.logout, style: const TextStyle(
                     color: Color(0xFFFF3B5C), fontWeight: FontWeight.w600)),
@@ -261,8 +239,8 @@ class _RoleBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-          color: c.withOpacity(0.15), borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: c.withOpacity(0.4))),
+          color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: c.withValues(alpha: 0.4))),
       child: Text(label, style: TextStyle(color: c, fontSize: 11, fontWeight: FontWeight.w700)));
   }
 }
@@ -292,7 +270,7 @@ class _MenuItem extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       tileColor: AppColors.bgCard,
       leading: Container(padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: iconColor.withOpacity(0.12),
+          decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10)),
           child: Icon(icon, color: iconColor, size: 18)),
       title: Text(label, style: const TextStyle(color: Colors.white,
@@ -318,7 +296,7 @@ class _SwitchTile extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       tileColor: AppColors.bgCard,
       leading: Container(padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: iconColor.withOpacity(0.12),
+          decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10)),
           child: Icon(icon, color: iconColor, size: 18)),
       title: Text(label, style: const TextStyle(color: Colors.white,
