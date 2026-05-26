@@ -59,29 +59,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: AppColors.primary, width: 1.5),
                     ),
-                    child: TextField(
-                      controller: _ctrl,
-                      focusNode: _focus,
-                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: 'Маҳсулотро ҷустуҷӯ кунед...',
-                        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-                        prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
-                        suffixIcon: query.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 18),
-                                onPressed: () {
-                                  _ctrl.clear();
-                                  ref.read(searchQueryProvider.notifier).state = '';
-                                },
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Row(children: [
+                      const SizedBox(width: 12),
+                      const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(child: EditableText(
+                        controller: _ctrl,
+                        focusNode: _focus,
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                        cursorColor: AppColors.primary,
+                        backgroundCursorColor: Colors.grey,
+                        onChanged: (v) => ref.read(searchQueryProvider.notifier).state = v,
+                        onSubmitted: (v) => ref.read(searchQueryProvider.notifier).state = v,
+                      )),
+                      if (query.isNotEmpty) IconButton(
+                        icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 18),
+                        onPressed: () { _ctrl.clear(); ref.read(searchQueryProvider.notifier).state = ''; },
                       ),
-                      onChanged: (v) => ref.read(searchQueryProvider.notifier).state = v,
-                      onSubmitted: (v) => ref.read(searchQueryProvider.notifier).state = v,
-                    ),
+                      const SizedBox(width: 4),
+                    ]),
                   ),
                 ),
               ]),
