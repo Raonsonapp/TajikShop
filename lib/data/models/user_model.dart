@@ -3,11 +3,9 @@ class UserModel {
   final String email;
   final String fullName;
   final String? avatar;
-  final String? phone;
   final String role;
   final bool isSeller;
   final bool isVerified;
-  final bool isBanned;
   final DateTime createdAt;
 
   const UserModel({
@@ -15,28 +13,30 @@ class UserModel {
     required this.email,
     required this.fullName,
     this.avatar,
-    this.phone,
     required this.role,
     required this.isSeller,
     required this.isVerified,
-    this.isBanned = false,
     required this.createdAt,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) {
+  factory UserModel.fromJson(Map<String, dynamic> j) {
+    // ✅ Сервер "name" ё "full_name" ё "username" мефиристад
+    final name = j['full_name']?.toString() ??
+        j['name']?.toString() ??
+        j['username']?.toString() ??
+        j['email']?.toString().split('@').first ??
+        'Корбар';
+    final role = j['role']?.toString() ?? 'buyer';
     return UserModel(
-      id: json['id']?.toString() ?? '',
-      email: json['email'] ?? '',
-      // backend uses 'name', fallback to 'full_name'
-      fullName: json['name'] ?? json['full_name'] ?? json['username'] ?? 'Корбар',
-      avatar: json['avatar_url'] ?? json['avatar'],
-      phone: json['phone'],
-      role: json['role'] ?? 'buyer',
-      isSeller: json['is_seller'] ?? false,
-      isVerified: json['is_verified'] ?? false,
-      isBanned: json['is_banned'] ?? false,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
+      id: j['id']?.toString() ?? '',
+      email: j['email']?.toString() ?? '',
+      fullName: name,
+      avatar: j['avatar_url']?.toString() ?? j['avatar']?.toString(),
+      role: role,
+      isSeller: j['is_seller'] == true || role == 'seller' || role == 'admin',
+      isVerified: j['is_verified'] == true,
+      createdAt: j['created_at'] != null
+          ? DateTime.tryParse(j['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
     );
   }
@@ -44,9 +44,8 @@ class UserModel {
   Map<String, dynamic> toJson() => {
     'id': id,
     'email': email,
-    'name': fullName,
+    'full_name': fullName,
     'avatar_url': avatar,
-    'phone': phone,
     'role': role,
     'is_seller': isSeller,
     'is_verified': isVerified,
