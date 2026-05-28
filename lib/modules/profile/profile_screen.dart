@@ -147,7 +147,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ])),
                 const SizedBox(width: 16),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(user != null && user.fullName.isNotEmpty ? user.fullName : (user?.email?.split('@').first ?? 'Корбар'),
+                  Text(user?.fullName ?? 'Корбар',
                       style: const TextStyle(color: Colors.white,
                           fontSize: 18, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 4),
