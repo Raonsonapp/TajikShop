@@ -118,7 +118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           gradient: AppColors.primaryGradient,
                           borderRadius: BorderRadius.circular(11),
                           boxShadow: [BoxShadow(
-                            color: AppColors.primary.withOpacity(0.4), blurRadius: 10)]),
+                            color: AppColors.primary.withValues(alpha: 0.4), blurRadius: 10)]),
                         child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 20)),
                       const SizedBox(width: 10),
                       const Text('TajikShop',
@@ -188,7 +188,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       width: _bannerIdx == i ? 24 : 6, height: 6,
                       decoration: BoxDecoration(
                         gradient: _bannerIdx == i ? AppColors.primaryGradient : null,
-                        color: _bannerIdx == i ? null : AppColors.textMuted.withOpacity(0.3),
+                        color: _bannerIdx == i ? null : AppColors.textMuted.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(3)))))),
 
               // PROMO CHIPS
@@ -275,20 +275,20 @@ class _BannerCard extends StatelessWidget {
           begin: Alignment.topLeft, end: Alignment.bottomRight),
       borderRadius: BorderRadius.circular(22),
       boxShadow: [BoxShadow(
-          color: banner.c1.withOpacity(0.35), blurRadius: 18, offset: const Offset(0, 6))]),
+          color: banner.c1.withValues(alpha: 0.35), blurRadius: 18, offset: const Offset(0, 6))]),
     child: Stack(children: [
       Positioned(right: -25, top: -25,
         child: Container(width: 130, height: 130,
           decoration: BoxDecoration(shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.08)))),
+              color: Colors.white.withValues(alpha: 0.08)))),
       Positioned(right: 30, bottom: -35,
         child: Container(width: 100, height: 100,
           decoration: BoxDecoration(shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.06)))),
+              color: Colors.white.withValues(alpha: 0.06)))),
       Positioned(left: -10, bottom: -20,
         child: Container(width: 80, height: 80,
           decoration: BoxDecoration(shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.05)))),
+              color: Colors.white.withValues(alpha: 0.05)))),
       Padding(padding: const EdgeInsets.all(22),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -297,14 +297,14 @@ class _BannerCard extends StatelessWidget {
                   fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.3)),
           const SizedBox(height: 5),
           Text(banner.sub,
-              style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12)),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12)),
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.22),
+              color: Colors.white.withValues(alpha: 0.22),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.35))),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.35))),
             child: const Text('Бештар →',
                 style: TextStyle(color: Colors.white,
                     fontSize: 12, fontWeight: FontWeight.w700))),
@@ -323,9 +323,9 @@ class _PromoChip extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.25))),
+        border: Border.all(color: color.withValues(alpha: 0.25))),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, color: color, size: 18),
         const SizedBox(height: 3),
@@ -365,12 +365,24 @@ class _AppBarBtn extends StatelessWidget {
     icon: Icon(icon, color: Colors.white, size: 24), onPressed: onTap);
 }
 
-class _SearchField extends StatelessWidget {
+class _SearchField extends StatefulWidget {
   final TextEditingController ctrl;
   final ValueChanged<String> onSubmit;
   final VoidCallback onClose;
   const _SearchField({required this.ctrl, required this.onSubmit, required this.onClose});
+  @override
+  State<_SearchField> createState() => _SearchFieldState();
+}
 
+class _SearchFieldState extends State<_SearchField> {
+  final _focus = FocusNode();
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
+  }
+  @override
+  void dispose() { _focus.dispose(); super.dispose(); }
   @override
   Widget build(BuildContext context) => Row(children: [
     Expanded(child: Container(
@@ -378,23 +390,23 @@ class _SearchField extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.bgCard,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.5))),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.5))),
       child: Row(children: [
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 18),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Expanded(child: EditableText(
-          controller: ctrl,
-          focusNode: FocusNode()..requestFocus(),
+          controller: widget.ctrl,
+          focusNode: _focus,
           style: const TextStyle(color: Colors.white, fontSize: 14),
           cursorColor: AppColors.primary,
           backgroundCursorColor: Colors.grey,
-          onSubmitted: onSubmit,
+          onSubmitted: widget.onSubmit,
         )),
         const SizedBox(width: 8),
-      ])),
+      ]))),
     const SizedBox(width: 8),
-    GestureDetector(onTap: onClose,
+    GestureDetector(onTap: widget.onClose,
       child: const Text('Бекор',
           style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600))),
   ]);
@@ -407,7 +419,7 @@ class _EmptyState extends StatelessWidget {
     padding: const EdgeInsets.symmetric(vertical: 60),
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       Icon(Icons.storefront_outlined, size: 72,
-          color: AppColors.textMuted.withOpacity(0.35)),
+          color: AppColors.textMuted.withValues(alpha: 0.35)),
       const SizedBox(height: 16),
       const Text('Ҳоло маҳсулот нест',
           style: TextStyle(color: AppColors.textMuted, fontSize: 16,
