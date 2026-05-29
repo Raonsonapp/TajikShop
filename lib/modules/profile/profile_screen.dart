@@ -147,9 +147,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ])),
                 const SizedBox(width: 16),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(user?.fullName ?? 'Корбар',
-                      style: const TextStyle(color: Colors.white,
-                          fontSize: 18, fontWeight: FontWeight.w700)),
+                  Row(children: [
+                    Flexible(
+                      child: Text(
+                        (user?.fullName != null && user!.fullName.isNotEmpty)
+                            ? user.fullName
+                            : (user?.email?.split('@').first ?? 'Корбар'),
+                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (user?.fullName == 'tajikshop' || user?.isVerified == true) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1DA1F2).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF1DA1F2).withValues(alpha: 0.5)),
+                        ),
+                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.verified_rounded, color: Color(0xFF1DA1F2), size: 12),
+                          SizedBox(width: 3),
+                          Text('✓', style: TextStyle(color: Color(0xFF1DA1F2), fontSize: 10, fontWeight: FontWeight.w800)),
+                        ]),
+                      ),
+                    ],
+                  ]),
                   const SizedBox(height: 4),
                   Text(user?.email ?? '',
                       style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
@@ -162,7 +186,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             if (user?.isSeller == true || user?.role == 'seller')
               _MenuItem(icon: Icons.store_rounded, iconColor: const Color(0xFF00D084),
                   label: l.sellerDashboard,
-                  onTap: () => context.push(RouteNames.sellerDashboard))
+                  onTap: () => context.go(RouteNames.sellerDashboard))
             else
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -174,9 +198,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 8),
             _SectionLabel(l.orders),
             _MenuItem(icon: Icons.receipt_long_rounded, iconColor: const Color(0xFF00A3FF),
-                label: l.orders, onTap: () => context.push(RouteNames.orders)),
+                label: l.orders, onTap: () => context.go(RouteNames.orders)),
             _MenuItem(icon: Icons.favorite_rounded, iconColor: const Color(0xFF00D084),
-                label: l.favorites, onTap: () => context.push(RouteNames.favorites)),
+                label: l.favorites, onTap: () => context.go(RouteNames.favorites)),
 
             const SizedBox(height: 8),
             _SectionLabel(l.settings),
@@ -195,7 +219,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onTap: _showLanguagePicker),
 
             _MenuItem(icon: Icons.notifications_outlined, iconColor: const Color(0xFFE040FB),
-                label: l.notifications, onTap: () => context.push(RouteNames.notifications)),
+                label: l.notifications, onTap: () => context.go(RouteNames.notifications)),
 
             const SizedBox(height: 8),
             _SectionLabel(l.about),
