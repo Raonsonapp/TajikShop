@@ -10,6 +10,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/search_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
@@ -78,6 +79,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     });
   }
 
+  void _runSearch(String q) {
+    final query = q.trim();
+    if (query.isEmpty) return;
+    ref.read(searchQueryProvider.notifier).state = query;
+    context.go(RouteNames.search);
+  }
+
   @override
   void dispose() {
     _scrollDebounce?.cancel();
@@ -110,7 +118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               floating: true, snap: true, pinned: false, elevation: 0,
               systemOverlayStyle: SystemUiOverlayStyle.light,
               title: _searchActive
-                  ? _SearchField(ctrl: _searchCtrl, onSubmit: (_) {},
+                  ? _SearchField(ctrl: _searchCtrl, onSubmit: _runSearch,
                       onClose: () { setState(() => _searchActive = false); _searchCtrl.clear(); })
                   : Row(children: [
                       Container(width: 36, height: 36,

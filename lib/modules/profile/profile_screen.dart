@@ -53,6 +53,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       behavior: SnackBarBehavior.floating));
   }
 
+  // ── About ────────────────────────────────────────────────────────────────────
+  void _showAbout(AppL10n l) {
+    showAboutDialog(
+      context: context,
+      applicationName: 'TajikShop',
+      applicationVersion: '1.0.0',
+      applicationIcon: Container(
+        width: 48, height: 48,
+        decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.circular(12)),
+        child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 28),
+      ),
+      children: const [
+        SizedBox(height: 8),
+        Text('Бозори онлайни Тоҷикистон — харид ва фурӯши осон.'),
+      ],
+    );
+  }
+
   // ── Language picker ──────────────────────────────────────────────────────────
   void _showLanguagePicker() {
     final l = AppL10n.of(context);
@@ -224,7 +244,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 8),
             _SectionLabel(l.about),
             _MenuItem(icon: Icons.info_outline_rounded, iconColor: AppColors.textMuted,
-                label: l.about, onTap: () {}),
+                label: l.about, onTap: () => _showAbout(l)),
 
             // ── Logout ─────────────────────────────────────────────────
             const SizedBox(height: 8),

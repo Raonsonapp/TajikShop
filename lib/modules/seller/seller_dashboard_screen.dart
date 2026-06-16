@@ -8,6 +8,12 @@ import '../../routes/route_names.dart';
 class SellerDashboardScreen extends ConsumerWidget {
   const SellerDashboardScreen({super.key});
 
+  void _soon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Ин бахш ба зудӣ илова мешавад'),
+      behavior: SnackBarBehavior.floating));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
@@ -102,19 +108,19 @@ class SellerDashboardScreen extends ConsumerWidget {
               icon: Icons.inventory_outlined,
               label: 'Маҳсулотҳоям',
               subtitle: 'Идораи маҳсулотҳо',
-              onTap: () {},
+              onTap: () => _soon(context),
             ),
             _ActionItem(
               icon: Icons.pending_actions_outlined,
               label: 'Фармоишҳои нав',
               subtitle: 'Фармоишҳои интизорро бубинед',
-              onTap: () {},
+              onTap: () => context.push(RouteNames.orders),
             ),
             _ActionItem(
               icon: Icons.bar_chart_outlined,
               label: 'Оморҳои фурӯш',
               subtitle: 'Гузориши фурӯши ман',
-              onTap: () {},
+              onTap: () => _soon(context),
             ),
           ],
         ),

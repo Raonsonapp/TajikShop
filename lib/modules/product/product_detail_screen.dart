@@ -1,11 +1,16 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/product_model.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/favorites_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/error_screen.dart';
@@ -46,6 +51,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   Widget _build(ProductModel p) {
+    final isFav = ref.watch(favoritesProvider).contains(p.id);
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       body: CustomScrollView(slivers: [
@@ -54,8 +60,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           expandedHeight: 340, pinned: true,
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
-            IconButton(icon: const Icon(Icons.favorite_border, color: Colors.white), onPressed: () {}),
-            IconButton(icon: const Icon(Icons.share_outlined, color: Colors.white), onPressed: () {}),
+            IconButton(
+              icon: Icon(isFav ? Icons.favorite : Icons.favorite_border,
+                  color: isFav ? AppColors.error : Colors.white),
+              onPressed: () => _toggleFavorite(p.id)),
+            IconButton(
+              icon: const Icon(Icons.share_outlined, color: Colors.white),
+              onPressed: () => _share(p)),
           ],
           flexibleSpace: FlexibleSpaceBar(
             background: Stack(children: [
@@ -169,10 +180,46 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               }
             })),
           const SizedBox(width: 12),
-          Expanded(child: AppButton(text: 'Харидан', onTap: () {})),
+          Expanded(child: AppButton(text: 'Харидан', onTap: () => _buyNow(p))),
         ]),
       ),
     );
+  }
+
+  void _toggleFavorite(String id) {
+    if (!ref.read(authProvider).isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Барои дӯстдошта ворид шавед'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+      return;
+    }
+    ref.read(favoritesProvider.notifier).toggle(id);
+  }
+
+  void _share(ProductModel p) {
+    Clipboard.setData(ClipboardData(text: '${p.title} — ${p.price.toStringAsFixed(0)} сом. | TajikShop'));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Нусха гирифта шуд 📋'),
+      backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+  }
+
+  Future<void> _buyNow(ProductModel p) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!ref.read(authProvider).isAuthenticated) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Барои харид ворид шавед'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+      return;
+    }
+    try {
+      await ref.read(cartProvider.notifier).addToCart(p.id);
+      if (!mounted) return;
+      context.go(RouteNames.cart);
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Хато ҳангоми илова ба сабад'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+    }
   }
 }
 

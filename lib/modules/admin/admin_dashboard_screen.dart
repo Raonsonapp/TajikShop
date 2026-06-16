@@ -12,6 +12,12 @@ final adminStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
 
+  void _soon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Ин бахш ба зудӣ илова мешавад'),
+      behavior: SnackBarBehavior.floating));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(adminStatsProvider);
@@ -79,19 +85,19 @@ class AdminDashboardScreen extends ConsumerWidget {
 
               _ManageCard(
                 icon: Icons.people_alt_outlined, label: 'Корбарон', subtitle: 'Идораи корбарон ва блок',
-                color: AppColors.primary, onTap: () {},
+                color: AppColors.primary, onTap: () => _soon(context),
               ),
               _ManageCard(
                 icon: Icons.store_mall_directory_outlined, label: 'Фурӯшандаҳо',
-                subtitle: 'Тасдиқ ва верификация', color: const Color(0xFF6C63FF), onTap: () {},
+                subtitle: 'Тасдиқ ва верификация', color: const Color(0xFF6C63FF), onTap: () => _soon(context),
               ),
               _ManageCard(
                 icon: Icons.receipt_outlined, label: 'Ҳамаи фармоишҳо',
-                subtitle: 'Идораи статуси фармоишҳо', color: AppColors.warning, onTap: () {},
+                subtitle: 'Идораи статуси фармоишҳо', color: AppColors.warning, onTap: () => _soon(context),
               ),
               _ManageCard(
                 icon: Icons.category_outlined, label: 'Категорияҳо',
-                subtitle: 'Илова ва таҳрири категорияҳо', color: AppColors.success, onTap: () {},
+                subtitle: 'Илова ва таҳрири категорияҳо', color: AppColors.success, onTap: () => _soon(context),
               ),
               const SizedBox(height: 40),
             ],

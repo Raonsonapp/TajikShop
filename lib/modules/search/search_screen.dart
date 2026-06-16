@@ -19,7 +19,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Агар аз экрани дигар бо query омада бошем, онро нишон диҳем
+      final existing = ref.read(searchQueryProvider);
+      if (existing.isNotEmpty) {
+        _ctrl.text = existing;
+        _ctrl.selection = TextSelection.collapsed(offset: existing.length);
+      }
+      _focus.requestFocus();
+    });
   }
 
   @override

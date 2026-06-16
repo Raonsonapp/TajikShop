@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/product_model.dart';
 import '../../providers/favorites_provider.dart';
+import '../../providers/cart_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class ProductCard extends ConsumerStatefulWidget {
   final ProductModel product;
@@ -40,6 +42,36 @@ class _ProductCardState extends ConsumerState<ProductCard>
     HapticFeedback.lightImpact();
     _ctrl.forward(from: 0);
     ref.read(favoritesProvider.notifier).toggle(widget.product.id);
+  }
+
+  Future<void> _addToCart() async {
+    HapticFeedback.selectionClick();
+    final messenger = ScaffoldMessenger.of(context);
+    if (!ref.read(authProvider).isAuthenticated) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Барои харид ворид шавед'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+      return;
+    }
+    if (!widget.product.inStock) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Маҳсулот тамом шуд'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+      return;
+    }
+    try {
+      await ref.read(cartProvider.notifier).addToCart(widget.product.id);
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(
+        content: const Text('✅ Ба сабад илова шуд'),
+        backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))));
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Хато ҳангоми илова'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+    }
   }
 
   @override
@@ -210,7 +242,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                                     fontSize: 10, decoration: TextDecoration.lineThrough)),
                         ])),
                       GestureDetector(
-                        onTap: () { HapticFeedback.selectionClick(); },
+                        onTap: _addToCart,
                         child: Container(
                           width: 30, height: 30,
                           decoration: BoxDecoration(
