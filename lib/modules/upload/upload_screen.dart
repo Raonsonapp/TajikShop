@@ -252,13 +252,19 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border, width: 0.5)),
       padding: const EdgeInsets.all(12),
-      child: EditableText(
+      child: TextField(
         controller: _descCtrl,
-        focusNode: FocusNode(),
         maxLines: 5,
+        keyboardType: TextInputType.multiline,
+        textInputAction: TextInputAction.newline,
         style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
         cursorColor: AppColors.primary,
-        backgroundCursorColor: Colors.grey,
+        decoration: const InputDecoration(
+          isCollapsed: true,
+          border: InputBorder.none,
+          hintText: 'Маҳсулотро муфассал тавсиф кунед...',
+          hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
+        ),
       ),
     ),
   ]);
@@ -380,14 +386,19 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           border: Border.all(color: AppColors.border, width: 0.5),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: EditableText(
+        child: TextField(
           controller: c,
-          focusNode: FocusNode(),
           keyboardType: type,
           inputFormatters: formatters,
+          textInputAction: TextInputAction.next,
           style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
           cursorColor: AppColors.primary,
-          backgroundCursorColor: Colors.grey,
+          decoration: InputDecoration(
+            isCollapsed: true,
+            border: InputBorder.none,
+            hintText: hint,
+            hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+          ),
         ),
       ),
     ]);

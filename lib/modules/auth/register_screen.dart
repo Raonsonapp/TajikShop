@@ -16,6 +16,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl  = TextEditingController();
   bool _loading    = false;
+  bool _obscure    = true;
   String? _error;
 
   @override
@@ -63,6 +64,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     bool obscure = false,
     TextInputType? keyboard,
     List<TextInputFormatter>? formatters,
+    TextInputAction action = TextInputAction.next,
+    void Function(String)? onSubmitted,
   }) {
     return Container(
       height: 56,
@@ -77,17 +80,32 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           Icon(icon, color: const Color(0xFF6B6E82), size: 20),
           const SizedBox(width: 10),
           Expanded(
-            child: EditableText(
+            child: TextField(
               controller: ctrl,
-              focusNode: FocusNode(),
-              obscureText: obscure,
+              obscureText: obscure ? _obscure : false,
               keyboardType: keyboard,
               inputFormatters: formatters,
+              textInputAction: action,
+              onSubmitted: onSubmitted,
               style: const TextStyle(color: Colors.white, fontSize: 15),
               cursorColor: const Color(0xFF00D084),
-              backgroundCursorColor: Colors.grey,
+              decoration: InputDecoration(
+                isCollapsed: true,
+                border: InputBorder.none,
+                hintText: hint,
+                hintStyle: const TextStyle(color: Color(0xFF6B6E82)),
+              ),
             ),
           ),
+          if (obscure)
+            IconButton(
+              icon: Icon(
+                  _obscure
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: const Color(0xFF6B6E82), size: 20),
+              onPressed: () => setState(() => _obscure = !_obscure),
+            ),
         ],
       ),
     );
@@ -181,6 +199,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 hint: 'Парол (ҳадди ақал 6)',
                 icon: Icons.lock_outline_rounded,
                 obscure: true,
+                action: TextInputAction.done,
+                onSubmitted: (_) => _loading ? null : _register(),
               ),
               const SizedBox(height: 24),
 

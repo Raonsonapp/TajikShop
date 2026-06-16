@@ -14,6 +14,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl  = TextEditingController();
   bool _loading    = false;
+  bool _obscure    = true;
   String? _error;
 
   @override
@@ -106,14 +107,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         color: Color(0xFF6B6E82), size: 20),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: EditableText(
+                      child: TextField(
                         controller: _emailCtrl,
-                        focusNode: FocusNode(),
                         style: const TextStyle(
                             color: Colors.white, fontSize: 15),
                         cursorColor: const Color(0xFF00D084),
-                        backgroundCursorColor: Colors.grey,
                         keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.email],
+                        decoration: const InputDecoration(
+                          isCollapsed: true,
+                          border: InputBorder.none,
+                          hintText: 'Email',
+                          hintStyle: TextStyle(color: Color(0xFF6B6E82)),
+                        ),
                       ),
                     ),
                   ],
@@ -137,15 +144,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         color: Color(0xFF6B6E82), size: 20),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: EditableText(
+                      child: TextField(
                         controller: _passCtrl,
-                        focusNode: FocusNode(),
-                        obscureText: true,
+                        obscureText: _obscure,
                         style: const TextStyle(
                             color: Colors.white, fontSize: 15),
                         cursorColor: const Color(0xFF00D084),
-                        backgroundCursorColor: Colors.grey,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.password],
+                        onSubmitted: (_) => _loading ? null : _login(),
+                        decoration: const InputDecoration(
+                          isCollapsed: true,
+                          border: InputBorder.none,
+                          hintText: 'Парол',
+                          hintStyle: TextStyle(color: Color(0xFF6B6E82)),
+                        ),
                       ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                          _obscure
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: const Color(0xFF6B6E82), size: 20),
+                      onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ],
                 ),

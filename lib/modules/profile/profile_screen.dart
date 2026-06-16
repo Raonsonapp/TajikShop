@@ -152,7 +152,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       child: Text(
                         (user?.fullName != null && user!.fullName.isNotEmpty)
                             ? user.fullName
-                            : (user?.email?.split('@').first ?? 'Корбар'),
+                            : (user?.email.split('@').first ?? 'Корбар'),
                         style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
                         overflow: TextOverflow.ellipsis,
                       ),

@@ -63,12 +63,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       const SizedBox(width: 12),
                       const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
                       const SizedBox(width: 8),
-                      Expanded(child: EditableText(
+                      Expanded(child: TextField(
                         controller: _ctrl,
                         focusNode: _focus,
+                        textInputAction: TextInputAction.search,
                         style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
                         cursorColor: AppColors.primary,
-                        backgroundCursorColor: Colors.grey,
+                        decoration: const InputDecoration(
+                          isCollapsed: true,
+                          border: InputBorder.none,
+                          hintText: 'Ҷустуҷӯи маҳсулот...',
+                          hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                        ),
                         onChanged: (v) => ref.read(searchQueryProvider.notifier).state = v,
                         onSubmitted: (v) => ref.read(searchQueryProvider.notifier).state = v,
                       )),

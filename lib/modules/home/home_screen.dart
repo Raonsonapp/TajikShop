@@ -265,7 +265,7 @@ class _Banner {
 
 class _BannerCard extends StatelessWidget {
   final _Banner banner;
-  const _BannerCard({super.key, required this.banner});
+  const _BannerCard({required this.banner});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -395,12 +395,18 @@ class _SearchFieldState extends State<_SearchField> {
         const SizedBox(width: 10),
         const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 18),
         const SizedBox(width: 6),
-        Expanded(child: EditableText(
+        Expanded(child: TextField(
           controller: widget.ctrl,
           focusNode: _focus,
+          textInputAction: TextInputAction.search,
           style: const TextStyle(color: Colors.white, fontSize: 14),
           cursorColor: AppColors.primary,
-          backgroundCursorColor: Colors.grey,
+          decoration: const InputDecoration(
+            isCollapsed: true,
+            border: InputBorder.none,
+            hintText: 'Ҷустуҷӯ...',
+            hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
+          ),
           onSubmitted: widget.onSubmit,
         )),
         const SizedBox(width: 8),
