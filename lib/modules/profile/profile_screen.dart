@@ -16,6 +16,7 @@ import '../../providers/locale_provider.dart';
 import '../../routes/route_names.dart';
 import '../../core/app_l10n.dart';
 import '../../shared/widgets/app_button.dart';
+import '../seller/seller_verify_sheet.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -103,15 +104,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       });
   }
 
-  // ── Become Seller ────────────────────────────────────────────────────────────
+  // ── Become Seller (бо тасдиқи паспорт) ────────────────────────────────────────
   Future<void> _becomeSeller() async {
-    final l = AppL10n.of(context);
-    final ok = await ref.read(authProvider.notifier).becomeSeller();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(ok ? l.becomeSellerSuccess : l.error),
-      backgroundColor: ok ? AppColors.success : AppColors.error,
-      behavior: SnackBarBehavior.floating));
+    await showSellerVerify(context);
   }
 
   // ── About ────────────────────────────────────────────────────────────────────

@@ -48,6 +48,7 @@ class _UserCard extends StatelessWidget {
     final role = user['role']?.toString() ?? 'buyer';
     final banned = user['is_banned'] == true;
     final verified = user['is_verified'] == true;
+    final passport = user['passport_url']?.toString() ?? '';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(12),
@@ -71,6 +72,12 @@ class _UserCard extends StatelessWidget {
           Row(children: [
             _chip(role, AppColors.primary),
             if (banned) ...[const SizedBox(width: 6), _chip('Манъшуда', AppColors.error)],
+            if (passport.isNotEmpty) ...[
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () => _viewPassport(context, passport),
+                child: _chip('📄 Паспорт', AppColors.info)),
+            ],
           ]),
         ])),
         PopupMenuButton<String>(
@@ -107,6 +114,21 @@ class _UserCard extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
     decoration: BoxDecoration(color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
     child: Text(t, style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w600)));
+
+  void _viewPassport(BuildContext context, String url) {
+    showDialog(context: context, builder: (_) => Dialog(
+      backgroundColor: AppColors.bgCard,
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Padding(padding: EdgeInsets.all(12),
+          child: Text('Паспорти корбар', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700))),
+        ClipRRect(borderRadius: BorderRadius.circular(8),
+          child: InteractiveViewer(child: Image.network(url, fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Padding(padding: EdgeInsets.all(40),
+                child: Icon(Icons.broken_image_outlined, color: AppColors.textMuted, size: 48))))),
+        const SizedBox(height: 8),
+      ]),
+    ));
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════

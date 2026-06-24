@@ -148,6 +148,37 @@ func (h *UserHandler) SaveFCMToken(c *gin.Context) {
 	utils.OK(c, gin.H{"saved": true})
 }
 
+// SellerVerify — акси паспортро бор мекунад ва корбарро фурӯшанда мекунад
+// (is_verified=false то тасдиқи админ). KYC зидди фиреб.
+func (h *UserHandler) SellerVerify(c *gin.Context) {
+	uid := utils.UserID(c)
+	file, header, err := c.Request.FormFile("passport")
+	if err != nil {
+		utils.Err(c, http.StatusBadRequest, "акси паспорт лозим аст")
+		return
+	}
+	defer file.Close()
+	if h.r2 == nil {
+		utils.Err(c, http.StatusInternalServerError, "storage not configured")
+		return
+	}
+	url, err := h.r2.Upload(file, header, "passports")
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	db.DB.Exec(`UPDATE users SET passport_url=$1,is_seller=true,role='seller',updated_at=$2 WHERE id=$3`,
+		url, time.Now(), uid)
+	accessToken, _ := auth.GenerateAccessToken(uid, "seller", h.secret)
+	refreshToken, _ := auth.GenerateRefreshToken(uid, h.secret)
+	db.DB.Exec(`UPDATE users SET refresh_token=$1 WHERE id=$2`, refreshToken, uid)
+	utils.OK(c, gin.H{
+		"message":       "verification submitted",
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
+}
+
 func (h *UserHandler) BecomeSellerHandler(c *gin.Context) {
 	uid := utils.UserID(c)
 	db.DB.Exec(`UPDATE users SET is_seller=true,role='seller',updated_at=$1 WHERE id=$2`, time.Now(), uid)

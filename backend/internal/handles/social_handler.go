@@ -268,16 +268,28 @@ func (h *AdminHandler) DeleteProduct(c *gin.Context) {
 }
 
 func (h *AdminHandler) ListUsers(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT id,name,email,phone,role,is_verified,is_banned,created_at FROM users ORDER BY created_at DESC LIMIT 100`)
+	rows, _ := db.DB.Query(`SELECT id,name,email,phone,role,is_verified,is_banned,
+		COALESCE(passport_url,''),created_at FROM users ORDER BY created_at DESC LIMIT 100`)
 	defer rows.Close()
-	var users []models.User
+	type adminUser struct {
+		ID          string    `json:"id"`
+		Name        string    `json:"name"`
+		Email       string    `json:"email"`
+		Phone       string    `json:"phone"`
+		Role        string    `json:"role"`
+		IsVerified  bool      `json:"is_verified"`
+		IsBanned    bool      `json:"is_banned"`
+		PassportURL string    `json:"passport_url"`
+		CreatedAt   time.Time `json:"created_at"`
+	}
+	var users []adminUser
 	for rows.Next() {
-		var u models.User
-		rows.Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.Role, &u.IsVerified, &u.IsBanned, &u.CreatedAt)
+		var u adminUser
+		rows.Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.Role, &u.IsVerified, &u.IsBanned, &u.PassportURL, &u.CreatedAt)
 		users = append(users, u)
 	}
 	if users == nil {
-		users = []models.User{}
+		users = []adminUser{}
 	}
 	utils.OK(c, users)
 }

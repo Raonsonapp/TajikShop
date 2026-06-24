@@ -13,6 +13,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
+import '../seller/seller_verify_sheet.dart';
 
 class UploadScreen extends ConsumerStatefulWidget {
   const UploadScreen({super.key});
@@ -32,7 +33,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   String     _condition = 'Нав';
   String     _city      = 'Душанбе';
   bool       _loading   = false;
-  bool       _becomingS = false;
+  final bool _becomingS = false;
   double     _progress  = 0;
   String?    _error;
   int        _step      = 1;
@@ -67,21 +68,13 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     if (user == null) return false;
     if (user.isSeller || user.role == 'seller' || user.role == 'admin') return true;
 
-    setState(() { _becomingS = true; _error = null; });
-    try {
-      // becomeSeller() токени нав бо role='seller' мегирад ва захира мекунад
-      final ok = await ref.read(authProvider.notifier).becomeSeller();
-      if (!ok) {
-        setState(() => _error = 'Фурӯшанда шудан мумкин набуд');
-        return false;
-      }
-      return true;
-    } catch (e) {
-      setState(() => _error = 'Фурӯшанда шудан мумкин набуд: ${e.toString().replaceAll("Exception: ", "")}');
-      return false;
-    } finally {
-      setState(() => _becomingS = false);
+    // Бо тасдиқи паспорт (KYC) фурӯшанда мешавад
+    final ok = await showSellerVerify(context);
+    final nowSeller = ok == true && (ref.read(authProvider).user?.isSeller ?? false);
+    if (!nowSeller) {
+      setState(() => _error = 'Барои нашр аввал фурӯшанда шавед (паспорт)');
     }
+    return nowSeller;
   }
 
   Future<void> _submit() async {

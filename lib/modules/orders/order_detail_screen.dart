@@ -103,8 +103,45 @@ class OrderDetailScreen extends ConsumerWidget {
     }
   }
 
+  bool _canConfirm(String status) {
+    final s = status.toLowerCase();
+    return s != 'completed' && s != 'cancelled' && s != 'pending';
+  }
+
+  Future<void> _confirm(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+      backgroundColor: AppColors.bgCard,
+      title: const Text('Расидани молро тасдиқ мекунед?', style: TextStyle(color: AppColors.textPrimary)),
+      content: const Text('Танҳо вақте молро гирифтед тасдиқ кунед. Баъд аз тасдиқ, маблағ ба фурӯшанда дода мешавад.',
+          style: TextStyle(color: AppColors.textSecondary)),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Ҳоло не', style: TextStyle(color: AppColors.textMuted))),
+        TextButton(onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Бале, гирифтам', style: TextStyle(color: AppColors.success))),
+      ],
+    ));
+    if (ok != true) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ApiClient.instance.dio.post('/orders/$id/confirm');
+      ref.invalidate(orderDetailProvider(id));
+      ref.invalidate(ordersProvider);
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Раҳмат! Фармоиш анҷом ёфт ✅'),
+        backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+    } catch (e) {
+      final msg = (e is DioException && e.response?.data is Map)
+          ? e.response?.data['error']?.toString() : null;
+      messenger.showSnackBar(SnackBar(
+        content: Text(msg ?? 'Хато'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+    }
+  }
+
   Widget _build(BuildContext context, WidgetRef ref, OrderModel o) {
     final cancelled = o.status.toLowerCase() == 'cancelled';
+    final completed = o.status.toLowerCase() == 'completed';
     final current = _statusIndex(o.status);
     return ListView(padding: const EdgeInsets.all(16), children: [
       // Header card
@@ -197,8 +234,47 @@ class OrderDetailScreen extends ConsumerWidget {
         ]),
       ),
 
-      if (_canCancel(o.status)) ...[
+      if (completed) ...[
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.success.withValues(alpha: 0.3))),
+          child: const Row(children: [
+            Icon(Icons.verified_rounded, color: AppColors.success),
+            SizedBox(width: 10),
+            Expanded(child: Text('Фармоиш анҷом ёфт ва маблағ ба фурӯшанда дода шуд.',
+                style: TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w600))),
+          ])),
+      ],
+
+      if (_canConfirm(o.status)) ...[
         const SizedBox(height: 20),
+        // Ҳимояи escrow
+        Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(color: AppColors.info.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.info.withValues(alpha: 0.3))),
+          child: const Row(children: [
+            Icon(Icons.shield_outlined, color: AppColors.info, size: 20),
+            SizedBox(width: 10),
+            Expanded(child: Text('Ҳимоя: пули шумо то тасдиқи расидани мол нигоҳ дошта мешавад.',
+                style: TextStyle(color: AppColors.info, fontSize: 12))),
+          ])),
+        const SizedBox(height: 10),
+        SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(
+          onPressed: () => _confirm(context, ref),
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.success,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white),
+          label: const Text('Расидани молро тасдиқ мекунам',
+              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)))),
+      ],
+
+      if (_canCancel(o.status)) ...[
+        const SizedBox(height: 12),
         SizedBox(width: double.infinity, child: OutlinedButton.icon(
           onPressed: () => _cancel(context, ref),
           icon: const Icon(Icons.cancel_outlined, color: AppColors.error, size: 18),

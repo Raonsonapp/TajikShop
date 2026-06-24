@@ -43,6 +43,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.PUT("/users/me", middleware.Auth(), uh.UpdateProfile)
 	api.POST("/users/me/avatar", middleware.Auth(), uh.UploadAvatar)
 	api.POST("/users/me/become-seller", middleware.Auth(), uh.BecomeSellerHandler)
+	api.POST("/users/me/seller-verify", middleware.Auth(), uh.SellerVerify)
 	api.POST("/users/me/fcm-token", middleware.Auth(), uh.SaveFCMToken)
 	api.POST("/users/:id/follow", middleware.Auth(), flh.Follow)
 	api.DELETE("/users/:id/follow", middleware.Auth(), flh.Unfollow)
@@ -76,6 +77,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.GET("/orders/:id", middleware.Auth(), oh.GetOrder)
 	api.POST("/orders/:id/payment-proof", middleware.Auth(), oh.UploadPaymentProof)
 	api.POST("/orders/:id/cancel", middleware.Auth(), oh.Cancel)
+	api.POST("/orders/:id/confirm", middleware.Auth(), oh.Confirm)
 
 	// Favorites
 	api.GET("/favorites", middleware.Auth(), fh.List)

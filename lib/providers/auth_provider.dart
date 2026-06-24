@@ -180,6 +180,28 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  // ── Тасдиқи фурӯшанда бо паспорт (KYC) ───────────────────────────────────
+  Future<bool> submitSellerVerification(String filePath) async {
+    try {
+      final form = FormData.fromMap({
+        'passport': await MultipartFile.fromFile(filePath, filename: 'passport.jpg'),
+      });
+      final res = await _dio.post('/users/me/seller-verify', data: form);
+      final data = _unwrap(res.data);
+      final access = data['access_token']?.toString();
+      final refresh = data['refresh_token']?.toString();
+      if (access != null && access.isNotEmpty) {
+        await TokenStorage.saveTokens(accessToken: access, refreshToken: refresh);
+      }
+      final user = await _fetchMe();
+      await _persistSession(user);
+      state = AuthState(user: user, isAuthenticated: true);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> becomeSeller() async {
     try {
       final res = await _dio.post(ApiEndpoints.becomeSeller);
