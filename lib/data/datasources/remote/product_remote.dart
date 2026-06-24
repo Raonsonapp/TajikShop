@@ -13,6 +13,14 @@ List<ProductModel> _parseProductList(List<dynamic> rawList) {
       .toList();
 }
 
+/// Натиҷаи саҳифабандишуда (барои infinite scroll)
+class ProductPage {
+  final List<ProductModel> items;
+  final int total;
+  final bool hasMore;
+  const ProductPage({required this.items, required this.total, required this.hasMore});
+}
+
 class ProductRemote {
   Dio get _dio => ApiClient.instance.dio;
 
@@ -65,6 +73,40 @@ class ProductRemote {
     final rawList = _unwrapList(res.data);
     // ✅ Парсинг дар isolate-и дигар → UI блок намешавад!
     return await compute(_parseProductList, rawList);
+  }
+
+  // Саҳифабандишуда — бо total ва has_more
+  Future<ProductPage> getProductsPage({
+    int page = 1,
+    int limit = 20,
+    String? categoryId,
+    String? search,
+    String? sort,
+    double? minPrice,
+    double? maxPrice,
+    double? minRating,
+  }) async {
+    final res = await _dio.get(ApiEndpoints.products, queryParameters: {
+      'page': page,
+      'limit': limit,
+      if (categoryId != null && categoryId.isNotEmpty) 'category_id': categoryId,
+      if (search != null && search.isNotEmpty) 'search': search,
+      if (sort != null) 'sort': sort,
+      if (minPrice != null) 'min_price': minPrice,
+      if (maxPrice != null) 'max_price': maxPrice,
+      if (minRating != null) 'min_rating': minRating,
+    });
+    final rawList = _unwrapList(res.data);
+    final items = await compute(_parseProductList, rawList);
+    // meta аз data ё реша
+    Map meta = {};
+    if (res.data is Map) {
+      final d = (res.data as Map)['data'];
+      meta = d is Map ? d : res.data as Map;
+    }
+    final total = (meta['total'] as num?)?.toInt() ?? items.length;
+    final hasMore = meta['has_more'] == true ? true : items.length >= limit;
+    return ProductPage(items: items, total: total, hasMore: hasMore);
   }
 
   Future<List<ProductModel>> getTrending() async {

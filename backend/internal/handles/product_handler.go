@@ -55,52 +55,66 @@ func (h *ProductHandler) Create(c *gin.Context) {
 func (h *ProductHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
 	search := c.Query("search")
 	if search == "" {
 		search = c.Query("q")
 	}
 	category := c.Query("category_id")
 	seller := c.Query("seller_id")
+	minPrice := c.Query("min_price")
+	maxPrice := c.Query("max_price")
+	minRating := c.Query("min_rating")
 	offset := (page - 1) * limit
 
-	query := `SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
-		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-		u.name as seller_name
-		FROM products p JOIN users u ON u.id=p.seller_id
-		WHERE 1=1`
+	// ── WHERE (барои COUNT ва main муштарак) ──
+	where := " WHERE 1=1"
 	args := []interface{}{}
 	argIdx := 1
-
-	// Фурӯшанда ҳамаи маҳсулоти худро (ҳатто ғайрифаъол) мебинад;
-	// рӯйхати оммавӣ танҳо маҳсулоти фаъолро нишон медиҳад.
 	if seller != "" {
-		query += fmt.Sprintf(" AND p.seller_id=$%d", argIdx)
+		where += fmt.Sprintf(" AND p.seller_id=$%d", argIdx)
 		args = append(args, seller)
 		argIdx++
 	} else {
-		query += " AND p.is_active=true"
+		where += " AND p.is_active=true"
 	}
-
-	if search != "" {
-		// Ҷустуҷӯи зирак: ҳар калимаро алоҳида мутобиқ мекунем (AND)
-		for _, w := range strings.Fields(search) {
-			query += fmt.Sprintf(" AND (p.title ILIKE $%d OR p.description ILIKE $%d)", argIdx, argIdx)
-			args = append(args, "%"+w+"%")
-			argIdx++
-		}
-	}
-	titleBoost := ""
-	if search != "" {
-		titleBoost = fmt.Sprintf("(CASE WHEN p.title ILIKE $%d THEN 0 ELSE 1 END), ", argIdx)
-		args = append(args, "%"+search+"%")
+	for _, w := range strings.Fields(search) {
+		where += fmt.Sprintf(" AND (p.title ILIKE $%d OR p.description ILIKE $%d)", argIdx, argIdx)
+		args = append(args, "%"+w+"%")
 		argIdx++
 	}
 	if category != "" {
-		query += fmt.Sprintf(" AND p.category_id=$%d", argIdx)
+		where += fmt.Sprintf(" AND p.category_id=$%d", argIdx)
 		args = append(args, category)
 		argIdx++
 	}
+	if v, err := strconv.ParseFloat(minPrice, 64); err == nil {
+		where += fmt.Sprintf(" AND p.price >= $%d", argIdx)
+		args = append(args, v)
+		argIdx++
+	}
+	if v, err := strconv.ParseFloat(maxPrice, 64); err == nil {
+		where += fmt.Sprintf(" AND p.price <= $%d", argIdx)
+		args = append(args, v)
+		argIdx++
+	}
+	if v, err := strconv.ParseFloat(minRating, 64); err == nil && v > 0 {
+		where += fmt.Sprintf(" AND COALESCE((SELECT AVG(rating) FROM reviews r WHERE r.product_id=p.id),0) >= $%d", argIdx)
+		args = append(args, v)
+		argIdx++
+	}
 
+	// ── Шумораи умумӣ (барои pagination) ──
+	var total int
+	db.DB.QueryRow(`SELECT COUNT(*) FROM products p JOIN users u ON u.id=p.seller_id`+where, args...).Scan(&total)
+
+	// ── Тартиб ──
+	mainArgs := append([]interface{}{}, args...)
 	orderBy := "p.created_at DESC"
 	switch c.Query("sort") {
 	case "price_asc":
@@ -112,16 +126,22 @@ func (h *ProductHandler) List(c *gin.Context) {
 	case "newest":
 		orderBy = "p.created_at DESC"
 	default:
-		// Ҳангоми ҷустуҷӯ бе sort: аввал мутобиқати ном, баъд маъруфият
 		if search != "" {
-			orderBy = titleBoost + "p.views DESC, p.created_at DESC"
+			orderBy = fmt.Sprintf("(CASE WHEN p.title ILIKE $%d THEN 0 ELSE 1 END), p.views DESC, p.created_at DESC", argIdx)
+			mainArgs = append(mainArgs, "%"+search+"%")
+			argIdx++
 		}
 	}
-	query += " ORDER BY " + orderBy
-	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
-	args = append(args, limit, offset)
 
-	rows, err := db.DB.Query(query, args...)
+	query := `SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
+		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
+		u.name as seller_name
+		FROM products p JOIN users u ON u.id=p.seller_id` + where +
+		" ORDER BY " + orderBy +
+		fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
+	mainArgs = append(mainArgs, limit, offset)
+
+	rows, err := db.DB.Query(query, mainArgs...)
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return
@@ -139,7 +159,13 @@ func (h *ProductHandler) List(c *gin.Context) {
 	if products == nil {
 		products = []models.Product{}
 	}
-	utils.OK(c, gin.H{"products": products, "page": page, "limit": limit})
+	utils.OK(c, gin.H{
+		"products": products,
+		"page":     page,
+		"limit":    limit,
+		"total":    total,
+		"has_more": offset+len(products) < total,
+	})
 }
 
 func (h *ProductHandler) GetByID(c *gin.Context) {

@@ -9,6 +9,7 @@ class ProductsState {
   final String? error;
   final int page;
   final bool hasMore;
+  final int total;
 
   const ProductsState({
     this.products = const [],
@@ -17,6 +18,7 @@ class ProductsState {
     this.error,
     this.page = 1,
     this.hasMore = true,
+    this.total = 0,
   });
 
   ProductsState copyWith({
@@ -26,6 +28,7 @@ class ProductsState {
     String? error,
     int? page,
     bool? hasMore,
+    int? total,
   }) =>
       ProductsState(
         products: products ?? this.products,
@@ -34,6 +37,7 @@ class ProductsState {
         error: error ?? this.error,
         page: page ?? this.page,
         hasMore: hasMore ?? this.hasMore,
+        total: total ?? this.total,
       );
 
   ProductsState clearError() => ProductsState(
@@ -42,6 +46,7 @@ class ProductsState {
         isLoading: isLoading,
         page: page,
         hasMore: hasMore,
+        total: total,
       );
 }
 
@@ -64,17 +69,18 @@ class ProductsNotifier extends StateNotifier<ProductsState> {
 
     try {
       final page = refresh ? 1 : state.page;
-      final products = await _repo.getProducts(
+      final res = await _repo.getProductsPage(
         page: page,
         categoryId: categoryId,
         search: search,
       ).timeout(const Duration(seconds: 10),
           onTimeout: () => throw Exception('Вақт гузашт. Дубора кӯшиш кунед'));
       state = state.copyWith(
-        products: refresh ? products : [...state.products, ...products],
+        products: refresh ? res.items : [...state.products, ...res.items],
         isLoading: false,
         page: page + 1,
-        hasMore: products.length >= 20,
+        hasMore: res.hasMore,
+        total: res.total,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
