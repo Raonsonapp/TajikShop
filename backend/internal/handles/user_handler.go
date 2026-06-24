@@ -137,6 +137,17 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 	utils.OK(c, gin.H{"avatar_url": url})
 }
 
+// SaveFCMToken — токени push-и дастгоҳро нигоҳ медорад
+func (h *UserHandler) SaveFCMToken(c *gin.Context) {
+	uid := utils.UserID(c)
+	var in struct {
+		Token string `json:"token"`
+	}
+	c.ShouldBindJSON(&in)
+	db.DB.Exec(`UPDATE users SET fcm_token=$1,updated_at=$2 WHERE id=$3`, in.Token, time.Now(), uid)
+	utils.OK(c, gin.H{"saved": true})
+}
+
 func (h *UserHandler) BecomeSellerHandler(c *gin.Context) {
 	uid := utils.UserID(c)
 	db.DB.Exec(`UPDATE users SET is_seller=true,role='seller',updated_at=$1 WHERE id=$2`, time.Now(), uid)

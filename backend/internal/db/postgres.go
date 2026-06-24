@@ -197,6 +197,7 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 
 -- ===== Wallet, Coupons & Payment methods (safe, idempotent) =====
 ALTER TABLE users  ADD COLUMN IF NOT EXISTS wallet_balance NUMERIC(12,2) DEFAULT 0;
+ALTER TABLE users  ADD COLUMN IF NOT EXISTS fcm_token TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20) DEFAULT 'dc';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount NUMERIC(12,2) DEFAULT 0;
 

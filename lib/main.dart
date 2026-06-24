@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/app_l10n.dart';
 import 'core/services/network_service.dart'; // ← ИЛОВА КУНЕД
+import 'core/services/push_service.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'routes/app_router.dart';
@@ -31,6 +32,9 @@ void main() {
 
   // ✅ NetworkService-ро инициализатсия кунед!
   NetworkService.instance.init();
+
+  // ✅ Push notifications (Firebase) — дар мобайл; web-ро рад мекунад
+  PushService.instance.init();
 
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);

@@ -5,6 +5,7 @@ import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
 import '../core/storage/token_storage.dart';
 import '../core/services/user_session.dart';
+import '../core/services/push_service.dart';
 import '../data/models/user_model.dart';
 
 // ─── Auth State ───────────────────────────────────────────────────────────────
@@ -222,6 +223,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       userRole: user.role,
     );
     await TokenStorage.saveUserId(user.id);
+    // FCM token-ро ба ҳисоби корбар мепайвандем (best-effort)
+    PushService.instance.registerToken();
   }
 }
 
