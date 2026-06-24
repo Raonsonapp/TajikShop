@@ -19,6 +19,7 @@ import '../modules/seller/seller_dashboard_screen.dart';
 import '../modules/seller/add_product_screen.dart';
 import '../modules/seller/my_products_screen.dart';
 import '../modules/admin/admin_dashboard_screen.dart';
+import '../modules/admin/admin_management_screens.dart';
 import '../modules/search/search_screen.dart';
 import '../modules/chat/chat_screen.dart';
 import '../shared/widgets/main_scaffold.dart';
@@ -50,6 +51,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.addProduct,      builder: (_, __) => const AddProductScreen()),
       GoRoute(path: RouteNames.myProducts,      builder: (_, __) => const MyProductsScreen()),
       GoRoute(path: RouteNames.admin,           builder: (_, __) => const AdminDashboardScreen()),
+      GoRoute(path: RouteNames.adminUsers,      builder: (_, __) => const AdminUsersScreen()),
+      GoRoute(path: RouteNames.adminOrders,     builder: (_, __) => const AdminOrdersScreen()),
+      GoRoute(path: RouteNames.adminCategories, builder: (_, __) => const AdminCategoriesScreen()),
       ShellRoute(
         builder: (context, state, child) => MainScaffold(child: child),
         routes: [

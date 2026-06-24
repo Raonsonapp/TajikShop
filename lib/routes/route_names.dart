@@ -19,4 +19,7 @@ class RouteNames {
   static const phoneOtp        = '/phone-otp';
   static const chat            = '/chat';
   static const myProducts      = '/my-products';
+  static const adminUsers      = '/admin/users';
+  static const adminOrders     = '/admin/orders';
+  static const adminCategories = '/admin/categories';
 }
