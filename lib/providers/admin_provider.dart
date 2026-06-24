@@ -18,6 +18,18 @@ final adminOrdersProvider = FutureProvider.autoDispose<List<Map<String, dynamic>
   return _unwrapList(res.data);
 });
 
+// ── Купонҳо (GET /admin/coupons) ────────────────────────────────────────────
+final adminCouponsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final res = await ApiClient.instance.dio.get('/admin/coupons');
+  return _unwrapList(res.data);
+});
+
+// ── Дархостҳои пополненияи интизор (GET /admin/wallet/pending) ───────────────
+final adminWalletPendingProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final res = await ApiClient.instance.dio.get('/admin/wallet/pending');
+  return _unwrapList(res.data);
+});
+
 class AdminService {
   static Future<void> banUser(String id) =>
       ApiClient.instance.dio.post('/admin/users/$id/ban');
@@ -31,4 +43,11 @@ class AdminService {
       ApiClient.instance.dio.delete('/admin/products/$id');
   static Future<void> createCategory(String name, String slug) =>
       ApiClient.instance.dio.post('/admin/categories', data: {'name': name, 'slug': slug});
+  static Future<void> createCoupon(String code, int discountPercent, int maxUses) =>
+      ApiClient.instance.dio.post('/admin/coupons',
+          data: {'code': code, 'discount_percent': discountPercent, 'max_uses': maxUses});
+  static Future<void> approveWalletTx(String id) =>
+      ApiClient.instance.dio.post('/admin/wallet/tx/$id/approve');
+  static Future<void> rejectWalletTx(String id) =>
+      ApiClient.instance.dio.post('/admin/wallet/tx/$id/reject');
 }

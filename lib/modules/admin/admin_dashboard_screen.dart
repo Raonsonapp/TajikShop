@@ -95,6 +95,14 @@ class AdminDashboardScreen extends ConsumerWidget {
                 icon: Icons.category_outlined, label: 'Категорияҳо',
                 subtitle: 'Илова ва таҳрири категорияҳо', color: AppColors.success, onTap: () => context.push(RouteNames.adminCategories),
               ),
+              _ManageCard(
+                icon: Icons.confirmation_number_outlined, label: 'Купонҳо',
+                subtitle: 'Сохтан ва идораи купонҳо', color: const Color(0xFFE040FB), onTap: () => context.push(RouteNames.adminCoupons),
+              ),
+              _ManageCard(
+                icon: Icons.account_balance_wallet_outlined, label: 'Тасдиқи ҳамён',
+                subtitle: 'Дархостҳои пополнения', color: AppColors.warning, onTap: () => context.push(RouteNames.adminWallet),
+              ),
               const SizedBox(height: 40),
             ],
           ),

@@ -12,6 +12,7 @@ import '../../core/api/api_endpoints.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/address_provider.dart';
+import '../../providers/wallet_provider.dart';
 import '../../data/models/cart_model.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
@@ -85,7 +86,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                       const SizedBox(height: 10),
                       _row('Ҷамъ', '${(cart.total + 20).toStringAsFixed(0)} сом.', bold: true),
                       const SizedBox(height: 16),
-                      AppButton(text: 'Пардохт тавасути DC', onTap: () => _dcCheckout(context)),
+                      AppButton(text: 'Пардохт кардан', onTap: () => _dcCheckout(context)),
                     ]),
                   ),
                 ]),
@@ -115,27 +116,58 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
   bool _loading = false;
   bool _sent = false;
   String? _addressId;
+  String _method = 'dc'; // dc | cod | wallet
+  final _couponCtrl = TextEditingController();
+  int _discountPct = 0;
+  String? _couponMsg;
+  bool _checkingCoupon = false;
+  String? _error;
   final _picker = ImagePicker();
+
+  @override
+  void dispose() { _couponCtrl.dispose(); super.dispose(); }
 
   Future<void> _pickReceipt() async {
     final img = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
     if (img != null) setState(() => _receipt = File(img.path));
   }
 
+  Future<void> _applyCoupon() async {
+    final code = _couponCtrl.text.trim();
+    if (code.isEmpty) return;
+    setState(() { _checkingCoupon = true; _couponMsg = null; });
+    final pct = await WalletService.validateCoupon(code);
+    setState(() {
+      _checkingCoupon = false;
+      if (pct != null && pct > 0) {
+        _discountPct = pct;
+        _couponMsg = '✅ Тахфифи $pct% татбиқ шуд';
+      } else {
+        _discountPct = 0;
+        _couponMsg = '❌ Купон нодуруст ё гузаштааст';
+      }
+    });
+  }
+
   Future<void> _submit() async {
-    if (_receipt == null) return;
-    setState(() => _loading = true);
+    if (_method == 'dc' && _receipt == null) {
+      setState(() => _error = 'Аввал чеки пардохтро бор кунед');
+      return;
+    }
+    setState(() { _loading = true; _error = null; });
     try {
-      // 1) Фармоиш месозем (бо суроға, агар интихоб шуда бошад)
+      // 1) Фармоиш месозем
       final res = await ApiClient.instance.dio.post(ApiEndpoints.checkout, data: {
         if (_addressId != null) 'address_id': _addressId,
+        'payment_method': _method,
+        if (_discountPct > 0) 'coupon_code': _couponCtrl.text.trim(),
       });
       final body = res.data is Map ? res.data as Map : const {};
       final data = body['data'] is Map ? body['data'] as Map : body;
       final orderId = (data['order_id'] ?? data['id'] ?? '').toString();
 
-      // 2) Чеки пардохтро бор мекунем
-      if (orderId.isNotEmpty) {
+      // 2) Барои DC чеки пардохтро бор мекунем
+      if (_method == 'dc' && _receipt != null && orderId.isNotEmpty) {
         final formData = FormData.fromMap({
           'proof': await MultipartFile.fromFile(_receipt!.path)
         });
@@ -143,12 +175,19 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
           '${ApiEndpoints.orders}/$orderId/payment-proof', data: formData);
       }
       await ref.read(cartProvider.notifier).loadCart();
+      if (_method == 'wallet') ref.invalidate(walletProvider);
       if (!mounted) return;
       setState(() { _loading = false; _sent = true; });
+    } on DioException catch (e) {
+      final msg = (e.response?.data is Map ? e.response?.data['error'] : null)?.toString();
+      if (mounted) setState(() { _loading = false; _error = msg ?? 'Хато ҳангоми пардохт'; });
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() { _loading = false; _error = 'Хато ҳангоми пардохт'; });
     }
   }
+
+  double get _cartTotal => ref.read(cartProvider).total;
+  double get _finalTotal => (_cartTotal + 20) * (1 - _discountPct / 100);
 
   Future<void> _addAddress() async {
     final added = await showModalBottomSheet<bool>(
@@ -219,50 +258,166 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
+      child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
         const SizedBox(height: 16),
-        const Text('Пардохти DC', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        const Align(alignment: Alignment.centerLeft,
+          child: Text('Тасдиқи фармоиш', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700))),
         const SizedBox(height: 16),
+
         // Суроғаи расонидан
         const Align(alignment: Alignment.centerLeft,
           child: Text('Суроғаи расонидан', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
         const SizedBox(height: 8),
         _addressSelector(),
         const SizedBox(height: 16),
-        // Seller DC info
-        Container(padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3))),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Row(children: [Icon(Icons.account_balance_wallet_outlined, color: AppColors.primary, size: 20),
-              SizedBox(width: 8), Text('Рақами DC-и фурӯшанда', style: TextStyle(color: AppColors.textMuted, fontSize: 12))]),
-            const SizedBox(height: 8),
-            const Text('+992 XX XXX XXXX', style: TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 4),
-            const Text('Пулро ба ин рақам интиқол диҳед', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          ])),
+
+        // Купон
+        const Align(alignment: Alignment.centerLeft,
+          child: Text('Купон / Промокод', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: Container(
+            decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border, width: 0.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: TextField(controller: _couponCtrl,
+              textCapitalization: TextCapitalization.characters,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              cursorColor: AppColors.primary,
+              decoration: const InputDecoration(isCollapsed: true,
+                  contentPadding: EdgeInsets.symmetric(vertical: 14), border: InputBorder.none,
+                  hintText: 'Кодро ворид кунед', hintStyle: TextStyle(color: AppColors.textMuted))))),
+          const SizedBox(width: 8),
+          SizedBox(height: 46, child: ElevatedButton(
+            onPressed: _checkingCoupon ? null : _applyCoupon,
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            child: _checkingCoupon
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Татбиқ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)))),
+        ]),
+        if (_couponMsg != null) Padding(padding: const EdgeInsets.only(top: 6),
+          child: Align(alignment: Alignment.centerLeft,
+            child: Text(_couponMsg!, style: TextStyle(
+                color: _discountPct > 0 ? AppColors.success : AppColors.error, fontSize: 12)))),
         const SizedBox(height: 16),
-        // Receipt upload
-        GestureDetector(
-          onTap: _pickReceipt,
-          child: Container(width: double.infinity, height: _receipt != null ? 160 : 90,
+
+        // Усули пардохт
+        const Align(alignment: Alignment.centerLeft,
+          child: Text('Усули пардохт', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
+        const SizedBox(height: 8),
+        _payOption('dc', Icons.account_balance_wallet_outlined, 'Корти DC', 'Интиқол + чеки пардохт'),
+        _payOption('cod', Icons.local_shipping_outlined, 'Пардохт ҳангоми расонидан', 'Накд ба курьер'),
+        _walletOption(),
+        const SizedBox(height: 16),
+
+        // Қисми вобаста ба усул
+        if (_method == 'dc') ...[
+          Container(padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _receipt != null ? AppColors.success : AppColors.border, width: 1.5),
-                image: _receipt != null ? DecorationImage(image: FileImage(_receipt!), fit: BoxFit.cover) : null),
-            child: _receipt == null ? const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.upload_file_rounded, color: AppColors.primary, size: 32),
-              SizedBox(height: 6),
-              Text('Чеки пардохтро бор кунед', style: TextStyle(color: AppColors.primary, fontSize: 13)),
-            ])) : null),
-        ),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3))),
+            child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [Icon(Icons.account_balance_wallet_outlined, color: AppColors.primary, size: 20),
+                SizedBox(width: 8), Text('Рақами DC-и фурӯшанда', style: TextStyle(color: AppColors.textMuted, fontSize: 12))]),
+              SizedBox(height: 8),
+              Text('+992 XX XXX XXXX', style: TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
+              SizedBox(height: 4),
+              Text('Пулро ба ин рақам интиқол диҳед, баъд чекро бор кунед', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            ])),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: _pickReceipt,
+            child: Container(width: double.infinity, height: _receipt != null ? 160 : 90,
+              decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: _receipt != null ? AppColors.success : AppColors.border, width: 1.5),
+                  image: _receipt != null ? DecorationImage(image: FileImage(_receipt!), fit: BoxFit.cover) : null),
+              child: _receipt == null ? const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.upload_file_rounded, color: AppColors.primary, size: 32),
+                SizedBox(height: 6),
+                Text('Чеки пардохтро бор кунед', style: TextStyle(color: AppColors.primary, fontSize: 13)),
+              ])) : null)),
+          const SizedBox(height: 16),
+        ],
+
+        // Ҷамъбаст
+        Container(padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12)),
+          child: Column(children: [
+            _row('Маҳсулот + доставка', '${(_cartTotal + 20).toStringAsFixed(0)} сом.'),
+            if (_discountPct > 0) ...[
+              const SizedBox(height: 6),
+              _row('Тахфиф ($_discountPct%)', '-${((_cartTotal + 20) * _discountPct / 100).toStringAsFixed(0)} сом.'),
+            ],
+            const SizedBox(height: 8),
+            const Divider(color: AppColors.divider, height: 1),
+            const SizedBox(height: 8),
+            _row('Ҷамъи пардохт', '${_finalTotal.toStringAsFixed(0)} сом.', bold: true),
+          ])),
+
+        if (_error != null) Padding(padding: const EdgeInsets.only(top: 12),
+          child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13))),
+
         const SizedBox(height: 16),
         AppButton(
-          text: _receipt == null ? 'Аввал чек бор кунед' : 'Фиристодан ✓',
+          text: _method == 'wallet' ? 'Пардохт аз ҳамён' : (_method == 'cod' ? 'Тасдиқи фармоиш' : 'Фиристодан ✓'),
           isLoading: _loading,
-          onTap: _receipt != null ? _submit : null,
+          onTap: _submit,
         ),
-      ]),
+        const SizedBox(height: 8),
+      ])),
+    );
+  }
+
+  Widget _payOption(String value, IconData icon, String title, String subtitle) {
+    final sel = _method == value;
+    return GestureDetector(
+      onTap: () => setState(() { _method = value; _error = null; }),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: sel ? AppColors.primary : AppColors.border, width: sel ? 1.4 : 0.5)),
+        child: Row(children: [
+          Icon(sel ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: sel ? AppColors.primary : AppColors.textMuted, size: 20),
+          const SizedBox(width: 10),
+          Icon(icon, color: AppColors.textSecondary, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(subtitle, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          ])),
+        ]),
+      ),
+    );
+  }
+
+  Widget _walletOption() {
+    final wallet = ref.watch(walletProvider);
+    final balance = wallet.maybeWhen(data: (d) => (d['balance'] as num?)?.toDouble() ?? 0, orElse: () => 0.0);
+    final enough = balance >= _finalTotal;
+    final sel = _method == 'wallet';
+    return GestureDetector(
+      onTap: () => setState(() { _method = 'wallet'; _error = null; }),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: sel ? AppColors.primary : AppColors.border, width: sel ? 1.4 : 0.5)),
+        child: Row(children: [
+          Icon(sel ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: sel ? AppColors.primary : AppColors.textMuted, size: 20),
+          const SizedBox(width: 10),
+          const Icon(Icons.savings_outlined, color: AppColors.textSecondary, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Ҳамён', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text('Тавозун: ${balance.toStringAsFixed(0)} сом.${enough ? '' : ' (нокифоя)'}',
+                style: TextStyle(color: enough ? AppColors.textMuted : AppColors.error, fontSize: 11)),
+          ])),
+        ]),
+      ),
     );
   }
 }

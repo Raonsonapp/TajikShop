@@ -24,6 +24,8 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	nh  := handlers.NewNotificationHandler()
 	ch  := handlers.NewCategoryHandler()
 	adm := handlers.NewAdminHandler()
+	wh  := handlers.NewWalletHandler()
+	cph := handlers.NewCouponHandler()
 
 	// Firebase handler — FIREBASE_PROJECT_ID env-дан мегирад
 	fbh := handlers.NewFirebaseHandler(secret, getenv("FIREBASE_WEB_API_KEY", ""))
@@ -94,6 +96,13 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.GET("/notifications", middleware.Auth(), nh.List)
 	api.POST("/notifications/read-all", middleware.Auth(), nh.MarkRead)
 
+	// Wallet
+	api.GET("/wallet", middleware.Auth(), wh.Get)
+	api.POST("/wallet/topup", middleware.Auth(), wh.TopUp)
+
+	// Coupons
+	api.GET("/coupons/validate", middleware.Auth(), cph.Validate)
+
 	// Admin
 	api.GET("/admin/stats", middleware.Auth(), middleware.AdminOnly(), adm.Stats)
 	api.GET("/admin/users", middleware.Auth(), middleware.AdminOnly(), adm.ListUsers)
@@ -104,6 +113,11 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.GET("/admin/orders", middleware.Auth(), middleware.AdminOnly(), adm.ListOrders)
 	api.PATCH("/admin/orders/:id/status", middleware.Auth(), middleware.AdminOnly(), adm.UpdateOrderStatus)
 	api.POST("/admin/categories", middleware.Auth(), middleware.AdminOnly(), ch.Create)
+	api.POST("/admin/coupons", middleware.Auth(), middleware.AdminOnly(), cph.Create)
+	api.GET("/admin/coupons", middleware.Auth(), middleware.AdminOnly(), cph.List)
+	api.GET("/admin/wallet/pending", middleware.Auth(), middleware.AdminOnly(), wh.AdminPending)
+	api.POST("/admin/wallet/tx/:id/approve", middleware.Auth(), middleware.AdminOnly(), wh.AdminApprove)
+	api.POST("/admin/wallet/tx/:id/reject", middleware.Auth(), middleware.AdminOnly(), wh.AdminReject)
 
 	// Health
 	r.GET("/health", func(c *gin.Context) {

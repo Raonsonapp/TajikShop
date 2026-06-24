@@ -22,6 +22,7 @@ import '../modules/admin/admin_dashboard_screen.dart';
 import '../modules/admin/admin_management_screens.dart';
 import '../modules/search/search_screen.dart';
 import '../modules/chat/chat_screen.dart';
+import '../modules/wallet/wallet_screen.dart';
 import '../shared/widgets/main_scaffold.dart';
 import '../providers/auth_provider.dart';
 import 'route_names.dart';
@@ -50,10 +51,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.seller,          builder: (_, __) => const SellerDashboardScreen()),
       GoRoute(path: RouteNames.addProduct,      builder: (_, __) => const AddProductScreen()),
       GoRoute(path: RouteNames.myProducts,      builder: (_, __) => const MyProductsScreen()),
+      GoRoute(path: RouteNames.wallet,          builder: (_, __) => const WalletScreen()),
       GoRoute(path: RouteNames.admin,           builder: (_, __) => const AdminDashboardScreen()),
       GoRoute(path: RouteNames.adminUsers,      builder: (_, __) => const AdminUsersScreen()),
       GoRoute(path: RouteNames.adminOrders,     builder: (_, __) => const AdminOrdersScreen()),
       GoRoute(path: RouteNames.adminCategories, builder: (_, __) => const AdminCategoriesScreen()),
+      GoRoute(path: RouteNames.adminCoupons,    builder: (_, __) => const AdminCouponsScreen()),
+      GoRoute(path: RouteNames.adminWallet,     builder: (_, __) => const AdminWalletScreen()),
       ShellRoute(
         builder: (context, state, child) => MainScaffold(child: child),
         routes: [

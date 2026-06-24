@@ -22,4 +22,7 @@ class RouteNames {
   static const adminUsers      = '/admin/users';
   static const adminOrders     = '/admin/orders';
   static const adminCategories = '/admin/categories';
+  static const wallet          = '/wallet';
+  static const adminCoupons    = '/admin/coupons';
+  static const adminWallet     = '/admin/wallet';
 }

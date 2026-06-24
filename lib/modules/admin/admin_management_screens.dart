@@ -297,3 +297,177 @@ class AdminCategoriesScreen extends ConsumerWidget {
     ));
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// КУПОНҲО
+// ════════════════════════════════════════════════════════════════════════════
+class AdminCouponsScreen extends ConsumerWidget {
+  const AdminCouponsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final coupons = ref.watch(adminCouponsProvider);
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(backgroundColor: AppColors.bgDark,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: const Text('Купонҳо', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700))),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.primary,
+        onPressed: () => _create(context, ref),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Купон', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+      body: coupons.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminCouponsProvider)),
+        data: (list) => list.isEmpty
+            ? const Center(child: Text('Купон нест', style: TextStyle(color: AppColors.textSecondary)))
+            : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
+                itemBuilder: (_, i) {
+                  final c = list[i];
+                  final used = (c['used_count'] as num?)?.toInt() ?? 0;
+                  final max = (c['max_uses'] as num?)?.toInt() ?? 0;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border, width: 0.5)),
+                    child: Row(children: [
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Text(c['code']?.toString() ?? '',
+                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 14))),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('-${c['discount_percent'] ?? 0}% тахфиф',
+                            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text('Истифода: $used${max > 0 ? ' / $max' : ' (бемаҳдуд)'}',
+                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      ])),
+                    ]));
+                }),
+      ),
+    );
+  }
+
+  void _create(BuildContext context, WidgetRef ref) {
+    final code = TextEditingController();
+    final disc = TextEditingController(text: '10');
+    final maxU = TextEditingController(text: '0');
+    showDialog(context: context, builder: (ctx) => AlertDialog(
+      backgroundColor: AppColors.bgCard,
+      title: const Text('Купони нав', style: TextStyle(color: AppColors.textPrimary)),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        _dlgField(code, 'Код (мас. BAHOR50)', cap: true),
+        _dlgField(disc, 'Тахфиф (%)', number: true),
+        _dlgField(maxU, 'Лимити истифода (0 = бемаҳдуд)', number: true),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx),
+            child: const Text('Бекор', style: TextStyle(color: AppColors.textMuted))),
+        TextButton(
+          onPressed: () async {
+            final cd = code.text.trim();
+            final pct = int.tryParse(disc.text.trim()) ?? 0;
+            if (cd.isEmpty || pct <= 0) return;
+            Navigator.pop(ctx);
+            final messenger = ScaffoldMessenger.of(context);
+            try {
+              await AdminService.createCoupon(cd, pct, int.tryParse(maxU.text.trim()) ?? 0);
+              ref.invalidate(adminCouponsProvider);
+              messenger.showSnackBar(const SnackBar(content: Text('Купон сохта шуд ✅'),
+                  backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+            } catch (_) {
+              messenger.showSnackBar(const SnackBar(content: Text('Хато (шояд код такрорӣ аст)'),
+                  backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+            }
+          },
+          child: const Text('Сохтан', style: TextStyle(color: AppColors.primary))),
+      ],
+    ));
+  }
+}
+
+Widget _dlgField(TextEditingController c, String hint, {bool number = false, bool cap = false}) =>
+    Padding(padding: const EdgeInsets.only(bottom: 10),
+      child: TextField(controller: c,
+        keyboardType: number ? TextInputType.number : null,
+        textCapitalization: cap ? TextCapitalization.characters : TextCapitalization.none,
+        style: const TextStyle(color: AppColors.textPrimary),
+        cursorColor: AppColors.primary,
+        decoration: InputDecoration(hintText: hint, hintStyle: const TextStyle(color: AppColors.textMuted))));
+
+// ════════════════════════════════════════════════════════════════════════════
+// ТАСДИҚИ ҲАМЁН (пополнения)
+// ════════════════════════════════════════════════════════════════════════════
+class AdminWalletScreen extends ConsumerWidget {
+  const AdminWalletScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pending = ref.watch(adminWalletPendingProvider);
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(backgroundColor: AppColors.bgDark,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: const Text('Тасдиқи пополнения', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+            onPressed: () => ref.invalidate(adminWalletPendingProvider))]),
+      body: pending.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminWalletPendingProvider)),
+        data: (list) => list.isEmpty
+            ? const Center(child: Text('Дархости интизор нест', style: TextStyle(color: AppColors.textSecondary)))
+            : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
+                itemBuilder: (_, i) {
+                  final t = list[i];
+                  final id = t['id']?.toString() ?? '';
+                  final amount = (t['amount'] as num?)?.toDouble() ?? 0;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border, width: 0.5)),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Expanded(child: Text(t['name']?.toString() ?? t['email']?.toString() ?? 'Корбар',
+                            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600))),
+                        Text('+${amount.toStringAsFixed(0)} сом.',
+                            style: const TextStyle(color: AppColors.success, fontSize: 16, fontWeight: FontWeight.w800)),
+                      ]),
+                      const SizedBox(height: 4),
+                      Text(t['email']?.toString() ?? '', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      const SizedBox(height: 10),
+                      Row(children: [
+                        Expanded(child: OutlinedButton(
+                          onPressed: () => _act(context, ref, id, false),
+                          style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.error)),
+                          child: const Text('Рад', style: TextStyle(color: AppColors.error)))),
+                        const SizedBox(width: 10),
+                        Expanded(child: ElevatedButton(
+                          onPressed: () => _act(context, ref, id, true),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                          child: const Text('Тасдиқ', style: TextStyle(color: Colors.white)))),
+                      ]),
+                    ]));
+                }),
+      ),
+    );
+  }
+
+  void _act(BuildContext context, WidgetRef ref, String id, bool approve) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      if (approve) {
+        await AdminService.approveWalletTx(id);
+      } else {
+        await AdminService.rejectWalletTx(id);
+      }
+      ref.invalidate(adminWalletPendingProvider);
+      messenger.showSnackBar(SnackBar(content: Text(approve ? 'Тасдиқ шуд ✅' : 'Рад шуд'),
+          backgroundColor: approve ? AppColors.success : AppColors.error, behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('Хато'),
+          backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+    }
+  }
+}

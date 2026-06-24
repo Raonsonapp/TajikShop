@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"tajikshop/internal/db"
 	"tajikshop/internal/models"
 	"tajikshop/internal/storage"
@@ -82,10 +83,16 @@ func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
 func (h *OrderHandler) Checkout(c *gin.Context) {
 	uid := utils.UserID(c)
 	var in struct {
-		AddressID string `json:"address_id"`
-		Note      string `json:"note"`
+		AddressID     string `json:"address_id"`
+		Note          string `json:"note"`
+		PaymentMethod string `json:"payment_method"` // dc | cod | wallet
+		CouponCode    string `json:"coupon_code"`
 	}
 	c.ShouldBindJSON(&in)
+	method := in.PaymentMethod
+	if method != "cod" && method != "wallet" {
+		method = "dc"
+	}
 
 	rows, err := db.DB.Query(`SELECT ci.product_id,ci.quantity,p.price FROM cart_items ci
 		JOIN products p ON p.id=ci.product_id WHERE ci.user_id=$1`, uid)
@@ -113,17 +120,91 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 		return
 	}
 
-	orderID := uuid.NewString()
-	db.DB.Exec(`INSERT INTO orders(id,user_id,address_id,total,note) VALUES($1,$2,$3,$4,$5)`,
-		orderID, uid, in.AddressID, total, in.Note)
+	// Купон (агар эътибор дошта бошад)
+	couponCode := strings.ToUpper(strings.TrimSpace(in.CouponCode))
+	discountPct := 0
+	if couponCode != "" {
+		if d, ok, _ := lookupCoupon(couponCode); ok {
+			discountPct = d
+		} else {
+			couponCode = ""
+		}
+	}
+	discountAmt := total * float64(discountPct) / 100
+	finalTotal := total - discountAmt
 
+	// address_id метавонад холӣ бошад (NULL)
+	var addr interface{}
+	if in.AddressID != "" {
+		addr = in.AddressID
+	}
+
+	orderID := uuid.NewString()
+
+	// ── Пардохт аз ҳамён: тавозунро месанҷем ва кам мекунем (атомӣ) ──
+	if method == "wallet" {
+		tx, txErr := db.DB.Begin()
+		if txErr != nil {
+			utils.Err(c, http.StatusInternalServerError, "tx begin failed")
+			return
+		}
+		var bal float64
+		tx.QueryRow(`SELECT COALESCE(wallet_balance,0) FROM users WHERE id=$1 FOR UPDATE`, uid).Scan(&bal)
+		if bal < finalTotal {
+			tx.Rollback()
+			utils.Err(c, http.StatusBadRequest, "Тавозуни ҳамён нокифоя аст")
+			return
+		}
+		if _, e := tx.Exec(`INSERT INTO orders(id,user_id,address_id,total,note,payment_method,discount,status)
+			VALUES($1,$2,$3,$4,$5,'wallet',$6,'paid')`, orderID, uid, addr, finalTotal, in.Note, discountAmt); e != nil {
+			tx.Rollback()
+			utils.Err(c, http.StatusInternalServerError, e.Error())
+			return
+		}
+		for _, i := range items {
+			tx.Exec(`INSERT INTO order_items(id,order_id,product_id,quantity,price) VALUES($1,$2,$3,$4,$5)`,
+				uuid.NewString(), orderID, i.ProductID, i.Qty, i.Price)
+		}
+		tx.Exec(`UPDATE users SET wallet_balance=wallet_balance-$1 WHERE id=$2`, finalTotal, uid)
+		tx.Exec(`INSERT INTO wallet_transactions(id,user_id,amount,type,status,note)
+			VALUES($1,$2,$3,'purchase','completed',$4)`,
+			uuid.NewString(), uid, -finalTotal, "Харид #"+shortID(orderID))
+		tx.Exec(`DELETE FROM cart_items WHERE user_id=$1`, uid)
+		if couponCode != "" {
+			tx.Exec(`UPDATE coupons SET used_count=used_count+1 WHERE UPPER(code)=$1`, couponCode)
+		}
+		if e := tx.Commit(); e != nil {
+			utils.Err(c, http.StatusInternalServerError, "checkout failed")
+			return
+		}
+		utils.Created(c, gin.H{"order_id": orderID, "total": finalTotal, "status": "paid", "discount": discountAmt})
+		return
+	}
+
+	// ── DC ё Cash-on-Delivery ──
+	if _, e := db.DB.Exec(`INSERT INTO orders(id,user_id,address_id,total,note,payment_method,discount,status)
+		VALUES($1,$2,$3,$4,$5,$6,$7,'pending')`,
+		orderID, uid, addr, finalTotal, in.Note, method, discountAmt); e != nil {
+		utils.Err(c, http.StatusInternalServerError, e.Error())
+		return
+	}
 	for _, i := range items {
 		db.DB.Exec(`INSERT INTO order_items(id,order_id,product_id,quantity,price) VALUES($1,$2,$3,$4,$5)`,
 			uuid.NewString(), orderID, i.ProductID, i.Qty, i.Price)
 	}
 	db.DB.Exec(`DELETE FROM cart_items WHERE user_id=$1`, uid)
+	if couponCode != "" {
+		db.DB.Exec(`UPDATE coupons SET used_count=used_count+1 WHERE UPPER(code)=$1`, couponCode)
+	}
 
-	utils.Created(c, gin.H{"order_id": orderID, "total": total})
+	utils.Created(c, gin.H{"order_id": orderID, "total": finalTotal, "discount": discountAmt})
+}
+
+func shortID(id string) string {
+	if len(id) > 8 {
+		return id[:8]
+	}
+	return id
 }
 
 func (h *OrderHandler) MyOrders(c *gin.Context) {

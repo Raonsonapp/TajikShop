@@ -194,6 +194,33 @@ CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_messages_receiver ON messages(receiver_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+
+-- ===== Wallet, Coupons & Payment methods (safe, idempotent) =====
+ALTER TABLE users  ADD COLUMN IF NOT EXISTS wallet_balance NUMERIC(12,2) DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20) DEFAULT 'dc';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount NUMERIC(12,2) DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	amount NUMERIC(12,2) NOT NULL,
+	type VARCHAR(20) NOT NULL,          -- topup | purchase | refund
+	status VARCHAR(20) DEFAULT 'pending', -- pending | completed | rejected
+	note TEXT DEFAULT '',
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_wallet_tx_user ON wallet_transactions(user_id);
+
+CREATE TABLE IF NOT EXISTS coupons (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	code VARCHAR(40) UNIQUE NOT NULL,
+	discount_percent INT NOT NULL DEFAULT 0,
+	max_uses INT DEFAULT 0,             -- 0 = бемаҳдуд
+	used_count INT DEFAULT 0,
+	is_active BOOLEAN DEFAULT true,
+	expires_at TIMESTAMPTZ,
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
 `
 	if _, err := DB.Exec(schema); err != nil {
 		log.Fatalf("❌ Schema migration failed: %v", err)
