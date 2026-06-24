@@ -48,6 +48,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/users/:id/follow", middleware.Auth(), flh.Follow)
 	api.DELETE("/users/:id/follow", middleware.Auth(), flh.Unfollow)
 	api.GET("/users/:id/followers", middleware.Auth(), flh.Followers)
+	api.GET("/users/:id/public", uh.PublicProfile)
 
 	// Products
 	api.GET("/products", ph.List)
@@ -87,6 +88,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	// Addresses
 	api.GET("/addresses", middleware.Auth(), ah.List)
 	api.POST("/addresses", middleware.Auth(), ah.Create)
+	api.PATCH("/addresses/:id/default", middleware.Auth(), ah.SetDefault)
 	api.DELETE("/addresses/:id", middleware.Auth(), ah.Delete)
 
 	// Stories

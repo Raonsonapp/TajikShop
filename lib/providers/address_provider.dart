@@ -35,4 +35,8 @@ class AddressService {
   static Future<void> remove(String id) async {
     await ApiClient.instance.dio.delete('/addresses/$id');
   }
+
+  static Future<void> setDefault(String id) async {
+    await ApiClient.instance.dio.patch('/addresses/$id/default');
+  }
 }

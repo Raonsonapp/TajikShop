@@ -280,6 +280,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 label: l.orders, onTap: () => context.go(RouteNames.orders)),
             _MenuItem(icon: Icons.account_balance_wallet_rounded, iconColor: const Color(0xFFFFB800),
                 label: 'Ҳамёни ман', onTap: () => context.push(RouteNames.wallet)),
+            _MenuItem(icon: Icons.location_on_outlined, iconColor: const Color(0xFFFF6B2C),
+                label: 'Суроғаҳои ман', onTap: () => context.push(RouteNames.addresses)),
             _MenuItem(icon: Icons.favorite_rounded, iconColor: const Color(0xFF00D084),
                 label: l.favorites, onTap: () => context.go(RouteNames.favorites)),
 

@@ -542,3 +542,17 @@ func (h *AddressHandler) Delete(c *gin.Context) {
 	db.DB.Exec(`DELETE FROM addresses WHERE id=$1 AND user_id=$2`, id, uid)
 	utils.OK(c, gin.H{"message": "deleted"})
 }
+
+func (h *AddressHandler) SetDefault(c *gin.Context) {
+	uid := utils.UserID(c)
+	id := c.Param("id")
+	tx, err := db.DB.Begin()
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, "tx begin failed")
+		return
+	}
+	tx.Exec(`UPDATE addresses SET is_default=false WHERE user_id=$1`, uid)
+	tx.Exec(`UPDATE addresses SET is_default=true WHERE id=$1 AND user_id=$2`, id, uid)
+	tx.Commit()
+	utils.OK(c, gin.H{"updated": true})
+}

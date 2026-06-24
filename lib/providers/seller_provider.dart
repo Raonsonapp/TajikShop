@@ -11,6 +11,15 @@ final sellerProductsProvider =
   return ProductRepository().getProducts(sellerId: sellerId);
 });
 
+// ── Профили оммавии фурӯшанда (GET /users/:id/public) ───────────────────────
+final sellerPublicProvider =
+    FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, id) async {
+  final res = await ApiClient.instance.dio.get('/users/$id/public');
+  final raw = res.data;
+  final data = raw is Map ? (raw['data'] is Map ? raw['data'] as Map : raw) : {};
+  return Map<String, dynamic>.from(data);
+});
+
 class SellerProductService {
   static Future<void> update(String id, {
     required String title,

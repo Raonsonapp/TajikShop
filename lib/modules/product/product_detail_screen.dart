@@ -146,7 +146,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               ]),
               const SizedBox(height: 20),
               if (p.sellerName != null) GestureDetector(
-                onTap: () => _openChat(p),
+                onTap: () => _openSeller(p),
                 child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
@@ -162,16 +162,19 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   const Spacer(),
                   _followButton(p),
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                    decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10)),
-                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary, size: 16),
-                      SizedBox(width: 6),
-                      Text('Паём', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)),
-                    ])),
+                  GestureDetector(
+                    onTap: () => _openChat(p),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10)),
+                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary, size: 16),
+                        SizedBox(width: 6),
+                        Text('Паём', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)),
+                      ])),
+                  ),
                 ]))),
               const SizedBox(height: 20),
               const Text('Тавсиф', style: TextStyle(
@@ -263,6 +266,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     if (p.sellerId.isEmpty) return;
     final name = Uri.encodeComponent(p.sellerName ?? 'Фурӯшанда');
     context.push('${RouteNames.chat}/${p.sellerId}?name=$name');
+  }
+
+  void _openSeller(ProductModel p) {
+    if (p.sellerId.isEmpty) return;
+    final name = Uri.encodeComponent(p.sellerName ?? 'Фурӯшанда');
+    context.push('/seller/${p.sellerId}?name=$name');
   }
 
   // ── Тугмаи пайгирӣ (follow) ────────────────────────────────────────────────

@@ -193,6 +193,38 @@ func (h *UserHandler) BecomeSellerHandler(c *gin.Context) {
 	})
 }
 
+// PublicProfile — саҳифаи оммавии фурӯшанда/корбар (бе auth)
+func (h *UserHandler) PublicProfile(c *gin.Context) {
+	id := c.Param("id")
+	var (
+		uid, name, avatar, bio, role string
+		isVerified                   bool
+	)
+	err := db.DB.QueryRow(`SELECT id,name,COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified
+		FROM users WHERE id=$1`, id).Scan(&uid, &name, &avatar, &bio, &role, &isVerified)
+	if err != nil {
+		utils.Err(c, http.StatusNotFound, "user not found")
+		return
+	}
+	var followers, products int
+	var rating float64
+	db.DB.QueryRow(`SELECT COUNT(*) FROM follows WHERE following_id=$1`, id).Scan(&followers)
+	db.DB.QueryRow(`SELECT COUNT(*) FROM products WHERE seller_id=$1 AND is_active=true`, id).Scan(&products)
+	db.DB.QueryRow(`SELECT COALESCE(AVG(r.rating),0) FROM reviews r
+		JOIN products p ON p.id=r.product_id WHERE p.seller_id=$1`, id).Scan(&rating)
+	utils.OK(c, gin.H{
+		"id":          uid,
+		"name":        name,
+		"avatar_url":  avatar,
+		"bio":         bio,
+		"role":        role,
+		"is_verified": isVerified,
+		"followers":   followers,
+		"products":    products,
+		"rating":      rating,
+	})
+}
+
 func (h *UserHandler) RefreshToken(c *gin.Context) {
 	var in struct {
 		RefreshToken string `json:"refresh_token" binding:"required"`
