@@ -19,12 +19,16 @@ class AddressService {
     required String city,
     required String street,
     String zip = '',
+    double lat = 0,
+    double lng = 0,
   }) async {
     await ApiClient.instance.dio.post('/addresses', data: {
       'title': title,
       'city': city,
       'street': street,
       'zip': zip,
+      'lat': lat,
+      'lng': lng,
     });
   }
 

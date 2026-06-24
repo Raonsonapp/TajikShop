@@ -426,33 +426,45 @@ func NewAddressHandler() *AddressHandler { return &AddressHandler{} }
 func (h *AddressHandler) Create(c *gin.Context) {
 	uid := utils.UserID(c)
 	var in struct {
-		Title  string `json:"title" binding:"required"`
-		City   string `json:"city" binding:"required"`
-		Street string `json:"street" binding:"required"`
-		Zip    string `json:"zip"`
+		Title  string  `json:"title" binding:"required"`
+		City   string  `json:"city" binding:"required"`
+		Street string  `json:"street" binding:"required"`
+		Zip    string  `json:"zip"`
+		Lat    float64 `json:"lat"`
+		Lng    float64 `json:"lng"`
 	}
 	if err := c.ShouldBindJSON(&in); err != nil {
 		utils.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	id := uuid.NewString()
-	db.DB.Exec(`INSERT INTO addresses(id,user_id,title,city,street,zip) VALUES($1,$2,$3,$4,$5,$6)`,
-		id, uid, in.Title, in.City, in.Street, in.Zip)
+	db.DB.Exec(`INSERT INTO addresses(id,user_id,title,city,street,zip,lat,lng) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+		id, uid, in.Title, in.City, in.Street, in.Zip, in.Lat, in.Lng)
 	utils.Created(c, gin.H{"id": id})
 }
 
 func (h *AddressHandler) List(c *gin.Context) {
 	uid := utils.UserID(c)
-	rows, _ := db.DB.Query(`SELECT id,title,city,street,zip,is_default FROM addresses WHERE user_id=$1`, uid)
+	rows, _ := db.DB.Query(`SELECT id,title,city,street,zip,is_default,COALESCE(lat,0),COALESCE(lng,0) FROM addresses WHERE user_id=$1`, uid)
 	defer rows.Close()
-	var addrs []models.Address
+	type addr struct {
+		ID        string  `json:"id"`
+		Title     string  `json:"title"`
+		City      string  `json:"city"`
+		Street    string  `json:"street"`
+		Zip       string  `json:"zip"`
+		IsDefault bool    `json:"is_default"`
+		Lat       float64 `json:"lat"`
+		Lng       float64 `json:"lng"`
+	}
+	var addrs []addr
 	for rows.Next() {
-		var a models.Address
-		rows.Scan(&a.ID, &a.Title, &a.City, &a.Street, &a.Zip, &a.IsDefault)
+		var a addr
+		rows.Scan(&a.ID, &a.Title, &a.City, &a.Street, &a.Zip, &a.IsDefault, &a.Lat, &a.Lng)
 		addrs = append(addrs, a)
 	}
 	if addrs == nil {
-		addrs = []models.Address{}
+		addrs = []addr{}
 	}
 	utils.OK(c, addrs)
 }

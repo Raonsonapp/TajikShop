@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -81,7 +82,16 @@ func (h *ProductHandler) List(c *gin.Context) {
 	}
 
 	if search != "" {
-		query += fmt.Sprintf(" AND (p.title ILIKE $%d OR p.description ILIKE $%d)", argIdx, argIdx)
+		// Ҷустуҷӯи зирак: ҳар калимаро алоҳида мутобиқ мекунем (AND)
+		for _, w := range strings.Fields(search) {
+			query += fmt.Sprintf(" AND (p.title ILIKE $%d OR p.description ILIKE $%d)", argIdx, argIdx)
+			args = append(args, "%"+w+"%")
+			argIdx++
+		}
+	}
+	titleBoost := ""
+	if search != "" {
+		titleBoost = fmt.Sprintf("(CASE WHEN p.title ILIKE $%d THEN 0 ELSE 1 END), ", argIdx)
 		args = append(args, "%"+search+"%")
 		argIdx++
 	}
@@ -101,6 +111,11 @@ func (h *ProductHandler) List(c *gin.Context) {
 		orderBy = "p.views DESC, p.created_at DESC"
 	case "newest":
 		orderBy = "p.created_at DESC"
+	default:
+		// Ҳангоми ҷустуҷӯ бе sort: аввал мутобиқати ном, баъд маъруфият
+		if search != "" {
+			orderBy = titleBoost + "p.views DESC, p.created_at DESC"
+		}
 	}
 	query += " ORDER BY " + orderBy
 	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
