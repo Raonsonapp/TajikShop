@@ -1,3 +1,5 @@
+import 'variant_model.dart';
+
 class ProductModel {
   final String id;
   final String title;
@@ -16,6 +18,10 @@ class ProductModel {
   final bool inStock;
   final int views;
   final int likeCount;
+  final String? brandName;
+  final int minOrderQty;
+  final double wholesalePrice;
+  final List<VariantModel> variants;
   final DateTime createdAt;
 
   const ProductModel({
@@ -25,7 +31,10 @@ class ProductModel {
     required this.sellerId, this.sellerName,
     required this.images, required this.rating, required this.reviewCount,
     required this.stock, required this.inStock,
-    this.views = 0, this.likeCount = 0, required this.createdAt,
+    this.views = 0, this.likeCount = 0,
+    this.brandName, this.minOrderQty = 1, this.wholesalePrice = 0,
+    this.variants = const [],
+    required this.createdAt,
   });
 
   String get mainImage => images.isNotEmpty ? images.first : '';
@@ -81,6 +90,15 @@ class ProductModel {
       inStock:         inStock,
       views:           (json['views'] as num?)?.toInt() ?? 0,
       likeCount:       (json['like_count'] ?? json['favorites_count'] as num?)?.toInt() ?? 0,
+      brandName:       json['brand_name']?.toString(),
+      minOrderQty:     (json['min_order_qty'] as num?)?.toInt() ?? 1,
+      wholesalePrice:  (json['wholesale_price'] as num?)?.toDouble() ?? 0,
+      variants: (json['variants'] is List)
+          ? (json['variants'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map(VariantModel.fromJson)
+              .toList()
+          : const [],
       createdAt:       json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),

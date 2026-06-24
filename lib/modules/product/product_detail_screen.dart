@@ -9,6 +9,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/services/recent_service.dart';
 import '../../data/models/product_model.dart';
 import '../../data/models/review_model.dart';
+import '../../data/models/variant_model.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/favorites_provider.dart';
@@ -32,6 +33,7 @@ class ProductDetailScreen extends ConsumerStatefulWidget {
 class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   int _imgIndex = 0;
   bool _recorded = false;
+  VariantModel? _variant;
 
   @override
   Widget build(BuildContext context) {
@@ -129,11 +131,19 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (p.brandName != null && p.brandName!.isNotEmpty)
+                Padding(padding: const EdgeInsets.only(bottom: 6),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: AppColors.info.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8)),
+                    child: Text(p.brandName!.toUpperCase(),
+                        style: const TextStyle(color: AppColors.info, fontSize: 11, fontWeight: FontWeight.w700)))),
               Text(p.title, style: const TextStyle(
                   color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
               Row(children: [
-                Text('${p.price.toStringAsFixed(0)} сом.',
+                Text('${((_variant != null && _variant!.price > 0) ? _variant!.price : p.price).toStringAsFixed(0)} сом.',
                     style: const TextStyle(color: AppColors.primary, fontSize: 26, fontWeight: FontWeight.w800)),
                 if (p.oldPrice != null) ...[
                   const SizedBox(width: 12),
@@ -142,6 +152,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           decoration: TextDecoration.lineThrough)),
                 ],
               ]),
+              if (p.wholesalePrice > 0) ...[
+                const SizedBox(height: 4),
+                Text('Нархи яклухт: ${p.wholesalePrice.toStringAsFixed(0)} сом.'
+                    '${p.minOrderQty > 1 ? ' (аз ${p.minOrderQty} дона)' : ''}',
+                    style: const TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w600)),
+              ],
               const SizedBox(height: 16),
               Row(children: [
                 _Chip(icon: Icons.star_rounded, value: p.rating.toStringAsFixed(1), color: AppColors.warning),
@@ -158,6 +174,41 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           color: p.inStock ? AppColors.success : AppColors.error,
                           fontSize: 12, fontWeight: FontWeight.w600))),
               ]),
+              if (p.variants.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                const Text('Вариантҳо', style: TextStyle(
+                    color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                Wrap(spacing: 8, runSpacing: 8, children: p.variants.map((v) {
+                  final sel = _variant?.id == v.id;
+                  return GestureDetector(
+                    onTap: v.inStock ? () => setState(() => _variant = sel ? null : v) : null,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: sel ? AppColors.primary.withValues(alpha: 0.15) : AppColors.bgCard,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: sel ? AppColors.primary : AppColors.border,
+                            width: sel ? 1.4 : 0.6)),
+                      child: Text(
+                          v.inStock ? v.label : '${v.label} (нест)',
+                          style: TextStyle(
+                              color: v.inStock ? (sel ? AppColors.primary : AppColors.textPrimary) : AppColors.textMuted,
+                              fontSize: 13, fontWeight: sel ? FontWeight.w700 : FontWeight.w500)),
+                    ),
+                  );
+                }).toList()),
+              ],
+              if (p.minOrderQty > 1) ...[
+                const SizedBox(height: 12),
+                Row(children: [
+                  const Icon(Icons.inventory_2_outlined, color: AppColors.textMuted, size: 16),
+                  const SizedBox(width: 6),
+                  Text('Ҳадди ақали фармоиш: ${p.minOrderQty} дона',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                ]),
+              ],
               const SizedBox(height: 20),
               if (p.sellerName != null) GestureDetector(
                 onTap: () => _openSeller(p),

@@ -33,6 +33,11 @@ type Product struct {
 	VideoURL        string    `json:"video_url"`
 	Images          []string  `json:"images"`
 	SellerName      string    `json:"seller_name,omitempty"`
+	BrandID         string    `json:"brand_id,omitempty"`
+	BrandName       string    `json:"brand_name,omitempty"`
+	MinOrderQty     int       `json:"min_order_qty,omitempty"`
+	WholesalePrice  float64   `json:"wholesale_price,omitempty"`
+	Variants        interface{} `json:"variants,omitempty"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }

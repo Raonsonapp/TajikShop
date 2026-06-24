@@ -235,6 +235,29 @@ CREATE TABLE IF NOT EXISTS reports (
 	resolved BOOLEAN DEFAULT false,
 	created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ===== Brands & Product variants (size/color/SKU) + MOQ/wholesale =====
+CREATE TABLE IF NOT EXISTS brands (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	name VARCHAR(100) NOT NULL,
+	slug VARCHAR(100) UNIQUE NOT NULL,
+	logo_url TEXT DEFAULT '',
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS product_variants (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+	size VARCHAR(50) DEFAULT '',
+	color VARCHAR(50) DEFAULT '',
+	sku VARCHAR(80) DEFAULT '',
+	price NUMERIC(12,2) DEFAULT 0,
+	stock INT DEFAULT 0,
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_variants_product ON product_variants(product_id);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS brand_id UUID REFERENCES brands(id);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS min_order_qty INT DEFAULT 1;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS wholesale_price NUMERIC(12,2) DEFAULT 0;
 `
 	if _, err := DB.Exec(schema); err != nil {
 		log.Fatalf("❌ Schema migration failed: %v", err)

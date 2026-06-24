@@ -181,6 +181,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 		for _, i := range items {
 			tx.Exec(`INSERT INTO order_items(id,order_id,product_id,quantity,price) VALUES($1,$2,$3,$4,$5)`,
 				uuid.NewString(), orderID, i.ProductID, i.Qty, i.Price)
+			tx.Exec(`UPDATE products SET stock=GREATEST(stock-$1,0) WHERE id=$2`, i.Qty, i.ProductID)
 		}
 		tx.Exec(`UPDATE users SET wallet_balance=wallet_balance-$1 WHERE id=$2`, finalTotal, uid)
 		tx.Exec(`INSERT INTO wallet_transactions(id,user_id,amount,type,status,note)
@@ -212,6 +213,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 	for _, i := range items {
 		db.DB.Exec(`INSERT INTO order_items(id,order_id,product_id,quantity,price) VALUES($1,$2,$3,$4,$5)`,
 			uuid.NewString(), orderID, i.ProductID, i.Qty, i.Price)
+		db.DB.Exec(`UPDATE products SET stock=GREATEST(stock-$1,0) WHERE id=$2`, i.Qty, i.ProductID)
 	}
 	db.DB.Exec(`DELETE FROM cart_items WHERE user_id=$1`, uid)
 	if couponCode != "" {

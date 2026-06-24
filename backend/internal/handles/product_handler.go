@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -23,11 +24,14 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	uid := utils.UserID(c)
 	var in struct {
 		CategoryID      string  `json:"category_id"`
+		BrandID         string  `json:"brand_id"`
 		Title           string  `json:"title" binding:"required"`
 		Description     string  `json:"description"`
 		Price           float64 `json:"price" binding:"required,gt=0"`
 		DiscountPercent int     `json:"discount_percent"`
 		Stock           int     `json:"stock"`
+		MinOrderQty     int     `json:"min_order_qty"`
+		WholesalePrice  float64 `json:"wholesale_price"`
 	}
 	if err := c.ShouldBindJSON(&in); err != nil {
 		utils.Err(c, http.StatusBadRequest, err.Error())
@@ -37,14 +41,20 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	if in.Stock == 0 {
 		in.Stock = 999
 	}
+	if in.MinOrderQty < 1 {
+		in.MinOrderQty = 1
+	}
 	id := uuid.NewString()
-	var catID interface{}
+	var catID, brandID interface{}
 	if in.CategoryID != "" {
 		catID = in.CategoryID
 	}
-	_, err := db.DB.Exec(`INSERT INTO products(id,seller_id,category_id,title,description,price,discount_percent,stock,is_active)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,true)`,
-		id, uid, catID, in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock)
+	if in.BrandID != "" {
+		brandID = in.BrandID
+	}
+	_, err := db.DB.Exec(`INSERT INTO products(id,seller_id,category_id,brand_id,title,description,price,discount_percent,stock,min_order_qty,wholesale_price,is_active)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,true)`,
+		id, uid, catID, brandID, in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.MinOrderQty, in.WholesalePrice)
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return
@@ -171,16 +181,27 @@ func (h *ProductHandler) List(c *gin.Context) {
 func (h *ProductHandler) GetByID(c *gin.Context) {
 	id := c.Param("id")
 	var p models.Product
+	var brandID, brandName sql.NullString
+	var moq int
+	var wholesale float64
 	err := db.DB.QueryRow(`SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
-		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.video_url, p.created_at, u.name
-		FROM products p JOIN users u ON u.id=p.seller_id WHERE p.id=$1`, id).
+		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.video_url, p.created_at, u.name,
+		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name
+		FROM products p JOIN users u ON u.id=p.seller_id
+		LEFT JOIN brands b ON b.id=p.brand_id WHERE p.id=$1`, id).
 		Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description, &p.Price,
-			&p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.VideoURL, &p.CreatedAt, &p.SellerName)
+			&p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.VideoURL, &p.CreatedAt, &p.SellerName,
+			&brandID, &moq, &wholesale, &brandName)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "product not found")
 		return
 	}
 	p.Images = getProductImages(id)
+	p.BrandID = brandID.String
+	p.BrandName = brandName.String
+	p.MinOrderQty = moq
+	p.WholesalePrice = wholesale
+	p.Variants = getProductVariants(id)
 	db.DB.Exec(`UPDATE products SET views=views+1 WHERE id=$1`, id)
 	utils.OK(c, p)
 }

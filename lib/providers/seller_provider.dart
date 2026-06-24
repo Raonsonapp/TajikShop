@@ -2,7 +2,37 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
 import '../data/models/product_model.dart';
+import '../data/models/variant_model.dart';
 import '../data/repositories/product_repository.dart';
+
+// ── Вариантҳои маҳсулот ─────────────────────────────────────────────────────
+final productVariantsProvider =
+    FutureProvider.autoDispose.family<List<VariantModel>, String>((ref, productId) async {
+  final res = await ApiClient.instance.dio.get('/products/$productId/variants');
+  final raw = res.data;
+  final list = raw is List ? raw : (raw is Map ? (raw['data'] ?? []) : []);
+  return (list as List).whereType<Map<String, dynamic>>().map(VariantModel.fromJson).toList();
+});
+
+// ── Брендҳо ─────────────────────────────────────────────────────────────────
+final brandsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final res = await ApiClient.instance.dio.get('/brands');
+  final raw = res.data;
+  final list = raw is List ? raw : (raw is Map ? (raw['data'] ?? []) : []);
+  return (list as List).whereType<Map<String, dynamic>>().toList();
+});
+
+class VariantService {
+  static Future<void> add(String productId,
+      {String size = '', String color = '', String sku = '', double price = 0, int stock = 0}) async {
+    await ApiClient.instance.dio.post('/products/$productId/variants',
+        data: {'size': size, 'color': color, 'sku': sku, 'price': price, 'stock': stock});
+  }
+
+  static Future<void> remove(String variantId) async {
+    await ApiClient.instance.dio.delete('/variants/$variantId');
+  }
+}
 
 // ── Маҳсулоти фурӯшанда (GET /products?seller_id=) ──────────────────────────
 final sellerProductsProvider =

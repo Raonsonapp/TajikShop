@@ -27,6 +27,8 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	wh  := handlers.NewWalletHandler()
 	cph := handlers.NewCouponHandler()
 	rph := handlers.NewReportHandler()
+	bh  := handlers.NewBrandHandler()
+	vh  := handlers.NewVariantHandler()
 
 	// Firebase handler — FIREBASE_PROJECT_ID env-дан мегирад
 	fbh := handlers.NewFirebaseHandler(secret, getenv("FIREBASE_WEB_API_KEY", ""))
@@ -59,6 +61,13 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.PUT("/products/:id", middleware.Auth(), middleware.SellerOnly(), ph.Update)
 	api.DELETE("/products/:id", middleware.Auth(), middleware.SellerOnly(), ph.Delete)
 	api.POST("/products/:id/images", middleware.Auth(), middleware.SellerOnly(), ph.UploadImages)
+	api.GET("/products/:id/variants", vh.ByProduct)
+	api.POST("/products/:id/variants", middleware.Auth(), middleware.SellerOnly(), vh.Add)
+	api.DELETE("/variants/:id", middleware.Auth(), middleware.SellerOnly(), vh.Delete)
+
+	// Brands
+	api.GET("/brands", bh.List)
+	api.POST("/admin/brands", middleware.Auth(), middleware.AdminOnly(), bh.Create)
 
 	// Reviews — separate path to avoid conflict
 	api.GET("/reviews/product/:product_id", rh.ByProduct)

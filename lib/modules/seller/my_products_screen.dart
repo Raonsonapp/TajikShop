@@ -10,6 +10,7 @@ import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/error_screen.dart';
+import 'manage_variants_screen.dart';
 
 class MyProductsScreen extends ConsumerWidget {
   const MyProductsScreen({super.key});
@@ -101,6 +102,11 @@ class _ProductRow extends StatelessWidget {
                 style: TextStyle(color: p.inStock ? AppColors.success : AppColors.error,
                     fontSize: 10, fontWeight: FontWeight.w600))),
         ])),
+        IconButton(
+          icon: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
+          tooltip: 'Вариантҳо',
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => ManageVariantsScreen(productId: p.id, title: p.title)))),
         IconButton(
           icon: const Icon(Icons.edit_outlined, color: AppColors.info, size: 20),
           onPressed: () => _openEdit(context)),
