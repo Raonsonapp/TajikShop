@@ -138,7 +138,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                           fontSize: 12, fontWeight: FontWeight.w600))),
               ]),
               const SizedBox(height: 20),
-              if (p.sellerName != null) Container(
+              if (p.sellerName != null) GestureDetector(
+                onTap: () => _openChat(p),
+                child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.border, width: 0.5)),
@@ -151,8 +153,17 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     const Text('Фурӯшанда', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                   ]),
                   const Spacer(),
-                  const Icon(Icons.chevron_right, color: AppColors.textMuted),
-                ])),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10)),
+                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary, size: 16),
+                      SizedBox(width: 6),
+                      Text('Паём', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)),
+                    ])),
+                ]))),
               const SizedBox(height: 20),
               const Text('Тавсиф', style: TextStyle(
                   color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
@@ -230,6 +241,19 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         content: Text('Хато ҳангоми илова ба сабад'),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
     }
+  }
+
+  // ── Чат бо фурӯшанда ───────────────────────────────────────────────────────
+  void _openChat(ProductModel p) {
+    if (!ref.read(authProvider).isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Барои паём навиштан ворид шавед'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+      return;
+    }
+    if (p.sellerId.isEmpty) return;
+    final name = Uri.encodeComponent(p.sellerName ?? 'Фурӯшанда');
+    context.push('${RouteNames.chat}/${p.sellerId}?name=$name');
   }
 
   // ── Бахши шарҳҳо ───────────────────────────────────────────────────────────

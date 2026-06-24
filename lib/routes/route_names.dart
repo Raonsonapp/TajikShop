@@ -17,4 +17,5 @@ class RouteNames {
   static const admin           = '/admin';
   static const phoneAuth       = '/phone-auth';
   static const phoneOtp        = '/phone-otp';
+  static const chat            = '/chat';
 }

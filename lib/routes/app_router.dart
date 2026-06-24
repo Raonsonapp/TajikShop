@@ -18,6 +18,7 @@ import '../modules/seller/seller_dashboard_screen.dart';
 import '../modules/seller/add_product_screen.dart';
 import '../modules/admin/admin_dashboard_screen.dart';
 import '../modules/search/search_screen.dart';
+import '../modules/chat/chat_screen.dart';
 import '../shared/widgets/main_scaffold.dart';
 import '../providers/auth_provider.dart';
 import 'route_names.dart';
@@ -32,6 +33,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.phoneAuth, builder: (_, __) => const PhoneAuthScreen()),
       GoRoute(path: '/product/:id',
           builder: (_, s) => ProductDetailScreen(id: s.pathParameters['id']!)),
+      GoRoute(path: '/chat/:id',
+          builder: (_, s) => ChatScreen(
+                userId: s.pathParameters['id']!,
+                userName: s.uri.queryParameters['name'] ?? 'Фурӯшанда',
+              )),
       GoRoute(path: RouteNames.orders,          builder: (_, __) => const OrdersScreen()),
       GoRoute(path: RouteNames.notifications,   builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: RouteNames.categories,      builder: (_, __) => const CategoriesScreen()),
