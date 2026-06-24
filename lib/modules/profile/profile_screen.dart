@@ -29,17 +29,78 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _pickAvatar() async {
     final xf = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (xf == null) return;
-    final file = File(xf.path);
+    final messenger = ScaffoldMessenger.of(context);
     try {
-      final form = FormData.fromMap({'avatar': await MultipartFile.fromFile(file.path)});
-      final res = await ApiClient.instance.dio.put(ApiEndpoints.me, data: form);
-      final body = res.data is Map ? res.data as Map<String, dynamic> : <String, dynamic>{};
-      final data = body['data'] as Map<String, dynamic>? ?? body;
-      final url  = data['avatar_url']?.toString();
-      if (url != null && url.isNotEmpty) {
-        await ref.read(authProvider.notifier).checkAuth();
-      }
-    } catch (_) {}
+      final form = FormData.fromMap({'avatar': await MultipartFile.fromFile(xf.path)});
+      // ✅ Endpoint-и дурусти аватар (POST /users/me/avatar)
+      await ApiClient.instance.dio.post(ApiEndpoints.uploadAvatar, data: form);
+      await ref.read(authProvider.notifier).checkAuth();
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Расм нав шуд ✅'),
+        backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Расм бор нашуд'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  // ── Таҳрири профил (PUT /users/me) ─────────────────────────────────────────
+  void _editProfile() {
+    final user = ref.read(authProvider).user;
+    final nameCtrl = TextEditingController(text: user?.fullName ?? '');
+    final bioCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) {
+        bool loading = false;
+        return StatefulBuilder(builder: (ctx, setSheet) {
+          Widget field(String label, TextEditingController c, {int maxLines = 1}) =>
+            Padding(padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border, width: 0.5)),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: TextField(controller: c, maxLines: maxLines,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  cursorColor: AppColors.primary,
+                  decoration: InputDecoration(isCollapsed: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14), border: InputBorder.none,
+                      hintText: label, hintStyle: const TextStyle(color: AppColors.textMuted)))));
+          return Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Center(child: Container(width: 40, height: 4,
+                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 16),
+              const Text('Таҳрири профил', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 16),
+              field('Номи корбар', nameCtrl),
+              field('Био (дар бораи худ)', bioCtrl, maxLines: 3),
+              const SizedBox(height: 8),
+              AppButton(text: 'Захира кардан', isLoading: loading, onTap: () async {
+                setSheet(() => loading = true);
+                final messenger = ScaffoldMessenger.of(context);
+                try {
+                  await ApiClient.instance.dio.put(ApiEndpoints.updateProfile,
+                      data: {'name': nameCtrl.text.trim(), 'bio': bioCtrl.text.trim()});
+                  await ref.read(authProvider.notifier).checkAuth();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  messenger.showSnackBar(const SnackBar(content: Text('Профил нав шуд ✅'),
+                      backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+                } catch (_) {
+                  setSheet(() => loading = false);
+                  messenger.showSnackBar(const SnackBar(content: Text('Хато'),
+                      backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+                }
+              }),
+            ]),
+          );
+        });
+      });
   }
 
   // ── Become Seller ────────────────────────────────────────────────────────────
@@ -200,6 +261,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   const SizedBox(height: 8),
                   _RoleBadge(role: user?.role ?? 'buyer', l: l),
                 ])),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, color: AppColors.textSecondary, size: 20),
+                  onPressed: _editProfile),
               ])),
 
             // ── Seller / Become Seller ─────────────────────────────────────

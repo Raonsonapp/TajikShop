@@ -291,6 +291,17 @@ func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 	db.DB.Exec(`UPDATE orders SET status=$1,updated_at=$2 WHERE id=$3`, in.Status, time.Now(), oid)
+	// Огоҳӣ ба соҳиби фармоиш
+	var ownerID string
+	if err := db.DB.QueryRow(`SELECT user_id FROM orders WHERE id=$1`, oid).Scan(&ownerID); err == nil && ownerID != "" {
+		short := oid
+		if len(short) > 8 {
+			short = short[:8]
+		}
+		db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
+			VALUES($1,$2,'order','Ҳолати фармоиш нав шуд','Фармоиши #`+short+`: `+in.Status+`',$3)`,
+			uuid.NewString(), ownerID, oid)
+	}
 	utils.OK(c, gin.H{"message": "status updated"})
 }
 

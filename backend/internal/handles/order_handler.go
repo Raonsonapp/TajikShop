@@ -186,6 +186,9 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 		tx.Exec(`INSERT INTO wallet_transactions(id,user_id,amount,type,status,note)
 			VALUES($1,$2,$3,'purchase','completed',$4)`,
 			uuid.NewString(), uid, -finalTotal, "Харид #"+shortID(orderID))
+		tx.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
+			VALUES($1,$2,'order','Фармоиш қабул шуд','Фармоиши #`+shortID(orderID)+` бо ҳамён пардохт шуд',$3)`,
+			uuid.NewString(), uid, orderID)
 		tx.Exec(`DELETE FROM cart_items WHERE user_id=$1`, uid)
 		if couponCode != "" {
 			tx.Exec(`UPDATE coupons SET used_count=used_count+1 WHERE UPPER(code)=$1`, couponCode)
@@ -213,6 +216,9 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 	if couponCode != "" {
 		db.DB.Exec(`UPDATE coupons SET used_count=used_count+1 WHERE UPPER(code)=$1`, couponCode)
 	}
+	db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
+		VALUES($1,$2,'order','Фармоиш қабул шуд','Фармоиши #`+shortID(orderID)+` қабул шуд',$3)`,
+		uuid.NewString(), uid, orderID)
 
 	utils.Created(c, gin.H{"order_id": orderID, "total": finalTotal, "discount": discountAmt})
 }
@@ -282,6 +288,9 @@ func (h *OrderHandler) Cancel(c *gin.Context) {
 		return
 	}
 	tx.Exec(`UPDATE orders SET status='cancelled',updated_at=$1 WHERE id=$2`, time.Now(), oid)
+	tx.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
+		VALUES($1,$2,'order','Фармоиш бекор шуд','Фармоиши #`+shortID(oid)+` бекор карда шуд',$3)`,
+		uuid.NewString(), uid, oid)
 	refunded := false
 	if method == "wallet" && (status == "paid" || status == "processing") {
 		tx.Exec(`UPDATE users SET wallet_balance=COALESCE(wallet_balance,0)+$1 WHERE id=$2`, total, uid)
