@@ -4,14 +4,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/product_model.dart';
+import '../../data/models/review_model.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/review_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/error_screen.dart';
 
@@ -155,6 +159,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               const SizedBox(height: 8),
               Text(p.description.isEmpty ? 'Тавсифе нест' : p.description,
                   style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.6)),
+
+              const SizedBox(height: 28),
+              _reviewsSection(p),
+
+              const SizedBox(height: 28),
+              _similarSection(p),
             ])),
         ),
       ]),
@@ -220,6 +230,217 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         content: Text('Хато ҳангоми илова ба сабад'),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
     }
+  }
+
+  // ── Бахши шарҳҳо ───────────────────────────────────────────────────────────
+  Widget _reviewsSection(ProductModel p) {
+    final reviews = ref.watch(productReviewsProvider(p.id));
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        const Text('Шарҳҳо', style: TextStyle(
+            color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        const Spacer(),
+        TextButton.icon(
+          onPressed: () => _openAddReview(p),
+          icon: const Icon(Icons.rate_review_outlined, size: 18, color: AppColors.primary),
+          label: const Text('Шарҳ навиштан',
+              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
+      ]),
+      const SizedBox(height: 4),
+      reviews.when(
+        loading: () => const Padding(padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2))),
+        error: (e, _) => _ratingSummary(p, 0, const SizedBox()),
+        data: (list) {
+          if (list.isEmpty) {
+            return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              _ratingSummary(p, 0, const SizedBox()),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 12),
+                child: Text('Ҳоло шарҳе нест. Аввалин шуда шарҳ нависед!',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13))),
+            ]);
+          }
+          final avg = list.fold<int>(0, (s, r) => s + r.rating) / list.length;
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _ratingSummary(p, avg, Text('${list.length} шарҳ',
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 12))),
+            const SizedBox(height: 8),
+            ...list.take(5).map(_reviewTile),
+            if (list.length > 5)
+              Padding(padding: const EdgeInsets.only(top: 4),
+                child: Text('ва боз ${list.length - 5} шарҳ...',
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12))),
+          ]);
+        },
+      ),
+    ]);
+  }
+
+  Widget _ratingSummary(ProductModel p, double avg, Widget trailing) {
+    final value = avg > 0 ? avg : p.rating;
+    return Row(children: [
+      Text(value.toStringAsFixed(1),
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 28, fontWeight: FontWeight.w800)),
+      const SizedBox(width: 8),
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: List.generate(5, (i) => Icon(
+            i < value.round() ? Icons.star_rounded : Icons.star_border_rounded,
+            color: AppColors.warning, size: 16))),
+        const SizedBox(height: 2),
+        trailing,
+      ]),
+    ]);
+  }
+
+  Widget _reviewTile(ReviewModel r) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        CircleAvatar(radius: 14, backgroundColor: AppColors.bgSurface,
+          backgroundImage: (r.userAvatar != null && r.userAvatar!.isNotEmpty)
+              ? CachedNetworkImageProvider(r.userAvatar!) : null,
+          child: (r.userAvatar == null || r.userAvatar!.isEmpty)
+              ? const Icon(Icons.person, size: 16, color: AppColors.textMuted) : null),
+        const SizedBox(width: 8),
+        Expanded(child: Text(r.userName?.isNotEmpty == true ? r.userName! : 'Корбар',
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600))),
+        Text(DateFormat('dd.MM.yyyy').format(r.createdAt),
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+      ]),
+      const SizedBox(height: 4),
+      Row(children: List.generate(5, (i) => Icon(
+          i < r.rating ? Icons.star_rounded : Icons.star_border_rounded,
+          color: AppColors.warning, size: 13))),
+      if (r.comment.isNotEmpty) ...[
+        const SizedBox(height: 4),
+        Text(r.comment, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4)),
+      ],
+    ]),
+  );
+
+  void _openAddReview(ProductModel p) {
+    if (!ref.read(authProvider).isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Барои шарҳ навиштан ворид шавед'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _AddReviewSheet(
+        productId: p.id,
+        onDone: () => ref.invalidate(productReviewsProvider(p.id))),
+    );
+  }
+
+  // ── Маҳсулоти монанд ───────────────────────────────────────────────────────
+  Widget _similarSection(ProductModel p) {
+    if (p.categoryId == null || p.categoryId!.isEmpty) return const SizedBox.shrink();
+    final similar = ref.watch(similarProductsProvider(p.categoryId!));
+    return similar.when(
+      loading: () => const SizedBox(),
+      error: (_, __) => const SizedBox(),
+      data: (list) {
+        final others = list.where((e) => e.id != p.id).take(10).toList();
+        if (others.isEmpty) return const SizedBox.shrink();
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Маҳсулоти монанд', style: TextStyle(
+              color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 250,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: others.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (_, i) => SizedBox(width: 150, child: ProductCard(product: others[i])),
+            ),
+          ),
+        ]);
+      },
+    );
+  }
+}
+
+// ── Add review bottom sheet ────────────────────────────────────────────────────
+class _AddReviewSheet extends ConsumerStatefulWidget {
+  final String productId;
+  final VoidCallback onDone;
+  const _AddReviewSheet({required this.productId, required this.onDone});
+  @override
+  ConsumerState<_AddReviewSheet> createState() => _AddReviewSheetState();
+}
+
+class _AddReviewSheetState extends ConsumerState<_AddReviewSheet> {
+  int _rating = 5;
+  final _ctrl = TextEditingController();
+  bool _loading = false;
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  Future<void> _submit() async {
+    setState(() => _loading = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ReviewService.submit(
+          productId: widget.productId, rating: _rating, comment: _ctrl.text.trim());
+      widget.onDone();
+      if (!mounted) return;
+      Navigator.pop(context);
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Шарҳи шумо илова шуд ✅'),
+        backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Хато ҳангоми фиристодани шарҳ'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Center(child: Container(width: 40, height: 4,
+            decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+        const SizedBox(height: 16),
+        const Text('Баҳои худро гузоред', style: TextStyle(
+            color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 16),
+        Center(child: Row(mainAxisSize: MainAxisSize.min, children: List.generate(5, (i) =>
+          GestureDetector(
+            onTap: () { HapticFeedback.selectionClick(); setState(() => _rating = i + 1); },
+            child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Icon(i < _rating ? Icons.star_rounded : Icons.star_border_rounded,
+                  color: AppColors.warning, size: 40)))))),
+        const SizedBox(height: 20),
+        Container(
+          decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border, width: 0.5)),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          child: TextField(
+            controller: _ctrl,
+            maxLines: 3,
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+            cursorColor: AppColors.primary,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              hintText: 'Фикри худро нависед (ихтиёрӣ)...',
+              hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14)),
+          ),
+        ),
+        const SizedBox(height: 20),
+        AppButton(text: 'Фиристодан', onTap: _submit, isLoading: _loading),
+      ]),
+    );
   }
 }
 
