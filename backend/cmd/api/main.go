@@ -5,6 +5,7 @@ import (
 	"tajikshop/internal/config"
 	"tajikshop/internal/db"
 	"tajikshop/internal/middleware"
+	"tajikshop/internal/push"
 	"tajikshop/internal/routes"
 	"tajikshop/internal/storage"
 
@@ -16,6 +17,8 @@ func main() {
 
 	db.Connect(cfg.DBUrl)
 	db.Migrate() // Танҳо ҷадвалҳои нав месозад — DROP намекунад
+
+	push.Init() // Firebase push (агар FIREBASE_SERVICE_ACCOUNT гузошта шуда бошад)
 
 	middleware.SetSecret(cfg.JWTSecret)
 

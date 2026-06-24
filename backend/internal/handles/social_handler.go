@@ -89,6 +89,7 @@ func (h *FollowHandler) Follow(c *gin.Context) {
 	// Notification
 	db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,ref_id) VALUES($1,$2,$3,$4,$5)`,
 		uuid.NewString(), targetID, "follow", "Someone followed you", uid)
+	pushToUser(targetID, "Пайгири нав", "Касе шуморо пайгирӣ кард")
 	utils.OK(c, gin.H{"message": "followed"})
 }
 
@@ -301,6 +302,7 @@ func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 		db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
 			VALUES($1,$2,'order','Ҳолати фармоиш нав шуд','Фармоиши #`+short+`: `+in.Status+`',$3)`,
 			uuid.NewString(), ownerID, oid)
+		pushToUser(ownerID, "Ҳолати фармоиш нав шуд", "Фармоиши #"+short+": "+in.Status)
 	}
 	utils.OK(c, gin.H{"message": "status updated"})
 }

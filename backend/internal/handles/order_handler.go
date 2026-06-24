@@ -197,6 +197,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 			utils.Err(c, http.StatusInternalServerError, "checkout failed")
 			return
 		}
+		pushToUser(uid, "Фармоиш қабул шуд", "Фармоиши #"+shortID(orderID)+" бо ҳамён пардохт шуд")
 		utils.Created(c, gin.H{"order_id": orderID, "total": finalTotal, "status": "paid", "discount": discountAmt})
 		return
 	}
@@ -219,6 +220,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 	db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
 		VALUES($1,$2,'order','Фармоиш қабул шуд','Фармоиши #`+shortID(orderID)+` қабул шуд',$3)`,
 		uuid.NewString(), uid, orderID)
+	pushToUser(uid, "Фармоиш қабул шуд", "Фармоиши #"+shortID(orderID)+" қабул шуд")
 
 	utils.Created(c, gin.H{"order_id": orderID, "total": finalTotal, "discount": discountAmt})
 }
@@ -303,6 +305,7 @@ func (h *OrderHandler) Cancel(c *gin.Context) {
 		utils.Err(c, http.StatusInternalServerError, "cancel failed")
 		return
 	}
+	pushToUser(uid, "Фармоиш бекор шуд", "Фармоиши #"+shortID(oid)+" бекор карда шуд")
 	utils.OK(c, gin.H{"cancelled": true, "refunded": refunded})
 }
 

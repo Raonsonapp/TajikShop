@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
 
@@ -12,11 +13,11 @@ class RegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
-  final _nameCtrl  = TextEditingController();
+  final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
-  bool _loading    = false;
-  bool _obscure    = true;
+  final _passCtrl = TextEditingController();
+  bool _loading = false;
+  bool _obscure = true;
   String? _error;
 
   @override
@@ -28,9 +29,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _register() async {
-    final name  = _nameCtrl.text.trim();
+    FocusScope.of(context).unfocus();
+    final name = _nameCtrl.text.trim();
     final email = _emailCtrl.text.trim();
-    final pass  = _passCtrl.text;
+    final pass = _passCtrl.text;
     if (name.isEmpty || email.isEmpty || pass.isEmpty) {
       setState(() => _error = 'Ҳамаи майдонҳоро пур кунед');
       return;
@@ -57,194 +59,171 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
-  Widget _field({
-    required TextEditingController ctrl,
-    required String hint,
-    required IconData icon,
-    bool obscure = false,
-    TextInputType? keyboard,
-    List<TextInputFormatter>? formatters,
-    TextInputAction action = TextInputAction.next,
-    void Function(String)? onSubmitted,
-  }) {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C1C2E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF3A3A5C)),
-      ),
-      child: Row(
-        children: [
-          const SizedBox(width: 12),
-          Icon(icon, color: const Color(0xFF6B6E82), size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: ctrl,
-              obscureText: obscure ? _obscure : false,
-              keyboardType: keyboard,
-              inputFormatters: formatters,
-              textInputAction: action,
-              onSubmitted: onSubmitted,
-              style: const TextStyle(color: Colors.white, fontSize: 15),
-              cursorColor: const Color(0xFF00D084),
-              decoration: InputDecoration(
-                isCollapsed: true,
-                border: InputBorder.none,
-                hintText: hint,
-                hintStyle: const TextStyle(color: Color(0xFF6B6E82)),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            colors: [Color(0xFF1A1230), Color(0xFF0C1430), Color(0xFF0A0A0F)],
+            stops: [0.0, 0.45, 1.0],
+          ),
+        ),
+        child: Stack(children: [
+          Positioned(top: -90, right: -40, child: _glow(const Color(0xFFE040FB), 240)),
+          Positioned(top: 60, left: -60, child: _glow(const Color(0xFF00D084), 220)),
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 26),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 54),
+                  Center(child: Container(
+                    width: 76, height: 76,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                      borderRadius: BorderRadius.circular(22),
+                      boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.4), blurRadius: 24)],
+                    ),
+                    child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 38),
+                  )),
+                  const SizedBox(height: 20),
+                  const Text('Ҳисоб созед 🚀',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 8),
+                  const Text('Ба бозори Тоҷикистон хуш омадед',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+                  const SizedBox(height: 32),
+
+                  if (_error != null)
+                    Container(
+                      padding: const EdgeInsets.all(13),
+                      margin: const EdgeInsets.only(bottom: 18),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.13),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.error.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13))),
+                      ]),
+                    ),
+
+                  _field(
+                    controller: _nameCtrl,
+                    hint: 'Номи корбар',
+                    icon: Icons.person_outline_rounded,
+                    formatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_.]')),
+                      LengthLimitingTextInputFormatter(30),
+                    ],
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 6, top: 6, bottom: 12),
+                    child: Text('Танҳо ҳарфҳои хурд, рақам ва _',
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                  ),
+                  _field(
+                    controller: _emailCtrl,
+                    hint: 'Email',
+                    icon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 14),
+                  _field(
+                    controller: _passCtrl,
+                    hint: 'Парол (ҳадди ақал 6)',
+                    icon: Icons.lock_outline_rounded,
+                    obscure: _obscure,
+                    action: TextInputAction.done,
+                    onSubmitted: (_) => _loading ? null : _register(),
+                    suffix: IconButton(
+                      icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: AppColors.textMuted, size: 20),
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                    ),
+                  ),
+                  const SizedBox(height: 26),
+
+                  GestureDetector(
+                    onTap: _loading ? null : _register,
+                    child: Container(
+                      height: 54,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.4), blurRadius: 18, offset: const Offset(0, 8))],
+                      ),
+                      alignment: Alignment.center,
+                      child: _loading
+                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                          : const Text('Сабтном', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Center(child: TextButton(
+                    onPressed: () => context.go(RouteNames.login),
+                    child: RichText(text: const TextSpan(children: [
+                      TextSpan(text: 'Ҳисоб доред?  ', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                      TextSpan(text: 'Ворид шавед', style: TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w700)),
+                    ])),
+                  )),
+                  const SizedBox(height: 28),
+                ],
               ),
             ),
           ),
-          if (obscure)
-            IconButton(
-              icon: Icon(
-                  _obscure
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: const Color(0xFF6B6E82), size: 20),
-              onPressed: () => setState(() => _obscure = !_obscure),
-            ),
-        ],
+        ]),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0F),
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 48),
+  Widget _glow(Color c, double size) => Container(
+    width: size, height: size,
+    decoration: BoxDecoration(shape: BoxShape.circle,
+        gradient: RadialGradient(colors: [c.withValues(alpha: 0.20), Colors.transparent])),
+  );
 
-              // Logo
-              Row(children: [
-                Container(
-                  width: 44, height: 44,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                        colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.shopping_bag_rounded,
-                      color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 12),
-                const Text('TajikShop',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800)),
-              ]),
-
-              const SizedBox(height: 32),
-              const Text('Ҳисоб созед 🚀',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800)),
-              const SizedBox(height: 8),
-              const Text('Ба бозори Тоҷикистон хуш омадед',
-                  style: TextStyle(color: Colors.white54, fontSize: 15)),
-              const SizedBox(height: 32),
-
-              if (_error != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.redAccent),
-                  ),
-                  child: Text(_error!,
-                      style: const TextStyle(color: Colors.redAccent)),
-                ),
-
-              // Ном
-              _field(
-                ctrl: _nameCtrl,
-                hint: 'Номи корбар',
-                icon: Icons.person_outline_rounded,
-                formatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_.]')),
-                  LengthLimitingTextInputFormatter(30),
-                ],
-              ),
-              const Padding(
-                padding: EdgeInsets.only(left: 4, top: 4, bottom: 12),
-                child: Text('Танҳо ҳарфҳои хурд, рақам ва _',
-                    style: TextStyle(color: Colors.white38, fontSize: 11)),
-              ),
-
-              // Email
-              _field(
-                ctrl: _emailCtrl,
-                hint: 'Email',
-                icon: Icons.email_outlined,
-                keyboard: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 12),
-
-              // Парол
-              _field(
-                ctrl: _passCtrl,
-                hint: 'Парол (ҳадди ақал 6)',
-                icon: Icons.lock_outline_rounded,
-                obscure: true,
-                action: TextInputAction.done,
-                onSubmitted: (_) => _loading ? null : _register(),
-              ),
-              const SizedBox(height: 24),
-
-              // Тугма
-              SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _loading ? null : _register,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00D084),
-                    disabledBackgroundColor: Colors.grey.shade800,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    elevation: 0,
-                  ),
-                  child: _loading
-                      ? const SizedBox(
-                          width: 24, height: 24,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2.5))
-                      : const Text('Сабтном',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold)),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Text('Ҳисоб доред?  ',
-                    style: TextStyle(color: Colors.white54)),
-                GestureDetector(
-                  onTap: () => context.go(RouteNames.login),
-                  child: const Text('Ворид шавед',
-                      style: TextStyle(
-                          color: Color(0xFF00D084),
-                          fontWeight: FontWeight.w600)),
-                ),
-              ]),
-              const SizedBox(height: 40),
-            ],
-          ),
-        ),
+  Widget _field({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool obscure = false,
+    TextInputType? keyboardType,
+    TextInputAction action = TextInputAction.next,
+    List<TextInputFormatter>? formatters,
+    Widget? suffix,
+    void Function(String)? onSubmitted,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      textInputAction: action,
+      inputFormatters: formatters,
+      onSubmitted: onSubmitted,
+      style: const TextStyle(color: Colors.white, fontSize: 15),
+      cursorColor: AppColors.primary,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFF161622),
+        prefixIcon: Icon(icon, color: AppColors.textMuted, size: 21),
+        suffixIcon: suffix,
+        hintText: hint,
+        hintStyle: const TextStyle(color: AppColors.textMuted),
+        contentPadding: const EdgeInsets.symmetric(vertical: 17, horizontal: 16),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: Color(0xFF2A2A3E), width: 1)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1.6)),
       ),
     );
   }
