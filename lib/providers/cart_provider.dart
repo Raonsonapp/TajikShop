@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/api/api_client.dart';
 import '../data/models/cart_model.dart';
 import '../data/repositories/cart_repository.dart';
 
@@ -45,6 +46,28 @@ class CartNotifier extends StateNotifier<CartState> {
       state = state.copyWith(items: state.items.where((i) => i.id != itemId).toList());
     } catch (e) {
       state = state.copyWith(error: e.toString());
+    }
+  }
+
+  Future<void> updateQuantity(String itemId, int quantity) async {
+    if (quantity <= 0) {
+      await removeItem(itemId);
+      return;
+    }
+    // Optimistic
+    final updated = [
+      for (final i in state.items)
+        if (i.id == itemId)
+          CartItemModel(id: i.id, productId: i.productId, title: i.title,
+              image: i.image, price: i.price, quantity: quantity)
+        else
+          i
+    ];
+    state = state.copyWith(items: updated);
+    try {
+      await ApiClient.instance.dio.patch('/cart/$itemId', data: {'quantity': quantity});
+    } catch (_) {
+      await loadCart();
     }
   }
 

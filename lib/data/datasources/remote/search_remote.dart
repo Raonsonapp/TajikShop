@@ -7,17 +7,41 @@ import '../../models/category_model.dart';
 class SearchRemote {
   Dio get _dio => ApiClient.instance.dio;
 
-  Future<List<ProductModel>> search(String query) async {
-    final res = await _dio.get(ApiEndpoints.products, queryParameters: {'q': query, 'limit': 30});
-    final data = res.data;
-    List items = data is List ? data : (data['products'] ?? data['items'] ?? []);
-    return items.map((e) => ProductModel.fromJson(e as Map<String, dynamic>)).toList();
+  // Server: {"success":true,"data":{"products":[...]}} ё {"success":true,"data":[...]}
+  List<dynamic> _unwrapList(dynamic raw) {
+    if (raw is List) return raw;
+    if (raw is Map) {
+      final d = raw['data'];
+      if (d is List) return d;
+      if (d is Map) {
+        for (final k in ['products', 'items', 'results', 'categories']) {
+          if (d[k] is List) return d[k] as List;
+        }
+      }
+      for (final k in ['products', 'items', 'categories']) {
+        if (raw[k] is List) return raw[k] as List;
+      }
+    }
+    return const [];
+  }
+
+  Future<List<ProductModel>> search(String query, {String? sort}) async {
+    final res = await _dio.get(ApiEndpoints.products, queryParameters: {
+      'q': query,
+      'limit': 30,
+      if (sort != null && sort.isNotEmpty) 'sort': sort,
+    });
+    return _unwrapList(res.data)
+        .whereType<Map<String, dynamic>>()
+        .map(ProductModel.fromJson)
+        .toList();
   }
 
   Future<List<CategoryModel>> getCategories() async {
     final res = await _dio.get(ApiEndpoints.categories);
-    final data = res.data;
-    List items = data is List ? data : (data['categories'] ?? []);
-    return items.map((e) => CategoryModel.fromJson(e as Map<String, dynamic>)).toList();
+    return _unwrapList(res.data)
+        .whereType<Map<String, dynamic>>()
+        .map(CategoryModel.fromJson)
+        .toList();
   }
 }

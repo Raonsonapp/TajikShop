@@ -78,6 +78,23 @@ func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
 	utils.OK(c, gin.H{"message": "removed"})
 }
 
+// UpdateCartItem — миқдорро тағйир медиҳад (0 → нест мекунад)
+func (h *OrderHandler) UpdateCartItem(c *gin.Context) {
+	uid := utils.UserID(c)
+	itemID := c.Param("id")
+	var in struct {
+		Quantity int `json:"quantity"`
+	}
+	c.ShouldBindJSON(&in)
+	if in.Quantity <= 0 {
+		db.DB.Exec(`DELETE FROM cart_items WHERE id=$1 AND user_id=$2`, itemID, uid)
+		utils.OK(c, gin.H{"removed": true})
+		return
+	}
+	db.DB.Exec(`UPDATE cart_items SET quantity=$1 WHERE id=$2 AND user_id=$3`, in.Quantity, itemID, uid)
+	utils.OK(c, gin.H{"updated": true, "quantity": in.Quantity})
+}
+
 // ========== ORDERS ==========
 
 func (h *OrderHandler) Checkout(c *gin.Context) {
@@ -241,6 +258,43 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 		o.Items = append(o.Items, i)
 	}
 	utils.OK(c, o)
+}
+
+// Cancel — фармоишро бекор мекунад; агар бо ҳамён пардохт шуда бошад, пул бармегардад
+func (h *OrderHandler) Cancel(c *gin.Context) {
+	uid := utils.UserID(c)
+	oid := c.Param("id")
+	var status, method string
+	var total float64
+	err := db.DB.QueryRow(`SELECT status,COALESCE(payment_method,'dc'),total FROM orders WHERE id=$1 AND user_id=$2`,
+		oid, uid).Scan(&status, &method, &total)
+	if err != nil {
+		utils.Err(c, http.StatusNotFound, "order not found")
+		return
+	}
+	if status == "delivered" || status == "cancelled" || status == "shipped" {
+		utils.Err(c, http.StatusBadRequest, "Ин фармоишро бекор кардан мумкин нест")
+		return
+	}
+	tx, txErr := db.DB.Begin()
+	if txErr != nil {
+		utils.Err(c, http.StatusInternalServerError, "tx begin failed")
+		return
+	}
+	tx.Exec(`UPDATE orders SET status='cancelled',updated_at=$1 WHERE id=$2`, time.Now(), oid)
+	refunded := false
+	if method == "wallet" && (status == "paid" || status == "processing") {
+		tx.Exec(`UPDATE users SET wallet_balance=COALESCE(wallet_balance,0)+$1 WHERE id=$2`, total, uid)
+		tx.Exec(`INSERT INTO wallet_transactions(id,user_id,amount,type,status,note)
+			VALUES($1,$2,$3,'refund','completed',$4)`,
+			uuid.NewString(), uid, total, "Бозгашти фармоиш #"+shortID(oid))
+		refunded = true
+	}
+	if err := tx.Commit(); err != nil {
+		utils.Err(c, http.StatusInternalServerError, "cancel failed")
+		return
+	}
+	utils.OK(c, gin.H{"cancelled": true, "refunded": refunded})
 }
 
 func (h *OrderHandler) UploadPaymentProof(c *gin.Context) {

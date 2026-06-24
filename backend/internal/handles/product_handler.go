@@ -90,7 +90,20 @@ func (h *ProductHandler) List(c *gin.Context) {
 		args = append(args, category)
 		argIdx++
 	}
-	query += fmt.Sprintf(" ORDER BY p.created_at DESC LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
+
+	orderBy := "p.created_at DESC"
+	switch c.Query("sort") {
+	case "price_asc":
+		orderBy = "p.price ASC"
+	case "price_desc":
+		orderBy = "p.price DESC"
+	case "popular":
+		orderBy = "p.views DESC, p.created_at DESC"
+	case "newest":
+		orderBy = "p.created_at DESC"
+	}
+	query += " ORDER BY " + orderBy
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
 	args = append(args, limit, offset)
 
 	rows, err := db.DB.Query(query, args...)

@@ -70,7 +70,8 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                   Expanded(child: ListView.builder(padding: const EdgeInsets.all(16),
                     itemCount: cart.items.length,
                     itemBuilder: (_, i) => _Item(item: cart.items[i],
-                      onRemove: () => ref.read(cartProvider.notifier).removeItem(cart.items[i].id)))),
+                      onRemove: () => ref.read(cartProvider.notifier).removeItem(cart.items[i].id),
+                      onQuantity: (q) => ref.read(cartProvider.notifier).updateQuantity(cart.items[i].id, q)))),
                   // Summary + DC Checkout
                   Container(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
@@ -425,7 +426,8 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
 class _Item extends StatelessWidget {
   final CartItemModel item;
   final VoidCallback onRemove;
-  const _Item({required this.item, required this.onRemove});
+  final void Function(int) onQuantity;
+  const _Item({required this.item, required this.onRemove, required this.onQuantity});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -438,16 +440,38 @@ class _Item extends StatelessWidget {
             errorWidget: (_, __, ___) => _ph()) : _ph()),
       const SizedBox(width: 12),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w500)),
+        Row(children: [
+          Expanded(child: Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w500))),
+          GestureDetector(onTap: onRemove,
+            child: const Padding(padding: EdgeInsets.only(left: 6),
+              child: Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20))),
+        ]),
         const SizedBox(height: 4),
-        Text('${item.price.toStringAsFixed(0)} сом. × ${item.quantity}',
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
         Text('${item.total.toStringAsFixed(0)} сом.',
             style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 14)),
+        const SizedBox(height: 8),
+        // Stepper-и миқдор
+        Row(children: [
+          _qtyBtn(Icons.remove_rounded, () => onQuantity(item.quantity - 1)),
+          Container(
+            constraints: const BoxConstraints(minWidth: 34),
+            alignment: Alignment.center,
+            child: Text('${item.quantity}',
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700))),
+          _qtyBtn(Icons.add_rounded, () => onQuantity(item.quantity + 1)),
+        ]),
       ])),
-      IconButton(onPressed: onRemove, icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20)),
     ]));
+
+  Widget _qtyBtn(IconData icon, VoidCallback onTap) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 30, height: 30,
+      decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.border, width: 0.5)),
+      child: Icon(icon, color: AppColors.textPrimary, size: 18)),
+  );
 
   Widget _ph() => Container(width: 72, height: 72, color: AppColors.bgSurface,
       child: const Icon(Icons.image_outlined, color: AppColors.textMuted));

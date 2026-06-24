@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/api/api_client.dart';
 import '../../data/models/order_model.dart';
+import '../../providers/wallet_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/error_screen.dart';
+import 'orders_screen.dart';
 
 final orderDetailProvider =
     FutureProvider.autoDispose.family<OrderModel, String>((ref, id) async {
@@ -56,12 +59,51 @@ class OrderDetailScreen extends ConsumerWidget {
       body: order.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(orderDetailProvider(id))),
-        data: (o) => _build(context, o),
+        data: (o) => _build(context, ref, o),
       ),
     );
   }
 
-  Widget _build(BuildContext context, OrderModel o) {
+  bool _canCancel(String status) {
+    const ok = ['pending', 'processing', 'paid', 'payment_uploaded'];
+    return ok.contains(status.toLowerCase());
+  }
+
+  Future<void> _cancel(BuildContext context, WidgetRef ref) async {
+    final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+      backgroundColor: AppColors.bgCard,
+      title: const Text('Бекор кардан?', style: TextStyle(color: AppColors.textPrimary)),
+      content: const Text('Фармоиш бекор карда шавад? Агар бо ҳамён пардохт шуда бошад, пул бармегардад.',
+          style: TextStyle(color: AppColors.textSecondary)),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Не', style: TextStyle(color: AppColors.textMuted))),
+        TextButton(onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Бале, бекор кун', style: TextStyle(color: AppColors.error))),
+      ],
+    ));
+    if (confirm != true) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final res = await ApiClient.instance.dio.post('/orders/$id/cancel');
+      final refunded = (res.data is Map && res.data['data'] is Map)
+          ? res.data['data']['refunded'] == true : false;
+      ref.invalidate(orderDetailProvider(id));
+      ref.invalidate(ordersProvider);
+      if (refunded) ref.invalidate(walletProvider);
+      messenger.showSnackBar(SnackBar(
+        content: Text(refunded ? 'Бекор шуд — пул ба ҳамён баргашт ✅' : 'Фармоиш бекор шуд'),
+        backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+    } catch (e) {
+      final msg = (e is DioException && e.response?.data is Map)
+          ? e.response?.data['error']?.toString() : null;
+      messenger.showSnackBar(SnackBar(
+        content: Text(msg ?? 'Бекор кардан мумкин нашуд'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  Widget _build(BuildContext context, WidgetRef ref, OrderModel o) {
     final cancelled = o.status.toLowerCase() == 'cancelled';
     final current = _statusIndex(o.status);
     return ListView(padding: const EdgeInsets.all(16), children: [
@@ -154,6 +196,18 @@ class OrderDetailScreen extends ConsumerWidget {
           ],
         ]),
       ),
+
+      if (_canCancel(o.status)) ...[
+        const SizedBox(height: 20),
+        SizedBox(width: double.infinity, child: OutlinedButton.icon(
+          onPressed: () => _cancel(context, ref),
+          icon: const Icon(Icons.cancel_outlined, color: AppColors.error, size: 18),
+          label: const Text('Фармоишро бекор кардан', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),
+          style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.error),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))),
+      ],
     ]);
   }
 

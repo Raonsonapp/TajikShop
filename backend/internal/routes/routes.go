@@ -66,6 +66,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	// Cart
 	api.GET("/cart", middleware.Auth(), oh.GetCart)
 	api.POST("/cart", middleware.Auth(), oh.AddToCart)
+	api.PATCH("/cart/:id", middleware.Auth(), oh.UpdateCartItem)
 	api.DELETE("/cart/:id", middleware.Auth(), oh.RemoveFromCart)
 
 	// Orders
@@ -73,6 +74,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.GET("/orders", middleware.Auth(), oh.MyOrders)
 	api.GET("/orders/:id", middleware.Auth(), oh.GetOrder)
 	api.POST("/orders/:id/payment-proof", middleware.Auth(), oh.UploadPaymentProof)
+	api.POST("/orders/:id/cancel", middleware.Auth(), oh.Cancel)
 
 	// Favorites
 	api.GET("/favorites", middleware.Auth(), fh.List)

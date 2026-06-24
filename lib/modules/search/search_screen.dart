@@ -134,8 +134,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                                  child: Text('${list.length} натиҷа барои "$query"',
-                                      style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                                  child: Row(children: [
+                                    Expanded(child: Text('${list.length} натиҷа барои "$query"',
+                                        style: const TextStyle(color: AppColors.textMuted, fontSize: 13))),
+                                    _sortButton(),
+                                  ]),
                                 ),
                                 Expanded(
                                   child: GridView.builder(
@@ -152,6 +155,36 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _sortButton() {
+    const opts = {
+      null: 'Нав', 'price_asc': 'Арзон → Қимат',
+      'price_desc': 'Қимат → Арзон', 'popular': 'Машҳур',
+    };
+    final current = ref.watch(searchSortProvider);
+    return PopupMenuButton<String?>(
+      color: AppColors.bgElevated,
+      onSelected: (v) => ref.read(searchSortProvider.notifier).state = v,
+      itemBuilder: (_) => opts.entries.map((e) => PopupMenuItem<String?>(
+        value: e.key,
+        child: Row(children: [
+          if (current == e.key) const Icon(Icons.check, color: AppColors.primary, size: 16)
+          else const SizedBox(width: 16),
+          const SizedBox(width: 8),
+          Text(e.value, style: const TextStyle(color: AppColors.textPrimary)),
+        ]))).toList(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border, width: 0.5)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.swap_vert_rounded, color: AppColors.primary, size: 16),
+          const SizedBox(width: 4),
+          Text(opts[current] ?? 'Нав', style: const TextStyle(color: AppColors.textPrimary, fontSize: 12)),
+        ]),
       ),
     );
   }
