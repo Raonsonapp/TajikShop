@@ -11,6 +11,7 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/address_provider.dart';
 import '../../data/models/cart_model.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
@@ -113,6 +114,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
   File? _receipt;
   bool _loading = false;
   bool _sent = false;
+  String? _addressId;
   final _picker = ImagePicker();
 
   Future<void> _pickReceipt() async {
@@ -124,26 +126,83 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
     if (_receipt == null) return;
     setState(() => _loading = true);
     try {
-      // Create order first
-      final cart = ref.read(cartProvider);
-      await ApiClient.instance.dio.post(ApiEndpoints.checkout, data: {});
-      // Get latest order to upload proof
-      final orders = await ApiClient.instance.dio.get(ApiEndpoints.orders);
-      final list = orders.data is List ? orders.data as List : (orders.data['orders'] ?? []);
-      if (list.isNotEmpty) {
-        final orderId = list.first['id']?.toString() ?? '';
-        if (orderId.isNotEmpty) {
-          final formData = FormData.fromMap({
-            'proof': await MultipartFile.fromFile(_receipt!.path)
-          });
-          await ApiClient.instance.dio.post(
-            '${ApiEndpoints.orders}/$orderId/payment-proof', data: formData);
-        }
+      // 1) Фармоиш месозем (бо суроға, агар интихоб шуда бошад)
+      final res = await ApiClient.instance.dio.post(ApiEndpoints.checkout, data: {
+        if (_addressId != null) 'address_id': _addressId,
+      });
+      final body = res.data is Map ? res.data as Map : const {};
+      final data = body['data'] is Map ? body['data'] as Map : body;
+      final orderId = (data['order_id'] ?? data['id'] ?? '').toString();
+
+      // 2) Чеки пардохтро бор мекунем
+      if (orderId.isNotEmpty) {
+        final formData = FormData.fromMap({
+          'proof': await MultipartFile.fromFile(_receipt!.path)
+        });
+        await ApiClient.instance.dio.post(
+          '${ApiEndpoints.orders}/$orderId/payment-proof', data: formData);
       }
       await ref.read(cartProvider.notifier).loadCart();
+      if (!mounted) return;
       setState(() { _loading = false; _sent = true; });
-    } catch (_) { setState(() => _loading = false); }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
   }
+
+  Future<void> _addAddress() async {
+    final added = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: AppColors.bgCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => const _AddAddressSheet());
+    if (added == true) ref.invalidate(addressesProvider);
+  }
+
+  Widget _addressSelector() {
+    final addresses = ref.watch(addressesProvider);
+    return addresses.when(
+      loading: () => const Padding(padding: EdgeInsets.symmetric(vertical: 8),
+          child: LinearProgressIndicator(color: AppColors.primary, backgroundColor: AppColors.bgSurface)),
+      error: (_, __) => _addAddressBtn(),
+      data: (list) {
+        if (list.isEmpty) return _addAddressBtn();
+        _addressId ??= list.firstWhere((a) => a.isDefault, orElse: () => list.first).id;
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          ...list.map((a) => GestureDetector(
+            onTap: () => setState(() => _addressId = a.id),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.bgSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: _addressId == a.id ? AppColors.primary : AppColors.border,
+                    width: _addressId == a.id ? 1.4 : 0.5)),
+              child: Row(children: [
+                Icon(_addressId == a.id ? Icons.radio_button_checked : Icons.radio_button_off,
+                    color: _addressId == a.id ? AppColors.primary : AppColors.textMuted, size: 20),
+                const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(a.title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                  Text(a.full, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                ])),
+              ]),
+            ))),
+          _addAddressBtn(),
+        ]);
+      },
+    );
+  }
+
+  Widget _addAddressBtn() => TextButton.icon(
+    onPressed: _addAddress,
+    icon: const Icon(Icons.add_location_alt_outlined, color: AppColors.primary, size: 18),
+    label: const Text('Суроға илова кунед',
+        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)));
 
   @override
   Widget build(BuildContext context) {
@@ -164,6 +223,12 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
         Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
         const SizedBox(height: 16),
         const Text('Пардохти DC', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 16),
+        // Суроғаи расонидан
+        const Align(alignment: Alignment.centerLeft,
+          child: Text('Суроғаи расонидан', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
+        const SizedBox(height: 8),
+        _addressSelector(),
         const SizedBox(height: 16),
         // Seller DC info
         Container(padding: const EdgeInsets.all(16),
@@ -244,4 +309,87 @@ class _row extends StatelessWidget {
     Text(value, style: TextStyle(color: bold ? AppColors.primary : AppColors.textSecondary,
         fontSize: bold ? 17 : 13, fontWeight: bold ? FontWeight.w800 : FontWeight.w400)),
   ]);
+}
+
+// ── Иловаи суроға ──────────────────────────────────────────────────────────────
+class _AddAddressSheet extends ConsumerStatefulWidget {
+  const _AddAddressSheet();
+  @override
+  ConsumerState<_AddAddressSheet> createState() => _AddAddressSheetState();
+}
+
+class _AddAddressSheetState extends ConsumerState<_AddAddressSheet> {
+  final _title = TextEditingController(text: 'Хона');
+  final _city = TextEditingController(text: 'Душанбе');
+  final _street = TextEditingController();
+  final _zip = TextEditingController();
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _title.dispose(); _city.dispose(); _street.dispose(); _zip.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_street.text.trim().isEmpty || _city.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Шаҳр ва кӯчаро пур кунед'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await AddressService.add(
+        title: _title.text.trim().isEmpty ? 'Суроға' : _title.text.trim(),
+        city: _city.text.trim(),
+        street: _street.text.trim(),
+        zip: _zip.text.trim());
+      if (mounted) Navigator.pop(context, true);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Суроға захира нашуд'),
+          backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+      }
+    }
+  }
+
+  Widget _f(String hint, TextEditingController c) => Container(
+    margin: const EdgeInsets.only(bottom: 10),
+    decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border, width: 0.5)),
+    padding: const EdgeInsets.symmetric(horizontal: 14),
+    child: TextField(
+      controller: c,
+      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      cursorColor: AppColors.primary,
+      decoration: InputDecoration(
+        isCollapsed: true,
+        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        border: InputBorder.none,
+        hintText: hint, hintStyle: const TextStyle(color: AppColors.textMuted)),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Center(child: Container(width: 40, height: 4,
+            decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+        const SizedBox(height: 16),
+        const Text('Суроғаи нав', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 16),
+        _f('Номи суроға (Хона, Кор...)', _title),
+        _f('Шаҳр *', _city),
+        _f('Кӯча, хона, манзил *', _street),
+        _f('Индекс (ихтиёрӣ)', _zip),
+        const SizedBox(height: 8),
+        AppButton(text: 'Захира кардан', onTap: _save, isLoading: _loading),
+      ]),
+    );
+  }
 }

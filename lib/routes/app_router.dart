@@ -11,6 +11,7 @@ import '../modules/categories/categories_screen.dart';
 import '../modules/product/product_detail_screen.dart';
 import '../modules/cart/cart_screen.dart';
 import '../modules/orders/orders_screen.dart';
+import '../modules/orders/order_detail_screen.dart';
 import '../modules/favorites/favorites_screen.dart';
 import '../modules/notifications/notifications_screen.dart';
 import '../modules/profile/profile_screen.dart';
@@ -39,6 +40,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                 userName: s.uri.queryParameters['name'] ?? 'Фурӯшанда',
               )),
       GoRoute(path: RouteNames.orders,          builder: (_, __) => const OrdersScreen()),
+      GoRoute(path: '/orders/:id',              builder: (_, s) => OrderDetailScreen(id: s.pathParameters['id']!)),
       GoRoute(path: RouteNames.notifications,   builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: RouteNames.categories,      builder: (_, __) => const CategoriesScreen()),
       GoRoute(path: RouteNames.search,          builder: (_, __) => const SearchScreen()),

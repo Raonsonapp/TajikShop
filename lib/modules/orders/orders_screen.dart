@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/order_model.dart';
@@ -45,7 +46,9 @@ class _OCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = _c();
-    return Container(
+    return GestureDetector(
+      onTap: () => context.push('/orders/${order.id}'),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border, width: 0.5)),
@@ -67,6 +70,6 @@ class _OCard extends StatelessWidget {
               style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 15)),
         ]),
       ]),
-    );
+    ));
   }
 }
