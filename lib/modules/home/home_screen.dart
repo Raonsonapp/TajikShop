@@ -1,19 +1,24 @@
 // ignore_for_file: depend_on_referenced_packages
 // ignore_for_file: curly_braces_in_flow_control_structures
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/product_model.dart';
+import '../../data/models/story_model.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/story_provider.dart';
 import '../../routes/route_names.dart';
+import '../stories/story_viewer_screen.dart';
 
 /// Instagram gradient барои ҳалқаи stories
 const _instaRing = SweepGradient(colors: [
@@ -175,11 +180,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 // ════════════════════════════════════════════════════════════════════════════
 // STORIES BAR — категорияҳо бо ҳалқаи градиентии Instagram
 // ════════════════════════════════════════════════════════════════════════════
-class _StoriesBar extends ConsumerWidget {
+class _StoriesBar extends ConsumerStatefulWidget {
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_StoriesBar> createState() => _StoriesBarState();
+}
+
+class _StoriesBarState extends ConsumerState<_StoriesBar> {
+  bool _posting = false;
+
+  Future<void> _createStory() async {
+    if (!ref.read(authProvider).isAuthenticated) {
+      context.go(RouteNames.login);
+      return;
+    }
+    final x = await ImagePicker().pickImage(
+        source: ImageSource.gallery, imageQuality: 80, maxWidth: 1080);
+    if (x == null) return;
+    setState(() => _posting = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await StoryService.create(File(x.path).path);
+      ref.invalidate(storiesFeedProvider);
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Story нашр шуд ✅'),
+        backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Story нашр нашуд'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+    } finally {
+      if (mounted) setState(() => _posting = false);
+    }
+  }
+
+  void _openViewer(List<StoryModel> stories, int index) {
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => StoryViewerScreen(stories: stories, initialIndex: index)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cats = ref.watch(categoriesProvider);
+    final stories = ref.watch(storiesFeedProvider);
     final user = ref.watch(authProvider).user;
+
+    final storyList = stories.maybeWhen(data: (l) => l, orElse: () => const <StoryModel>[]);
 
     return SizedBox(
       height: 104,
@@ -187,13 +232,21 @@ class _StoriesBar extends ConsumerWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         children: [
-          // Your story
+          // Your story (нашри story)
           _StoryItem(
-            label: 'Шумо',
+            label: 'Story-и шумо',
             avatar: user?.avatar,
             isOwn: true,
-            onTap: () => context.go(RouteNames.upload),
+            busy: _posting,
+            onTap: _createStory,
           ),
+          // Story-ҳои воқеӣ
+          ...List.generate(storyList.length, (i) => _StoryItem(
+            label: storyList[i].userName,
+            imageUrl: storyList[i].avatarUrl ?? storyList[i].mediaUrl,
+            onTap: () => _openViewer(storyList, i),
+          )),
+          // Категорияҳо
           ...cats.when(
             data: (list) => list.map((c) => _StoryItem(
               label: c.name,
@@ -203,7 +256,7 @@ class _StoriesBar extends ConsumerWidget {
                 context.push(RouteNames.search);
               },
             )),
-            loading: () => List.generate(6, (_) => const _StoryShimmer()),
+            loading: () => List.generate(5, (_) => const _StoryShimmer()),
             error: (_, __) => const <Widget>[],
           ),
         ],
@@ -217,9 +270,10 @@ class _StoryItem extends StatelessWidget {
   final String? avatar;
   final String? imageUrl;
   final bool isOwn;
+  final bool busy;
   final VoidCallback onTap;
   const _StoryItem({required this.label, this.avatar, this.imageUrl,
-      this.isOwn = false, required this.onTap});
+      this.isOwn = false, this.busy = false, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -253,13 +307,17 @@ class _StoryItem extends StatelessWidget {
                           color: AppColors.textMuted, size: 26)
                       : null,
                 ),
-                if (isOwn)
+                if (isOwn && !busy)
                   Positioned(bottom: 0, right: 0,
                     child: Container(
                       decoration: BoxDecoration(
                         color: AppColors.info, shape: BoxShape.circle,
                         border: Border.all(color: AppColors.bgDark, width: 2)),
                       child: const Icon(Icons.add, color: Colors.white, size: 14))),
+                if (busy)
+                  const Positioned.fill(child: Center(
+                    child: SizedBox(width: 22, height: 22,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))),
               ]),
             ),
           ),

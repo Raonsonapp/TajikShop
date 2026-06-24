@@ -13,6 +13,7 @@ import '../../providers/cart_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/review_provider.dart';
+import '../../providers/follow_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/product_card.dart';
@@ -153,6 +154,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     const Text('Фурӯшанда', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                   ]),
                   const Spacer(),
+                  _followButton(p),
+                  const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
@@ -254,6 +257,35 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     if (p.sellerId.isEmpty) return;
     final name = Uri.encodeComponent(p.sellerName ?? 'Фурӯшанда');
     context.push('${RouteNames.chat}/${p.sellerId}?name=$name');
+  }
+
+  // ── Тугмаи пайгирӣ (follow) ────────────────────────────────────────────────
+  Widget _followButton(ProductModel p) {
+    if (p.sellerId.isEmpty) return const SizedBox.shrink();
+    final following = ref.watch(followProvider).contains(p.sellerId);
+    return GestureDetector(
+      onTap: () {
+        if (!ref.read(authProvider).isAuthenticated) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Барои пайгирӣ ворид шавед'),
+            backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+          return;
+        }
+        HapticFeedback.selectionClick();
+        ref.read(followProvider.notifier).toggle(p.sellerId);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: following ? Colors.transparent : AppColors.primary,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.primary)),
+        child: Text(following ? 'Пайгирӣ шуд' : 'Пайгирӣ',
+            style: TextStyle(
+                color: following ? AppColors.primary : Colors.white,
+                fontWeight: FontWeight.w700, fontSize: 13)),
+      ),
+    );
   }
 
   // ── Бахши шарҳҳо ───────────────────────────────────────────────────────────
