@@ -9,8 +9,10 @@ class ProductRepository {
     String? categoryId,
     String? search,
     String? sort,
+    String? sellerId,
   }) =>
-      _remote.getProducts(page: page, categoryId: categoryId, search: search, sort: sort);
+      _remote.getProducts(
+          page: page, categoryId: categoryId, search: search, sort: sort, sellerId: sellerId);
 
   Future<List<ProductModel>> getTrending() => _remote.getTrending();
 

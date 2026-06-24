@@ -52,6 +52,7 @@ class ProductRemote {
     String? categoryId,
     String? search,
     String? sort,
+    String? sellerId,
   }) async {
     final res = await _dio.get(ApiEndpoints.products, queryParameters: {
       'page': page,
@@ -59,6 +60,7 @@ class ProductRemote {
       if (categoryId != null && categoryId.isNotEmpty) 'category_id': categoryId,
       if (search != null && search.isNotEmpty) 'search': search,
       if (sort != null) 'sort': sort,
+      if (sellerId != null && sellerId.isNotEmpty) 'seller_id': sellerId,
     });
     final rawList = _unwrapList(res.data);
     // ✅ Парсинг дар isolate-и дигар → UI блок намешавад!

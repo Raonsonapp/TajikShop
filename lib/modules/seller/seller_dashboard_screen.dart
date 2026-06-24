@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/seller_provider.dart';
 import '../../routes/route_names.dart';
 
 class SellerDashboardScreen extends ConsumerWidget {
@@ -17,6 +18,9 @@ class SellerDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
+    final uid = user?.id ?? '';
+    final pcount = ref.watch(sellerProductsProvider(uid))
+        .maybeWhen(data: (l) => l.length, orElse: () => 0);
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(
@@ -85,11 +89,11 @@ class SellerDashboardScreen extends ConsumerWidget {
               shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12,
               childAspectRatio: 1.6,
-              children: const [
-                _StatCard(value: '0', label: 'Фармоишҳо', icon: Icons.receipt_long_outlined, color: AppColors.primary),
-                _StatCard(value: '0', label: 'Маҳсулот', icon: Icons.inventory_2_outlined, color: Color(0xFF6C63FF)),
-                _StatCard(value: '0 сом.', label: 'Даромад', icon: Icons.account_balance_wallet_outlined, color: AppColors.warning),
-                _StatCard(value: '0', label: 'Мизоҷон', icon: Icons.people_outline, color: AppColors.info),
+              children: [
+                const _StatCard(value: '0', label: 'Фармоишҳо', icon: Icons.receipt_long_outlined, color: AppColors.primary),
+                _StatCard(value: '$pcount', label: 'Маҳсулот', icon: Icons.inventory_2_outlined, color: const Color(0xFF6C63FF)),
+                const _StatCard(value: '0 сом.', label: 'Даромад', icon: Icons.account_balance_wallet_outlined, color: AppColors.warning),
+                const _StatCard(value: '0', label: 'Мизоҷон', icon: Icons.people_outline, color: AppColors.info),
               ],
             ),
             const SizedBox(height: 24),
@@ -108,7 +112,7 @@ class SellerDashboardScreen extends ConsumerWidget {
               icon: Icons.inventory_outlined,
               label: 'Маҳсулотҳоям',
               subtitle: 'Идораи маҳсулотҳо',
-              onTap: () => _soon(context),
+              onTap: () => context.push(RouteNames.myProducts),
             ),
             _ActionItem(
               icon: Icons.pending_actions_outlined,

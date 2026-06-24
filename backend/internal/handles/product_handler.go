@@ -59,15 +59,26 @@ func (h *ProductHandler) List(c *gin.Context) {
 		search = c.Query("q")
 	}
 	category := c.Query("category_id")
+	seller := c.Query("seller_id")
 	offset := (page - 1) * limit
 
 	query := `SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
 		u.name as seller_name
 		FROM products p JOIN users u ON u.id=p.seller_id
-		WHERE p.is_active=true`
+		WHERE 1=1`
 	args := []interface{}{}
 	argIdx := 1
+
+	// Фурӯшанда ҳамаи маҳсулоти худро (ҳатто ғайрифаъол) мебинад;
+	// рӯйхати оммавӣ танҳо маҳсулоти фаъолро нишон медиҳад.
+	if seller != "" {
+		query += fmt.Sprintf(" AND p.seller_id=$%d", argIdx)
+		args = append(args, seller)
+		argIdx++
+	} else {
+		query += " AND p.is_active=true"
+	}
 
 	if search != "" {
 		query += fmt.Sprintf(" AND (p.title ILIKE $%d OR p.description ILIKE $%d)", argIdx, argIdx)
