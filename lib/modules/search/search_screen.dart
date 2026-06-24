@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/search_provider.dart';
 import '../../shared/widgets/product_card.dart';
@@ -189,12 +190,56 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
+  Widget _recentlyViewed() {
+    final recent = ref.watch(recentlyViewedProvider);
+    return recent.maybeWhen(
+      data: (list) {
+        if (list.isEmpty) return const SizedBox.shrink();
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Бознигаристашуда',
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 12),
+          SizedBox(height: 150, child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: list.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            itemBuilder: (_, i) {
+              final m = list[i];
+              final id = m['id']?.toString() ?? '';
+              final image = m['image']?.toString() ?? '';
+              final price = (m['price'] as num?)?.toDouble() ?? 0;
+              return GestureDetector(
+                onTap: () => context.push('/product/$id'),
+                child: SizedBox(width: 100, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  ClipRRect(borderRadius: BorderRadius.circular(12),
+                    child: image.isNotEmpty
+                        ? CachedNetworkImage(imageUrl: image, width: 100, height: 100, fit: BoxFit.cover,
+                            errorWidget: (_, __, ___) => Container(width: 100, height: 100, color: AppColors.bgSurface,
+                                child: const Icon(Icons.image_outlined, color: AppColors.textMuted)))
+                        : Container(width: 100, height: 100, color: AppColors.bgSurface,
+                            child: const Icon(Icons.image_outlined, color: AppColors.textMuted))),
+                  const SizedBox(height: 4),
+                  Text(m['title']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                  Text('${price.toStringAsFixed(0)} сом.',
+                      style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
+                ])),
+              );
+            })),
+          const SizedBox(height: 24),
+        ]);
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+
   Widget _buildEmptyState(AsyncValue categories) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _recentlyViewed(),
           // Popular searches
           const Text('Ҷустуҷӯи маъмул',
               style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/recent_service.dart';
 import '../../data/models/product_model.dart';
 import '../../data/models/review_model.dart';
 import '../../providers/product_provider.dart';
@@ -29,6 +30,7 @@ class ProductDetailScreen extends ConsumerStatefulWidget {
 
 class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   int _imgIndex = 0;
+  bool _recorded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +58,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   Widget _build(ProductModel p) {
+    if (!_recorded) {
+      _recorded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => RecentService.add(p));
+    }
     final isFav = ref.watch(favoritesProvider).contains(p.id);
     return Scaffold(
       backgroundColor: AppColors.bgDark,
