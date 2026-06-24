@@ -103,6 +103,10 @@ class AdminDashboardScreen extends ConsumerWidget {
                 icon: Icons.account_balance_wallet_outlined, label: 'Тасдиқи ҳамён',
                 subtitle: 'Дархостҳои пополнения', color: AppColors.warning, onTap: () => context.push(RouteNames.adminWallet),
               ),
+              _ManageCard(
+                icon: Icons.flag_outlined, label: 'Гузоришҳо',
+                subtitle: 'Шикоятҳои корбарон', color: AppColors.error, onTap: () => context.push(RouteNames.adminReports),
+              ),
               const SizedBox(height: 40),
             ],
           ),

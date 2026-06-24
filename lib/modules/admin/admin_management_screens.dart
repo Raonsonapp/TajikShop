@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/api/api_client.dart';
 import '../../providers/admin_provider.dart';
+import '../../providers/report_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../shared/widgets/error_screen.dart';
 
@@ -491,5 +493,71 @@ class AdminWalletScreen extends ConsumerWidget {
       messenger.showSnackBar(const SnackBar(content: Text('Хато'),
           backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
     }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ГУЗОРИШҲО (Reports)
+// ════════════════════════════════════════════════════════════════════════════
+class AdminReportsScreen extends ConsumerWidget {
+  const AdminReportsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reports = ref.watch(adminReportsProvider);
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(backgroundColor: AppColors.bgDark,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: const Text('Гузоришҳо', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+            onPressed: () => ref.invalidate(adminReportsProvider))]),
+      body: reports.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminReportsProvider)),
+        data: (list) => list.isEmpty
+            ? const Center(child: Text('Гузориш нест', style: TextStyle(color: AppColors.textSecondary)))
+            : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
+                itemBuilder: (_, i) {
+                  final r = list[i];
+                  final resolved = r['resolved'] == true;
+                  final type = r['target_type']?.toString() ?? '';
+                  DateTime? date;
+                  if (r['created_at'] != null) date = DateTime.tryParse(r['created_at'].toString());
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: resolved ? AppColors.border : AppColors.error.withValues(alpha: 0.4), width: 0.6)),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(color: AppColors.info.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                          child: Text(type == 'product' ? 'Маҳсулот' : 'Корбар',
+                              style: const TextStyle(color: AppColors.info, fontSize: 10, fontWeight: FontWeight.w600))),
+                        const Spacer(),
+                        if (resolved)
+                          const Text('Ҳалшуда ✓', style: TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.w600))
+                        else
+                          TextButton(onPressed: () async {
+                            try {
+                              await ApiClient.instance.dio.post('/admin/reports/${r['id']}/resolve');
+                              ref.invalidate(adminReportsProvider);
+                            } catch (_) {}
+                          }, child: const Text('Ҳал кардан', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
+                      ]),
+                      const SizedBox(height: 6),
+                      Text(r['reason']?.toString() ?? '',
+                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('ID: ${r['target_id']?.toString() ?? ''}',
+                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                      if (date != null)
+                        Text(DateFormat('dd.MM.yyyy • HH:mm').format(date),
+                            style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                    ]));
+                }),
+      ),
+    );
   }
 }

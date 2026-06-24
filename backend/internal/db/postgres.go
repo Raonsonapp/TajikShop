@@ -225,6 +225,16 @@ CREATE TABLE IF NOT EXISTS coupons (
 	expires_at TIMESTAMPTZ,
 	created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS reports (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	reporter_id UUID REFERENCES users(id) ON DELETE SET NULL,
+	target_type VARCHAR(20) NOT NULL,   -- product | user
+	target_id UUID NOT NULL,
+	reason TEXT NOT NULL,
+	resolved BOOLEAN DEFAULT false,
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
 `
 	if _, err := DB.Exec(schema); err != nil {
 		log.Fatalf("❌ Schema migration failed: %v", err)

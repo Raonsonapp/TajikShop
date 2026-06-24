@@ -15,6 +15,7 @@ import '../../providers/favorites_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/review_provider.dart';
 import '../../providers/follow_provider.dart';
+import '../../providers/report_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/product_card.dart';
@@ -78,6 +79,19 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             IconButton(
               icon: const Icon(Icons.share_outlined, color: Colors.white),
               onPressed: () => _share(p)),
+            PopupMenuButton<String>(
+              color: AppColors.bgElevated,
+              icon: const Icon(Icons.more_vert, color: Colors.white),
+              onSelected: (v) { if (v == 'report') _report(p); },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'report',
+                    child: Row(children: [
+                      Icon(Icons.flag_outlined, color: AppColors.error, size: 18),
+                      SizedBox(width: 8),
+                      Text('Гузориш додан', style: TextStyle(color: AppColors.textPrimary)),
+                    ])),
+              ],
+            ),
           ],
           flexibleSpace: FlexibleSpaceBar(
             background: Stack(children: [
@@ -266,6 +280,44 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     if (p.sellerId.isEmpty) return;
     final name = Uri.encodeComponent(p.sellerName ?? 'Фурӯшанда');
     context.push('${RouteNames.chat}/${p.sellerId}?name=$name');
+  }
+
+  void _report(ProductModel p) {
+    if (!ref.read(authProvider).isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Барои гузориш ворид шавед'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+      return;
+    }
+    const reasons = ['Қалбакӣ / фиребгар', 'Нархи нодуруст', 'Мӯҳтавои номатлуб', 'Спам', 'Дигар'];
+    showModalBottomSheet(context: context, backgroundColor: AppColors.bgCard,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 12),
+          const Text('Сабаби гузориш', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          ...reasons.map((r) => ListTile(
+            leading: const Icon(Icons.flag_outlined, color: AppColors.error, size: 20),
+            title: Text(r, style: const TextStyle(color: AppColors.textPrimary)),
+            onTap: () async {
+              Navigator.pop(context);
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await ReportService.send(targetType: 'product', targetId: p.id, reason: r);
+                messenger.showSnackBar(const SnackBar(
+                  content: Text('Гузориш фиристода шуд. Раҳмат!'),
+                  backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+              } catch (_) {
+                messenger.showSnackBar(const SnackBar(
+                  content: Text('Хато'),
+                  backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+              }
+            },
+          )),
+        ])));
   }
 
   void _openSeller(ProductModel p) {

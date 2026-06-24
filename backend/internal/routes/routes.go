@@ -26,6 +26,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	adm := handlers.NewAdminHandler()
 	wh  := handlers.NewWalletHandler()
 	cph := handlers.NewCouponHandler()
+	rph := handlers.NewReportHandler()
 
 	// Firebase handler — FIREBASE_PROJECT_ID env-дан мегирад
 	fbh := handlers.NewFirebaseHandler(secret, getenv("FIREBASE_WEB_API_KEY", ""))
@@ -109,6 +110,11 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 
 	// Coupons
 	api.GET("/coupons/validate", middleware.Auth(), cph.Validate)
+
+	// Reports (зидди сӯиистифода)
+	api.POST("/reports", middleware.Auth(), rph.Create)
+	api.GET("/admin/reports", middleware.Auth(), middleware.AdminOnly(), rph.AdminList)
+	api.POST("/admin/reports/:id/resolve", middleware.Auth(), middleware.AdminOnly(), rph.AdminResolve)
 
 	// Admin
 	api.GET("/admin/stats", middleware.Auth(), middleware.AdminOnly(), adm.Stats)
