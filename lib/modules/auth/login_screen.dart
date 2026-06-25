@@ -135,8 +135,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  // Майдон: TextField-и стандартӣ бо filled:true + fillColor-и ТИРА (M2).
-  // Фони тираи худи майдон highlight-и хокистаранги autofill/native-ро мепӯшонад.
+  // Майдон: Container тира + TextField collapsed (filled НЕ — filled:true дар
+  // ин дастгоҳ блоки азими хокистаранг медиҳад). Баландии собит + clip.
   Widget _field({
     required TextEditingController controller,
     required String hint,
@@ -145,32 +145,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     TextInputType? keyboardType,
     Widget? suffix,
   }) {
-    return TextField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboardType,
-      maxLines: 1,
-      autocorrect: false,
-      enableSuggestions: false,
-      cursorColor: AppColors.primary,
-      style: const TextStyle(color: Colors.white, fontSize: 15),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: AppColors.bgSurface,
-        prefixIcon: Icon(icon, color: AppColors.textMuted, size: 20),
-        suffixIcon: suffix,
-        hintText: hint,
-        hintStyle: const TextStyle(color: AppColors.textMuted),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFF2A2A3E))),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1.6)),
+    return Container(
+      height: 56,
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        color: AppColors.bgSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF2A2A3E)),
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: Row(children: [
+        Icon(icon, color: AppColors.textMuted, size: 20),
+        const SizedBox(width: 10),
+        Expanded(
+          child: TextField(
+            controller: controller,
+            obscureText: obscure,
+            keyboardType: keyboardType,
+            maxLines: 1,
+            autocorrect: false,
+            enableSuggestions: false,
+            cursorColor: AppColors.primary,
+            style: const TextStyle(color: Colors.white, fontSize: 15),
+            decoration: InputDecoration.collapsed(
+              hintText: hint,
+              hintStyle: const TextStyle(color: AppColors.textMuted),
+            ),
+          ),
+        ),
+        if (suffix != null) suffix,
+      ]),
     );
   }
 }
