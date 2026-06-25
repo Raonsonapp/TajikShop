@@ -20,27 +20,27 @@ type User struct {
 }
 
 type Product struct {
-	ID              string    `json:"id"`
-	SellerID        string    `json:"seller_id"`
-	CategoryID      string    `json:"category_id"`
-	Title           string    `json:"title"`
-	Description     string    `json:"description"`
-	Price           float64   `json:"price"`
-	DiscountPercent int       `json:"discount_percent"`
-	Stock           int       `json:"stock"`
-	IsActive        bool      `json:"is_active"`
-	Views           int       `json:"views"`
-	VideoURL        string    `json:"video_url"`
-	Images          []string  `json:"images"`
-	SellerName      string    `json:"seller_name,omitempty"`
-	BrandID         string    `json:"brand_id,omitempty"`
-	BrandName       string    `json:"brand_name,omitempty"`
-	MinOrderQty     int       `json:"min_order_qty,omitempty"`
-	WholesalePrice  float64   `json:"wholesale_price,omitempty"`
+	ID              string      `json:"id"`
+	SellerID        string      `json:"seller_id"`
+	CategoryID      string      `json:"category_id"`
+	Title           string      `json:"title"`
+	Description     string      `json:"description"`
+	Price           float64     `json:"price"`
+	DiscountPercent int         `json:"discount_percent"`
+	Stock           int         `json:"stock"`
+	IsActive        bool        `json:"is_active"`
+	Views           int         `json:"views"`
+	VideoURL        string      `json:"video_url"`
+	Images          []string    `json:"images"`
+	SellerName      string      `json:"seller_name,omitempty"`
+	BrandID         string      `json:"brand_id,omitempty"`
+	BrandName       string      `json:"brand_name,omitempty"`
+	MinOrderQty     int         `json:"min_order_qty,omitempty"`
+	WholesalePrice  float64     `json:"wholesale_price,omitempty"`
 	Variants        interface{} `json:"variants,omitempty"`
-	SaleEndsAt      *time.Time `json:"sale_ends_at,omitempty"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	SaleEndsAt      *time.Time  `json:"sale_ends_at,omitempty"`
+	CreatedAt       time.Time   `json:"created_at"`
+	UpdatedAt       time.Time   `json:"updated_at"`
 }
 
 type Category struct {

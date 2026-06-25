@@ -16,6 +16,7 @@ var client *messaging.Client
 // Манбаи credential:
 //   - FIREBASE_SERVICE_ACCOUNT  (мӯҳтавои JSON-и калид — тавсияшаванда барои Render/HF)
 //   - GOOGLE_APPLICATION_CREDENTIALS (роҳи файли .json)
+//
 // Агар ҳеҷ яке набошад, push хомӯш мемонад (барнома кор мекунад).
 func Init() {
 	ctx := context.Background()

@@ -56,8 +56,8 @@ func (h *StoryHandler) Feed(c *gin.Context) {
 	defer rows.Close()
 	type StoryFeed struct {
 		models.Story
-		UserName   string `json:"user_name"`
-		AvatarURL  string `json:"avatar_url"`
+		UserName  string `json:"user_name"`
+		AvatarURL string `json:"avatar_url"`
 	}
 	var stories []StoryFeed
 	for rows.Next() {

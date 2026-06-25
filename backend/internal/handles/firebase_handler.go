@@ -16,8 +16,8 @@ import (
 )
 
 type FirebaseHandler struct {
-	secret     string
-	projectID  string
+	secret    string
+	projectID string
 }
 
 func NewFirebaseHandler(secret, projectID string) *FirebaseHandler {
@@ -43,7 +43,7 @@ func (h *FirebaseHandler) VerifyPhone(c *gin.Context) {
 		return
 	}
 
-	phone      := claims["phone_number"].(string)
+	phone := claims["phone_number"].(string)
 	firebaseUID := claims["uid"].(string)
 
 	// Корбарро дар DB меёбем ё месозем
@@ -112,7 +112,7 @@ func verifyFirebaseIDToken(idToken, projectID string) (map[string]interface{}, e
 	// Firebase token verify endpoint
 	url := fmt.Sprintf(
 		"https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=%s", projectID)
-	
+
 	body := fmt.Sprintf(`{"idToken":"%s"}`, idToken)
 	resp, err := http.Post(url, "application/json", strings.NewReader(body))
 	if err != nil {
@@ -136,7 +136,7 @@ func verifyFirebaseIDToken(idToken, projectID string) (map[string]interface{}, e
 	user := users[0].(map[string]interface{})
 
 	phone, _ := user["phoneNumber"].(string)
-	uid, _   := user["localId"].(string)
+	uid, _ := user["localId"].(string)
 
 	return map[string]interface{}{
 		"phone_number": phone,

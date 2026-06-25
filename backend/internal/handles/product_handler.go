@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"tajikshop/internal/db"
 	"tajikshop/internal/models"
 	"tajikshop/internal/storage"
@@ -167,12 +168,12 @@ func (h *ProductHandler) List(c *gin.Context) {
 		if saleEnds.Valid {
 			p.SaleEndsAt = &saleEnds.Time
 		}
-		p.Images = getProductImages(p.ID)
 		products = append(products, p)
 	}
 	if products == nil {
 		products = []models.Product{}
 	}
+	fillImages(products) // batch — 1 query ба ҷои N
 	utils.OK(c, gin.H{
 		"products": products,
 		"page":     page,
@@ -316,12 +317,12 @@ func (h *ProductHandler) Trending(c *gin.Context) {
 		var p models.Product
 		rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
 			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName)
-		p.Images = getProductImages(p.ID)
 		products = append(products, p)
 	}
 	if products == nil {
 		products = []models.Product{}
 	}
+	fillImages(products) // batch — 1 query ба ҷои N
 	utils.OK(c, gin.H{"products": products})
 }
 
@@ -343,4 +344,42 @@ func getProductImages(productID string) []string {
 		return []string{}
 	}
 	return urls
+}
+
+// getProductImagesBatch — расмҳои ҳамаи маҳсулотро дар ЯК query мегирад (N+1-ро бартараф мекунад)
+func getProductImagesBatch(ids []string) map[string][]string {
+	out := map[string][]string{}
+	if len(ids) == 0 {
+		return out
+	}
+	rows, err := db.DB.Query(`SELECT product_id, url FROM product_images
+		WHERE product_id = ANY($1) ORDER BY position`, pq.Array(ids))
+	if err != nil {
+		return out
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var pid, url string
+		rows.Scan(&pid, &url)
+		if url != "" {
+			out[pid] = append(out[pid], url)
+		}
+	}
+	return out
+}
+
+// fillImages — Images-и ҳар маҳсулотро аз харита пур мекунад
+func fillImages(products []models.Product) {
+	ids := make([]string, len(products))
+	for i := range products {
+		ids[i] = products[i].ID
+	}
+	imgs := getProductImagesBatch(ids)
+	for i := range products {
+		if v, ok := imgs[products[i].ID]; ok {
+			products[i].Images = v
+		} else {
+			products[i].Images = []string{}
+		}
+	}
 }
