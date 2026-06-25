@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/search_history_service.dart';
 import '../../providers/search_provider.dart';
 import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
@@ -36,6 +37,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     _ctrl.dispose();
     _focus.dispose();
     super.dispose();
+  }
+
+  void _search(String q) {
+    final query = q.trim();
+    if (query.isEmpty) return;
+    _ctrl.text = query;
+    ref.read(searchQueryProvider.notifier).state = query;
+    SearchHistoryService.add(query).then((_) {
+      if (mounted) ref.invalidate(searchHistoryProvider);
+    });
   }
 
   @override
@@ -85,7 +96,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
                         ),
                         onChanged: (v) => ref.read(searchQueryProvider.notifier).state = v,
-                        onSubmitted: (v) => ref.read(searchQueryProvider.notifier).state = v,
+                        onSubmitted: _search,
                       )),
                       if (query.isNotEmpty) IconButton(
                         icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 18),
@@ -190,6 +201,45 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
+  Widget _recentSearches() {
+    final history = ref.watch(searchHistoryProvider);
+    return history.maybeWhen(
+      data: (list) {
+        if (list.isEmpty) return const SizedBox.shrink();
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Text('Ҷустуҷӯҳои охирин',
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+            const Spacer(),
+            GestureDetector(
+              onTap: () => SearchHistoryService.clear().then((_) => ref.invalidate(searchHistoryProvider)),
+              child: const Text('Тоза кардан', style: TextStyle(color: AppColors.primary, fontSize: 12))),
+          ]),
+          const SizedBox(height: 10),
+          Wrap(spacing: 8, runSpacing: 8, children: list.map((q) => GestureDetector(
+            onTap: () => _search(q),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+              decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border, width: 0.5)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.history_rounded, color: AppColors.textMuted, size: 15),
+                const SizedBox(width: 6),
+                Text(q, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => SearchHistoryService.remove(q).then((_) => ref.invalidate(searchHistoryProvider)),
+                  child: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 15)),
+              ]),
+            ),
+          )).toList()),
+          const SizedBox(height: 24),
+        ]);
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+
   Widget _recentlyViewed() {
     final recent = ref.watch(recentlyViewedProvider);
     return recent.maybeWhen(
@@ -239,6 +289,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _recentSearches(),
           _recentlyViewed(),
           // Popular searches
           const Text('Ҷустуҷӯи маъмул',
@@ -248,10 +299,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             spacing: 8, runSpacing: 8,
             children: ['iPhone', 'Телевизор', 'Либос', 'Пойафзол', 'Ноутбук', 'Гӯшвора',
                 'Смартфон', 'Мебел'].map((tag) => GestureDetector(
-              onTap: () {
-                _ctrl.text = tag;
-                ref.read(searchQueryProvider.notifier).state = tag;
-              },
+              onTap: () => _search(tag),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
@@ -275,10 +323,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.1),
               itemCount: cats.length > 9 ? 9 : cats.length,
               itemBuilder: (_, i) => GestureDetector(
-                onTap: () {
-                  _ctrl.text = cats[i].name;
-                  ref.read(searchQueryProvider.notifier).state = cats[i].name;
-                },
+                onTap: () => _search(cats[i].name),
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColors.bgCard,

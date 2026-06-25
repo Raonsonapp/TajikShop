@@ -3,6 +3,12 @@ import '../data/models/product_model.dart';
 import '../data/models/category_model.dart';
 import '../data/datasources/remote/search_remote.dart';
 import '../core/services/recent_service.dart';
+import '../core/services/search_history_service.dart';
+
+// Таърихи ҷустуҷӯ (маҳаллӣ)
+final searchHistoryProvider = FutureProvider.autoDispose<List<String>>((ref) async {
+  return SearchHistoryService.get();
+});
 
 // Маҳсулоти бознигаристашуда (маҳаллӣ)
 final recentlyViewedProvider =
