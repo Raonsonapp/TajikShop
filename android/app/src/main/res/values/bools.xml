@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Impeller-ро қатъӣ хомӯш мекунем (boolean, на string) — буги рендеринги MIUI -->
+    <bool name="enable_impeller">false</bool>
+</resources>

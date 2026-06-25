@@ -9,10 +9,12 @@
         android:allowBackup="true"
         android:fullBackupContent="false">
 
-        <!-- Impeller-ро дар Android хомӯш мекунем — буги рендеринги хокистаранг дар MIUI/Xiaomi -->
+        <!-- Impeller-ро дар Android хомӯш мекунем — буги рендеринги хокистаранг дар MIUI/Xiaomi.
+             ⚠️ android:resource (boolean) истифода мешавад, на android:value (string),
+             вагарна getBoolean() default=true бармегардонад ва Impeller фаъол мемонад. -->
         <meta-data
             android:name="io.flutter.embedding.android.EnableImpeller"
-            android:value="false" />
+            android:resource="@bool/enable_impeller" />
 
         <activity
             android:name=".MainActivity"
