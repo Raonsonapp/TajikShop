@@ -27,4 +27,5 @@ class RouteNames {
   static const adminWallet     = '/admin/wallet';
   static const addresses       = '/addresses';
   static const adminReports    = '/admin/reports';
+  static const adminReturns    = '/admin/returns';
 }

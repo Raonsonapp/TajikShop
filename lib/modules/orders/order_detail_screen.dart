@@ -8,7 +8,10 @@ import '../../core/constants/app_colors.dart';
 import '../../core/api/api_client.dart';
 import '../../data/models/order_model.dart';
 import '../../providers/wallet_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/return_provider.dart';
 import '../../routes/route_names.dart';
+import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/error_screen.dart';
 import 'orders_screen.dart';
 
@@ -139,6 +142,110 @@ class OrderDetailScreen extends ConsumerWidget {
     }
   }
 
+  // ── Бозгашт / Иваз ──────────────────────────────────────────────────────────
+  Widget _returnSection(BuildContext context, WidgetRef ref, OrderModel o) {
+    final s = o.status.toLowerCase();
+    if (s != 'delivered' && s != 'completed') return const SizedBox.shrink();
+    final ret = ref.watch(orderReturnProvider(o.id));
+    return ret.maybeWhen(
+      data: (r) {
+        if (r != null) {
+          final status = r['status']?.toString() ?? 'pending';
+          final type = r['type']?.toString() == 'exchange' ? 'Иваз' : 'Бозгашт';
+          const labels = {'pending': 'дар интизор', 'approved': 'қабул шуд', 'rejected': 'рад шуд', 'completed': 'анҷом ёфт'};
+          final color = status == 'rejected'
+              ? AppColors.error
+              : (status == 'completed' || status == 'approved' ? AppColors.success : AppColors.warning);
+          return Padding(padding: const EdgeInsets.only(top: 16),
+            child: Container(padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: color.withValues(alpha: 0.3))),
+              child: Row(children: [
+                Icon(Icons.assignment_return_outlined, color: color, size: 20),
+                const SizedBox(width: 10),
+                Expanded(child: Text('$type: ${labels[status] ?? status}',
+                    style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600))),
+              ])));
+        }
+        return Padding(padding: const EdgeInsets.only(top: 16),
+          child: SizedBox(width: double.infinity, child: OutlinedButton.icon(
+            onPressed: () => _requestReturn(context, ref, o),
+            icon: const Icon(Icons.assignment_return_outlined, size: 18, color: AppColors.warning),
+            label: const Text('Бозгашт ё иваз кардан', style: TextStyle(color: AppColors.warning, fontWeight: FontWeight.w600)),
+            style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.warning),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))));
+      },
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+
+  void _requestReturn(BuildContext context, WidgetRef ref, OrderModel o) {
+    final reasonCtrl = TextEditingController();
+    String type = 'return';
+    showModalBottomSheet(context: context, backgroundColor: AppColors.bgCard, isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 16),
+          const Text('Бозгашт / Иваз', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 14),
+          Row(children: [
+            _typeChip('return', 'Бозгашти пул', type, (v) => setSheet(() => type = v)),
+            const SizedBox(width: 10),
+            _typeChip('exchange', 'Иваз кардан', type, (v) => setSheet(() => type = v)),
+          ]),
+          const SizedBox(height: 14),
+          Container(
+            decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border, width: 0.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: TextField(controller: reasonCtrl, maxLines: 3,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              cursorColor: AppColors.primary,
+              decoration: const InputDecoration(border: InputBorder.none, hintText: 'Сабабро нависед...',
+                  hintStyle: TextStyle(color: AppColors.textMuted))),
+          ),
+          const SizedBox(height: 16),
+          AppButton(text: 'Фиристодани дархост', onTap: () async {
+            final reason = reasonCtrl.text.trim();
+            if (reason.isEmpty) return;
+            Navigator.pop(ctx);
+            final messenger = ScaffoldMessenger.of(context);
+            try {
+              await ReturnService.request(o.id, type: type, reason: reason);
+              ref.invalidate(orderReturnProvider(o.id));
+              messenger.showSnackBar(const SnackBar(content: Text('Дархост фиристода шуд ✅'),
+                  backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+            } catch (e) {
+              final msg = (e is DioException && e.response?.data is Map) ? e.response?.data['error']?.toString() : null;
+              messenger.showSnackBar(SnackBar(content: Text(msg ?? 'Хато'),
+                  backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+            }
+          }),
+        ]),
+      )));
+  }
+
+  Widget _typeChip(String value, String label, String current, Function(String) onTap) {
+    final sel = current == value;
+    return Expanded(child: GestureDetector(
+      onTap: () => onTap(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12), alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: sel ? AppColors.primary.withValues(alpha: 0.15) : AppColors.bgSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: sel ? AppColors.primary : AppColors.border, width: sel ? 1.4 : 0.5)),
+        child: Text(label, style: TextStyle(color: sel ? AppColors.primary : AppColors.textSecondary,
+            fontWeight: FontWeight.w600, fontSize: 13)),
+      ),
+    ));
+  }
+
   Widget _build(BuildContext context, WidgetRef ref, OrderModel o) {
     final cancelled = o.status.toLowerCase() == 'cancelled';
     final completed = o.status.toLowerCase() == 'completed';
@@ -248,6 +355,8 @@ class OrderDetailScreen extends ConsumerWidget {
                 style: TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w600))),
           ])),
       ],
+
+      _returnSection(context, ref, o),
 
       if (_canConfirm(o.status)) ...[
         const SizedBox(height: 20),

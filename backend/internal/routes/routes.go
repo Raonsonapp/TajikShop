@@ -30,6 +30,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	bh  := handlers.NewBrandHandler()
 	vh  := handlers.NewVariantHandler()
 	qah := handlers.NewQAHandler()
+	reh := handlers.NewReturnHandler()
 
 	// Firebase handler — FIREBASE_PROJECT_ID env-дан мегирад
 	fbh := handlers.NewFirebaseHandler(secret, getenv("FIREBASE_WEB_API_KEY", ""))
@@ -96,6 +97,8 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/orders/:id/payment-proof", middleware.Auth(), oh.UploadPaymentProof)
 	api.POST("/orders/:id/cancel", middleware.Auth(), oh.Cancel)
 	api.POST("/orders/:id/confirm", middleware.Auth(), oh.Confirm)
+	api.POST("/orders/:id/return", middleware.Auth(), reh.Create)
+	api.GET("/orders/:id/return", middleware.Auth(), reh.ForOrder)
 
 	// Favorites
 	api.GET("/favorites", middleware.Auth(), fh.List)
@@ -144,6 +147,8 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/admin/categories", middleware.Auth(), middleware.AdminOnly(), ch.Create)
 	api.POST("/admin/coupons", middleware.Auth(), middleware.AdminOnly(), cph.Create)
 	api.GET("/admin/coupons", middleware.Auth(), middleware.AdminOnly(), cph.List)
+	api.GET("/admin/returns", middleware.Auth(), middleware.AdminOnly(), reh.AdminList)
+	api.POST("/admin/returns/:id/status", middleware.Auth(), middleware.AdminOnly(), reh.AdminUpdate)
 	api.GET("/admin/wallet/pending", middleware.Auth(), middleware.AdminOnly(), wh.AdminPending)
 	api.POST("/admin/wallet/tx/:id/approve", middleware.Auth(), middleware.AdminOnly(), wh.AdminApprove)
 	api.POST("/admin/wallet/tx/:id/reject", middleware.Auth(), middleware.AdminOnly(), wh.AdminReject)

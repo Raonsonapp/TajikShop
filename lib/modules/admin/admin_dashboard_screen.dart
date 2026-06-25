@@ -107,6 +107,10 @@ class AdminDashboardScreen extends ConsumerWidget {
                 icon: Icons.flag_outlined, label: 'Гузоришҳо',
                 subtitle: 'Шикоятҳои корбарон', color: AppColors.error, onTap: () => context.push(RouteNames.adminReports),
               ),
+              _ManageCard(
+                icon: Icons.assignment_return_outlined, label: 'Бозгашт/Иваз',
+                subtitle: 'Дархостҳои бозгашт', color: const Color(0xFF00A3FF), onTap: () => context.push(RouteNames.adminReturns),
+              ),
               const SizedBox(height: 40),
             ],
           ),

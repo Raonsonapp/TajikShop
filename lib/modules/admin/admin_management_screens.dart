@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/api/api_client.dart';
 import '../../providers/admin_provider.dart';
 import '../../providers/report_provider.dart';
+import '../../providers/return_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../shared/widgets/error_screen.dart';
 
@@ -559,5 +560,96 @@ class AdminReportsScreen extends ConsumerWidget {
                 }),
       ),
     );
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// БОЗГАШТ / ИВАЗ (Returns)
+// ════════════════════════════════════════════════════════════════════════════
+class AdminReturnsScreen extends ConsumerWidget {
+  const AdminReturnsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final returns = ref.watch(adminReturnsProvider);
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(backgroundColor: AppColors.bgDark,
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        title: const Text('Бозгашт ва иваз', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+            onPressed: () => ref.invalidate(adminReturnsProvider))]),
+      body: returns.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminReturnsProvider)),
+        data: (list) => list.isEmpty
+            ? const Center(child: Text('Дархост нест', style: TextStyle(color: AppColors.textSecondary)))
+            : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
+                itemBuilder: (_, i) {
+                  final r = list[i];
+                  final status = r['status']?.toString() ?? 'pending';
+                  final type = r['type']?.toString() == 'exchange' ? 'Иваз' : 'Бозгашти пул';
+                  final id = r['id']?.toString() ?? '';
+                  DateTime? date;
+                  if (r['created_at'] != null) date = DateTime.tryParse(r['created_at'].toString());
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: status == 'pending' ? AppColors.warning.withValues(alpha: 0.4) : AppColors.border, width: 0.6)),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                          child: Text(type, style: const TextStyle(color: AppColors.warning, fontSize: 10, fontWeight: FontWeight.w600))),
+                        const SizedBox(width: 8),
+                        Text(r['user_name']?.toString() ?? '', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                        const Spacer(),
+                        Text(status, style: TextStyle(
+                            color: status == 'rejected' ? AppColors.error : (status == 'completed' || status == 'approved' ? AppColors.success : AppColors.warning),
+                            fontSize: 11, fontWeight: FontWeight.w600)),
+                      ]),
+                      const SizedBox(height: 6),
+                      Text(r['reason']?.toString() ?? '', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                      Text('Фармоиш: #${(r['order_id']?.toString() ?? '').padRight(8).substring(0, 8).toUpperCase()}'
+                          '${date != null ? ' • ${DateFormat('dd.MM.yyyy').format(date)}' : ''}',
+                          style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                      if (status == 'pending' || status == 'approved') ...[
+                        const SizedBox(height: 10),
+                        Row(children: [
+                          if (status == 'pending')
+                            Expanded(child: OutlinedButton(
+                              onPressed: () => _update(context, ref, id, 'rejected'),
+                              style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.error)),
+                              child: const Text('Рад', style: TextStyle(color: AppColors.error)))),
+                          if (status == 'pending') const SizedBox(width: 8),
+                          if (status == 'pending')
+                            Expanded(child: ElevatedButton(
+                              onPressed: () => _update(context, ref, id, 'approved'),
+                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.info),
+                              child: const Text('Қабул', style: TextStyle(color: Colors.white)))),
+                          if (status == 'approved')
+                            Expanded(child: ElevatedButton(
+                              onPressed: () => _update(context, ref, id, 'completed'),
+                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
+                              child: const Text('Анҷом (бозгашти пул)', style: TextStyle(color: Colors.white)))),
+                        ]),
+                      ],
+                    ]));
+                }),
+      ),
+    );
+  }
+
+  void _update(BuildContext context, WidgetRef ref, String id, String status) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ReturnService.adminUpdate(id, status);
+      ref.invalidate(adminReturnsProvider);
+      messenger.showSnackBar(const SnackBar(content: Text('Навсозӣ шуд ✅'),
+          backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(content: Text('Хато'),
+          backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+    }
   }
 }

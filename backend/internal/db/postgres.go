@@ -279,6 +279,18 @@ CREATE TABLE IF NOT EXISTS questions (
 	answered_at TIMESTAMPTZ
 );
 CREATE INDEX IF NOT EXISTS idx_questions_product ON questions(product_id);
+
+-- ===== Returns / Exchanges =====
+CREATE TABLE IF NOT EXISTS returns (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	type VARCHAR(20) NOT NULL DEFAULT 'return',  -- return | exchange
+	reason TEXT NOT NULL,
+	status VARCHAR(20) DEFAULT 'pending',         -- pending | approved | rejected | completed
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_returns_order ON returns(order_id);
 `
 	if _, err := DB.Exec(schema); err != nil {
 		log.Fatalf("❌ Schema migration failed: %v", err)
