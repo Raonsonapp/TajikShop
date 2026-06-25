@@ -135,8 +135,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  // Майдон: Container ранги замина + TextField бо InputDecoration.collapsed
-  // (filled:true дар MIUI хокистаранг рендер мекунад — барои ҳамин filled НЕ)
+  // Майдон: баландии СОБИТ + ClipRRect — то ҳар чӣ TextField рендер кунад,
+  // ба андозаи дуруст бурида шавад (буги рендери MIUI).
   Widget _field({
     required TextEditingController controller,
     required String hint,
@@ -146,6 +146,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     Widget? suffix,
   }) {
     return Container(
+      height: 56,
+      clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         color: AppColors.bgSurface,
         borderRadius: BorderRadius.circular(14),
@@ -160,12 +162,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             controller: controller,
             obscureText: obscure,
             keyboardType: keyboardType,
+            maxLines: 1,
+            cursorOpacityAnimates: false,
             style: const TextStyle(color: Colors.white, fontSize: 15),
             cursorColor: AppColors.primary,
             decoration: InputDecoration(
+              isDense: true,
               isCollapsed: true,
-              contentPadding: const EdgeInsets.symmetric(vertical: 17),
+              filled: false,
+              fillColor: Colors.transparent,
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
               hintText: hint,
               hintStyle: const TextStyle(color: AppColors.textMuted),
             ),

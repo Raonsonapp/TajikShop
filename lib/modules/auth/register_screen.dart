@@ -163,6 +163,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     Widget? suffix,
   }) {
     return Container(
+      height: 56,
+      clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         color: AppColors.bgSurface,
         borderRadius: BorderRadius.circular(14),
@@ -178,12 +180,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             obscureText: obscure,
             keyboardType: keyboardType,
             inputFormatters: formatters,
+            maxLines: 1,
+            cursorOpacityAnimates: false,
             style: const TextStyle(color: Colors.white, fontSize: 15),
             cursorColor: AppColors.primary,
             decoration: InputDecoration(
+              isDense: true,
               isCollapsed: true,
-              contentPadding: const EdgeInsets.symmetric(vertical: 17),
+              filled: false,
+              fillColor: Colors.transparent,
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
               hintText: hint,
               hintStyle: const TextStyle(color: AppColors.textMuted),
             ),

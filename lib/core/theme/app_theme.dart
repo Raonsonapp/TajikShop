@@ -46,7 +46,9 @@ class AppTheme {
       ),
     ),
     dividerTheme: const DividerThemeData(color: AppColors.divider, thickness: 1),
-    useMaterial3: true,
+    // ⚠️ Material 2: дар M3 рангҳои surface дар баъзе дастгоҳҳои MIUI
+    // хокистаранг рендер мешаванд — M2 пешбинишаванда ва устувор аст.
+    useMaterial3: false,
   );
   static ThemeData get lightTheme => darkTheme;
 }
