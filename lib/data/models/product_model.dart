@@ -22,6 +22,7 @@ class ProductModel {
   final int minOrderQty;
   final double wholesalePrice;
   final List<VariantModel> variants;
+  final DateTime? saleEndsAt;
   final DateTime createdAt;
 
   const ProductModel({
@@ -34,10 +35,13 @@ class ProductModel {
     this.views = 0, this.likeCount = 0,
     this.brandName, this.minOrderQty = 1, this.wholesalePrice = 0,
     this.variants = const [],
+    this.saleEndsAt,
     required this.createdAt,
   });
 
   String get mainImage => images.isNotEmpty ? images.first : '';
+
+  bool get isFlashSale => saleEndsAt != null && saleEndsAt!.isAfter(DateTime.now());
 
   int get computedDiscount {
     if (discountPercent > 0) return discountPercent;
@@ -99,6 +103,9 @@ class ProductModel {
               .map(VariantModel.fromJson)
               .toList()
           : const [],
+      saleEndsAt: json['sale_ends_at'] != null
+          ? DateTime.tryParse(json['sale_ends_at'].toString())?.toLocal()
+          : null,
       createdAt:       json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),

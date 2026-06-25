@@ -121,8 +121,21 @@ class _ProductCardState extends ConsumerState<ProductCard>
                       begin: Alignment.bottomCenter, end: Alignment.topCenter,
                       colors: [Colors.black.withOpacity(0.7), Colors.transparent])))),
 
+              // Flash sale badge
+              if (p.isFlashSale)
+                Positioned(top: 8, left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFFFF416C), Color(0xFFFF4B2B)]),
+                      borderRadius: BorderRadius.circular(8)),
+                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.bolt_rounded, color: Colors.white, size: 11),
+                      Text('FLASH', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+                    ]))),
+
               // Discount badge
-              if (disc > 0)
+              if (disc > 0 && !p.isFlashSale)
                 Positioned(top: 8, left: 8,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),

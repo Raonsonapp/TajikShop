@@ -175,6 +175,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
   late final TextEditingController _stock;
   late final TextEditingController _disc;
   late final TextEditingController _desc;
+  final _sale = TextEditingController();
   late bool _active;
   bool _loading = false;
 
@@ -192,7 +193,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
 
   @override
   void dispose() {
-    _title.dispose(); _price.dispose(); _stock.dispose(); _disc.dispose(); _desc.dispose();
+    _title.dispose(); _price.dispose(); _stock.dispose(); _disc.dispose(); _desc.dispose(); _sale.dispose();
     super.dispose();
   }
 
@@ -206,7 +207,8 @@ class _EditProductSheetState extends State<_EditProductSheet> {
         price: double.tryParse(_price.text.replaceAll(',', '.')) ?? widget.product.price,
         discountPercent: int.tryParse(_disc.text.trim()) ?? 0,
         stock: int.tryParse(_stock.text.trim()) ?? 0,
-        isActive: _active);
+        isActive: _active,
+        saleHours: int.tryParse(_sale.text.trim()) ?? 0);
       widget.onDone();
       if (!mounted) return;
       Navigator.pop(context);
@@ -258,6 +260,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
             Expanded(child: _f('Тахфиф (%)', _disc, type: TextInputType.number)),
           ]),
           _f('Захира', _stock, type: TextInputType.number),
+          _f('⚡ Flash sale (соат, холӣ=тағйир нест, -1=бекор)', _sale, type: TextInputType.number),
           _f('Тавсиф', _desc, maxLines: 3),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,

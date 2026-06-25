@@ -22,6 +22,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/error_screen.dart';
+import '../../shared/widgets/countdown_text.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
   final String id;
@@ -141,6 +142,23 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         style: const TextStyle(color: AppColors.info, fontSize: 11, fontWeight: FontWeight.w700)))),
               Text(p.title, style: const TextStyle(
                   color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
+              if (p.isFlashSale) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Color(0xFFFF416C), Color(0xFFFF4B2B)]),
+                    borderRadius: BorderRadius.circular(12)),
+                  child: Row(children: [
+                    const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 6),
+                    const Text('FLASH SALE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                    const Spacer(),
+                    const Text('Тамом: ', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    CountdownText(endsAt: p.saleEndsAt!,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
+                  ])),
+              ],
               const SizedBox(height: 12),
               Row(children: [
                 Text('${((_variant != null && _variant!.price > 0) ? _variant!.price : p.price).toStringAsFixed(0)} сом.',

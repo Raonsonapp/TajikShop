@@ -58,6 +58,7 @@ class SellerProductService {
     required int discountPercent,
     required int stock,
     required bool isActive,
+    int saleHours = 0, // >0 = flash sale то N соат; <0 = бекор
   }) async {
     await ApiClient.instance.dio.put(ApiEndpoints.product(id), data: {
       'title': title,
@@ -66,6 +67,7 @@ class SellerProductService {
       'discount_percent': discountPercent,
       'stock': stock,
       'is_active': isActive,
+      'sale_hours': saleHours,
     });
   }
 

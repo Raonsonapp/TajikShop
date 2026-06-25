@@ -38,6 +38,7 @@ type Product struct {
 	MinOrderQty     int       `json:"min_order_qty,omitempty"`
 	WholesalePrice  float64   `json:"wholesale_price,omitempty"`
 	Variants        interface{} `json:"variants,omitempty"`
+	SaleEndsAt      *time.Time `json:"sale_ends_at,omitempty"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }

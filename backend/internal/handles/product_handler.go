@@ -145,7 +145,7 @@ func (h *ProductHandler) List(c *gin.Context) {
 
 	query := `SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-		u.name as seller_name
+		u.name as seller_name, p.sale_ends_at
 		FROM products p JOIN users u ON u.id=p.seller_id` + where +
 		" ORDER BY " + orderBy +
 		fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
@@ -161,8 +161,12 @@ func (h *ProductHandler) List(c *gin.Context) {
 	var products []models.Product
 	for rows.Next() {
 		var p models.Product
+		var saleEnds sql.NullTime
 		rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName)
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds)
+		if saleEnds.Valid {
+			p.SaleEndsAt = &saleEnds.Time
+		}
 		p.Images = getProductImages(p.ID)
 		products = append(products, p)
 	}
@@ -184,14 +188,15 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 	var brandID, brandName sql.NullString
 	var moq int
 	var wholesale float64
+	var saleEnds sql.NullTime
 	err := db.DB.QueryRow(`SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.video_url, p.created_at, u.name,
-		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name
+		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name, p.sale_ends_at
 		FROM products p JOIN users u ON u.id=p.seller_id
 		LEFT JOIN brands b ON b.id=p.brand_id WHERE p.id=$1`, id).
 		Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description, &p.Price,
 			&p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.VideoURL, &p.CreatedAt, &p.SellerName,
-			&brandID, &moq, &wholesale, &brandName)
+			&brandID, &moq, &wholesale, &brandName, &saleEnds)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "product not found")
 		return
@@ -201,6 +206,9 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 	p.BrandName = brandName.String
 	p.MinOrderQty = moq
 	p.WholesalePrice = wholesale
+	if saleEnds.Valid {
+		p.SaleEndsAt = &saleEnds.Time
+	}
 	p.Variants = getProductVariants(id)
 	db.DB.Exec(`UPDATE products SET views=views+1 WHERE id=$1`, id)
 	utils.OK(c, p)
@@ -216,6 +224,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		DiscountPercent int     `json:"discount_percent"`
 		Stock           int     `json:"stock"`
 		IsActive        bool    `json:"is_active"`
+		SaleHours       int     `json:"sale_hours"` // >0 = flash sale то N соат; <0 = бекор
 	}
 	c.ShouldBindJSON(&in)
 	res, err := db.DB.Exec(`UPDATE products SET title=$1, description=$2, price=$3,
@@ -230,6 +239,13 @@ func (h *ProductHandler) Update(c *gin.Context) {
 	if n == 0 {
 		utils.Err(c, http.StatusForbidden, "not your product")
 		return
+	}
+	// Flash sale
+	if in.SaleHours > 0 {
+		db.DB.Exec(`UPDATE products SET sale_ends_at = NOW() + ($1 * INTERVAL '1 hour') WHERE id=$2 AND seller_id=$3`,
+			in.SaleHours, id, uid)
+	} else if in.SaleHours < 0 {
+		db.DB.Exec(`UPDATE products SET sale_ends_at = NULL WHERE id=$1 AND seller_id=$2`, id, uid)
 	}
 	utils.OK(c, gin.H{"updated": true})
 }

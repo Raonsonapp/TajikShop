@@ -258,6 +258,7 @@ CREATE INDEX IF NOT EXISTS idx_variants_product ON product_variants(product_id);
 ALTER TABLE products ADD COLUMN IF NOT EXISTS brand_id UUID REFERENCES brands(id);
 ALTER TABLE products ADD COLUMN IF NOT EXISTS min_order_qty INT DEFAULT 1;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS wholesale_price NUMERIC(12,2) DEFAULT 0;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS sale_ends_at TIMESTAMPTZ;
 
 -- ===== Review helpful votes + Product Q&A =====
 CREATE TABLE IF NOT EXISTS review_likes (
