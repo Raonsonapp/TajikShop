@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
+import '../../shared/widgets/dark_text_field.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -102,7 +103,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ]),
                 ),
 
-              _field(controller: _nameCtrl, hint: 'Номи корбар', icon: Icons.person_outline_rounded,
+              DarkTextField(controller: _nameCtrl, hint: 'Номи корбар', icon: Icons.person_outline_rounded,
                   formatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_.]')),
                     LengthLimitingTextInputFormatter(30),
@@ -112,11 +113,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 child: Text('Танҳо ҳарфҳои хурд, рақам ва _',
                     style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
               ),
-              _field(controller: _emailCtrl, hint: 'Email', icon: Icons.email_outlined,
+              DarkTextField(controller: _emailCtrl, hint: 'Email', icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 14),
-              _field(controller: _passCtrl, hint: 'Парол (ҳадди ақал 6)', icon: Icons.lock_outline_rounded,
+              DarkTextField(controller: _passCtrl, hint: 'Парол (ҳадди ақал 6)', icon: Icons.lock_outline_rounded,
                   obscure: _obscure,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _loading ? null : _register(),
                   suffix: GestureDetector(
                     onTap: () => setState(() => _obscure = !_obscure),
                     child: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -153,46 +156,4 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 
-  Widget _field({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    bool obscure = false,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? formatters,
-    Widget? suffix,
-  }) {
-    return Container(
-      height: 56,
-      clipBehavior: Clip.hardEdge,
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF2A2A3E)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Row(children: [
-        Icon(icon, color: AppColors.textMuted, size: 20),
-        const SizedBox(width: 10),
-        Expanded(
-          child: TextField(
-            controller: controller,
-            obscureText: obscure,
-            keyboardType: keyboardType,
-            inputFormatters: formatters,
-            maxLines: 1,
-            autocorrect: false,
-            enableSuggestions: false,
-            cursorColor: AppColors.primary,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
-            decoration: InputDecoration.collapsed(
-              hintText: hint,
-              hintStyle: const TextStyle(color: AppColors.textMuted),
-            ),
-          ),
-        ),
-        if (suffix != null) suffix,
-      ]),
-    );
-  }
 }

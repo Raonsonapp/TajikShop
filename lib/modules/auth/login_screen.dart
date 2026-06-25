@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
+import '../../shared/widgets/dark_text_field.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -94,11 +95,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ]),
                 ),
 
-              _field(controller: _emailCtrl, hint: 'Email', icon: Icons.email_outlined,
+              DarkTextField(controller: _emailCtrl, hint: 'Email', icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 14),
-              _field(controller: _passCtrl, hint: 'Парол', icon: Icons.lock_outline_rounded,
+              DarkTextField(controller: _passCtrl, hint: 'Парол', icon: Icons.lock_outline_rounded,
                   obscure: _obscure,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _loading ? null : _login(),
                   suffix: GestureDetector(
                     onTap: () => setState(() => _obscure = !_obscure),
                     child: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -135,46 +138,4 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  // Майдон: Container тира + TextField collapsed (filled НЕ — filled:true дар
-  // ин дастгоҳ блоки азими хокистаранг медиҳад). Баландии собит + clip.
-  Widget _field({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    bool obscure = false,
-    TextInputType? keyboardType,
-    Widget? suffix,
-  }) {
-    return Container(
-      height: 56,
-      clipBehavior: Clip.hardEdge,
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF2A2A3E)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Row(children: [
-        Icon(icon, color: AppColors.textMuted, size: 20),
-        const SizedBox(width: 10),
-        Expanded(
-          child: TextField(
-            controller: controller,
-            obscureText: obscure,
-            keyboardType: keyboardType,
-            maxLines: 1,
-            autocorrect: false,
-            enableSuggestions: false,
-            cursorColor: AppColors.primary,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
-            decoration: InputDecoration.collapsed(
-              hintText: hint,
-              hintStyle: const TextStyle(color: AppColors.textMuted),
-            ),
-          ),
-        ),
-        if (suffix != null) suffix,
-      ]),
-    );
-  }
 }
