@@ -258,6 +258,26 @@ CREATE INDEX IF NOT EXISTS idx_variants_product ON product_variants(product_id);
 ALTER TABLE products ADD COLUMN IF NOT EXISTS brand_id UUID REFERENCES brands(id);
 ALTER TABLE products ADD COLUMN IF NOT EXISTS min_order_qty INT DEFAULT 1;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS wholesale_price NUMERIC(12,2) DEFAULT 0;
+
+-- ===== Review helpful votes + Product Q&A =====
+CREATE TABLE IF NOT EXISTS review_likes (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	review_id UUID NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
+	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	UNIQUE(review_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS questions (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	question TEXT NOT NULL,
+	answer TEXT DEFAULT '',
+	answered_by UUID,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	answered_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_questions_product ON questions(product_id);
 `
 	if _, err := DB.Exec(schema); err != nil {
 		log.Fatalf("❌ Schema migration failed: %v", err)

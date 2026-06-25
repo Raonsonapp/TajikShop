@@ -252,6 +252,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               _reviewsSection(p),
 
               const SizedBox(height: 28),
+              _qaSection(p),
+
+              const SizedBox(height: 28),
               _similarSection(p),
             ])),
         ),
@@ -439,7 +442,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             _ratingSummary(p, avg, Text('${list.length} шарҳ',
                 style: const TextStyle(color: AppColors.textMuted, fontSize: 12))),
             const SizedBox(height: 8),
-            ...list.take(5).map(_reviewTile),
+            ...list.take(5).map((r) => _ReviewTile(review: r)),
             if (list.length > 5)
               Padding(padding: const EdgeInsets.only(top: 4),
                 child: Text('ва боз ${list.length - 5} шарҳ...',
@@ -466,31 +469,130 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     ]);
   }
 
-  Widget _reviewTile(ReviewModel r) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  // ── Q&A (савол-ҷавоб) ───────────────────────────────────────────────────────
+  Widget _qaSection(ProductModel p) {
+    final qa = ref.watch(productQuestionsProvider(p.id));
+    final isSeller = ref.watch(authProvider).user?.id == p.sellerId;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        CircleAvatar(radius: 14, backgroundColor: AppColors.bgSurface,
-          backgroundImage: (r.userAvatar != null && r.userAvatar!.isNotEmpty)
-              ? CachedNetworkImageProvider(r.userAvatar!) : null,
-          child: (r.userAvatar == null || r.userAvatar!.isEmpty)
-              ? const Icon(Icons.person, size: 16, color: AppColors.textMuted) : null),
-        const SizedBox(width: 8),
-        Expanded(child: Text(r.userName?.isNotEmpty == true ? r.userName! : 'Корбар',
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600))),
-        Text(DateFormat('dd.MM.yyyy').format(r.createdAt),
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+        const Text('Савол ва ҷавоб', style: TextStyle(
+            color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        const Spacer(),
+        TextButton.icon(
+          onPressed: () => _askQuestion(p),
+          icon: const Icon(Icons.help_outline_rounded, size: 18, color: AppColors.primary),
+          label: const Text('Савол додан', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
       ]),
-      const SizedBox(height: 4),
-      Row(children: List.generate(5, (i) => Icon(
-          i < r.rating ? Icons.star_rounded : Icons.star_border_rounded,
-          color: AppColors.warning, size: 13))),
-      if (r.comment.isNotEmpty) ...[
-        const SizedBox(height: 4),
-        Text(r.comment, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4)),
-      ],
-    ]),
-  );
+      qa.when(
+        loading: () => const SizedBox(),
+        error: (_, __) => const SizedBox(),
+        data: (list) {
+          if (list.isEmpty) {
+            return const Padding(padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text('Ҳоло саволе нест. Аввалин шуда пурсед!',
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 13)));
+          }
+          return Column(children: list.take(6).map((q) {
+            final answer = q['answer']?.toString() ?? '';
+            final qid = q['id']?.toString() ?? '';
+            return Container(
+              margin: const EdgeInsets.only(top: 10), padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border, width: 0.5)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('С: ', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 13)),
+                  Expanded(child: Text(q['question']?.toString() ?? '',
+                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600))),
+                ]),
+                if (answer.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('Ҷ: ', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w800, fontSize: 13)),
+                    Expanded(child: Text(answer,
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4))),
+                  ]),
+                ] else if (isSeller) ...[
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: () => _answerQuestion(p, qid),
+                    child: const Text('↳ Ҷавоб додан',
+                        style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600))),
+                ] else ...[
+                  const SizedBox(height: 4),
+                  const Text('Ҳанӯз ҷавоб нест', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                ],
+              ]),
+            );
+          }).toList());
+        },
+      ),
+    ]);
+  }
+
+  void _askQuestion(ProductModel p) {
+    if (!ref.read(authProvider).isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Барои савол додан ворид шавед'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+      return;
+    }
+    _textPrompt(title: 'Саволи худро нависед', hint: 'Масалан: Кафолат дорад?', action: 'Фиристодан',
+      onSubmit: (text) async {
+        try {
+          await ReviewService.ask(p.id, text);
+          ref.invalidate(productQuestionsProvider(p.id));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Савол фиристода шуд ✅'),
+              backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+          }
+        } catch (_) {}
+      });
+  }
+
+  void _answerQuestion(ProductModel p, String questionId) {
+    _textPrompt(title: 'Ҷавоби шумо', hint: 'Ҷавобро нависед...', action: 'Ҷавоб додан',
+      onSubmit: (text) async {
+        try {
+          await ReviewService.answer(questionId, text);
+          ref.invalidate(productQuestionsProvider(p.id));
+        } catch (_) {}
+      });
+  }
+
+  void _textPrompt({required String title, required String hint, required String action, required Function(String) onSubmit}) {
+    final ctrl = TextEditingController();
+    showModalBottomSheet(context: context, backgroundColor: AppColors.bgCard, isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 16),
+          Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 16),
+          Container(
+            decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border, width: 0.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: TextField(controller: ctrl, maxLines: 3, autofocus: true,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              cursorColor: AppColors.primary,
+              decoration: InputDecoration(border: InputBorder.none, hintText: hint,
+                  hintStyle: const TextStyle(color: AppColors.textMuted))),
+          ),
+          const SizedBox(height: 16),
+          AppButton(text: action, onTap: () {
+            final t = ctrl.text.trim();
+            if (t.isEmpty) return;
+            Navigator.pop(ctx);
+            onSubmit(t);
+          }),
+        ]),
+      ));
+  }
 
   void _openAddReview(ProductModel p) {
     if (!ref.read(authProvider).isAuthenticated) {
@@ -630,4 +732,76 @@ class _Chip extends StatelessWidget {
       Icon(icon, color: color, size: 14), const SizedBox(width: 4),
       Text(value, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
     ]));
+}
+
+// ── Review tile бо тугмаи «фоиданок» ────────────────────────────────────────────
+class _ReviewTile extends ConsumerStatefulWidget {
+  final ReviewModel review;
+  const _ReviewTile({required this.review});
+  @override
+  ConsumerState<_ReviewTile> createState() => _ReviewTileState();
+}
+
+class _ReviewTileState extends ConsumerState<_ReviewTile> {
+  late int _count = widget.review.helpfulCount;
+  bool _liked = false;
+  bool _busy = false;
+
+  Future<void> _toggle() async {
+    if (_busy) return;
+    if (!ref.read(authProvider).isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Барои овоз додан ворид шавед'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+      return;
+    }
+    setState(() { _busy = true; _liked = !_liked; _count += _liked ? 1 : -1; });
+    try {
+      final c = await ReviewService.toggleHelpful(widget.review.id);
+      if (mounted) setState(() => _count = c);
+    } catch (_) {} finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final r = widget.review;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          CircleAvatar(radius: 14, backgroundColor: AppColors.bgSurface,
+            backgroundImage: (r.userAvatar != null && r.userAvatar!.isNotEmpty)
+                ? CachedNetworkImageProvider(r.userAvatar!) : null,
+            child: (r.userAvatar == null || r.userAvatar!.isEmpty)
+                ? const Icon(Icons.person, size: 16, color: AppColors.textMuted) : null),
+          const SizedBox(width: 8),
+          Expanded(child: Text(r.userName?.isNotEmpty == true ? r.userName! : 'Корбар',
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600))),
+          Text(DateFormat('dd.MM.yyyy').format(r.createdAt),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+        ]),
+        const SizedBox(height: 4),
+        Row(children: List.generate(5, (i) => Icon(
+            i < r.rating ? Icons.star_rounded : Icons.star_border_rounded,
+            color: AppColors.warning, size: 13))),
+        if (r.comment.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(r.comment, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4)),
+        ],
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: _toggle,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(_liked ? Icons.thumb_up_alt_rounded : Icons.thumb_up_off_alt_rounded,
+                size: 15, color: _liked ? AppColors.primary : AppColors.textMuted),
+            const SizedBox(width: 5),
+            Text('Фоиданок${_count > 0 ? ' ($_count)' : ''}',
+                style: TextStyle(color: _liked ? AppColors.primary : AppColors.textMuted, fontSize: 12)),
+          ]),
+        ),
+      ]),
+    );
+  }
 }

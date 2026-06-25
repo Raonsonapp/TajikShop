@@ -6,6 +6,7 @@ class ReviewModel {
   final String productId;
   final int rating;
   final String comment;
+  final int helpfulCount;
   final DateTime createdAt;
 
   const ReviewModel({
@@ -16,6 +17,7 @@ class ReviewModel {
     required this.productId,
     required this.rating,
     required this.comment,
+    this.helpfulCount = 0,
     required this.createdAt,
   });
 
@@ -28,6 +30,7 @@ class ReviewModel {
       productId: json['product_id']?.toString() ?? '',
       rating: (json['rating'] as num?)?.toInt() ?? 5,
       comment: json['comment'] ?? '',
+      helpfulCount: (json['helpful_count'] as num?)?.toInt() ?? 0,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at']) ?? DateTime.now()
           : DateTime.now(),

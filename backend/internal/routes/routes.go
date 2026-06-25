@@ -29,6 +29,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	rph := handlers.NewReportHandler()
 	bh  := handlers.NewBrandHandler()
 	vh  := handlers.NewVariantHandler()
+	qah := handlers.NewQAHandler()
 
 	// Firebase handler — FIREBASE_PROJECT_ID env-дан мегирад
 	fbh := handlers.NewFirebaseHandler(secret, getenv("FIREBASE_WEB_API_KEY", ""))
@@ -72,6 +73,12 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	// Reviews — separate path to avoid conflict
 	api.GET("/reviews/product/:product_id", rh.ByProduct)
 	api.POST("/reviews", middleware.Auth(), rh.Create)
+	api.POST("/reviews/:id/helpful", middleware.Auth(), rh.Helpful)
+
+	// Q&A (савол-ҷавоб дар маҳсулот)
+	api.GET("/products/:id/questions", qah.ByProduct)
+	api.POST("/products/:id/questions", middleware.Auth(), qah.Ask)
+	api.POST("/questions/:id/answer", middleware.Auth(), qah.Answer)
 
 	// Categories
 	api.GET("/categories", ch.List)

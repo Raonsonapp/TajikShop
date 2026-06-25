@@ -427,19 +427,38 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 
 func (h *ReviewHandler) ByProduct(c *gin.Context) {
 	pid := c.Param("product_id")
-	rows, _ := db.DB.Query(`SELECT r.id,r.rating,r.comment,r.created_at,u.name FROM reviews r
-		JOIN users u ON u.id=r.user_id WHERE r.product_id=$1 ORDER BY r.created_at DESC`, pid)
+	rows, _ := db.DB.Query(`SELECT r.id,r.rating,r.comment,r.created_at,u.name,
+		COALESCE((SELECT COUNT(*) FROM review_likes rl WHERE rl.review_id=r.id),0)
+		FROM reviews r JOIN users u ON u.id=r.user_id
+		WHERE r.product_id=$1 ORDER BY COALESCE((SELECT COUNT(*) FROM review_likes rl WHERE rl.review_id=r.id),0) DESC, r.created_at DESC`, pid)
 	defer rows.Close()
 	var reviews []models.Review
 	for rows.Next() {
 		var r models.Review
-		rows.Scan(&r.ID, &r.Rating, &r.Comment, &r.CreatedAt, &r.UserName)
+		rows.Scan(&r.ID, &r.Rating, &r.Comment, &r.CreatedAt, &r.UserName, &r.HelpfulCount)
 		reviews = append(reviews, r)
 	}
 	if reviews == nil {
 		reviews = []models.Review{}
 	}
 	utils.OK(c, reviews)
+}
+
+// Helpful — овози «фоиданок»-ро иваз мекунад (toggle)
+func (h *ReviewHandler) Helpful(c *gin.Context) {
+	uid := utils.UserID(c)
+	rid := c.Param("id")
+	var exists bool
+	db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM review_likes WHERE review_id=$1 AND user_id=$2)`, rid, uid).Scan(&exists)
+	if exists {
+		db.DB.Exec(`DELETE FROM review_likes WHERE review_id=$1 AND user_id=$2`, rid, uid)
+	} else {
+		db.DB.Exec(`INSERT INTO review_likes(id,review_id,user_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING`,
+			uuid.NewString(), rid, uid)
+	}
+	var count int
+	db.DB.QueryRow(`SELECT COUNT(*) FROM review_likes WHERE review_id=$1`, rid).Scan(&count)
+	utils.OK(c, gin.H{"helpful": !exists, "count": count})
 }
 
 // ========== FAVORITES ==========
