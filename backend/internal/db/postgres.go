@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"log"
+	"strings"
 
 	_ "github.com/lib/pq"
 )
@@ -299,12 +300,34 @@ CREATE INDEX IF NOT EXISTS idx_cart_user ON cart_items(user_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
 CREATE INDEX IF NOT EXISTS idx_products_active_created ON products(is_active, created_at DESC);
+
+-- ===== Тоза кардани сатрҳои холӣ дар сутунҳои UNIQUE =====
+-- Дар Postgres '' != NULL, пас ду корбари бе телефон/email ба UNIQUE бархӯрд мекунанд.
+-- Сатри холиро ба NULL табдил медиҳем — NULL-ҳо ба UNIQUE бархӯрд намекунанд.
+UPDATE users SET email=NULL WHERE email='';
+UPDATE users SET phone=NULL WHERE phone='';
+UPDATE users SET firebase_uid=NULL WHERE firebase_uid='';
+ALTER TABLE users ALTER COLUMN firebase_uid DROP DEFAULT;
 `
-	if _, err := DB.Exec(schema); err != nil {
-		log.Fatalf("❌ Schema migration failed: %v", err)
-	}
+	// Ҳар як амрро ҷудогона иҷро мекунем: агар яктааш хато диҳад, сервер
+	// АЗ КОР НАМЕАФТАД (log.Fatalf нест) — пас login/register ҳамеша кор мекунанд.
+	execEach(schema)
 	log.Println("✅ DB schema ready")
 	seedCategories()
+}
+
+// execEach — схемаро ба амрҳои алоҳида ҷудо карда, ҳар якро иҷро мекунад.
+// Хатои як амр тамоми migration-ро (ва серверро) аз кор намебарорад.
+func execEach(schema string) {
+	for _, stmt := range strings.Split(schema, ";") {
+		s := strings.TrimSpace(stmt)
+		if s == "" {
+			continue
+		}
+		if _, err := DB.Exec(s); err != nil {
+			log.Printf("⚠️  migration stmt skipped: %v", err)
+		}
+	}
 }
 
 func seedCategories() {

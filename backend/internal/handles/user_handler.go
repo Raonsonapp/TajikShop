@@ -46,10 +46,14 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 	id := uuid.NewString()
-	_, err = db.DB.Exec(`INSERT INTO users(id,name,email,phone,password_hash) VALUES($1,$2,$3,$4,$5)`,
+	// NULLIF: майдони холӣ ('') ба NULL табдил мешавад. Дар Postgres ду сатри ''
+	// ба UNIQUE(email)/UNIQUE(phone) бархӯрд мекунанд, аммо NULL-ҳо не — пас
+	// корбарони танҳо-email (бе телефон) бемушкил сабтном мешаванд.
+	_, err = db.DB.Exec(`INSERT INTO users(id,name,email,phone,password_hash)
+		VALUES($1,$2,NULLIF($3,''),NULLIF($4,''),$5)`,
 		id, in.Name, in.Email, in.Phone, hash)
 	if err != nil {
-		utils.Err(c, http.StatusConflict, "user already exists")
+		utils.Err(c, http.StatusConflict, "Ин корбар аллакай вуҷуд дорад")
 		return
 	}
 	accessToken, _ := auth.GenerateAccessToken(id, "buyer", h.secret)
@@ -72,11 +76,13 @@ func (h *UserHandler) Login(c *gin.Context) {
 	}
 	var u models.User
 	var err error
+	// COALESCE: email/phone метавонанд NULL бошанд (корбарони танҳо-email/танҳо-телефон).
+	// Бе COALESCE сканкунии NULL ба string хато медиҳад (500).
 	if in.Email != "" {
-		err = db.DB.QueryRow(`SELECT id,name,email,phone,password_hash,role,is_banned FROM users WHERE email=$1`, in.Email).
+		err = db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),password_hash,role,is_banned FROM users WHERE email=$1`, in.Email).
 			Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.PasswordHash, &u.Role, &u.IsBanned)
 	} else {
-		err = db.DB.QueryRow(`SELECT id,name,email,phone,password_hash,role,is_banned FROM users WHERE phone=$1`, in.Phone).
+		err = db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),password_hash,role,is_banned FROM users WHERE phone=$1`, in.Phone).
 			Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.PasswordHash, &u.Role, &u.IsBanned)
 	}
 	if err == sql.ErrNoRows {
@@ -100,7 +106,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 func (h *UserHandler) Me(c *gin.Context) {
 	uid := utils.UserID(c)
 	var u models.User
-	err := db.DB.QueryRow(`SELECT id,name,email,phone,avatar_url,bio,role,is_verified,is_seller,created_at FROM users WHERE id=$1`, uid).
+	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,created_at FROM users WHERE id=$1`, uid).
 		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.CreatedAt)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "user not found")
