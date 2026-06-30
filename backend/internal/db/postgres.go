@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"strings"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -18,10 +19,17 @@ func Connect(dsn string) {
 	}
 	DB.SetMaxOpenConns(25)
 	DB.SetMaxIdleConns(5)
-	if err = DB.Ping(); err != nil {
-		log.Fatalf("❌ DB.Ping failed: %v", err)
+	// Ping-ро бо такрор месанҷем: агар DB-и Supabase ҳоло бедор шуда истода
+	// бошад (cold start), сервер фавран намемурад, балки то 10 маротиба сабр мекунад.
+	for i := 1; i <= 10; i++ {
+		if err = DB.Ping(); err == nil {
+			log.Println("✅ PostgreSQL connected")
+			return
+		}
+		log.Printf("⏳ DB.Ping retry %d/10: %v", i, err)
+		time.Sleep(3 * time.Second)
 	}
-	log.Println("✅ PostgreSQL connected")
+	log.Fatalf("❌ DB.Ping failed after retries: %v", err)
 }
 
 // Migrate — ҷадвалҳоро танҳо агар вуҷуд надошта бошанд месозад.
