@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../../providers/wallet_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/error_screen.dart';
+import '../../shared/widgets/safe_input.dart';
 
 class WalletScreen extends ConsumerWidget {
   const WalletScreen({super.key});
@@ -111,11 +112,9 @@ class WalletScreen extends ConsumerWidget {
         const Text('Маблағро ворид кунед. Баъди тасдиқи админ ба ҳамён илова мешавад.',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
         const SizedBox(height: 12),
-        TextField(controller: ctrl, autofocus: true, keyboardType: TextInputType.number,
-          style: const TextStyle(color: AppColors.textPrimary),
-          cursorColor: AppColors.primary,
-          decoration: const InputDecoration(hintText: 'Маблағ (сом.)',
-              hintStyle: TextStyle(color: AppColors.textMuted))),
+        SafeInput(controller: ctrl, autofocus: true, keyboardType: TextInputType.number,
+          hint: 'Маблағ (сом.)',
+          textColor: AppColors.textPrimary),
       ]),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx),

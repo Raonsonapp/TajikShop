@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../../core/constants/app_colors.dart';
 import '../../providers/address_provider.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/safe_input.dart';
 import 'map_picker_screen.dart';
 
 /// Равзанаи иловаи суроға (бо интихоб дар харита). Натиҷа: true агар захира шуд.
@@ -78,15 +79,11 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
     decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border, width: 0.5)),
     padding: const EdgeInsets.symmetric(horizontal: 14),
-    child: TextField(
+    child: SafeInput(
       controller: c,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-      cursorColor: AppColors.primary,
-      decoration: InputDecoration(
-        isCollapsed: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14),
-        border: InputBorder.none,
-        hintText: hint, hintStyle: const TextStyle(color: AppColors.textMuted)),
+      hint: hint,
+      textColor: AppColors.textPrimary,
+      fontSize: 14,
     ),
   );
 

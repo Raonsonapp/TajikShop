@@ -13,6 +13,7 @@ import '../../providers/return_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/error_screen.dart';
+import '../../shared/widgets/safe_input.dart';
 import 'orders_screen.dart';
 
 final orderDetailProvider =
@@ -203,11 +204,9 @@ class OrderDetailScreen extends ConsumerWidget {
             decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border, width: 0.5)),
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: TextField(controller: reasonCtrl, maxLines: 3,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-              cursorColor: AppColors.primary,
-              decoration: const InputDecoration(border: InputBorder.none, hintText: 'Сабабро нависед...',
-                  hintStyle: TextStyle(color: AppColors.textMuted))),
+            child: SafeInput(controller: reasonCtrl, maxLines: 3,
+              hint: 'Сабабро нависед...',
+              textColor: AppColors.textPrimary, fontSize: 14),
           ),
           const SizedBox(height: 16),
           AppButton(text: 'Фиристодани дархост', onTap: () async {

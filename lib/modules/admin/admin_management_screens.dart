@@ -8,6 +8,7 @@ import '../../providers/report_provider.dart';
 import '../../providers/return_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../shared/widgets/error_screen.dart';
+import '../../shared/widgets/safe_input.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // КОРБАРОН
@@ -292,11 +293,9 @@ class AdminCategoriesScreen extends ConsumerWidget {
     showDialog(context: context, builder: (ctx) => AlertDialog(
       backgroundColor: AppColors.bgCard,
       title: const Text('Категорияи нав', style: TextStyle(color: AppColors.textPrimary)),
-      content: TextField(controller: ctrl, autofocus: true,
-        style: const TextStyle(color: AppColors.textPrimary),
-        cursorColor: AppColors.primary,
-        decoration: const InputDecoration(hintText: 'Номи категория',
-            hintStyle: TextStyle(color: AppColors.textMuted))),
+      content: SafeInput(controller: ctrl, autofocus: true,
+        hint: 'Номи категория',
+        textColor: AppColors.textPrimary),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx),
             child: const Text('Бекор', style: TextStyle(color: AppColors.textMuted))),
@@ -415,12 +414,11 @@ class AdminCouponsScreen extends ConsumerWidget {
 
 Widget _dlgField(TextEditingController c, String hint, {bool number = false, bool cap = false}) =>
     Padding(padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(controller: c,
+      child: SafeInput(controller: c,
         keyboardType: number ? TextInputType.number : null,
         textCapitalization: cap ? TextCapitalization.characters : TextCapitalization.none,
-        style: const TextStyle(color: AppColors.textPrimary),
-        cursorColor: AppColors.primary,
-        decoration: InputDecoration(hintText: hint, hintStyle: const TextStyle(color: AppColors.textMuted))));
+        hint: hint,
+        textColor: AppColors.textPrimary));
 
 // ════════════════════════════════════════════════════════════════════════════
 // ТАСДИҚИ ҲАМЁН (пополнения)

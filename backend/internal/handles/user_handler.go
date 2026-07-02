@@ -106,8 +106,8 @@ func (h *UserHandler) Login(c *gin.Context) {
 func (h *UserHandler) Me(c *gin.Context) {
 	uid := utils.UserID(c)
 	var u models.User
-	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,created_at FROM users WHERE id=$1`, uid).
-		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.CreatedAt)
+	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,COALESCE(store_lat,0),COALESCE(store_lng,0),created_at FROM users WHERE id=$1`, uid).
+		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.StoreLat, &u.StoreLng, &u.CreatedAt)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "user not found")
 		return
@@ -124,6 +124,22 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	c.ShouldBindJSON(&in)
 	db.DB.Exec(`UPDATE users SET name=$1,bio=$2,updated_at=$3 WHERE id=$4`, in.Name, in.Bio, time.Now(), uid)
 	utils.OK(c, gin.H{"message": "updated"})
+}
+
+// UpdateLocation — ҷойгиршавии мағозаи фурӯшандаро (GPS) нигоҳ медорад (ихтиёрӣ).
+func (h *UserHandler) UpdateLocation(c *gin.Context) {
+	uid := utils.UserID(c)
+	var in struct {
+		Lat float64 `json:"lat"`
+		Lng float64 `json:"lng"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		utils.Err(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	db.DB.Exec(`UPDATE users SET store_lat=$1,store_lng=$2,updated_at=$3 WHERE id=$4`,
+		in.Lat, in.Lng, time.Now(), uid)
+	utils.OK(c, gin.H{"lat": in.Lat, "lng": in.Lng})
 }
 
 func (h *UserHandler) UploadAvatar(c *gin.Context) {

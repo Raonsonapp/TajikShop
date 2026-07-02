@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../routes/route_names.dart';
+import '../../shared/widgets/safe_input.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -153,19 +154,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         decoration: BoxDecoration(
             color: AppColors.bgSurface, borderRadius: BorderRadius.circular(24)),
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: TextField(
+        child: SafeInput(
           controller: _ctrl,
           minLines: 1, maxLines: 4,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
-          cursorColor: AppColors.primary,
+          textColor: AppColors.textPrimary,
           textInputAction: TextInputAction.send,
           onSubmitted: (_) => _send(),
-          decoration: const InputDecoration(
-            isCollapsed: true,
-            contentPadding: EdgeInsets.symmetric(vertical: 12),
-            border: InputBorder.none,
-            hintText: 'Паём нависед...',
-            hintStyle: TextStyle(color: AppColors.textMuted)),
+          hint: 'Паём нависед...',
         ),
       )),
       const SizedBox(width: 8),

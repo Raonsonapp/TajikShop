@@ -23,6 +23,7 @@ import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/error_screen.dart';
 import '../../shared/widgets/countdown_text.dart';
+import '../../shared/widgets/safe_input.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
   final String id;
@@ -595,11 +596,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border, width: 0.5)),
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: TextField(controller: ctrl, maxLines: 3, autofocus: true,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-              cursorColor: AppColors.primary,
-              decoration: InputDecoration(border: InputBorder.none, hintText: hint,
-                  hintStyle: const TextStyle(color: AppColors.textMuted))),
+            child: SafeInput(controller: ctrl, maxLines: 3, autofocus: true,
+              hint: hint,
+              textColor: AppColors.textPrimary, fontSize: 14),
           ),
           const SizedBox(height: 16),
           AppButton(text: action, onTap: () {
@@ -720,16 +719,11 @@ class _AddReviewSheetState extends ConsumerState<_AddReviewSheet> {
           decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.border, width: 0.5)),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          child: TextField(
+          child: SafeInput(
             controller: _ctrl,
             maxLines: 3,
-            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-            cursorColor: AppColors.primary,
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              hintText: 'Фикри худро нависед (ихтиёрӣ)...',
-              hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14)),
-          ),
+            hint: 'Фикри худро нависед (ихтиёрӣ)...',
+            textColor: AppColors.textPrimary, fontSize: 14),
         ),
         const SizedBox(height: 20),
         AppButton(text: 'Фиристодан', onTap: _submit, isLoading: _loading),

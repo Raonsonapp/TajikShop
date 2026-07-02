@@ -15,7 +15,10 @@ import '../../providers/theme_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../routes/route_names.dart';
 import '../../core/app_l10n.dart';
+import 'package:latlong2/latlong.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/safe_input.dart';
+import '../address/map_picker_screen.dart';
 import '../seller/seller_verify_sheet.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -64,13 +67,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: Container(
                 decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppColors.border, width: 0.5)),
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                child: TextField(controller: c, maxLines: maxLines,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                  cursorColor: AppColors.primary,
-                  decoration: InputDecoration(isCollapsed: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14), border: InputBorder.none,
-                      hintText: label, hintStyle: const TextStyle(color: AppColors.textMuted)))));
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: SafeInput(controller: c, hint: label, maxLines: maxLines, fontSize: 14)));
           return Padding(
             padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -107,6 +105,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // ── Become Seller (бо тасдиқи паспорт) ────────────────────────────────────────
   Future<void> _becomeSeller() async {
     await showSellerVerify(context);
+  }
+
+  // ── Ҷойгиршавии мағоза (GPS, ихтиёрӣ) ─────────────────────────────────────────
+  Future<void> _setStoreLocation() async {
+    final picked = await Navigator.of(context).push<LatLng>(
+      MaterialPageRoute(
+        builder: (_) => const MapPickerScreen(initial: LatLng(38.5598, 68.7870)),
+      ),
+    );
+    if (picked == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ApiClient.instance.dio.put(
+        '/users/me/location',
+        data: {'lat': picked.latitude, 'lng': picked.longitude},
+      );
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Ҷойгиршавии мағоза сабт шуд 📍'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Ҷойгиршавӣ сабт нашуд'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating));
+    }
   }
 
   // ── About ────────────────────────────────────────────────────────────────────
@@ -262,10 +286,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ])),
 
             // ── Seller / Become Seller ─────────────────────────────────────
-            if (user?.isSeller == true || user?.role == 'seller')
+            if (user?.isSeller == true || user?.role == 'seller') ...[
               _MenuItem(icon: Icons.store_rounded, iconColor: const Color(0xFF00D084),
                   label: l.sellerDashboard,
-                  onTap: () => context.go(RouteNames.sellerDashboard))
+                  onTap: () => context.go(RouteNames.sellerDashboard)),
+              _MenuItem(icon: Icons.location_on_rounded, iconColor: const Color(0xFFFF6B2C),
+                  label: 'Ҷойгиршавии мағоза (GPS)',
+                  onTap: _setStoreLocation),
+            ]
             else
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
