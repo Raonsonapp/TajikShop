@@ -291,7 +291,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   label: l.sellerDashboard,
                   onTap: () => context.go(RouteNames.sellerDashboard)),
               _MenuItem(icon: Icons.location_on_rounded, iconColor: const Color(0xFFFF6B2C),
-                  label: 'Ҷойгиршавии мағоза (GPS)',
+                  label: l.storeLocation,
                   onTap: _setStoreLocation),
             ]
             else
@@ -307,9 +307,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _MenuItem(icon: Icons.receipt_long_rounded, iconColor: const Color(0xFF00A3FF),
                 label: l.orders, onTap: () => context.go(RouteNames.orders)),
             _MenuItem(icon: Icons.account_balance_wallet_rounded, iconColor: const Color(0xFFFFB800),
-                label: 'Ҳамёни ман', onTap: () => context.push(RouteNames.wallet)),
+                label: l.myWallet, onTap: () => context.push(RouteNames.wallet)),
             _MenuItem(icon: Icons.location_on_outlined, iconColor: const Color(0xFFFF6B2C),
-                label: 'Суроғаҳои ман', onTap: () => context.push(RouteNames.addresses)),
+                label: l.myAddresses, onTap: () => context.push(RouteNames.addresses)),
             _MenuItem(icon: Icons.favorite_rounded, iconColor: const Color(0xFF00D084),
                 label: l.favorites, onTap: () => context.go(RouteNames.favorites)),
 

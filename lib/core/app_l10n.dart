@@ -66,6 +66,11 @@ class AppL10n {
   String get editProfile => lang == 'ru' ? 'Редактировать профиль' : lang == 'en' ? 'Edit Profile' : 'Вироиши профил';
   String get myProducts => lang == 'ru' ? 'Мои товары' : lang == 'en' ? 'My Products' : 'Маҳсулотҳои ман';
   String get noProducts => lang == 'ru' ? 'Нет товаров' : lang == 'en' ? 'No products' : 'Маҳсулот нест';
+  String get myWallet   => lang == 'ru' ? 'Мой кошелёк' : lang == 'en' ? 'My Wallet' : 'Ҳамёни ман';
+  String get myAddresses => lang == 'ru' ? 'Мои адреса' : lang == 'en' ? 'My Addresses' : 'Суроғаҳои ман';
+  String get storeLocation => lang == 'ru' ? 'Локация магазина (GPS)' : lang == 'en' ? 'Store Location (GPS)' : 'Ҷойгиршавии мағоза (GPS)';
+  String get popularSearches => lang == 'ru' ? 'Популярные запросы' : lang == 'en' ? 'Popular searches' : 'Ҷустуҷӯи маъмул';
+  String get searchProductsHint => lang == 'ru' ? 'Поиск товаров...' : lang == 'en' ? 'Search products...' : 'Ҷустуҷӯи маҳсулот...';
 }
 
 class AppLocalizationsDelegate extends LocalizationsDelegate<AppL10n> {
