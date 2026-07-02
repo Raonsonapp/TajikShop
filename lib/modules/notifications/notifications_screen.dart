@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../data/models/notification_model.dart';
@@ -20,10 +21,10 @@ class NotificationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notifs = ref.watch(notificationsProvider);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: const Text('Огоҳиномаҳо', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Огоҳиномаҳо', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [
           TextButton(onPressed: () async {
             try { await ApiClient.instance.dio.post(ApiEndpoints.readNotifications); ref.invalidate(notificationsProvider); } catch (_) {}
@@ -33,13 +34,13 @@ class NotificationsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(notificationsProvider)),
         data: (list) => list.isEmpty
-            ? const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.notifications_none_rounded, size: 80, color: AppColors.textMuted),
-                SizedBox(height: 16),
-                Text('Огоҳиноме нест', style: TextStyle(color: AppColors.textSecondary, fontSize: 16))]))
+            ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.notifications_none_rounded, size: 80, color: context.pal.textMuted),
+                const SizedBox(height: 16),
+                Text('Огоҳиноме нест', style: TextStyle(color: context.pal.textSecondary, fontSize: 16))]))
             : ListView.separated(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 itemCount: list.length,
-                separatorBuilder: (_, __) => const Divider(color: AppColors.divider, height: 1),
+                separatorBuilder: (_, __) => Divider(color: context.pal.divider, height: 1),
                 itemBuilder: (_, i) => _NTile(n: list[i])),
       ),
     );
@@ -61,17 +62,17 @@ class _NTile extends StatelessWidget {
       const SizedBox(width: 12),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Expanded(child: Text(n.title, style: TextStyle(color: AppColors.textPrimary, fontSize: 14,
+          Expanded(child: Text(n.title, style: TextStyle(color: context.pal.textPrimary, fontSize: 14,
               fontWeight: n.isRead ? FontWeight.w400 : FontWeight.w600))),
           if (!n.isRead) Container(width: 8, height: 8,
               decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
         ]),
         const SizedBox(height: 4),
         Text(n.body, maxLines: 2, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
         const SizedBox(height: 4),
         Text(DateFormat('dd.MM.yyyy HH:mm').format(n.createdAt),
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+            style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
       ])),
     ]));
 }

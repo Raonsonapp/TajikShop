@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 
 class ErrorScreen extends StatelessWidget {
   final String message;
@@ -9,21 +10,21 @@ class ErrorScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(backgroundColor: AppColors.bgDark,
-          iconTheme: const IconThemeData(color: AppColors.textPrimary)),
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold,
+          iconTheme: IconThemeData(color: context.pal.textPrimary)),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.wifi_off_rounded, size: 72, color: AppColors.textMuted),
+            Icon(Icons.wifi_off_rounded, size: 72, color: context.pal.textMuted),
             const SizedBox(height: 20),
-            const Text('Пайвастшавӣ мавҷуд нест',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+            Text('Пайвастшавӣ мавҷуд нест',
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
                 textAlign: TextAlign.center),
             const SizedBox(height: 8),
-            const Text('Интернетро санҷед ва дубора кӯшиш кунед',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            Text('Интернетро санҷед ва дубора кӯшиш кунед',
+                style: TextStyle(color: context.pal.textSecondary, fontSize: 14),
                 textAlign: TextAlign.center),
             if (onRetry != null) ...[
               const SizedBox(height: 24),

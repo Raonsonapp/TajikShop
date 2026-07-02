@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../shared/widgets/app_button.dart';
@@ -72,12 +73,12 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       appBar: AppBar(
-        backgroundColor: AppColors.bgDark,
-        title: const Text('Маҳсулот илова кунед',
-            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        backgroundColor: context.pal.scaffold,
+        title: Text('Маҳсулот илова кунед',
+            style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -87,15 +88,15 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Images Section
-              const Text('Расмҳо (то 5)',
-                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+              Text('Расмҳо (то 5)',
+                  style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w600)),
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
                   height: 120,
                   decoration: BoxDecoration(
-                    color: AppColors.bgCard,
+                    color: context.pal.card,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.primary.withOpacity(0.5), style: BorderStyle.solid),
                   ),

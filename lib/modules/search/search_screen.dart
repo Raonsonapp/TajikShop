@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../core/app_l10n.dart';
 import '../../core/services/search_history_service.dart';
 import '../../providers/search_provider.dart';
@@ -58,7 +59,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final categories = ref.watch(categoriesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       body: SafeArea(
         child: Column(
           children: [
@@ -67,7 +68,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: Row(children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 20),
+                  icon: Icon(Icons.arrow_back_ios_new, color: context.pal.textPrimary, size: 20),
                   onPressed: () => context.go('/home'),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 32),
@@ -77,7 +78,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   child: Container(
                     height: 48,
                     decoration: BoxDecoration(
-                      color: AppColors.bgSurface,
+                      color: context.pal.surface,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: AppColors.primary, width: 1.5),
                     ),
@@ -91,12 +92,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         hint: AppL10n.of(context).searchProductsHint,
                         textInputAction: TextInputAction.search,
                         fontSize: 14,
-                        textColor: AppColors.textPrimary,
+                        textColor: context.pal.textPrimary,
                         onChanged: (v) => ref.read(searchQueryProvider.notifier).state = v,
                         onSubmitted: _search,
                       )),
                       if (query.isNotEmpty) IconButton(
-                        icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 18),
+                        icon: Icon(Icons.close_rounded, color: context.pal.textMuted, size: 18),
                         onPressed: () { _ctrl.clear(); ref.read(searchQueryProvider.notifier).state = ''; },
                       ),
                       const SizedBox(width: 4),
@@ -129,13 +130,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       data: (list) => list.isEmpty
                           ? Center(
                               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                                const Icon(Icons.search_off_rounded, size: 80, color: AppColors.textMuted),
+                                Icon(Icons.search_off_rounded, size: 80, color: context.pal.textMuted),
                                 const SizedBox(height: 16),
                                 Text('"$query" — ёфт нашуд',
-                                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+                                    style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
                                 const SizedBox(height: 8),
-                                const Text('Калимаи дигар истифода кунед',
-                                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                                Text('Калимаи дигар истифода кунед',
+                                    style: TextStyle(color: context.pal.textMuted, fontSize: 13)),
                               ]),
                             )
                           : Column(
@@ -145,7 +146,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                                   child: Row(children: [
                                     Expanded(child: Text('${list.length} натиҷа барои "$query"',
-                                        style: const TextStyle(color: AppColors.textMuted, fontSize: 13))),
+                                        style: TextStyle(color: context.pal.textMuted, fontSize: 13))),
                                     _sortButton(),
                                   ]),
                                 ),
@@ -175,7 +176,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     };
     final current = ref.watch(searchSortProvider);
     return PopupMenuButton<String?>(
-      color: AppColors.bgElevated,
+      color: context.pal.elevated,
       onSelected: (v) => ref.read(searchSortProvider.notifier).state = v,
       itemBuilder: (_) => opts.entries.map((e) => PopupMenuItem<String?>(
         value: e.key,
@@ -183,16 +184,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           if (current == e.key) const Icon(Icons.check, color: AppColors.primary, size: 16)
           else const SizedBox(width: 16),
           const SizedBox(width: 8),
-          Text(e.value, style: const TextStyle(color: AppColors.textPrimary)),
+          Text(e.value, style: TextStyle(color: context.pal.textPrimary)),
         ]))).toList(),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.border, width: 0.5)),
+        decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: context.pal.border, width: 0.5)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.swap_vert_rounded, color: AppColors.primary, size: 16),
           const SizedBox(width: 4),
-          Text(opts[current] ?? 'Нав', style: const TextStyle(color: AppColors.textPrimary, fontSize: 12)),
+          Text(opts[current] ?? 'Нав', style: TextStyle(color: context.pal.textPrimary, fontSize: 12)),
         ]),
       ),
     );
@@ -205,8 +206,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         if (list.isEmpty) return const SizedBox.shrink();
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            const Text('Ҷустуҷӯҳои охирин',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+            Text('Ҷустуҷӯҳои охирин',
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
             const Spacer(),
             GestureDetector(
               onTap: () => SearchHistoryService.clear().then((_) => ref.invalidate(searchHistoryProvider)),
@@ -217,16 +218,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             onTap: () => _search(q),
             child: Container(
               padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-              decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border, width: 0.5)),
+              decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: context.pal.border, width: 0.5)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.history_rounded, color: AppColors.textMuted, size: 15),
+                Icon(Icons.history_rounded, color: context.pal.textMuted, size: 15),
                 const SizedBox(width: 6),
-                Text(q, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                Text(q, style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
                 const SizedBox(width: 4),
                 GestureDetector(
                   onTap: () => SearchHistoryService.remove(q).then((_) => ref.invalidate(searchHistoryProvider)),
-                  child: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 15)),
+                  child: Icon(Icons.close_rounded, color: context.pal.textMuted, size: 15)),
               ]),
             ),
           )).toList()),
@@ -243,8 +244,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       data: (list) {
         if (list.isEmpty) return const SizedBox.shrink();
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Бознигаристашуда',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text('Бознигаристашуда',
+              style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           SizedBox(height: 150, child: ListView.separated(
             scrollDirection: Axis.horizontal,
@@ -261,13 +262,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ClipRRect(borderRadius: BorderRadius.circular(12),
                     child: image.isNotEmpty
                         ? CachedNetworkImage(imageUrl: image, width: 100, height: 100, fit: BoxFit.cover,
-                            errorWidget: (_, __, ___) => Container(width: 100, height: 100, color: AppColors.bgSurface,
-                                child: const Icon(Icons.image_outlined, color: AppColors.textMuted)))
-                        : Container(width: 100, height: 100, color: AppColors.bgSurface,
-                            child: const Icon(Icons.image_outlined, color: AppColors.textMuted))),
+                            errorWidget: (_, __, ___) => Container(width: 100, height: 100, color: context.pal.surface,
+                                child: Icon(Icons.image_outlined, color: context.pal.textMuted)))
+                        : Container(width: 100, height: 100, color: context.pal.surface,
+                            child: Icon(Icons.image_outlined, color: context.pal.textMuted))),
                   const SizedBox(height: 4),
                   Text(m['title']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                      style: TextStyle(color: context.pal.textSecondary, fontSize: 11)),
                   Text('${price.toStringAsFixed(0)} сом.',
                       style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
                 ])),
@@ -290,7 +291,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           _recentlyViewed(),
           // Popular searches
           Text(AppL10n.of(context).popularSearches,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8, runSpacing: 8,
@@ -300,18 +301,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: AppColors.bgCard,
+                  color: context.pal.card,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border, width: 0.5),
+                  border: Border.all(color: context.pal.border, width: 0.5),
                 ),
-                child: Text(tag, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                child: Text(tag, style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
               ),
             )).toList(),
           ),
           const SizedBox(height: 28),
           // Categories
           Text(AppL10n.of(context).categories,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           categories.when(
             data: (cats) => GridView.builder(
@@ -323,16 +324,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 onTap: () => _search(cats[i].name),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.bgCard,
+                    color: context.pal.card,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border, width: 0.5),
+                    border: Border.all(color: context.pal.border, width: 0.5),
                   ),
                   child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                     const Icon(Icons.category_outlined, color: AppColors.primary, size: 28),
                     const SizedBox(height: 6),
                     Text(cats[i].name,
                         maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                        style: TextStyle(color: context.pal.textSecondary, fontSize: 11),
                         textAlign: TextAlign.center),
                   ]),
                 ),

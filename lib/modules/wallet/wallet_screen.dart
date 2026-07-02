@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../providers/wallet_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/error_screen.dart';
@@ -14,12 +15,12 @@ class WalletScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final wallet = ref.watch(walletProvider);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       appBar: AppBar(
-        backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: const Text('Ҳамёни ман', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+        backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Ҳамёни ман', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(walletProvider))],
       ),
       body: wallet.when(
@@ -50,12 +51,12 @@ class WalletScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             AppButton(text: '➕ Пополнение кардан', onTap: () => _topUp(context, ref)),
             const SizedBox(height: 24),
-            const Text('Таърихи амалиётҳо',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+            Text('Таърихи амалиётҳо',
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             if (txs.isEmpty)
-              const Padding(padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: Text('Ҳоло амалиёте нест', style: TextStyle(color: AppColors.textMuted))))
+              Padding(padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: Text('Ҳоло амалиёте нест', style: TextStyle(color: context.pal.textMuted))))
             else
               ...txs.whereType<Map>().map((t) => _txTile(Map<String, dynamic>.from(t))),
           ]);
@@ -106,19 +107,19 @@ class WalletScreen extends ConsumerWidget {
   void _topUp(BuildContext context, WidgetRef ref) {
     final ctrl = TextEditingController();
     showDialog(context: context, builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.bgCard,
-      title: const Text('Пополнение', style: TextStyle(color: AppColors.textPrimary)),
+      backgroundColor: context.pal.card,
+      title: Text('Пополнение', style: TextStyle(color: context.pal.textPrimary)),
       content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text('Маблағро ворид кунед. Баъди тасдиқи админ ба ҳамён илова мешавад.',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        Text('Маблағро ворид кунед. Баъди тасдиқи админ ба ҳамён илова мешавад.',
+            style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
         const SizedBox(height: 12),
         SafeInput(controller: ctrl, autofocus: true, keyboardType: TextInputType.number,
           hint: 'Маблағ (сом.)',
-          textColor: AppColors.textPrimary),
+          textColor: context.pal.textPrimary),
       ]),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx),
-            child: const Text('Бекор', style: TextStyle(color: AppColors.textMuted))),
+            child: Text('Бекор', style: TextStyle(color: context.pal.textMuted))),
         TextButton(
           onPressed: () async {
             final amount = double.tryParse(ctrl.text.replaceAll(',', '.')) ?? 0;

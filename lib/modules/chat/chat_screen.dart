@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../routes/route_names.dart';
@@ -64,28 +65,28 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final convo = ref.watch(conversationProvider(widget.userId));
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       appBar: AppBar(
-        backgroundColor: AppColors.bgCard,
+        backgroundColor: context.pal.card,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : context.go(RouteNames.home)),
         titleSpacing: 0,
         title: Row(children: [
-          CircleAvatar(radius: 16, backgroundColor: AppColors.bgSurface,
+          CircleAvatar(radius: 16, backgroundColor: context.pal.surface,
             child: Text(widget.userName.isNotEmpty ? widget.userName[0].toUpperCase() : '?',
                 style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700))),
           const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             Text(widget.userName, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
-            const Text('Фурӯшанда', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+            Text('Фурӯшанда', style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
           ])),
         ]),
         actions: [IconButton(
-          icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+          icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
           onPressed: () => ref.invalidate(conversationProvider(widget.userId)))],
       ),
       body: Column(children: [

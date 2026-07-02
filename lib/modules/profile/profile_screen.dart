@@ -8,6 +8,7 @@ import 'package:dio/dio.dart';
 import 'dart:io';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../providers/auth_provider.dart';
@@ -56,7 +57,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final bioCtrl = TextEditingController();
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: context.pal.card,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) {
@@ -65,17 +66,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           Widget field(String label, TextEditingController c, {int maxLines = 1}) =>
             Padding(padding: const EdgeInsets.only(bottom: 12),
               child: Container(
-                decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border, width: 0.5)),
+                decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: context.pal.border, width: 0.5)),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 child: SafeInput(controller: c, hint: label, maxLines: maxLines, fontSize: 14)));
           return Padding(
             padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Center(child: Container(width: 40, height: 4,
-                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+                  decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 16),
-              const Text('Таҳрири профил', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+              Text('Таҳрири профил', style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 16),
               field('Номи корбар', nameCtrl),
               field('Био (дар бораи худ)', bioCtrl, maxLines: 3),
@@ -158,17 +159,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final l = AppL10n.of(context);
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: context.pal.card,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(width: 40, height: 4,
-              decoration: BoxDecoration(color: AppColors.border,
+              decoration: BoxDecoration(color: context.pal.border,
                   borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 20),
-          Text(l.language, style: const TextStyle(color: Colors.white,
+          Text(l.language, style: TextStyle(color: context.pal.textPrimary,
               fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 20),
           ...LocaleNotifier.supported.map((locale) {
@@ -179,7 +180,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   locale.languageCode == 'ru' ? '🇷🇺' : '🇬🇧',
                   style: const TextStyle(fontSize: 24)),
               title: Text(LocaleNotifier.langName(locale.languageCode),
-                  style: TextStyle(color: isActive ? AppColors.primary : Colors.white,
+                  style: TextStyle(color: isActive ? AppColors.primary : context.pal.textPrimary,
                       fontWeight: isActive ? FontWeight.w700 : FontWeight.w400)),
               trailing: isActive
                   ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
@@ -200,16 +201,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final l      = AppL10n.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
 
           // ── App Bar ────────────────────────────────────────────────────────
           SliverAppBar(
-            backgroundColor: AppColors.bgDark,
+            backgroundColor: context.pal.scaffold,
             floating: true, elevation: 0,
-            title: Text(l.profile, style: const TextStyle(color: Colors.white,
+            title: Text(l.profile, style: TextStyle(color: context.pal.textPrimary,
                 fontWeight: FontWeight.w700, fontSize: 20)),
           ),
 
@@ -221,21 +222,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                    colors: [AppColors.primary.withValues(alpha: 0.15), AppColors.bgCard],
+                    colors: [AppColors.primary.withValues(alpha: 0.15), context.pal.card],
                     begin: Alignment.topLeft, end: Alignment.bottomRight),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.border)),
+                border: Border.all(color: context.pal.border)),
               child: Row(children: [
                 // Avatar
                 GestureDetector(
                   onTap: _pickAvatar,
                   child: Stack(children: [
                     CircleAvatar(radius: 36,
-                      backgroundColor: AppColors.bgSurface,
+                      backgroundColor: context.pal.surface,
                       backgroundImage: user?.avatar != null && user!.avatar!.isNotEmpty
                           ? CachedNetworkImageProvider(user.avatar!) : null,
                       child: user?.avatar == null || user!.avatar!.isEmpty
-                          ? const Icon(Icons.person_rounded, color: AppColors.textMuted, size: 36)
+                          ? Icon(Icons.person_rounded, color: context.pal.textMuted, size: 36)
                           : null),
                     Positioned(bottom: 0, right: 0,
                       child: Container(
@@ -253,7 +254,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         (user?.fullName != null && user!.fullName.isNotEmpty)
                             ? user.fullName
                             : (user?.email.split('@').first ?? 'Корбар'),
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                        style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -276,12 +277,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ]),
                   const SizedBox(height: 4),
                   Text(user?.email ?? '',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                      style: TextStyle(color: context.pal.textMuted, fontSize: 13)),
                   const SizedBox(height: 8),
                   _RoleBadge(role: user?.role ?? 'buyer', l: l),
                 ])),
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined, color: AppColors.textSecondary, size: 20),
+                  icon: Icon(Icons.edit_outlined, color: context.pal.textSecondary, size: 20),
                   onPressed: _editProfile),
               ])),
 
@@ -334,7 +335,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
             const SizedBox(height: 8),
             _SectionLabel(l.about),
-            _MenuItem(icon: Icons.info_outline_rounded, iconColor: AppColors.textMuted,
+            _MenuItem(icon: Icons.info_outline_rounded, iconColor: context.pal.textMuted,
                 label: l.about, onTap: () => _showAbout(l)),
 
             // ── Logout ─────────────────────────────────────────────────
@@ -386,8 +387,8 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 8, 20, 6),
-    child: Text(label.toUpperCase(), style: const TextStyle(
-        color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)));
+    child: Text(label.toUpperCase(), style: TextStyle(
+        color: context.pal.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)));
 }
 
 class _MenuItem extends StatelessWidget {
@@ -403,15 +404,15 @@ class _MenuItem extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
     child: ListTile(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      tileColor: AppColors.bgCard,
+      tileColor: context.pal.card,
       leading: Container(padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10)),
           child: Icon(icon, color: iconColor, size: 18)),
-      title: Text(label, style: const TextStyle(color: Colors.white,
+      title: Text(label, style: TextStyle(color: context.pal.textPrimary,
           fontSize: 14, fontWeight: FontWeight.w500)),
-      trailing: const Icon(Icons.chevron_right_rounded,
-          color: AppColors.textMuted, size: 20),
+      trailing: Icon(Icons.chevron_right_rounded,
+          color: context.pal.textMuted, size: 20),
       onTap: onTap));
 }
 
@@ -429,12 +430,12 @@ class _SwitchTile extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
     child: ListTile(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      tileColor: AppColors.bgCard,
+      tileColor: context.pal.card,
       leading: Container(padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10)),
           child: Icon(icon, color: iconColor, size: 18)),
-      title: Text(label, style: const TextStyle(color: Colors.white,
+      title: Text(label, style: TextStyle(color: context.pal.textPrimary,
           fontSize: 14, fontWeight: FontWeight.w500)),
       trailing: Switch.adaptive(value: value, onChanged: onChanged,
           activeColor: AppColors.primary)));
