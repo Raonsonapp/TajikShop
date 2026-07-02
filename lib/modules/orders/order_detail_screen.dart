@@ -202,12 +202,12 @@ class OrderDetailScreen extends ConsumerWidget {
           ]),
           const SizedBox(height: 14),
           Container(
-            decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border, width: 0.5)),
+            decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: context.pal.border, width: 0.5)),
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: SafeInput(controller: reasonCtrl, maxLines: 3,
               hint: 'Сабабро нависед...',
-              textColor: AppColors.textPrimary, fontSize: 14),
+              textColor: context.pal.textPrimary, fontSize: 14),
           ),
           const SizedBox(height: 16),
           AppButton(text: 'Фиристодани дархост', onTap: () async {
@@ -254,15 +254,15 @@ class OrderDetailScreen extends ConsumerWidget {
       // Header card
       Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border, width: 0.5)),
+        decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.pal.border, width: 0.5)),
         child: Row(children: [
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('#${(o.id.length > 8 ? o.id.substring(0, 8) : o.id).toUpperCase()}',
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
             Text(DateFormat('dd.MM.yyyy • HH:mm').format(o.createdAt),
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
           ]),
           const Spacer(),
           Text('${o.total.toStringAsFixed(0)} сом.',
@@ -272,8 +272,8 @@ class OrderDetailScreen extends ConsumerWidget {
       const SizedBox(height: 20),
 
       // Tracking timeline
-      const Text('Ҳолати расонидан',
-          style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+      Text('Ҳолати расонидан',
+          style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
       const SizedBox(height: 12),
       if (cancelled)
         Container(
@@ -294,18 +294,18 @@ class OrderDetailScreen extends ConsumerWidget {
             Column(children: [
               Container(width: 34, height: 34,
                 decoration: BoxDecoration(
-                  color: done ? AppColors.primary : AppColors.bgSurface,
+                  color: done ? AppColors.primary : context.pal.surface,
                   shape: BoxShape.circle,
-                  border: Border.all(color: done ? AppColors.primary : AppColors.border, width: 1.5)),
-                child: Icon(_steps[i].$3, color: done ? Colors.white : AppColors.textMuted, size: 18)),
+                  border: Border.all(color: done ? AppColors.primary : context.pal.border, width: 1.5)),
+                child: Icon(_steps[i].$3, color: done ? Colors.white : context.pal.textMuted, size: 18)),
               if (!isLast)
                 Expanded(child: Container(width: 2,
-                    color: i < current ? AppColors.primary : AppColors.border)),
+                    color: i < current ? AppColors.primary : context.pal.border)),
             ]),
             const SizedBox(width: 14),
             Padding(padding: const EdgeInsets.only(top: 6, bottom: 18),
               child: Text(_steps[i].$2, style: TextStyle(
-                  color: done ? AppColors.textPrimary : AppColors.textMuted,
+                  color: done ? context.pal.textPrimary : context.pal.textMuted,
                   fontSize: 14, fontWeight: done ? FontWeight.w600 : FontWeight.w400))),
           ]));
         })),
@@ -314,22 +314,22 @@ class OrderDetailScreen extends ConsumerWidget {
 
       // Payment proof
       if (o.paymentProof != null && o.paymentProof!.isNotEmpty) ...[
-        const Text('Чеки пардохт',
-            style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        Text('Чеки пардохт',
+            style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
         const SizedBox(height: 10),
         ClipRRect(borderRadius: BorderRadius.circular(12),
           child: CachedNetworkImage(imageUrl: o.paymentProof!, height: 180, width: double.infinity, fit: BoxFit.cover,
-            placeholder: (_, __) => Container(height: 180, color: AppColors.bgSurface),
-            errorWidget: (_, __, ___) => Container(height: 180, color: AppColors.bgSurface,
-                child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted)))),
+            placeholder: (_, __) => Container(height: 180, color: context.pal.surface),
+            errorWidget: (_, __, ___) => Container(height: 180, color: context.pal.surface,
+                child: Icon(Icons.broken_image_outlined, color: context.pal.textMuted)))),
         const SizedBox(height: 20),
       ],
 
       // Items count + note
       Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 0.5)),
+        decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: context.pal.border, width: 0.5)),
         child: Column(children: [
           _row('Маҳсулот', '${o.itemCount}'),
           const SizedBox(height: 8),
