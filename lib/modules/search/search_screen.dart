@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/app_l10n.dart';
 import '../../core/services/search_history_service.dart';
 import '../../providers/search_provider.dart';
 import '../../shared/widgets/product_card.dart';
@@ -87,7 +88,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       Expanded(child: SafeInput(
                         controller: _ctrl,
                         focusNode: _focus,
-                        hint: 'Ҷустуҷӯи маҳсулот...',
+                        hint: AppL10n.of(context).searchProductsHint,
                         textInputAction: TextInputAction.search,
                         fontSize: 14,
                         textColor: AppColors.textPrimary,
@@ -288,8 +289,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           _recentSearches(),
           _recentlyViewed(),
           // Popular searches
-          const Text('Ҷустуҷӯи маъмул',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(AppL10n.of(context).popularSearches,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8, runSpacing: 8,
@@ -309,8 +310,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
           const SizedBox(height: 28),
           // Categories
-          const Text('Категорияҳо',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(AppL10n.of(context).categories,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           categories.when(
             data: (cats) => GridView.builder(
