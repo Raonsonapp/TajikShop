@@ -1,24 +1,20 @@
 // ignore_for_file: depend_on_referenced_packages
 // ignore_for_file: curly_braces_in_flow_control_structures
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../data/models/product_model.dart';
-import '../../data/models/story_model.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/cart_provider.dart';
-import '../../providers/story_provider.dart';
 import '../../routes/route_names.dart';
-import '../stories/story_viewer_screen.dart';
 
 /// Instagram gradient барои ҳалқаи stories
 const _instaRing = SweepGradient(colors: [
@@ -79,9 +75,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             _header(),
-            SliverToBoxAdapter(child: _StoriesBar()),
-            const SliverToBoxAdapter(
-                child: Divider(color: AppColors.border, height: 1)),
+            SliverToBoxAdapter(child: _CategoryStrip()),
+            SliverToBoxAdapter(
+                child: Divider(color: context.pal.border, height: 1)),
 
             // Feed
             if (ps.error != null && ps.products.isEmpty)
@@ -178,173 +174,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// STORIES BAR — категорияҳо бо ҳалқаи градиентии Instagram
+// CATEGORY STRIP — категорияҳои маркетплейс (chip-ҳо)
 // ════════════════════════════════════════════════════════════════════════════
-class _StoriesBar extends ConsumerStatefulWidget {
+class _CategoryStrip extends ConsumerWidget {
   @override
-  ConsumerState<_StoriesBar> createState() => _StoriesBarState();
-}
-
-class _StoriesBarState extends ConsumerState<_StoriesBar> {
-  bool _posting = false;
-
-  Future<void> _createStory() async {
-    if (!ref.read(authProvider).isAuthenticated) {
-      context.go(RouteNames.login);
-      return;
-    }
-    final x = await ImagePicker().pickImage(
-        source: ImageSource.gallery, imageQuality: 80, maxWidth: 1080);
-    if (x == null) return;
-    setState(() => _posting = true);
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await StoryService.create(File(x.path).path);
-      ref.invalidate(storiesFeedProvider);
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Story нашр шуд ✅'),
-        backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
-    } catch (_) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Story нашр нашуд'),
-        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
-    } finally {
-      if (mounted) setState(() => _posting = false);
-    }
-  }
-
-  void _openViewer(List<StoryModel> stories, int index) {
-    Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => StoryViewerScreen(stories: stories, initialIndex: index)));
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cats = ref.watch(categoriesProvider);
-    final stories = ref.watch(storiesFeedProvider);
-    final user = ref.watch(authProvider).user;
-
-    final storyList = stories.maybeWhen(data: (l) => l, orElse: () => const <StoryModel>[]);
-
-    return SizedBox(
-      height: 104,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        children: [
-          // Your story (нашри story)
-          _StoryItem(
-            label: 'Story-и шумо',
-            avatar: user?.avatar,
-            isOwn: true,
-            busy: _posting,
-            onTap: _createStory,
+    return cats.when(
+      loading: () => SizedBox(
+        height: 46,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          itemCount: 6,
+          itemBuilder: (_, __) => Container(
+            width: 88,
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+                color: context.pal.surface,
+                borderRadius: BorderRadius.circular(20)),
           ),
-          // Story-ҳои воқеӣ
-          ...List.generate(storyList.length, (i) => _StoryItem(
-            label: storyList[i].userName,
-            imageUrl: storyList[i].avatarUrl ?? storyList[i].mediaUrl,
-            onTap: () => _openViewer(storyList, i),
-          )),
-          // Категорияҳо
-          ...cats.when(
-            data: (list) => list.map((c) => _StoryItem(
-              label: c.name,
-              imageUrl: c.image,
+        ),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (list) => SizedBox(
+        height: 46,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          itemCount: list.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, i) {
+            final c = list[i];
+            return GestureDetector(
               onTap: () {
                 ref.read(searchQueryProvider.notifier).state = c.name;
                 context.push(RouteNames.search);
               },
-            )),
-            loading: () => List.generate(5, (_) => const _StoryShimmer()),
-            error: (_, __) => const <Widget>[],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StoryItem extends StatelessWidget {
-  final String label;
-  final String? avatar;
-  final String? imageUrl;
-  final bool isOwn;
-  final bool busy;
-  final VoidCallback onTap;
-  const _StoryItem({required this.label, this.avatar, this.imageUrl,
-      this.isOwn = false, this.busy = false, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final img = avatar ?? imageUrl;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 72,
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        child: Column(children: [
-          Container(
-            width: 66, height: 66,
-            padding: const EdgeInsets.all(2.5),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: isOwn ? null : _instaRing,
-              color: isOwn ? AppColors.border : null,
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: const BoxDecoration(
-                  shape: BoxShape.circle, color: AppColors.bgDark),
-              child: Stack(children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.bgSurface,
-                  backgroundImage: (img != null && img.isNotEmpty)
-                      ? CachedNetworkImageProvider(img) : null,
-                  child: (img == null || img.isEmpty)
-                      ? Icon(isOwn ? Icons.person_rounded : Icons.category_rounded,
-                          color: AppColors.textMuted, size: 26)
-                      : null,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: context.pal.card,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: context.pal.border, width: 0.6),
                 ),
-                if (isOwn && !busy)
-                  Positioned(bottom: 0, right: 0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.info, shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.bgDark, width: 2)),
-                      child: const Icon(Icons.add, color: Colors.white, size: 14))),
-                if (busy)
-                  const Positioned.fill(child: Center(
-                    child: SizedBox(width: 22, height: 22,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))),
-              ]),
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 11)),
-        ]),
+                child: Text(c.name,
+                    style: TextStyle(
+                        color: context.pal.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600)),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
-}
-
-class _StoryShimmer extends StatelessWidget {
-  const _StoryShimmer();
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 72, margin: const EdgeInsets.symmetric(horizontal: 2),
-    child: Shimmer.fromColors(
-      baseColor: AppColors.shimmerBase, highlightColor: AppColors.shimmerHighlight,
-      child: Column(children: [
-        Container(width: 66, height: 66,
-            decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.shimmerBase)),
-        const SizedBox(height: 6),
-        Container(width: 44, height: 9, color: AppColors.shimmerBase),
-      ]),
-    ),
-  );
 }
 
 // ════════════════════════════════════════════════════════════════════════════
