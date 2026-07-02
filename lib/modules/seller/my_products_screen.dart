@@ -10,6 +10,7 @@ import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/error_screen.dart';
+import '../../shared/widgets/safe_input.dart';
 import 'manage_variants_screen.dart';
 
 class MyProductsScreen extends ConsumerWidget {
@@ -232,11 +233,9 @@ class _EditProductSheetState extends State<_EditProductSheet> {
         decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border, width: 0.5)),
         padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: TextField(controller: c, keyboardType: type, maxLines: maxLines,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-          cursorColor: AppColors.primary,
-          decoration: const InputDecoration(isCollapsed: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 13), border: InputBorder.none)),
+        child: SafeInput(controller: c, keyboardType: type, maxLines: maxLines,
+          hint: '',
+          textColor: AppColors.textPrimary, fontSize: 14),
       ),
       const SizedBox(height: 12),
     ]);

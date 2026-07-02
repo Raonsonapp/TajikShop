@@ -14,6 +14,8 @@ type User struct {
 	IsVerified   bool      `json:"is_verified"`
 	IsSeller     bool      `json:"is_seller"`
 	IsBanned     bool      `json:"is_banned"`
+	StoreLat     float64   `json:"store_lat"`
+	StoreLng     float64   `json:"store_lng"`
 	RefreshToken string    `json:"-"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`

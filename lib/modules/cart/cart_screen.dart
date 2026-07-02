@@ -18,6 +18,7 @@ import '../../routes/route_names.dart';
 import '../address/add_address_sheet.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/shimmer_card.dart';
+import '../../shared/widgets/safe_input.dart';
 
 class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
@@ -277,13 +278,10 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
             decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border, width: 0.5)),
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: TextField(controller: _couponCtrl,
+            child: SafeInput(controller: _couponCtrl,
+              hint: 'Кодро ворид кунед',
               textCapitalization: TextCapitalization.characters,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-              cursorColor: AppColors.primary,
-              decoration: const InputDecoration(isCollapsed: true,
-                  contentPadding: EdgeInsets.symmetric(vertical: 14), border: InputBorder.none,
-                  hintText: 'Кодро ворид кунед', hintStyle: TextStyle(color: AppColors.textMuted))))),
+              textColor: AppColors.textPrimary, fontSize: 14))),
           const SizedBox(width: 8),
           SizedBox(height: 46, child: ElevatedButton(
             onPressed: _checkingCoupon ? null : _applyCoupon,

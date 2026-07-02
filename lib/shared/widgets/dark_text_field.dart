@@ -1,35 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
+import 'safe_input.dart';
 
-/// Майдони матни 100% худсохт дар асоси EditableText-и хом.
+/// Майдони матни 100% худсохт (контейнери торик + `SafeInput`).
 ///
-/// Чаро на TextField: TextField-и Flutter ботинан
-/// `backgroundCursorColor: CupertinoColors.inactiveGray` (хокистаранг)
-/// мегузорад, ки дар баъзе дастгоҳҳои MIUI ҳамчун ФОНИ майдон рендер мешавад.
-/// Дар ин ҷо мо онро ба `Colors.transparent` мегузорем — пас ҳеҷ хокистарангӣ нест.
+/// `SafeInput` дар асоси `EditableText`-и хом аст ва
+/// `backgroundCursorColor: Colors.transparent` мегузорад — пас дар MIUI
+/// ягон фони хокистаранг рендер намешавад.
 class DarkTextField extends StatefulWidget {
   final TextEditingController controller;
   final String hint;
-  final IconData icon;
+  final IconData? icon;
   final bool obscure;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? formatters;
   final Widget? suffix;
   final TextInputAction textInputAction;
   final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onChanged;
+  final int maxLines;
+  final int? minLines;
 
   const DarkTextField({
     super.key,
     required this.controller,
     required this.hint,
-    required this.icon,
+    this.icon,
     this.obscure = false,
     this.keyboardType,
     this.formatters,
     this.suffix,
     this.textInputAction = TextInputAction.next,
     this.onSubmitted,
+    this.onChanged,
+    this.maxLines = 1,
+    this.minLines,
   });
 
   @override
@@ -42,7 +48,6 @@ class _DarkTextFieldState extends State<DarkTextField> {
   @override
   void initState() {
     super.initState();
-    widget.controller.addListener(_refresh);
     _focus.addListener(_refresh);
   }
 
@@ -52,7 +57,6 @@ class _DarkTextFieldState extends State<DarkTextField> {
 
   @override
   void dispose() {
-    widget.controller.removeListener(_refresh);
     _focus.dispose();
     super.dispose();
   }
@@ -60,12 +64,12 @@ class _DarkTextFieldState extends State<DarkTextField> {
   @override
   Widget build(BuildContext context) {
     final focused = _focus.hasFocus;
-    final empty = widget.controller.text.isEmpty;
+    final multiline = widget.maxLines != 1;
     return GestureDetector(
       onTap: () => _focus.requestFocus(),
       behavior: HitTestBehavior.opaque,
       child: Container(
-        height: 56,
+        constraints: BoxConstraints(minHeight: multiline ? 96 : 56),
         decoration: BoxDecoration(
           color: AppColors.bgSurface,
           borderRadius: BorderRadius.circular(14),
@@ -74,42 +78,36 @@ class _DarkTextFieldState extends State<DarkTextField> {
             width: focused ? 1.6 : 1,
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: Row(children: [
-          Icon(widget.icon, color: AppColors.textMuted, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Stack(alignment: Alignment.centerLeft, children: [
-              if (empty)
-                IgnorePointer(
-                  child: Text(widget.hint,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 15)),
-                ),
-              EditableText(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: Row(
+          crossAxisAlignment:
+              multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+          children: [
+            if (widget.icon != null) ...[
+              Padding(
+                padding: EdgeInsets.only(top: multiline ? 6 : 0),
+                child: Icon(widget.icon, color: AppColors.textMuted, size: 20),
+              ),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: SafeInput(
                 controller: widget.controller,
                 focusNode: _focus,
-                obscureText: widget.obscure,
+                hint: widget.hint,
+                obscure: widget.obscure,
                 keyboardType: widget.keyboardType,
-                inputFormatters: widget.formatters,
+                formatters: widget.formatters,
                 textInputAction: widget.textInputAction,
                 onSubmitted: widget.onSubmitted,
-                autocorrect: false,
-                enableSuggestions: false,
-                maxLines: 1,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
-                cursorColor: AppColors.primary,
-                // ✅ ин калидист — ягон фони хокистаранг намекашад
-                backgroundCursorColor: Colors.transparent,
-                selectionColor: AppColors.primary.withValues(alpha: 0.30),
-                selectionControls: materialTextSelectionControls,
-                cursorOpacityAnimates: false,
+                onChanged: widget.onChanged,
+                maxLines: widget.maxLines,
+                minLines: widget.minLines,
               ),
-            ]),
-          ),
-          if (widget.suffix != null) widget.suffix!,
-        ]),
+            ),
+            if (widget.suffix != null) widget.suffix!,
+          ],
+        ),
       ),
     );
   }

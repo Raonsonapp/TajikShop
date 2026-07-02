@@ -7,6 +7,7 @@ import '../../core/services/search_history_service.dart';
 import '../../providers/search_provider.dart';
 import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
+import '../../shared/widgets/safe_input.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -83,18 +84,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       const SizedBox(width: 12),
                       const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
                       const SizedBox(width: 8),
-                      Expanded(child: TextField(
+                      Expanded(child: SafeInput(
                         controller: _ctrl,
                         focusNode: _focus,
+                        hint: 'Ҷустуҷӯи маҳсулот...',
                         textInputAction: TextInputAction.search,
-                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-                        cursorColor: AppColors.primary,
-                        decoration: const InputDecoration(
-                          isCollapsed: true,
-                          border: InputBorder.none,
-                          hintText: 'Ҷустуҷӯи маҳсулот...',
-                          hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
-                        ),
+                        fontSize: 14,
+                        textColor: AppColors.textPrimary,
                         onChanged: (v) => ref.read(searchQueryProvider.notifier).state = v,
                         onSubmitted: _search,
                       )),

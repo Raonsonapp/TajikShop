@@ -13,6 +13,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/safe_input.dart';
 import '../seller/seller_verify_sheet.dart';
 
 class UploadScreen extends ConsumerStatefulWidget {
@@ -245,19 +246,14 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.border, width: 0.5)),
       padding: const EdgeInsets.all(12),
-      child: TextField(
+      child: SafeInput(
         controller: _descCtrl,
         maxLines: 5,
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.newline,
-        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-        cursorColor: AppColors.primary,
-        decoration: const InputDecoration(
-          isCollapsed: true,
-          border: InputBorder.none,
-          hintText: 'Маҳсулотро муфассал тавсиф кунед...',
-          hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 14),
-        ),
+        hint: 'Маҳсулотро муфассал тавсиф кунед...',
+        textColor: AppColors.textPrimary,
+        fontSize: 14,
       ),
     ),
   ]);
@@ -379,19 +375,13 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           border: Border.all(color: AppColors.border, width: 0.5),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: TextField(
+        child: SafeInput(
           controller: c,
           keyboardType: type,
-          inputFormatters: formatters,
-          textInputAction: TextInputAction.next,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-          cursorColor: AppColors.primary,
-          decoration: InputDecoration(
-            isCollapsed: true,
-            border: InputBorder.none,
-            hintText: hint,
-            hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-          ),
+          formatters: formatters,
+          hint: hint ?? '',
+          textColor: AppColors.textPrimary,
+          fontSize: 14,
         ),
       ),
     ]);

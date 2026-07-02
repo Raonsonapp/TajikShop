@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../providers/seller_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/error_screen.dart';
+import '../../shared/widgets/safe_input.dart';
 
 class ManageVariantsScreen extends ConsumerWidget {
   final String productId;
@@ -81,12 +82,9 @@ class ManageVariantsScreen extends ConsumerWidget {
             decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border, width: 0.5)),
             padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: TextField(controller: c, keyboardType: num ? TextInputType.number : null,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-              cursorColor: AppColors.primary,
-              decoration: InputDecoration(isCollapsed: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14), border: InputBorder.none,
-                  hintText: h, hintStyle: const TextStyle(color: AppColors.textMuted))),
+            child: SafeInput(controller: c, keyboardType: num ? TextInputType.number : null,
+              hint: h,
+              textColor: AppColors.textPrimary, fontSize: 14),
           ));
         return Padding(
           padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
