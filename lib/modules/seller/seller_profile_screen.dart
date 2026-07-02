@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../providers/seller_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/follow_provider.dart';
@@ -23,12 +24,12 @@ class SellerProfileScreen extends ConsumerWidget {
     final following = ref.watch(followProvider).contains(id);
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       appBar: AppBar(
-        backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(info.maybeWhen(data: (d) => d['name']?.toString() ?? name, orElse: () => name),
-            style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
       ),
       body: RefreshIndicator(
         color: AppColors.primary,
@@ -48,8 +49,8 @@ class SellerProfileScreen extends ConsumerWidget {
                 delegate: SliverChildBuilderDelegate((_, __) => const ShimmerCard(), childCount: 4))),
             error: (_, __) => const SliverToBoxAdapter(child: SizedBox()),
             data: (list) => list.isEmpty
-                ? const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.symmetric(vertical: 50),
-                    child: Center(child: Text('Маҳсулоте нест', style: TextStyle(color: AppColors.textMuted)))))
+                ? SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.symmetric(vertical: 50),
+                    child: Center(child: Text('Маҳсулоте нест', style: TextStyle(color: context.pal.textMuted)))))
                 : SliverPadding(padding: const EdgeInsets.fromLTRB(14, 0, 14, 100),
                     sliver: SliverGrid(
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -77,7 +78,7 @@ class SellerProfileScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(2.5),
             decoration: const BoxDecoration(shape: BoxShape.circle, gradient: AppColors.primaryGradient),
-            child: CircleAvatar(radius: 36, backgroundColor: AppColors.bgSurface,
+            child: CircleAvatar(radius: 36, backgroundColor: context.pal.surface,
               backgroundImage: avatar.isNotEmpty ? CachedNetworkImageProvider(avatar) : null,
               child: avatar.isEmpty ? const Icon(Icons.store_rounded, color: Colors.white, size: 32) : null),
           ),
@@ -93,13 +94,13 @@ class SellerProfileScreen extends ConsumerWidget {
         const SizedBox(height: 12),
         Row(children: [
           Text(d['name']?.toString() ?? 'Фурӯшанда',
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w800)),
+              style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w800)),
           if (verified) const Padding(padding: EdgeInsets.only(left: 6),
               child: Icon(Icons.verified_rounded, color: AppColors.info, size: 18)),
         ]),
         if (bio.isNotEmpty) ...[
           const SizedBox(height: 4),
-          Text(bio, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+          Text(bio, style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
         ],
         const SizedBox(height: 14),
         Row(children: [
@@ -124,17 +125,17 @@ class SellerProfileScreen extends ConsumerWidget {
             onTap: () => context.push('${RouteNames.chat}/$id?name=${Uri.encodeComponent(d['name']?.toString() ?? 'Фурӯшанда')}'),
             child: Container(
               height: 42, alignment: Alignment.center,
-              decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border)),
-              child: const Text('Паём', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+              decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: context.pal.border)),
+              child: Text('Паём', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
             ),
           )),
         ]),
         const SizedBox(height: 16),
-        const Divider(color: AppColors.border, height: 1),
+        Divider(color: context.pal.border, height: 1),
         const SizedBox(height: 8),
-        const Text('Маҳсулоти дӯкон',
-            style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+        Text('Маҳсулоти дӯкон',
+            style: TextStyle(color: context.pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
       ]),
     );

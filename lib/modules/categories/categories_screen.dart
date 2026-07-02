@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../providers/search_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../data/models/category_model.dart';
@@ -22,16 +23,16 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
     final products = ref.watch(productsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       appBar: AppBar(
-        backgroundColor: AppColors.bgDark,
+        backgroundColor: context.pal.scaffold,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimary, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new, color: context.pal.textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           _selected?.name ?? 'Категорияҳо',
-          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+          style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700),
         ),
       ),
       body: Row(
@@ -39,7 +40,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
           // Left: category list
           Container(
             width: 90,
-            color: AppColors.bgCard,
+            color: context.pal.card,
             child: cats.when(
               loading: () => ListView.builder(
                 itemCount: 8,
@@ -63,7 +64,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                       duration: const Duration(milliseconds: 200),
                       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.bgDark : Colors.transparent,
+                        color: isSelected ? context.pal.scaffold : Colors.transparent,
                         border: Border(
                           left: BorderSide(
                             color: isSelected ? AppColors.primary : Colors.transparent,
@@ -77,11 +78,11 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppColors.primary.withOpacity(0.15)
-                                : AppColors.bgSurface,
+                                : context.pal.surface,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(Icons.category_outlined,
-                              color: isSelected ? AppColors.primary : AppColors.textMuted,
+                              color: isSelected ? AppColors.primary : context.pal.textMuted,
                               size: 22),
                         ),
                         const SizedBox(height: 5),
@@ -90,7 +91,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                           maxLines: 2, overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                            color: isSelected ? AppColors.primary : context.pal.textSecondary,
                             fontSize: 10,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                           ),
@@ -105,12 +106,12 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
           // Right: products
           Expanded(
             child: _selected == null
-                ? const Center(
+                ? Center(
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.category_outlined, size: 70, color: AppColors.textMuted),
-                      SizedBox(height: 14),
+                      Icon(Icons.category_outlined, size: 70, color: context.pal.textMuted),
+                      const SizedBox(height: 14),
                       Text('Категорияро интихоб кунед',
-                          style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                          style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
                     ]),
                   )
                 : products.isLoading && products.products.isEmpty
@@ -122,12 +123,12 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                         itemBuilder: (_, __) => ShimmerCard(radius: 14),
                       )
                     : products.products.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Column(mainAxisSize: MainAxisSize.min, children: [
-                              Icon(Icons.inventory_2_outlined, size: 60, color: AppColors.textMuted),
-                              SizedBox(height: 12),
+                              Icon(Icons.inventory_2_outlined, size: 60, color: context.pal.textMuted),
+                              const SizedBox(height: 12),
                               Text('Маҳсулот нест',
-                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                                  style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
                             ]),
                           )
                         : GridView.builder(

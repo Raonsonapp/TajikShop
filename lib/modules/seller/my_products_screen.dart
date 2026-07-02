@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../data/models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/seller_provider.dart';
@@ -22,12 +23,12 @@ class MyProductsScreen extends ConsumerWidget {
     final products = ref.watch(sellerProductsProvider(uid));
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       appBar: AppBar(
-        backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: const Text('Маҳсулотҳоям',
-            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+        backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Маҳсулотҳоям',
+            style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
             icon: const Icon(Icons.add, color: AppColors.primary),
@@ -42,10 +43,10 @@ class MyProductsScreen extends ConsumerWidget {
             onRetry: () => ref.invalidate(sellerProductsProvider(uid))),
         data: (list) => list.isEmpty
             ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.inventory_2_outlined, size: 80, color: AppColors.textMuted),
+                Icon(Icons.inventory_2_outlined, size: 80, color: context.pal.textMuted),
                 const SizedBox(height: 16),
-                const Text('Шумо ҳоло маҳсулот надоред',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+                Text('Шумо ҳоло маҳсулот надоред',
+                    style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
                 const SizedBox(height: 20),
                 AppButton(text: 'Маҳсулот илова кунед', width: 220, height: 46,
                     onTap: () => context.push(RouteNames.addProduct)),
@@ -78,8 +79,8 @@ class _ProductRow extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border, width: 0.5)),
+      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: context.pal.border, width: 0.5)),
       child: Row(children: [
         ClipRRect(borderRadius: BorderRadius.circular(10),
           child: p.mainImage.isNotEmpty
@@ -89,10 +90,10 @@ class _ProductRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(p.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+              style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(height: 3),
           Text('${p.price.toStringAsFixed(0)} сом. • Захира: ${p.stock}',
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
           const SizedBox(height: 4),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -124,7 +125,7 @@ class _ProductRow extends StatelessWidget {
   void _openEdit(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: context.pal.card,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _EditProductSheet(product: product, onDone: onChanged));
@@ -132,13 +133,13 @@ class _ProductRow extends StatelessWidget {
 
   void _confirmDelete(BuildContext context) {
     showDialog(context: context, builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.bgCard,
-      title: const Text('Нест кардан?', style: TextStyle(color: AppColors.textPrimary)),
+      backgroundColor: context.pal.card,
+      title: Text('Нест кардан?', style: TextStyle(color: context.pal.textPrimary)),
       content: Text('"${product.title}" нест карда шавад?',
-          style: const TextStyle(color: AppColors.textSecondary)),
+          style: TextStyle(color: context.pal.textSecondary)),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx),
-            child: const Text('Не', style: TextStyle(color: AppColors.textMuted))),
+            child: Text('Не', style: TextStyle(color: context.pal.textMuted))),
         TextButton(
           onPressed: () async {
             Navigator.pop(ctx);
@@ -227,15 +228,15 @@ class _EditProductSheetState extends State<_EditProductSheet> {
 
   Widget _f(String label, TextEditingController c, {TextInputType? type, int maxLines = 1}) =>
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+      Text(label, style: TextStyle(color: context.pal.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
       const SizedBox(height: 5),
       Container(
-        decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 0.5)),
+        decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: context.pal.border, width: 0.5)),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: SafeInput(controller: c, keyboardType: type, maxLines: maxLines,
           hint: '',
-          textColor: AppColors.textPrimary, fontSize: 14),
+          textColor: context.pal.textPrimary, fontSize: 14),
       ),
       const SizedBox(height: 12),
     ]);
@@ -247,10 +248,10 @@ class _EditProductSheetState extends State<_EditProductSheet> {
       child: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Center(child: Container(width: 40, height: 4,
-              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+              decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 16),
-          const Text('Таҳрири маҳсулот', style: TextStyle(
-              color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          Text('Таҳрири маҳсулот', style: TextStyle(
+              color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 16),
           _f('Ном', _title),
           Row(children: [
@@ -264,8 +265,8 @@ class _EditProductSheetState extends State<_EditProductSheet> {
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             activeColor: AppColors.primary,
-            title: const Text('Фаъол (намоиш дар бозор)',
-                style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+            title: Text('Фаъол (намоиш дар бозор)',
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 14)),
             value: _active,
             onChanged: (v) => setState(() => _active = v)),
           const SizedBox(height: 12),
