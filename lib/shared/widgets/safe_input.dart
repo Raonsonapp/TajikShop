@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 
 /// Ядрои майдони матн дар асоси `EditableText`-и хом (БЕ контейнер).
 ///
@@ -25,8 +26,8 @@ class SafeInput extends StatefulWidget {
   final int? minLines;
   final bool autofocus;
   final TextCapitalization textCapitalization;
-  final Color textColor;
-  final Color hintColor;
+  final Color? textColor;
+  final Color? hintColor;
   final Color cursorColor;
   final double fontSize;
 
@@ -45,8 +46,8 @@ class SafeInput extends StatefulWidget {
     this.minLines,
     this.autofocus = false,
     this.textCapitalization = TextCapitalization.none,
-    this.textColor = Colors.white,
-    this.hintColor = AppColors.textMuted,
+    this.textColor,
+    this.hintColor,
     this.cursorColor = AppColors.primary,
     this.fontSize = 15,
   });
@@ -80,6 +81,8 @@ class _SafeInputState extends State<SafeInput> {
   Widget build(BuildContext context) {
     final multiline = widget.maxLines != 1;
     final empty = widget.controller.text.isEmpty;
+    final textColor = widget.textColor ?? context.pal.textPrimary;
+    final hintColor = widget.hintColor ?? context.pal.textMuted;
     // EditableText-и хом худ ба худ фокус намегирад — бо GestureDetector
     // ламскунӣ фокус мегирем, то дар ҳама ҷо клавиатура кушода шавад.
     return GestureDetector(
@@ -96,7 +99,7 @@ class _SafeInputState extends State<SafeInput> {
               widget.hint,
               maxLines: multiline ? null : 1,
               overflow: multiline ? null : TextOverflow.ellipsis,
-              style: TextStyle(color: widget.hintColor, fontSize: widget.fontSize),
+              style: TextStyle(color: hintColor, fontSize: widget.fontSize),
             ),
           ),
         EditableText(
@@ -115,7 +118,7 @@ class _SafeInputState extends State<SafeInput> {
           enableSuggestions: false,
           maxLines: widget.obscure ? 1 : widget.maxLines,
           minLines: widget.minLines,
-          style: TextStyle(color: widget.textColor, fontSize: widget.fontSize),
+          style: TextStyle(color: textColor, fontSize: widget.fontSize),
           cursorColor: widget.cursorColor,
           // ✅ ин калидист — ягон фони хокистаранг намекашад
           backgroundCursorColor: Colors.transparent,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/dark_text_field.dart';
@@ -52,7 +53,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -74,9 +75,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.primary, fontSize: 34, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
               const SizedBox(height: 8),
-              const Text('Хуш омадед! 👋\nБа ҳисоби худ ворид шавед',
+              Text('Хуш омадед! 👋\nБа ҳисоби худ ворид шавед',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 15, height: 1.4)),
+                  style: TextStyle(color: context.pal.textSecondary, fontSize: 15, height: 1.4)),
               const SizedBox(height: 36),
 
               if (_error != null)
@@ -105,7 +106,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   suffix: GestureDetector(
                     onTap: () => setState(() => _obscure = !_obscure),
                     child: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        color: AppColors.textMuted, size: 20))),
+                        color: context.pal.textMuted, size: 20))),
               const SizedBox(height: 26),
 
               SizedBox(

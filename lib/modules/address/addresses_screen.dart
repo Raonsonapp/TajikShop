@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../providers/address_provider.dart';
 import '../../shared/widgets/error_screen.dart';
 import 'add_address_sheet.dart';
@@ -12,12 +13,12 @@ class AddressesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final addresses = ref.watch(addressesProvider);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       appBar: AppBar(
-        backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: const Text('Суроғаҳои ман',
-            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+        backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Суроғаҳои ман',
+            style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
@@ -32,10 +33,10 @@ class AddressesScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(addressesProvider)),
         data: (list) => list.isEmpty
-            ? const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.location_off_outlined, size: 80, color: AppColors.textMuted),
-                SizedBox(height: 16),
-                Text('Суроға нест', style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+            ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.location_off_outlined, size: 80, color: context.pal.textMuted),
+                const SizedBox(height: 16),
+                Text('Суроға нест', style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
               ]))
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
@@ -44,9 +45,9 @@ class AddressesScreen extends ConsumerWidget {
                   final a = list[i];
                   return Container(
                     margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
+                    decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                            color: a.isDefault ? AppColors.primary : AppColors.border,
+                            color: a.isDefault ? AppColors.primary : context.pal.border,
                             width: a.isDefault ? 1.3 : 0.5)),
                     child: Row(children: [
                       Icon(a.hasLocation ? Icons.location_on : Icons.location_on_outlined,
@@ -54,7 +55,7 @@ class AddressesScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Row(children: [
-                          Text(a.title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+                          Text(a.title, style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
                           if (a.isDefault) ...[
                             const SizedBox(width: 8),
                             Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -64,11 +65,11 @@ class AddressesScreen extends ConsumerWidget {
                           ],
                         ]),
                         const SizedBox(height: 3),
-                        Text(a.full, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                        Text(a.full, style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
                       ])),
                       PopupMenuButton<String>(
-                        color: AppColors.bgElevated,
-                        icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+                        color: context.pal.elevated,
+                        icon: Icon(Icons.more_vert, color: context.pal.textSecondary),
                         onSelected: (v) async {
                           final messenger = ScaffoldMessenger.of(context);
                           try {
@@ -81,8 +82,8 @@ class AddressesScreen extends ConsumerWidget {
                           }
                         },
                         itemBuilder: (_) => [
-                          if (!a.isDefault) const PopupMenuItem(value: 'default',
-                              child: Text('Пешфарз кардан', style: TextStyle(color: AppColors.textPrimary))),
+                          if (!a.isDefault) PopupMenuItem(value: 'default',
+                              child: Text('Пешфарз кардан', style: TextStyle(color: context.pal.textPrimary))),
                           const PopupMenuItem(value: 'delete',
                               child: Text('Нест кардан', style: TextStyle(color: AppColors.error))),
                         ],

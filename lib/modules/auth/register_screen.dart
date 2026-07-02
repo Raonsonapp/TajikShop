@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/dark_text_field.dart';
@@ -60,7 +61,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -78,13 +79,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 38),
               )),
               const SizedBox(height: 18),
-              const Text('Ҳисоб созед 🚀',
+              Text('Ҳисоб созед 🚀',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white, fontSize: 27, fontWeight: FontWeight.w900)),
+                  style: TextStyle(color: context.pal.textPrimary, fontSize: 27, fontWeight: FontWeight.w900)),
               const SizedBox(height: 6),
-              const Text('Ба бозори Тоҷикистон хуш омадед',
+              Text('Ба бозори Тоҷикистон хуш омадед',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+                  style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
               const SizedBox(height: 30),
 
               if (_error != null)
@@ -108,10 +109,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_.]')),
                     LengthLimitingTextInputFormatter(30),
                   ]),
-              const Padding(
-                padding: EdgeInsets.only(left: 6, top: 6, bottom: 12),
+              Padding(
+                padding: const EdgeInsets.only(left: 6, top: 6, bottom: 12),
                 child: Text('Танҳо ҳарфҳои хурд, рақам ва _',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                    style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
               ),
               DarkTextField(controller: _emailCtrl, hint: 'Email', icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress),
@@ -123,7 +124,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   suffix: GestureDetector(
                     onTap: () => setState(() => _obscure = !_obscure),
                     child: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                        color: AppColors.textMuted, size: 20))),
+                        color: context.pal.textMuted, size: 20))),
               const SizedBox(height: 24),
 
               SizedBox(

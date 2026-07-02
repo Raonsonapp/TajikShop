@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../providers/address_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/safe_input.dart';
@@ -11,7 +12,7 @@ import 'map_picker_screen.dart';
 Future<bool?> showAddAddress(BuildContext context) {
   return showModalBottomSheet<bool>(
     context: context,
-    backgroundColor: AppColors.bgCard,
+    backgroundColor: context.pal.card,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
     builder: (_) => const AddAddressSheet(),
@@ -76,13 +77,13 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
 
   Widget _f(String hint, TextEditingController c) => Container(
     margin: const EdgeInsets.only(bottom: 10),
-    decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border, width: 0.5)),
+    decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.pal.border, width: 0.5)),
     padding: const EdgeInsets.symmetric(horizontal: 14),
     child: SafeInput(
       controller: c,
       hint: hint,
-      textColor: AppColors.textPrimary,
+      textColor: context.pal.textPrimary,
       fontSize: 14,
     ),
   );
@@ -93,9 +94,9 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
       padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Center(child: Container(width: 40, height: 4,
-            decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+            decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
         const SizedBox(height: 16),
-        const Text('Суроғаи нав', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+        Text('Суроғаи нав', style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 16),
         _f('Номи суроға (Хона, Кор...)', _title),
         _f('Шаҳр *', _city),
@@ -121,7 +122,7 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
                   style: TextStyle(
                       color: _lat != 0 ? AppColors.success : AppColors.primary,
                       fontSize: 13, fontWeight: FontWeight.w600))),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+              Icon(Icons.chevron_right_rounded, color: context.pal.textMuted),
             ]),
           ),
         ),

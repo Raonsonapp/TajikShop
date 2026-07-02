@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import 'safe_input.dart';
 
 /// Майдони матн бо контейнери торик + валидатсия (барои `Form`).
@@ -80,14 +81,14 @@ class _AppTextFieldState extends State<AppTextField> {
                 constraints:
                     BoxConstraints(minHeight: multiline ? 96 : 52),
                 decoration: BoxDecoration(
-                  color: AppColors.bgSurface,
+                  color: context.pal.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: hasError
                         ? AppColors.error
                         : focused
                             ? AppColors.primary
-                            : AppColors.border,
+                            : context.pal.border,
                     width: hasError || focused ? 1.4 : 0.5,
                   ),
                 ),
@@ -102,7 +103,7 @@ class _AppTextFieldState extends State<AppTextField> {
                       Padding(
                         padding: EdgeInsets.only(top: multiline ? 6 : 0),
                         child: Icon(widget.prefixIcon,
-                            color: AppColors.textMuted, size: 20),
+                            color: context.pal.textMuted, size: 20),
                       ),
                       const SizedBox(width: 10),
                     ],
@@ -127,7 +128,7 @@ class _AppTextFieldState extends State<AppTextField> {
                       GestureDetector(
                         onTap: widget.onSuffixTap,
                         child: Icon(widget.suffixIcon,
-                            color: AppColors.textMuted, size: 20),
+                            color: context.pal.textMuted, size: 20),
                       ),
                   ],
                 ),

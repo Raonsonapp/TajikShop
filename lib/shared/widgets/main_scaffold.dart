@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
 
@@ -27,9 +28,9 @@ class MainScaffold extends ConsumerWidget {
     return Scaffold(
       body: child,
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.bgDark,
-          border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
+        decoration: BoxDecoration(
+          color: context.pal.scaffold,
+          border: Border(top: BorderSide(color: context.pal.border, width: 0.5)),
         ),
         child: SafeArea(
           child: SizedBox(
@@ -56,7 +57,7 @@ class MainScaffold extends ConsumerWidget {
       child: GestureDetector(
         onTap: () => context.go(path),
         behavior: HitTestBehavior.opaque,
-        child: Icon(sel ? active : inactive, color: Colors.white, size: 28),
+        child: Icon(sel ? active : inactive, color: context.pal.textPrimary, size: 28),
       ),
     );
   }
@@ -74,11 +75,11 @@ class MainScaffold extends ConsumerWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                  color: sel ? Colors.white : Colors.transparent, width: 1.6),
+                  color: sel ? context.pal.textPrimary : Colors.transparent, width: 1.6),
             ),
             child: CircleAvatar(
               radius: 13,
-              backgroundColor: AppColors.bgSurface,
+              backgroundColor: context.pal.surface,
               backgroundImage: (avatar != null && avatar.isNotEmpty)
                   ? CachedNetworkImageProvider(avatar) : null,
               child: (avatar == null || avatar.isEmpty)

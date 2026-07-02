@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../routes/route_names.dart';
 import '../../core/app_l10n.dart';
 
@@ -15,22 +16,22 @@ class PhoneAuthScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppL10n.of(context);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+            icon: Icon(Icons.arrow_back_ios_rounded, color: context.pal.textPrimary),
             onPressed: () => context.go(RouteNames.login))),
       body: Center(child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const Text('📱', style: TextStyle(fontSize: 60)),
           const SizedBox(height: 24),
-          const Text('SMS верификация',
-              style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+          Text('SMS верификация',
+              style: TextStyle(color: context.pal.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
-          const Text('Ин функсия тез фаъол мешавад.\nҲозир бо Email ворид шавед.',
+          Text('Ин функсия тез фаъол мешавад.\nҲозир бо Email ворид шавед.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+              style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
           const SizedBox(height: 32),
           SizedBox(width: double.infinity,
             child: ElevatedButton(
@@ -53,7 +54,7 @@ class PhoneOtpScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      body: Center(child: Text('OTP', style: TextStyle(color: Colors.white))));
+      backgroundColor: context.pal.scaffold,
+      body: Center(child: Text('OTP', style: TextStyle(color: context.pal.textPrimary))));
   }
 }

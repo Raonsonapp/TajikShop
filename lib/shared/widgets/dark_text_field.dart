@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import 'safe_input.dart';
 
 /// Майдони матни 100% худсохт (контейнери торик + `SafeInput`).
@@ -71,10 +72,10 @@ class _DarkTextFieldState extends State<DarkTextField> {
       child: Container(
         constraints: BoxConstraints(minHeight: multiline ? 96 : 56),
         decoration: BoxDecoration(
-          color: AppColors.bgSurface,
+          color: context.pal.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: focused ? AppColors.primary : const Color(0xFF2A2A3E),
+            color: focused ? AppColors.primary : context.pal.border,
             width: focused ? 1.6 : 1,
           ),
         ),
@@ -86,7 +87,7 @@ class _DarkTextFieldState extends State<DarkTextField> {
             if (widget.icon != null) ...[
               Padding(
                 padding: EdgeInsets.only(top: multiline ? 6 : 0),
-                child: Icon(widget.icon, color: AppColors.textMuted, size: 20),
+                child: Icon(widget.icon, color: context.pal.textMuted, size: 20),
               ),
               const SizedBox(width: 10),
             ],
