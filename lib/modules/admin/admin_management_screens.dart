@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../providers/admin_provider.dart';
 import '../../providers/report_provider.dart';
@@ -20,17 +21,17 @@ class AdminUsersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final users = ref.watch(adminUsersProvider);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: const Text('Корбарон', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Корбарон', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminUsersProvider))]),
       body: users.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminUsersProvider)),
         data: (list) => list.isEmpty
-            ? const Center(child: Text('Корбар нест', style: TextStyle(color: AppColors.textSecondary)))
+            ? Center(child: Text('Корбар нест', style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) => _UserCard(user: list[i],
                     onChanged: () => ref.invalidate(adminUsersProvider))),
@@ -56,22 +57,22 @@ class _UserCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border, width: 0.5)),
+      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: context.pal.border, width: 0.5)),
       child: Row(children: [
-        CircleAvatar(radius: 20, backgroundColor: AppColors.bgSurface,
+        CircleAvatar(radius: 20, backgroundColor: context.pal.surface,
           child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
               style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700))),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Flexible(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600))),
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600))),
             if (verified) const Padding(padding: EdgeInsets.only(left: 4),
                 child: Icon(Icons.verified_rounded, color: AppColors.info, size: 14)),
           ]),
           Text(email, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
           const SizedBox(height: 4),
           Row(children: [
             _chip(role, AppColors.primary),
@@ -85,8 +86,8 @@ class _UserCard extends StatelessWidget {
           ]),
         ])),
         PopupMenuButton<String>(
-          color: AppColors.bgElevated,
-          icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+          color: context.pal.elevated,
+          icon: Icon(Icons.more_vert, color: context.pal.textSecondary),
           onSelected: (v) async {
             final messenger = ScaffoldMessenger.of(context);
             try {
@@ -102,8 +103,8 @@ class _UserCard extends StatelessWidget {
             }
           },
           itemBuilder: (_) => [
-            if (!verified) const PopupMenuItem(value: 'verify',
-                child: Text('Тасдиқи фурӯшанда', style: TextStyle(color: AppColors.textPrimary))),
+            if (!verified) PopupMenuItem(value: 'verify',
+                child: Text('Тасдиқи фурӯшанда', style: TextStyle(color: context.pal.textPrimary))),
             if (!banned) const PopupMenuItem(value: 'ban',
                 child: Text('Манъ кардан', style: TextStyle(color: AppColors.error)))
             else const PopupMenuItem(value: 'unban',
@@ -121,14 +122,14 @@ class _UserCard extends StatelessWidget {
 
   void _viewPassport(BuildContext context, String url) {
     showDialog(context: context, builder: (_) => Dialog(
-      backgroundColor: AppColors.bgCard,
+      backgroundColor: context.pal.card,
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Padding(padding: EdgeInsets.all(12),
-          child: Text('Паспорти корбар', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700))),
+        Padding(padding: const EdgeInsets.all(12),
+          child: Text('Паспорти корбар', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
         ClipRRect(borderRadius: BorderRadius.circular(8),
           child: InteractiveViewer(child: Image.network(url, fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => const Padding(padding: EdgeInsets.all(40),
-                child: Icon(Icons.broken_image_outlined, color: AppColors.textMuted, size: 48))))),
+            errorBuilder: (_, __, ___) => Padding(padding: const EdgeInsets.all(40),
+                child: Icon(Icons.broken_image_outlined, color: context.pal.textMuted, size: 48))))),
         const SizedBox(height: 8),
       ]),
     ));
@@ -151,17 +152,17 @@ class AdminOrdersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final orders = ref.watch(adminOrdersProvider);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: const Text('Ҳамаи фармоишҳо', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Ҳамаи фармоишҳо', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminOrdersProvider))]),
       body: orders.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminOrdersProvider)),
         data: (list) => list.isEmpty
-            ? const Center(child: Text('Фармоиш нест', style: TextStyle(color: AppColors.textSecondary)))
+            ? Center(child: Text('Фармоиш нест', style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) => _OrderCard(order: list[i],
                     onChanged: () => ref.invalidate(adminOrdersProvider))),
@@ -185,12 +186,12 @@ class _OrderCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border, width: 0.5)),
+      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: context.pal.border, width: 0.5)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Text('#${(id.length > 8 ? id.substring(0, 8) : id).toUpperCase()}',
-              style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 14)),
+              style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 14)),
           const Spacer(),
           Text('${total.toStringAsFixed(0)} сом.',
               style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 15)),
@@ -198,7 +199,7 @@ class _OrderCard extends StatelessWidget {
         const SizedBox(height: 4),
         if (created != null)
           Text(DateFormat('dd.MM.yyyy • HH:mm').format(created),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
         const SizedBox(height: 10),
         Row(children: [
           Container(
@@ -218,19 +219,19 @@ class _OrderCard extends StatelessWidget {
 
   void _changeStatus(BuildContext context) {
     final id = order['id']?.toString() ?? '';
-    showModalBottomSheet(context: context, backgroundColor: AppColors.bgCard,
+    showModalBottomSheet(context: context, backgroundColor: context.pal.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(width: 40, height: 4,
-              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2))),
+              decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 12),
-          const Text('Статуси нав', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text('Статуси нав', style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           ..._orderStatuses.map((s) => ListTile(
             leading: const Icon(Icons.circle, size: 10, color: AppColors.primary),
-            title: Text(_statusLabels[s] ?? s, style: const TextStyle(color: AppColors.textPrimary)),
+            title: Text(_statusLabels[s] ?? s, style: TextStyle(color: context.pal.textPrimary)),
             onTap: () async {
               Navigator.pop(context);
               final messenger = ScaffoldMessenger.of(context);
@@ -260,10 +261,10 @@ class AdminCategoriesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cats = ref.watch(categoriesProvider);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: const Text('Категорияҳо', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700))),
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Категорияҳо', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         onPressed: () => _addCategory(context, ref),
@@ -273,16 +274,16 @@ class AdminCategoriesScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(categoriesProvider)),
         data: (list) => list.isEmpty
-            ? const Center(child: Text('Категория нест', style: TextStyle(color: AppColors.textSecondary)))
+            ? Center(child: Text('Категория нест', style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) => Container(
                   margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border, width: 0.5)),
+                  decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: context.pal.border, width: 0.5)),
                   child: Row(children: [
                     const Icon(Icons.category_outlined, color: AppColors.primary, size: 20),
                     const SizedBox(width: 12),
-                    Text(list[i].name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w500)),
+                    Text(list[i].name, style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w500)),
                   ]))),
       ),
     );
@@ -291,14 +292,14 @@ class AdminCategoriesScreen extends ConsumerWidget {
   void _addCategory(BuildContext context, WidgetRef ref) {
     final ctrl = TextEditingController();
     showDialog(context: context, builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.bgCard,
-      title: const Text('Категорияи нав', style: TextStyle(color: AppColors.textPrimary)),
+      backgroundColor: context.pal.card,
+      title: Text('Категорияи нав', style: TextStyle(color: context.pal.textPrimary)),
       content: SafeInput(controller: ctrl, autofocus: true,
         hint: 'Номи категория',
-        textColor: AppColors.textPrimary),
+        textColor: context.pal.textPrimary),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx),
-            child: const Text('Бекор', style: TextStyle(color: AppColors.textMuted))),
+            child: Text('Бекор', style: TextStyle(color: context.pal.textMuted))),
         TextButton(
           onPressed: () async {
             final name = ctrl.text.trim();
@@ -332,10 +333,10 @@ class AdminCouponsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final coupons = ref.watch(adminCouponsProvider);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: const Text('Купонҳо', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700))),
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Купонҳо', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         onPressed: () => _create(context, ref),
@@ -345,7 +346,7 @@ class AdminCouponsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminCouponsProvider)),
         data: (list) => list.isEmpty
-            ? const Center(child: Text('Купон нест', style: TextStyle(color: AppColors.textSecondary)))
+            ? Center(child: Text('Купон нест', style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) {
                   final c = list[i];
@@ -353,8 +354,8 @@ class AdminCouponsScreen extends ConsumerWidget {
                   final max = (c['max_uses'] as num?)?.toInt() ?? 0;
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border, width: 0.5)),
+                    decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: context.pal.border, width: 0.5)),
                     child: Row(children: [
                       Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.15),
@@ -364,9 +365,9 @@ class AdminCouponsScreen extends ConsumerWidget {
                       const SizedBox(width: 12),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text('-${c['discount_percent'] ?? 0}% тахфиф',
-                            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                            style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
                         Text('Истифода: $used${max > 0 ? ' / $max' : ' (бемаҳдуд)'}',
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                            style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
                       ])),
                     ]));
                 }),
@@ -379,8 +380,8 @@ class AdminCouponsScreen extends ConsumerWidget {
     final disc = TextEditingController(text: '10');
     final maxU = TextEditingController(text: '0');
     showDialog(context: context, builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.bgCard,
-      title: const Text('Купони нав', style: TextStyle(color: AppColors.textPrimary)),
+      backgroundColor: context.pal.card,
+      title: Text('Купони нав', style: TextStyle(color: context.pal.textPrimary)),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         _dlgField(code, 'Код (мас. BAHOR50)', cap: true),
         _dlgField(disc, 'Тахфиф (%)', number: true),
@@ -388,7 +389,7 @@ class AdminCouponsScreen extends ConsumerWidget {
       ]),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx),
-            child: const Text('Бекор', style: TextStyle(color: AppColors.textMuted))),
+            child: Text('Бекор', style: TextStyle(color: context.pal.textMuted))),
         TextButton(
           onPressed: () async {
             final cd = code.text.trim();
@@ -430,17 +431,17 @@ class AdminWalletScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pending = ref.watch(adminWalletPendingProvider);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: const Text('Тасдиқи пополнения', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Тасдиқи пополнения', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminWalletPendingProvider))]),
       body: pending.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminWalletPendingProvider)),
         data: (list) => list.isEmpty
-            ? const Center(child: Text('Дархости интизор нест', style: TextStyle(color: AppColors.textSecondary)))
+            ? Center(child: Text('Дархости интизор нест', style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) {
                   final t = list[i];
@@ -448,17 +449,17 @@ class AdminWalletScreen extends ConsumerWidget {
                   final amount = (t['amount'] as num?)?.toDouble() ?? 0;
                   return Container(
                     margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border, width: 0.5)),
+                    decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: context.pal.border, width: 0.5)),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
                         Expanded(child: Text(t['name']?.toString() ?? t['email']?.toString() ?? 'Корбар',
-                            style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600))),
+                            style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600))),
                         Text('+${amount.toStringAsFixed(0)} сом.',
                             style: const TextStyle(color: AppColors.success, fontSize: 16, fontWeight: FontWeight.w800)),
                       ]),
                       const SizedBox(height: 4),
-                      Text(t['email']?.toString() ?? '', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      Text(t['email']?.toString() ?? '', style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
                       const SizedBox(height: 10),
                       Row(children: [
                         Expanded(child: OutlinedButton(
@@ -505,17 +506,17 @@ class AdminReportsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final reports = ref.watch(adminReportsProvider);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: const Text('Гузоришҳо', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Гузоришҳо', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminReportsProvider))]),
       body: reports.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminReportsProvider)),
         data: (list) => list.isEmpty
-            ? const Center(child: Text('Гузориш нест', style: TextStyle(color: AppColors.textSecondary)))
+            ? Center(child: Text('Гузориш нест', style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) {
                   final r = list[i];
@@ -525,8 +526,8 @@ class AdminReportsScreen extends ConsumerWidget {
                   if (r['created_at'] != null) date = DateTime.tryParse(r['created_at'].toString());
                   return Container(
                     margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: resolved ? AppColors.border : AppColors.error.withValues(alpha: 0.4), width: 0.6)),
+                    decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: resolved ? context.pal.border : AppColors.error.withValues(alpha: 0.4), width: 0.6)),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
                         Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -546,14 +547,14 @@ class AdminReportsScreen extends ConsumerWidget {
                       ]),
                       const SizedBox(height: 6),
                       Text(r['reason']?.toString() ?? '',
-                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                          style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
                       Text('ID: ${r['target_id']?.toString() ?? ''}',
                           maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                          style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
                       if (date != null)
                         Text(DateFormat('dd.MM.yyyy • HH:mm').format(date),
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                            style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
                     ]));
                 }),
       ),
@@ -571,17 +572,17 @@ class AdminReturnsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final returns = ref.watch(adminReturnsProvider);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
-      appBar: AppBar(backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
-        title: const Text('Бозгашт ва иваз', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Бозгашт ва иваз', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminReturnsProvider))]),
       body: returns.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminReturnsProvider)),
         data: (list) => list.isEmpty
-            ? const Center(child: Text('Дархост нест', style: TextStyle(color: AppColors.textSecondary)))
+            ? Center(child: Text('Дархост нест', style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) {
                   final r = list[i];
@@ -592,25 +593,25 @@ class AdminReturnsScreen extends ConsumerWidget {
                   if (r['created_at'] != null) date = DateTime.tryParse(r['created_at'].toString());
                   return Container(
                     margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: status == 'pending' ? AppColors.warning.withValues(alpha: 0.4) : AppColors.border, width: 0.6)),
+                    decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: status == 'pending' ? AppColors.warning.withValues(alpha: 0.4) : context.pal.border, width: 0.6)),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
                         Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
                           child: Text(type, style: const TextStyle(color: AppColors.warning, fontSize: 10, fontWeight: FontWeight.w600))),
                         const SizedBox(width: 8),
-                        Text(r['user_name']?.toString() ?? '', style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text(r['user_name']?.toString() ?? '', style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
                         const Spacer(),
                         Text(status, style: TextStyle(
                             color: status == 'rejected' ? AppColors.error : (status == 'completed' || status == 'approved' ? AppColors.success : AppColors.warning),
                             fontSize: 11, fontWeight: FontWeight.w600)),
                       ]),
                       const SizedBox(height: 6),
-                      Text(r['reason']?.toString() ?? '', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                      Text(r['reason']?.toString() ?? '', style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
                       Text('Фармоиш: #${(r['order_id']?.toString() ?? '').padRight(8).substring(0, 8).toUpperCase()}'
                           '${date != null ? ' • ${DateFormat('dd.MM.yyyy').format(date)}' : ''}',
-                          style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                          style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
                       if (status == 'pending' || status == 'approved') ...[
                         const SizedBox(height: 10),
                         Row(children: [

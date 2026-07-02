@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../data/models/order_model.dart';
 import '../../providers/wallet_provider.dart';
@@ -49,15 +50,15 @@ class OrderDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final order = ref.watch(orderDetailProvider(id));
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       appBar: AppBar(
-        backgroundColor: AppColors.bgDark,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        backgroundColor: context.pal.scaffold,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : context.go(RouteNames.orders)),
-        title: const Text('Фармоиш', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
+        title: Text('Фармоиш', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(orderDetailProvider(id)))],
       ),
       body: order.when(
@@ -75,13 +76,13 @@ class OrderDetailScreen extends ConsumerWidget {
 
   Future<void> _cancel(BuildContext context, WidgetRef ref) async {
     final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.bgCard,
-      title: const Text('Бекор кардан?', style: TextStyle(color: AppColors.textPrimary)),
-      content: const Text('Фармоиш бекор карда шавад? Агар бо ҳамён пардохт шуда бошад, пул бармегардад.',
-          style: TextStyle(color: AppColors.textSecondary)),
+      backgroundColor: context.pal.card,
+      title: Text('Бекор кардан?', style: TextStyle(color: context.pal.textPrimary)),
+      content: Text('Фармоиш бекор карда шавад? Агар бо ҳамён пардохт шуда бошад, пул бармегардад.',
+          style: TextStyle(color: context.pal.textSecondary)),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Не', style: TextStyle(color: AppColors.textMuted))),
+            child: Text('Не', style: TextStyle(color: context.pal.textMuted))),
         TextButton(onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Бале, бекор кун', style: TextStyle(color: AppColors.error))),
       ],
@@ -114,13 +115,13 @@ class OrderDetailScreen extends ConsumerWidget {
 
   Future<void> _confirm(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-      backgroundColor: AppColors.bgCard,
-      title: const Text('Расидани молро тасдиқ мекунед?', style: TextStyle(color: AppColors.textPrimary)),
-      content: const Text('Танҳо вақте молро гирифтед тасдиқ кунед. Баъд аз тасдиқ, маблағ ба фурӯшанда дода мешавад.',
-          style: TextStyle(color: AppColors.textSecondary)),
+      backgroundColor: context.pal.card,
+      title: Text('Расидани молро тасдиқ мекунед?', style: TextStyle(color: context.pal.textPrimary)),
+      content: Text('Танҳо вақте молро гирифтед тасдиқ кунед. Баъд аз тасдиқ, маблағ ба фурӯшанда дода мешавад.',
+          style: TextStyle(color: context.pal.textSecondary)),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Ҳоло не', style: TextStyle(color: AppColors.textMuted))),
+            child: Text('Ҳоло не', style: TextStyle(color: context.pal.textMuted))),
         TextButton(onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Бале, гирифтам', style: TextStyle(color: AppColors.success))),
       ],
@@ -184,15 +185,15 @@ class OrderDetailScreen extends ConsumerWidget {
   void _requestReturn(BuildContext context, WidgetRef ref, OrderModel o) {
     final reasonCtrl = TextEditingController();
     String type = 'return';
-    showModalBottomSheet(context: context, backgroundColor: AppColors.bgCard, isScrollControlled: true,
+    showModalBottomSheet(context: context, backgroundColor: context.pal.card, isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) => Padding(
         padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Center(child: Container(width: 40, height: 4,
-              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+              decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 16),
-          const Text('Бозгашт / Иваз', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          Text('Бозгашт / Иваз', style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 14),
           Row(children: [
             _typeChip('return', 'Бозгашти пул', type, (v) => setSheet(() => type = v)),

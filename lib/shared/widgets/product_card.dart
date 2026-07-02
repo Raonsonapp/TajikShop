@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../data/models/product_model.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/cart_provider.dart';
@@ -84,7 +85,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
       onTap: () => context.push('/product/${p.id}'),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.bgCard,
+          color: context.pal.card,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0xFF2A2A3E), width: 0.8),
           boxShadow: [
@@ -222,7 +223,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                 children: [
                   // Title
                   Text(p.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white,
+                      style: TextStyle(color: context.pal.textPrimary,
                           fontSize: 12, fontWeight: FontWeight.w600, height: 1.35)),
 
                   // Rating
@@ -279,8 +280,8 @@ class _ProductCardState extends ConsumerState<ProductCard>
   }
 
   Widget _shimmer() => Shimmer.fromColors(
-      baseColor: AppColors.shimmerBase, highlightColor: AppColors.shimmerHighlight,
-      child: Container(color: AppColors.shimmerBase));
+      baseColor: context.pal.shimmerBase, highlightColor: context.pal.shimmerHighlight,
+      child: Container(color: context.pal.shimmerBase));
 
   Widget _noImage() => Container(
       color: const Color(0xFF1C1C2E),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../routes/route_names.dart';
@@ -18,12 +19,12 @@ class AdminDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(adminStatsProvider);
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       appBar: AppBar(
-        backgroundColor: AppColors.bgDark,
-        title: const Text('Панели Админ',
-            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        backgroundColor: context.pal.scaffold,
+        title: Text('Панели Админ',
+            style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
       ),
       body: RefreshIndicator(
         color: AppColors.primary,
@@ -49,17 +50,17 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
 
-              const Text('Оморҳо',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              Text('Оморҳо',
+                  style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
 
               stats.when(
                 loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
                 error: (e, _) => Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14)),
+                  decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14)),
                   child: Text('Маълумот нест (${e.toString().split(':').first})',
-                      style: const TextStyle(color: AppColors.textSecondary)),
+                      style: TextStyle(color: context.pal.textSecondary)),
                 ),
                 data: (data) => GridView.count(
                   shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
@@ -75,8 +76,8 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
 
               const SizedBox(height: 24),
-              const Text('Идораи системаи',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              Text('Идораи системаи',
+                  style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 12),
 
               _ManageCard(
@@ -128,13 +129,13 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border, width: 0.5)),
+        decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: context.pal.border, width: 0.5)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(icon, color: color, size: 22),
           const SizedBox(height: 8),
-          Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
-          Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          Text(value, style: TextStyle(color: context.pal.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
+          Text(label, style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
         ]),
       );
 }
@@ -151,18 +152,18 @@ class _ManageCard extends StatelessWidget {
         child: Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border, width: 0.5)),
+          decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: context.pal.border, width: 0.5)),
           child: Row(children: [
             Container(width: 44, height: 44,
                 decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: color, size: 22)),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(label, style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
-              Text(subtitle, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+              Text(label, style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+              Text(subtitle, style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
             ])),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+            Icon(Icons.chevron_right_rounded, color: context.pal.textMuted),
           ]),
         ),
       );

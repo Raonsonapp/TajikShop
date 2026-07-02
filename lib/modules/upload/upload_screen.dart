@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../providers/auth_provider.dart';
@@ -154,26 +155,26 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     final cats = ref.watch(categoriesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.bgDark,
+      backgroundColor: context.pal.scaffold,
       appBar: AppBar(
-        backgroundColor: AppColors.bgDark, elevation: 0,
+        backgroundColor: context.pal.scaffold, elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: context.pal.textPrimary),
           onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : context.go(RouteNames.home)),
-        title: const Text('Эълон додан',
-            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 18)),
+        title: Text('Эълон додан',
+            style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 18)),
         actions: [TextButton(onPressed: _reset,
             child: const Text('Тоза кардан',
                 style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)))],
       ),
       body: Column(children: [
-        Container(color: AppColors.bgDark, padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        Container(color: context.pal.scaffold, padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           child: Row(children: [
             Text('$_step / 2', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 16)),
             const SizedBox(width: 12),
             Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(value: _step == 1 ? 0.5 : 1.0,
-                  backgroundColor: AppColors.bgSurface, color: AppColors.primary, minHeight: 5))),
+                  backgroundColor: context.pal.surface, color: AppColors.primary, minHeight: 5))),
           ])),
         Expanded(child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -198,7 +199,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         const SizedBox(height: 8),
         const Text('Расм илова кунед', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 14)),
         const SizedBox(height: 3),
-        const Text('То 5 расм • хаҷм автоматӣ кам мешавад', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+        Text('То 5 расм • хаҷм автоматӣ кам мешавад', style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
       ]))),
     const SizedBox(height: 10),
     if (_images.isNotEmpty) SizedBox(height: 86, child: ListView.builder(
@@ -243,8 +244,8 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     _sec('3. Тавсиф', null),
     Container(
       height: 120,
-      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border, width: 0.5)),
+      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: context.pal.border, width: 0.5)),
       padding: const EdgeInsets.all(12),
       child: SafeInput(
         controller: _descCtrl,
@@ -252,7 +253,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.newline,
         hint: 'Маҳсулотро муфассал тавсиф кунед...',
-        textColor: AppColors.textPrimary,
+        textColor: context.pal.textPrimary,
         fontSize: 14,
       ),
     ),
@@ -287,17 +288,17 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           const SizedBox(height: 3),
           Text('Агар шумо ҳанӯз фурӯшанда набошед, '
               '"Нашр кардан" автоматӣ шуморо фурӯшанда мекунад.',
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
         ])),
       ])),
     const SizedBox(height: 20),
 
     if (_becomingS) Container(padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12)),
-      child: const Row(children: [
-        SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
-        SizedBox(width: 12),
-        Text('Фурӯшанда шудан...', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12)),
+      child: Row(children: [
+        const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
+        const SizedBox(width: 12),
+        Text('Фурӯшанда шудан...', style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
       ])),
 
     if (_error != null) Container(padding: const EdgeInsets.all(12),
@@ -314,16 +315,16 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       const SizedBox(height: 12),
       ClipRRect(borderRadius: BorderRadius.circular(8),
         child: LinearProgressIndicator(value: _progress,
-            backgroundColor: AppColors.bgSurface, color: AppColors.primary, minHeight: 8)),
+            backgroundColor: context.pal.surface, color: AppColors.primary, minHeight: 8)),
       const SizedBox(height: 6),
-      Text('${(_progress * 100).round()}% бор шуд', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+      Text('${(_progress * 100).round()}% бор шуд', style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
     ]),
   ]);
 
   Widget _bottomBar() => Container(
     padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
-    decoration: const BoxDecoration(color: AppColors.bgCard,
-        border: Border(top: BorderSide(color: AppColors.border))),
+    decoration: BoxDecoration(color: context.pal.card,
+        border: Border(top: BorderSide(color: context.pal.border))),
     child: Row(children: [
       Expanded(child: OutlinedButton.icon(
         onPressed: _loading ? null : (_step == 2 ? () => setState(() { _step = 1; _error = null; }) : () {}),
@@ -357,22 +358,22 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
   Widget _sec(String t, String? s) => Padding(padding: const EdgeInsets.only(bottom: 10),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(t, style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+      Text(t, style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
       if (s != null) ...[const SizedBox(height: 2),
-        Text(s, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12))],
+        Text(s, style: TextStyle(color: context.pal.textSecondary, fontSize: 12))],
     ]));
 
   Widget _field(String label, TextEditingController c,
       {String? hint, TextInputType? type, List<TextInputFormatter>? formatters}) =>
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+      Text(label, style: TextStyle(color: context.pal.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
       const SizedBox(height: 5),
       Container(
         height: 50,
         decoration: BoxDecoration(
-          color: AppColors.bgCard,
+          color: context.pal.card,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(color: context.pal.border, width: 0.5),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: SafeInput(
@@ -380,7 +381,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           keyboardType: type,
           formatters: formatters,
           hint: hint ?? '',
-          textColor: AppColors.textPrimary,
+          textColor: context.pal.textPrimary,
           fontSize: 14,
         ),
       ),
@@ -389,26 +390,26 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   Widget _drop<T>({required String label, required T? value, required String hint,
       required List<DropdownMenuItem<T>> items, required void Function(T?) onChanged}) =>
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+      Text(label, style: TextStyle(color: context.pal.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
       const SizedBox(height: 5),
       Container(padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border, width: 0.5)),
+        decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: context.pal.border, width: 0.5)),
         child: DropdownButtonHideUnderline(child: DropdownButton<T>(
-          value: value, isExpanded: true, dropdownColor: AppColors.bgCard,
-          hint: Text(hint, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMuted),
+          value: value, isExpanded: true, dropdownColor: context.pal.card,
+          hint: Text(hint, style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
+          icon: Icon(Icons.keyboard_arrow_down_rounded, color: context.pal.textMuted),
           items: items, onChanged: onChanged,
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13)))),
+          style: TextStyle(color: context.pal.textPrimary, fontSize: 13)))),
     ]);
 
-  Widget _notAuth() => Scaffold(backgroundColor: AppColors.bgDark,
-    appBar: AppBar(backgroundColor: AppColors.bgDark, elevation: 0,
-        title: const Text('Эълон додан', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700))),
+  Widget _notAuth() => Scaffold(backgroundColor: context.pal.scaffold,
+    appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
+        title: Text('Эълон додан', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
     body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Icon(Icons.lock_outline_rounded, size: 80, color: AppColors.textMuted),
+      Icon(Icons.lock_outline_rounded, size: 80, color: context.pal.textMuted),
       const SizedBox(height: 16),
-      const Text('Барои эълон додан ворид шавед', style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+      Text('Барои эълон додан ворид шавед', style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
       const SizedBox(height: 20),
       AppButton(text: 'Ворид шавед', width: 200, height: 46, onTap: () => context.go(RouteNames.login)),
     ])));
