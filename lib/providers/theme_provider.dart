@@ -5,13 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _kKey = 'app_theme_mode';
 
 class ThemeNotifier extends StateNotifier<ThemeMode> {
-  ThemeNotifier() : super(ThemeMode.dark) {
+  // Пешфарз РАВШАН (мисли template-и ecommerce)
+  ThemeNotifier() : super(ThemeMode.light) {
     _load();
   }
   Future<void> _load() async {
     try {
       final p = await SharedPreferences.getInstance();
-      if (mounted) state = p.getString(_kKey) == 'light' ? ThemeMode.light : ThemeMode.dark;
+      if (mounted) state = p.getString(_kKey) == 'dark' ? ThemeMode.dark : ThemeMode.light;
     } catch (_) {}
   }
   void toggle() { state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark; _save(); }

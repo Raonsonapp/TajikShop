@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 import 'app_palette.dart';
 
@@ -15,17 +16,17 @@ class AppTheme {
       onPrimary: Colors.white, onSecondary: Colors.white,
       onSurface: AppColors.textPrimary, onError: Colors.white,
     ),
-    textTheme: const TextTheme(
+    textTheme: GoogleFonts.montserratTextTheme(const TextTheme(
       titleLarge: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 20),
       titleMedium: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 16),
       bodyLarge: TextStyle(color: AppColors.textPrimary, fontSize: 16),
       bodyMedium: TextStyle(color: AppColors.textSecondary, fontSize: 14),
       bodySmall: TextStyle(color: AppColors.textMuted, fontSize: 12),
-    ),
-    appBarTheme: const AppBarTheme(
+    )),
+    appBarTheme: AppBarTheme(
       backgroundColor: AppColors.bgDark, elevation: 0,
-      iconTheme: IconThemeData(color: AppColors.textPrimary),
-      titleTextStyle: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700),
+      iconTheme: const IconThemeData(color: AppColors.textPrimary),
+      titleTextStyle: GoogleFonts.montserrat(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w700),
     ),
     inputDecorationTheme: _inputTheme(AppColors.border),
     cardTheme: CardTheme(color: AppColors.bgCard, elevation: 0,
@@ -47,17 +48,17 @@ class AppTheme {
       onPrimary: Colors.white, onSecondary: Colors.white,
       onSurface: Color(0xFF0D0D1A), onError: Colors.white,
     ),
-    textTheme: const TextTheme(
+    textTheme: GoogleFonts.montserratTextTheme(const TextTheme(
       titleLarge: TextStyle(color: Color(0xFF0D0D1A), fontWeight: FontWeight.w700, fontSize: 20),
       titleMedium: TextStyle(color: Color(0xFF0D0D1A), fontWeight: FontWeight.w600, fontSize: 16),
       bodyLarge: TextStyle(color: Color(0xFF0D0D1A), fontSize: 16),
       bodyMedium: TextStyle(color: Color(0xFF5A5D70), fontSize: 14),
       bodySmall: TextStyle(color: Color(0xFF8A8DA0), fontSize: 12),
-    ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0xFFF4F6FA), elevation: 0,
-      iconTheme: IconThemeData(color: Color(0xFF0D0D1A)),
-      titleTextStyle: TextStyle(color: Color(0xFF0D0D1A), fontSize: 20, fontWeight: FontWeight.w700),
+    )),
+    appBarTheme: AppBarTheme(
+      backgroundColor: const Color(0xFFF4F6FA), elevation: 0,
+      iconTheme: const IconThemeData(color: Color(0xFF0D0D1A)),
+      titleTextStyle: GoogleFonts.montserrat(color: const Color(0xFF0D0D1A), fontSize: 20, fontWeight: FontWeight.w700),
     ),
     inputDecorationTheme: _inputTheme(const Color(0xFFE2E5EE)),
     cardTheme: CardTheme(color: const Color(0xFFFFFFFF), elevation: 0,
