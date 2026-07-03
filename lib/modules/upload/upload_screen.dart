@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
+import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
@@ -74,7 +75,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     final ok = await showSellerVerify(context);
     final nowSeller = ok == true && (ref.read(authProvider).user?.isSeller ?? false);
     if (!nowSeller) {
-      setState(() => _error = 'Барои нашр аввал фурӯшанда шавед (паспорт)');
+      setState(() => _error = AppL10n.of(context).becomeSellerFirst);
     }
     return nowSeller;
   }
@@ -123,10 +124,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Row(children: [
-          Icon(Icons.check_circle_rounded, color: Colors.white),
-          SizedBox(width: 10),
-          Text('Эълон нашр шуд! 🎉', style: TextStyle(fontWeight: FontWeight.w600)),
+        content: Row(children: [
+          const Icon(Icons.check_circle_rounded, color: Colors.white),
+          const SizedBox(width: 10),
+          Text(AppL10n.of(context).productPublished, style: const TextStyle(fontWeight: FontWeight.w600)),
         ]),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
@@ -134,7 +135,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       _reset();
       context.go(RouteNames.profile);
     } on DioException catch (e) {
-      setState(() => _error = e.message ?? 'Хатои номаълум');
+      setState(() => _error = e.message ?? AppL10n.of(context).unknownError);
     } catch (e) {
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -161,11 +162,11 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new, size: 20, color: context.pal.textPrimary),
           onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : context.go(RouteNames.home)),
-        title: Text('Эълон додан',
+        title: Text(AppL10n.of(context).postListing,
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 18)),
         actions: [TextButton(onPressed: _reset,
-            child: const Text('Тоза кардан',
-                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)))],
+            child: Text(AppL10n.of(context).clearAll,
+                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)))],
       ),
       body: Column(children: [
         Container(color: context.pal.scaffold, padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -185,7 +186,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   }
 
   Widget _step1(AsyncValue cats) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    _sec('1. Расмҳо', 'Беҳтар бо 3–5 расм эълон диққатҷалб мешавад'),
+    _sec('1. ${AppL10n.of(context).photos}', AppL10n.of(context).photosHint),
     GestureDetector(onTap: _pick, child: Container(
       width: double.infinity, height: 130,
       decoration: BoxDecoration(
@@ -197,9 +198,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.15), shape: BoxShape.circle),
           child: const Icon(Icons.camera_alt_rounded, color: AppColors.primary, size: 26)),
         const SizedBox(height: 8),
-        const Text('Расм илова кунед', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 14)),
+        Text(AppL10n.of(context).addPhoto, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 14)),
         const SizedBox(height: 3),
-        Text('То 5 расм • хаҷм автоматӣ кам мешавад', style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
+        Text(AppL10n.of(context).photosSubHint, style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
       ]))),
     const SizedBox(height: 10),
     if (_images.isNotEmpty) SizedBox(height: 86, child: ListView.builder(
@@ -227,13 +228,13 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         ]);
       })),
     const SizedBox(height: 20),
-    _sec('2. Маълумоти асосӣ', null),
-    _field('Номи маҳсулот *', _titleCtrl, hint: 'Номи маҳсулотро ворид кунед'),
+    _sec('2. ${AppL10n.of(context).basicInfo}', null),
+    _field('${AppL10n.of(context).productName} *', _titleCtrl, hint: AppL10n.of(context).productNameHint),
     const SizedBox(height: 12),
     Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(child: _field('Нарх (сомонӣ) *', _priceCtrl, hint: '0', type: TextInputType.number)),
+      Expanded(child: _field('${AppL10n.of(context).price} (сомонӣ) *', _priceCtrl, hint: '0', type: TextInputType.number)),
       const SizedBox(width: 10),
-      Expanded(child: _drop<String>(label: 'Категория', value: _catId, hint: 'Интихоб кунед',
+      Expanded(child: _drop<String>(label: AppL10n.of(context).category, value: _catId, hint: AppL10n.of(context).selectHint,
         items: cats.when(
           data: (l) => l.map<DropdownMenuItem<String>>((c) =>
             DropdownMenuItem(value: c.id as String, child: Text(c.name as String, overflow: TextOverflow.ellipsis))).toList(),
@@ -241,7 +242,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         onChanged: (v) => setState(() => _catId = v))),
     ]),
     const SizedBox(height: 20),
-    _sec('3. Тавсиф', null),
+    _sec('3. ${AppL10n.of(context).description}', null),
     Container(
       height: 120,
       decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
@@ -252,7 +253,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         maxLines: 5,
         keyboardType: TextInputType.multiline,
         textInputAction: TextInputAction.newline,
-        hint: 'Маҳсулотро муфассал тавсиф кунед...',
+        hint: AppL10n.of(context).descriptionHint,
         textColor: context.pal.textPrimary,
         fontSize: 14,
       ),
@@ -260,18 +261,18 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   ]);
 
   Widget _step2() => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    _sec('4. Тафсилот', null),
+    _sec('4. ${AppL10n.of(context).details}', null),
     Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(child: _drop<String>(label: 'Ҳолати маҳсулот', value: _condition, hint: '',
+      Expanded(child: _drop<String>(label: AppL10n.of(context).conditionLabel, value: _condition, hint: '',
         items: _conditions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
         onChanged: (v) => setState(() => _condition = v ?? _condition))),
       const SizedBox(width: 10),
-      Expanded(child: _drop<String>(label: 'Шаҳр', value: _city, hint: '',
+      Expanded(child: _drop<String>(label: AppL10n.of(context).city, value: _city, hint: '',
         items: _cities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
         onChanged: (v) => setState(() => _city = v ?? _city))),
     ]),
     const SizedBox(height: 12),
-    _field('Миқдор', _stockCtrl, hint: '1', type: TextInputType.number),
+    _field(AppL10n.of(context).quantity, _stockCtrl, hint: '1', type: TextInputType.number),
     const SizedBox(height: 20),
 
     // Seller info notice
@@ -283,11 +284,10 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         const Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 20),
         const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Барои нашр фурӯшанда шудан лозим',
-              style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(AppL10n.of(context).mustBeSeller,
+              style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(height: 3),
-          Text('Агар шумо ҳанӯз фурӯшанда набошед, '
-              '"Нашр кардан" автоматӣ шуморо фурӯшанда мекунад.',
+          Text(AppL10n.of(context).mustBeSellerDesc,
               style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
         ])),
       ])),
@@ -298,7 +298,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       child: Row(children: [
         const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
         const SizedBox(width: 12),
-        Text('Фурӯшанда шудан...', style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
+        Text(AppL10n.of(context).becomingSeller, style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
       ])),
 
     if (_error != null) Container(padding: const EdgeInsets.all(12),
@@ -317,7 +317,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         child: LinearProgressIndicator(value: _progress,
             backgroundColor: context.pal.surface, color: AppColors.primary, minHeight: 8)),
       const SizedBox(height: 6),
-      Text('${(_progress * 100).round()}% бор шуд', style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
+      Text('${(_progress * 100).round()}% ${AppL10n.of(context).uploaded}', style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
     ]),
   ]);
 
@@ -329,7 +329,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       Expanded(child: OutlinedButton.icon(
         onPressed: _loading ? null : (_step == 2 ? () => setState(() { _step = 1; _error = null; }) : () {}),
         icon: Icon(_step == 2 ? Icons.arrow_back_rounded : Icons.visibility_outlined, size: 18, color: AppColors.primary),
-        label: Text(_step == 2 ? 'Қафо' : 'Пешнамоиш',
+        label: Text(_step == 2 ? AppL10n.of(context).back : AppL10n.of(context).preview,
             style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
         style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.primary),
             padding: const EdgeInsets.symmetric(vertical: 14),
@@ -338,17 +338,17 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       Expanded(child: ElevatedButton.icon(
         onPressed: (_loading || _becomingS) ? null : () {
           if (_step == 1) {
-            if (_images.isEmpty) { setState(() => _error = 'Расм илова кунед'); return; }
-            if (_titleCtrl.text.trim().isEmpty) { setState(() => _error = 'Номро ворид кунед'); return; }
+            if (_images.isEmpty) { setState(() => _error = AppL10n.of(context).addPhoto); return; }
+            if (_titleCtrl.text.trim().isEmpty) { setState(() => _error = AppL10n.of(context).enterName); return; }
             final p = double.tryParse(_priceCtrl.text.replaceAll(',', '.'));
-            if (p == null || p <= 0) { setState(() => _error = 'Нархро ворид кунед'); return; }
+            if (p == null || p <= 0) { setState(() => _error = AppL10n.of(context).enterPrice); return; }
             setState(() { _step = 2; _error = null; });
           } else { _submit(); }
         },
         icon: (_loading || _becomingS)
             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
             : Icon(_step == 1 ? Icons.arrow_forward_rounded : Icons.send_rounded, size: 18),
-        label: Text((_loading || _becomingS) ? 'Кор карда истода...' : _step == 1 ? 'Давом додан' : 'Нашр кардан',
+        label: Text((_loading || _becomingS) ? AppL10n.of(context).processing : _step == 1 ? AppL10n.of(context).continueWord : AppL10n.of(context).publish,
             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
         style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 14),
@@ -405,12 +405,12 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
   Widget _notAuth() => Scaffold(backgroundColor: context.pal.scaffold,
     appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
-        title: Text('Эълон додан', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
+        title: Text(AppL10n.of(context).postListing, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
     body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
       Icon(Icons.lock_outline_rounded, size: 80, color: context.pal.textMuted),
       const SizedBox(height: 16),
-      Text('Барои эълон додан ворид шавед', style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
+      Text(AppL10n.of(context).loginToPost, style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
       const SizedBox(height: 20),
-      AppButton(text: 'Ворид шавед', width: 200, height: 46, onTap: () => context.go(RouteNames.login)),
+      AppButton(text: AppL10n.of(context).signIn, width: 200, height: 46, onTap: () => context.go(RouteNames.login)),
     ])));
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/product_provider.dart';
@@ -163,10 +164,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       Icon(Icons.storefront_outlined, size: 72,
           color: context.pal.textMuted.withValues(alpha: 0.4)),
       const SizedBox(height: 16),
-      Text('Ҳоло маҳсулот нест',
+      Text(AppL10n.of(context).noProductsYet,
           style: TextStyle(color: context.pal.textSecondary, fontSize: 16, fontWeight: FontWeight.w600)),
       const SizedBox(height: 6),
-      Text('Аввалин эълонро шумо гузоред! 🚀',
+      Text(AppL10n.of(context).beFirstToPost,
           textAlign: TextAlign.center,
           style: TextStyle(color: context.pal.textMuted, fontSize: 13)),
     ]),
@@ -183,7 +184,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       TextButton.icon(
         onPressed: _refresh,
         icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
-        label: const Text('Дубора', style: TextStyle(color: AppColors.primary))),
+        label: Text(AppL10n.of(context).retry, style: const TextStyle(color: AppColors.primary))),
     ]),
   );
 }

@@ -92,7 +92,8 @@ func (h *ProductHandler) List(c *gin.Context) {
 		args = append(args, seller)
 		argIdx++
 	} else {
-		where += " AND p.is_active=true"
+		// Маҳсулоти фурӯхташуда (stock=0) худ ба худ аз бозор пинҳон мешавад
+		where += " AND p.is_active=true AND p.stock > 0"
 	}
 	for _, w := range strings.Fields(search) {
 		where += fmt.Sprintf(" AND (p.title ILIKE $%d OR p.description ILIKE $%d)", argIdx, argIdx)
@@ -304,7 +305,7 @@ func (h *ProductHandler) Trending(c *gin.Context) {
 			u.name as seller_name
 		FROM products p
 		JOIN users u ON u.id = p.seller_id
-		WHERE p.is_active = true
+		WHERE p.is_active = true AND p.stock > 0
 		ORDER BY p.views DESC, p.created_at DESC
 		LIMIT 20`)
 	if err != nil {

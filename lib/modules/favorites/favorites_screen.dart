@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
@@ -25,7 +26,7 @@ class FavoritesScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       appBar: AppBar(backgroundColor: AppColors.bgDark,
-        title: const Text('Дӯстдоштаҳо', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+        title: Text(AppL10n.of(context).favorites, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: const Icon(Icons.refresh_rounded, color: AppColors.textSecondary),
             onPressed: () => ref.invalidate(favoritesProvider))]),
       body: favs.when(
@@ -35,10 +36,10 @@ class FavoritesScreen extends ConsumerWidget {
           itemCount: 6, itemBuilder: (_, __) => const ShimmerCard()),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(favoritesProvider)),
         data: (list) => list.isEmpty
-            ? const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.favorite_outline, size: 80, color: AppColors.textMuted),
-                SizedBox(height: 16),
-                Text('Дӯстдоштаҳо нест', style: TextStyle(color: AppColors.textSecondary, fontSize: 16))]))
+            ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.favorite_outline, size: 80, color: AppColors.textMuted),
+                const SizedBox(height: 16),
+                Text(AppL10n.of(context).noFavorites, style: const TextStyle(color: AppColors.textSecondary, fontSize: 16))]))
             : GridView.builder(padding: const EdgeInsets.all(16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.68),

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
+import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
@@ -45,16 +46,16 @@ class _CartScreenState extends ConsumerState<CartScreen> {
       body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.shopping_bag_outlined, size: 80, color: context.pal.textMuted),
         const SizedBox(height: 16),
-        Text('Барои дидани сабад ворид шавед', style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
+        Text(AppL10n.of(context).loginToViewCart, style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
         const SizedBox(height: 20),
-        AppButton(text: 'Ворид шавед', width: 200, height: 46, onTap: () => context.go(RouteNames.login)),
+        AppButton(text: AppL10n.of(context).signIn, width: 200, height: 46, onTap: () => context.go(RouteNames.login)),
       ])));
 
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: _bar(action: cart.items.isNotEmpty ? TextButton(
         onPressed: () async { for (final i in [...cart.items]) await ref.read(cartProvider.notifier).removeItem(i.id); },
-        child: const Text('Тоза', style: TextStyle(color: AppColors.error))) : null),
+        child: Text(AppL10n.of(context).clearShort, style: const TextStyle(color: AppColors.error))) : null),
       body: cart.isLoading
           ? ListView.builder(padding: const EdgeInsets.all(16), itemCount: 4,
               itemBuilder: (_, __) => Padding(padding: const EdgeInsets.only(bottom: 12),
@@ -66,9 +67,9 @@ class _CartScreenState extends ConsumerState<CartScreen> {
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.shopping_cart_outlined, size: 80, color: context.pal.textMuted),
                   const SizedBox(height: 16),
-                  Text('Сабад холи аст', style: TextStyle(color: context.pal.textSecondary, fontSize: 16)),
+                  Text(AppL10n.of(context).emptyCart, style: TextStyle(color: context.pal.textSecondary, fontSize: 16)),
                   const SizedBox(height: 24),
-                  AppButton(text: 'Харид кунед', width: 200, height: 46, onTap: () => context.go(RouteNames.home))]))
+                  AppButton(text: AppL10n.of(context).shopNow, width: 200, height: 46, onTap: () => context.go(RouteNames.home))]))
               : Column(children: [
                   Expanded(child: ListView.builder(padding: const EdgeInsets.all(16),
                     itemCount: cart.items.length,
@@ -82,15 +83,15 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                         border: Border(top: BorderSide(color: context.pal.border, width: 0.5)),
                         borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
                     child: Column(children: [
-                      _row('Маҳсулот (${cart.itemCount})', '${cart.total.toStringAsFixed(0)} сом.'),
+                      _row('${AppL10n.of(context).productsWord} (${cart.itemCount})', '${cart.total.toStringAsFixed(0)} сом.'),
                       const SizedBox(height: 6),
-                      const _row('Доставка', '20 сом.'),
+                      _row(AppL10n.of(context).delivery, '20 сом.'),
                       const SizedBox(height: 10),
                       Divider(color: context.pal.divider),
                       const SizedBox(height: 10),
-                      _row('Ҷамъ', '${(cart.total + 20).toStringAsFixed(0)} сом.', bold: true),
+                      _row(AppL10n.of(context).total, '${(cart.total + 20).toStringAsFixed(0)} сом.', bold: true),
                       const SizedBox(height: 16),
-                      AppButton(text: 'Пардохт кардан', onTap: () => _dcCheckout(context)),
+                      AppButton(text: AppL10n.of(context).payNow, onTap: () => _dcCheckout(context)),
                     ]),
                   ),
                 ]),
@@ -106,7 +107,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
 
   PreferredSizeWidget _bar({Widget? action}) => AppBar(
     backgroundColor: context.pal.scaffold,
-    title: Text('Сабад', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+    title: Text(AppL10n.of(context).cart, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
     actions: [if (action != null) action]);
 }
 
@@ -145,17 +146,17 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
       _checkingCoupon = false;
       if (pct != null && pct > 0) {
         _discountPct = pct;
-        _couponMsg = '✅ Тахфифи $pct% татбиқ шуд';
+        _couponMsg = '✅ $pct% ${AppL10n.of(context).discountApplied}';
       } else {
         _discountPct = 0;
-        _couponMsg = '❌ Купон нодуруст ё гузаштааст';
+        _couponMsg = AppL10n.of(context).couponInvalid;
       }
     });
   }
 
   Future<void> _submit() async {
     if (_method == 'dc' && _receipt == null) {
-      setState(() => _error = 'Аввал чеки пардохтро бор кунед');
+      setState(() => _error = AppL10n.of(context).uploadReceiptFirst);
       return;
     }
     setState(() { _loading = true; _error = null; });
@@ -184,9 +185,9 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
       setState(() { _loading = false; _sent = true; });
     } on DioException catch (e) {
       final msg = (e.response?.data is Map ? e.response?.data['error'] : null)?.toString();
-      if (mounted) setState(() { _loading = false; _error = msg ?? 'Хато ҳангоми пардохт'; });
+      if (mounted) setState(() { _loading = false; _error = msg ?? AppL10n.of(context).errorDuringPayment; });
     } catch (_) {
-      if (mounted) setState(() { _loading = false; _error = 'Хато ҳангоми пардохт'; });
+      if (mounted) setState(() { _loading = false; _error = AppL10n.of(context).errorDuringPayment; });
     }
   }
 
@@ -238,20 +239,20 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
   Widget _addAddressBtn() => TextButton.icon(
     onPressed: _addAddress,
     icon: const Icon(Icons.add_location_alt_outlined, color: AppColors.primary, size: 18),
-    label: const Text('Суроға илова кунед',
-        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)));
+    label: Text(AppL10n.of(context).addAddress,
+        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)));
 
   @override
   Widget build(BuildContext context) {
     if (_sent) return Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
       const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 72),
       const SizedBox(height: 16),
-      Text('Фармоиш қабул шуд!', style: TextStyle(color: context.pal.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
+      Text(AppL10n.of(context).orderAccepted, style: TextStyle(color: context.pal.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
       const SizedBox(height: 8),
-      Text('Чек ба фурӯшанда фиристода шуд. Тасдиқ баъд аз санҷиш.',
+      Text(AppL10n.of(context).orderReceiptSent,
           style: TextStyle(color: context.pal.textSecondary), textAlign: TextAlign.center),
       const SizedBox(height: 20),
-      AppButton(text: 'Фармоишҳоям', onTap: () { Navigator.pop(context); context.push(RouteNames.orders); }),
+      AppButton(text: AppL10n.of(context).myOrders, onTap: () { Navigator.pop(context); context.push(RouteNames.orders); }),
     ]));
 
     return Padding(
@@ -260,19 +261,19 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
         Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
         const SizedBox(height: 16),
         Align(alignment: Alignment.centerLeft,
-          child: Text('Тасдиқи фармоиш', style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700))),
+          child: Text(AppL10n.of(context).confirmOrder, style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700))),
         const SizedBox(height: 16),
 
         // Суроғаи расонидан
         Align(alignment: Alignment.centerLeft,
-          child: Text('Суроғаи расонидан', style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
+          child: Text(AppL10n.of(context).deliveryAddress, style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
         const SizedBox(height: 8),
         _addressSelector(),
         const SizedBox(height: 16),
 
         // Купон
         Align(alignment: Alignment.centerLeft,
-          child: Text('Купон / Промокод', style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
+          child: Text(AppL10n.of(context).couponPromo, style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
         const SizedBox(height: 8),
         Row(children: [
           Expanded(child: Container(
@@ -280,7 +281,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
                 border: Border.all(color: context.pal.border, width: 0.5)),
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: SafeInput(controller: _couponCtrl,
-              hint: 'Кодро ворид кунед',
+              hint: AppL10n.of(context).enterCode,
               textCapitalization: TextCapitalization.characters,
               textColor: context.pal.textPrimary, fontSize: 14))),
           const SizedBox(width: 8),
@@ -290,7 +291,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             child: _checkingCoupon
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Татбиқ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)))),
+                : Text(AppL10n.of(context).apply, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)))),
         ]),
         if (_couponMsg != null) Padding(padding: const EdgeInsets.only(top: 6),
           child: Align(alignment: Alignment.centerLeft,
@@ -300,10 +301,10 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
 
         // Усули пардохт
         Align(alignment: Alignment.centerLeft,
-          child: Text('Усули пардохт', style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
+          child: Text(AppL10n.of(context).paymentMethod, style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
         const SizedBox(height: 8),
-        _payOption('dc', Icons.account_balance_wallet_outlined, 'Корти DC', 'Интиқол + чеки пардохт'),
-        _payOption('cod', Icons.local_shipping_outlined, 'Пардохт ҳангоми расонидан', 'Накд ба курьер'),
+        _payOption('dc', Icons.account_balance_wallet_outlined, AppL10n.of(context).dcCard, AppL10n.of(context).dcCardDesc),
+        _payOption('cod', Icons.local_shipping_outlined, AppL10n.of(context).codTitle, AppL10n.of(context).codDesc),
         _walletOption(),
         const SizedBox(height: 16),
 
@@ -314,11 +315,11 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
                 border: Border.all(color: AppColors.primary.withValues(alpha: 0.3))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [const Icon(Icons.account_balance_wallet_outlined, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8), Text('Рақами DC-и фурӯшанда', style: TextStyle(color: context.pal.textMuted, fontSize: 12))]),
+                const SizedBox(width: 8), Text(AppL10n.of(context).sellerDcNumber, style: TextStyle(color: context.pal.textMuted, fontSize: 12))]),
               const SizedBox(height: 8),
               Text('+992 XX XXX XXXX', style: TextStyle(color: context.pal.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
-              Text('Пулро ба ин рақам интиқол диҳед, баъд чекро бор кунед', style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
+              Text(AppL10n.of(context).dcInstructions, style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
             ])),
           const SizedBox(height: 12),
           GestureDetector(
@@ -327,10 +328,10 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
               decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: _receipt != null ? AppColors.success : context.pal.border, width: 1.5),
                   image: _receipt != null ? DecorationImage(image: FileImage(_receipt!), fit: BoxFit.cover) : null),
-              child: _receipt == null ? const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.upload_file_rounded, color: AppColors.primary, size: 32),
-                SizedBox(height: 6),
-                Text('Чеки пардохтро бор кунед', style: TextStyle(color: AppColors.primary, fontSize: 13)),
+              child: _receipt == null ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.upload_file_rounded, color: AppColors.primary, size: 32),
+                const SizedBox(height: 6),
+                Text(AppL10n.of(context).uploadReceipt, style: const TextStyle(color: AppColors.primary, fontSize: 13)),
               ])) : null)),
           const SizedBox(height: 16),
         ],
@@ -339,15 +340,15 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
         Container(padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(12)),
           child: Column(children: [
-            _row('Маҳсулот + доставка', '${(_cartTotal + 20).toStringAsFixed(0)} сом.'),
+            _row(AppL10n.of(context).productsPlusDelivery, '${(_cartTotal + 20).toStringAsFixed(0)} сом.'),
             if (_discountPct > 0) ...[
               const SizedBox(height: 6),
-              _row('Тахфиф ($_discountPct%)', '-${((_cartTotal + 20) * _discountPct / 100).toStringAsFixed(0)} сом.'),
+              _row('${AppL10n.of(context).discountWord} ($_discountPct%)', '-${((_cartTotal + 20) * _discountPct / 100).toStringAsFixed(0)} сом.'),
             ],
             const SizedBox(height: 8),
             Divider(color: context.pal.divider, height: 1),
             const SizedBox(height: 8),
-            _row('Ҷамъи пардохт', '${_finalTotal.toStringAsFixed(0)} сом.', bold: true),
+            _row(AppL10n.of(context).totalPayment, '${_finalTotal.toStringAsFixed(0)} сом.', bold: true),
           ])),
 
         if (_error != null) Padding(padding: const EdgeInsets.only(top: 12),
@@ -355,7 +356,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
 
         const SizedBox(height: 16),
         AppButton(
-          text: _method == 'wallet' ? 'Пардохт аз ҳамён' : (_method == 'cod' ? 'Тасдиқи фармоиш' : 'Фиристодан ✓'),
+          text: _method == 'wallet' ? AppL10n.of(context).payFromWallet : (_method == 'cod' ? AppL10n.of(context).confirmOrder : '${AppL10n.of(context).send} ✓'),
           isLoading: _loading,
           onTap: _submit,
         ),
@@ -407,8 +408,8 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
           Icon(Icons.savings_outlined, color: context.pal.textSecondary, size: 20),
           const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Ҳамён', style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-            Text('Тавозун: ${balance.toStringAsFixed(0)} сом.${enough ? '' : ' (нокифоя)'}',
+            Text(AppL10n.of(context).wallet, style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text('${AppL10n.of(context).balance}: ${balance.toStringAsFixed(0)} сом.${enough ? '' : ' (${AppL10n.of(context).insufficient})'}',
                 style: TextStyle(color: enough ? context.pal.textMuted : AppColors.error, fontSize: 11)),
           ])),
         ]),

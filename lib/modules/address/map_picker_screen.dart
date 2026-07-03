@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 
 /// Интихоби нуқта дар харитаи OpenStreetMap (ройгон, бе калид).
-/// Натиҷа: LatLng-и маркази харита ҳангоми тасдиқ.
+/// Ҳангоми кушода шудан ба ҷойгиршавии ҳозираи дастгоҳ (GPS) меравад,
+/// то фурӯшанда мағозаашро осон ёбад. Натиҷа: LatLng ҳангоми тасдиқ.
 class MapPickerScreen extends StatefulWidget {
   final LatLng initial;
   const MapPickerScreen({super.key, required this.initial});
@@ -16,12 +18,44 @@ class MapPickerScreen extends StatefulWidget {
 
 class _MapPickerScreenState extends State<MapPickerScreen> {
   final _controller = MapController();
-  LatLng _center = const LatLng(38.5598, 68.7870); // Душанбе
+  late LatLng _center = widget.initial;
+  bool _locating = true;
 
   @override
   void initState() {
     super.initState();
-    _center = widget.initial;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _goToMyLocation(initial: true));
+  }
+
+  Future<void> _goToMyLocation({bool initial = false}) async {
+    if (mounted) setState(() => _locating = true);
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw 'GPS хомӯш аст';
+      }
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
+        throw 'Иҷозати ҷойгиршавӣ дода нашуд';
+      }
+      final pos = await Geolocator.getCurrentPosition();
+      final here = LatLng(pos.latitude, pos.longitude);
+      if (!mounted) return;
+      setState(() => _center = here);
+      _controller.move(here, 16);
+    } catch (e) {
+      if (!initial && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('$e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating));
+      }
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
   }
 
   @override
@@ -31,7 +65,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       appBar: AppBar(
         backgroundColor: context.pal.scaffold,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Ҷойро дар харита интихоб кунед',
+        title: Text('Ҷойи мағозаро интихоб кунед',
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 16)),
       ),
       body: Stack(children: [
@@ -39,7 +73,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           mapController: _controller,
           options: MapOptions(
             initialCenter: widget.initial,
-            initialZoom: 14,
+            initialZoom: 13,
             onPositionChanged: (camera, _) => _center = camera.center,
           ),
           children: [
@@ -67,8 +101,23 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(12)),
-            child: const Text('Харитаро ҳаракат диҳед, то маркер ба ҷои дилхоҳ ишора кунад',
-                textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 12)))),
+            child: Text(
+                _locating
+                    ? 'Ҷойгиршавии шумо ёфта мешавад…'
+                    : 'Харитаро ҳаракат диҳед, то маркер ба мағозаи шумо ишора кунад',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 12)))),
+
+        // Тугмаи «ҷойгиршавии ман»
+        Positioned(right: 16, bottom: 96,
+          child: FloatingActionButton(
+            heroTag: 'myloc',
+            backgroundColor: context.pal.card,
+            onPressed: _locating ? null : () => _goToMyLocation(),
+            child: _locating
+                ? const SizedBox(width: 22, height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.primary))
+                : const Icon(Icons.my_location_rounded, color: AppColors.primary))),
 
         // Тугмаи тасдиқ
         Positioned(left: 16, right: 16, bottom: 24,

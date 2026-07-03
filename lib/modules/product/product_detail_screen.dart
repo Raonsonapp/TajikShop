@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/services/recent_service.dart';
@@ -93,7 +94,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     child: Row(children: [
                       const Icon(Icons.flag_outlined, color: AppColors.error, size: 18),
                       const SizedBox(width: 8),
-                      Text('Гузориш додан', style: TextStyle(color: context.pal.textPrimary)),
+                      Text(AppL10n.of(context).report, style: TextStyle(color: context.pal.textPrimary)),
                     ])),
               ],
             ),
@@ -156,7 +157,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     const SizedBox(width: 6),
                     const Text('FLASH SALE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
                     const Spacer(),
-                    const Text('Тамом: ', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    Text(AppL10n.of(context).endsIn, style: const TextStyle(color: Colors.white70, fontSize: 12)),
                     CountdownText(endsAt: p.saleEndsAt!,
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
                   ])),
@@ -174,29 +175,29 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               ]),
               if (p.wholesalePrice > 0) ...[
                 const SizedBox(height: 4),
-                Text('Нархи яклухт: ${p.wholesalePrice.toStringAsFixed(0)} сом.'
-                    '${p.minOrderQty > 1 ? ' (аз ${p.minOrderQty} дона)' : ''}',
+                Text('${AppL10n.of(context).wholesalePriceLabel}: ${p.wholesalePrice.toStringAsFixed(0)} ${AppL10n.of(context).som}'
+                    '${p.minOrderQty > 1 ? ' (${AppL10n.of(context).from} ${p.minOrderQty} ${AppL10n.of(context).pcs})' : ''}',
                     style: const TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w600)),
               ],
               const SizedBox(height: 16),
               Row(children: [
                 _Chip(icon: Icons.star_rounded, value: p.rating.toStringAsFixed(1), color: AppColors.warning),
                 const SizedBox(width: 10),
-                _Chip(icon: Icons.chat_bubble_outline, value: '${p.reviewCount} шарҳ', color: AppColors.info),
+                _Chip(icon: Icons.chat_bubble_outline, value: '${p.reviewCount} ${AppL10n.of(context).reviewsWord}', color: AppColors.info),
                 const SizedBox(width: 10),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: p.inStock ? const Color(0x1A00BFA5) : const Color(0x1AFF5252),
                     borderRadius: BorderRadius.circular(20)),
-                  child: Text(p.inStock ? '✓ Мавҷуд' : '✗ Нест',
+                  child: Text(p.inStock ? AppL10n.of(context).inStock : AppL10n.of(context).notAvailable,
                       style: TextStyle(
                           color: p.inStock ? AppColors.success : AppColors.error,
                           fontSize: 12, fontWeight: FontWeight.w600))),
               ]),
               if (p.variants.isNotEmpty) ...[
                 const SizedBox(height: 18),
-                Text('Вариантҳо', style: TextStyle(
+                Text(AppL10n.of(context).variants, style: TextStyle(
                     color: context.pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 Wrap(spacing: 8, runSpacing: 8, children: p.variants.map((v) {
@@ -212,7 +213,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                             color: sel ? AppColors.primary : context.pal.border,
                             width: sel ? 1.4 : 0.6)),
                       child: Text(
-                          v.inStock ? v.label : '${v.label} (нест)',
+                          v.inStock ? v.label : '${v.label} (${AppL10n.of(context).notAvailableShort})',
                           style: TextStyle(
                               color: v.inStock ? (sel ? AppColors.primary : context.pal.textPrimary) : context.pal.textMuted,
                               fontSize: 13, fontWeight: sel ? FontWeight.w700 : FontWeight.w500)),
@@ -225,7 +226,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 Row(children: [
                   Icon(Icons.inventory_2_outlined, color: context.pal.textMuted, size: 16),
                   const SizedBox(width: 6),
-                  Text('Ҳадди ақали фармоиш: ${p.minOrderQty} дона',
+                  Text('${AppL10n.of(context).minOrderLabel}: ${p.minOrderQty} ${AppL10n.of(context).pcs}',
                       style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
                 ]),
               ],
@@ -242,7 +243,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   const SizedBox(width: 12),
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(p.sellerName!, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w600)),
-                    Text('Фурӯшанда', style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
+                    Text(AppL10n.of(context).seller, style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
                   ]),
                   const Spacer(),
                   _followButton(p),
@@ -254,18 +255,18 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(10)),
-                      child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary, size: 16),
-                        SizedBox(width: 6),
-                        Text('Паём', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primary, size: 16),
+                        const SizedBox(width: 6),
+                        Text(AppL10n.of(context).messageWord, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)),
                       ])),
                   ),
                 ]))),
               const SizedBox(height: 20),
-              Text('Тавсиф', style: TextStyle(
+              Text(AppL10n.of(context).description, style: TextStyle(
                   color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
-              Text(p.description.isEmpty ? 'Тавсифе нест' : p.description,
+              Text(p.description.isEmpty ? AppL10n.of(context).noDescription : p.description,
                   style: TextStyle(color: context.pal.textSecondary, fontSize: 14, height: 1.6)),
 
               const SizedBox(height: 28),
@@ -285,23 +286,24 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             border: Border(top: BorderSide(color: context.pal.border))),
         child: Row(children: [
           Expanded(child: AppButton(
-            text: 'Ба сабад', isOutlined: true, icon: Icons.shopping_bag_outlined,
+            text: AppL10n.of(context).addToCart, isOutlined: true, icon: Icons.shopping_bag_outlined,
             onTap: () async {
+              final l = AppL10n.of(context);
               final messenger = ScaffoldMessenger.of(context);
               try {
                 await ref.read(cartProvider.notifier).addToCart(p.id);
                 messenger.showSnackBar(SnackBar(
-                  content: const Text('✅ Ба сабад илова шуд'),
+                  content: Text(l.addedToCart),
                   backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))));
               } catch (_) {
-                messenger.showSnackBar(const SnackBar(
-                  content: Text('Барои харид ворид шавед'),
+                messenger.showSnackBar(SnackBar(
+                  content: Text(l.loginToBuy),
                   backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
               }
             })),
           const SizedBox(width: 12),
-          Expanded(child: AppButton(text: 'Харидан', onTap: () => _buyNow(p))),
+          Expanded(child: AppButton(text: AppL10n.of(context).buyNow, onTap: () => _buyNow(p))),
         ]),
       ),
     );
@@ -309,8 +311,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   void _toggleFavorite(String id) {
     if (!ref.read(authProvider).isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Барои дӯстдошта ворид шавед'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AppL10n.of(context).loginToFavorite),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
       return;
     }
@@ -319,16 +321,17 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   void _share(ProductModel p) {
     Clipboard.setData(ClipboardData(text: '${p.title} — ${p.price.toStringAsFixed(0)} сом. | TajikShop'));
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Нусха гирифта шуд 📋'),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(AppL10n.of(context).copied),
       backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
   }
 
   Future<void> _buyNow(ProductModel p) async {
+    final l = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     if (!ref.read(authProvider).isAuthenticated) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Барои харид ворид шавед'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l.loginToBuy),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
       return;
     }
@@ -337,8 +340,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       if (!mounted) return;
       context.go(RouteNames.cart);
     } catch (_) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Хато ҳангоми илова ба сабад'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l.errorAddingToCart),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
     }
   }
@@ -346,8 +349,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   // ── Чат бо фурӯшанда ───────────────────────────────────────────────────────
   void _openChat(ProductModel p) {
     if (!ref.read(authProvider).isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Барои паём навиштан ворид шавед'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AppL10n.of(context).loginToMessage),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
       return;
     }
@@ -357,13 +360,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   void _report(ProductModel p) {
+    final l = AppL10n.of(context);
     if (!ref.read(authProvider).isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Барои гузориш ворид шавед'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(l.loginToReport),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
       return;
     }
-    const reasons = ['Қалбакӣ / фиребгар', 'Нархи нодуруст', 'Мӯҳтавои номатлуб', 'Спам', 'Дигар'];
+    final reasons = [l.reportReasonFake, l.reportReasonWrongPrice, l.reportReasonInappropriate, l.reportReasonSpam, l.reportReasonOther];
     showModalBottomSheet(context: context, backgroundColor: context.pal.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => Padding(padding: const EdgeInsets.symmetric(vertical: 16),
@@ -371,7 +375,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           Container(width: 40, height: 4,
               decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 12),
-          Text('Сабаби гузориш', style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(l.reportReasonTitle, style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           ...reasons.map((r) => ListTile(
             leading: const Icon(Icons.flag_outlined, color: AppColors.error, size: 20),
@@ -381,12 +385,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               final messenger = ScaffoldMessenger.of(context);
               try {
                 await ReportService.send(targetType: 'product', targetId: p.id, reason: r);
-                messenger.showSnackBar(const SnackBar(
-                  content: Text('Гузориш фиристода шуд. Раҳмат!'),
+                messenger.showSnackBar(SnackBar(
+                  content: Text(l.reportSent),
                   backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
               } catch (_) {
-                messenger.showSnackBar(const SnackBar(
-                  content: Text('Хато'),
+                messenger.showSnackBar(SnackBar(
+                  content: Text(l.error),
                   backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
               }
             },
@@ -407,8 +411,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     return GestureDetector(
       onTap: () {
         if (!ref.read(authProvider).isAuthenticated) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Барои пайгирӣ ворид шавед'),
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppL10n.of(context).loginToFollow),
             backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
           return;
         }
@@ -421,7 +425,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           color: following ? Colors.transparent : AppColors.primary,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: AppColors.primary)),
-        child: Text(following ? 'Пайгирӣ шуд' : 'Пайгирӣ',
+        child: Text(following ? AppL10n.of(context).following : AppL10n.of(context).follow,
             style: TextStyle(
                 color: following ? AppColors.primary : Colors.white,
                 fontWeight: FontWeight.w700, fontSize: 13)),
@@ -434,14 +438,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     final reviews = ref.watch(productReviewsProvider(p.id));
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        Text('Шарҳҳо', style: TextStyle(
+        Text(AppL10n.of(context).reviewsTitle, style: TextStyle(
             color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
         const Spacer(),
         TextButton.icon(
           onPressed: () => _openAddReview(p),
           icon: const Icon(Icons.rate_review_outlined, size: 18, color: AppColors.primary),
-          label: const Text('Шарҳ навиштан',
-              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
+          label: Text(AppL10n.of(context).writeReview,
+              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
       ]),
       const SizedBox(height: 4),
       reviews.when(
@@ -453,19 +457,19 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               _ratingSummary(p, 0, const SizedBox()),
               Padding(padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text('Ҳоло шарҳе нест. Аввалин шуда шарҳ нависед!',
+                child: Text(AppL10n.of(context).noReviewsYet,
                     style: TextStyle(color: context.pal.textMuted, fontSize: 13))),
             ]);
           }
           final avg = list.fold<int>(0, (s, r) => s + r.rating) / list.length;
           return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _ratingSummary(p, avg, Text('${list.length} шарҳ',
+            _ratingSummary(p, avg, Text('${list.length} ${AppL10n.of(context).reviewsWord}',
                 style: TextStyle(color: context.pal.textMuted, fontSize: 12))),
             const SizedBox(height: 8),
             ...list.take(5).map((r) => _ReviewTile(review: r)),
             if (list.length > 5)
               Padding(padding: const EdgeInsets.only(top: 4),
-                child: Text('ва боз ${list.length - 5} шарҳ...',
+                child: Text('${AppL10n.of(context).andMore} ${list.length - 5} ${AppL10n.of(context).reviewsWord}...',
                     style: TextStyle(color: context.pal.textMuted, fontSize: 12))),
           ]);
         },
@@ -495,13 +499,13 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     final isSeller = ref.watch(authProvider).user?.id == p.sellerId;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        Text('Савол ва ҷавоб', style: TextStyle(
+        Text(AppL10n.of(context).qaTitle, style: TextStyle(
             color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
         const Spacer(),
         TextButton.icon(
           onPressed: () => _askQuestion(p),
           icon: const Icon(Icons.help_outline_rounded, size: 18, color: AppColors.primary),
-          label: const Text('Савол додан', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
+          label: Text(AppL10n.of(context).askQuestion, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
       ]),
       qa.when(
         loading: () => const SizedBox(),
@@ -509,7 +513,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         data: (list) {
           if (list.isEmpty) {
             return Padding(padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text('Ҳоло саволе нест. Аввалин шуда пурсед!',
+              child: Text(AppL10n.of(context).noQuestionsYet,
                   style: TextStyle(color: context.pal.textMuted, fontSize: 13)));
           }
           return Column(children: list.take(6).map((q) {
@@ -521,14 +525,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   border: Border.all(color: context.pal.border, width: 0.5)),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('С: ', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 13)),
+                  Text(AppL10n.of(context).questionShort, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 13)),
                   Expanded(child: Text(q['question']?.toString() ?? '',
                       style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w600))),
                 ]),
                 if (answer.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Ҷ: ', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w800, fontSize: 13)),
+                    Text(AppL10n.of(context).answerShort, style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.w800, fontSize: 13)),
                     Expanded(child: Text(answer,
                         style: TextStyle(color: context.pal.textSecondary, fontSize: 13, height: 1.4))),
                   ]),
@@ -536,11 +540,11 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   const SizedBox(height: 6),
                   GestureDetector(
                     onTap: () => _answerQuestion(p, qid),
-                    child: const Text('↳ Ҷавоб додан',
-                        style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600))),
+                    child: Text('↳ ${AppL10n.of(context).answerAction}',
+                        style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600))),
                 ] else ...[
                   const SizedBox(height: 4),
-                  Text('Ҳанӯз ҷавоб нест', style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
+                  Text(AppL10n.of(context).noAnswerYet, style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
                 ],
               ]),
             );
@@ -551,20 +555,21 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   void _askQuestion(ProductModel p) {
+    final l = AppL10n.of(context);
     if (!ref.read(authProvider).isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Барои савол додан ворид шавед'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(l.loginToAsk),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
       return;
     }
-    _textPrompt(title: 'Саволи худро нависед', hint: 'Масалан: Кафолат дорад?', action: 'Фиристодан',
+    _textPrompt(title: l.askQuestionTitle, hint: l.askQuestionHint, action: l.send,
       onSubmit: (text) async {
         try {
           await ReviewService.ask(p.id, text);
           ref.invalidate(productQuestionsProvider(p.id));
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-              content: Text('Савол фиристода шуд ✅'),
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(l.questionSent),
               backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
           }
         } catch (_) {}
@@ -572,7 +577,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   void _answerQuestion(ProductModel p, String questionId) {
-    _textPrompt(title: 'Ҷавоби шумо', hint: 'Ҷавобро нависед...', action: 'Ҷавоб додан',
+    final l = AppL10n.of(context);
+    _textPrompt(title: l.yourAnswer, hint: l.writeAnswerHint, action: l.answerAction,
       onSubmit: (text) async {
         try {
           await ReviewService.answer(questionId, text);
@@ -614,8 +620,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   void _openAddReview(ProductModel p) {
     if (!ref.read(authProvider).isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Барои шарҳ навиштан ворид шавед'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AppL10n.of(context).loginToReview),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
       return;
     }
@@ -642,7 +648,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         final others = list.where((e) => e.id != p.id).take(10).toList();
         if (others.isEmpty) return const SizedBox.shrink();
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Маҳсулоти монанд', style: TextStyle(
+          Text(AppL10n.of(context).similarProducts, style: TextStyle(
               color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           SizedBox(
@@ -679,6 +685,7 @@ class _AddReviewSheetState extends ConsumerState<_AddReviewSheet> {
 
   Future<void> _submit() async {
     setState(() => _loading = true);
+    final l = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ReviewService.submit(
@@ -686,14 +693,14 @@ class _AddReviewSheetState extends ConsumerState<_AddReviewSheet> {
       widget.onDone();
       if (!mounted) return;
       Navigator.pop(context);
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Шарҳи шумо илова шуд ✅'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l.reviewAdded),
         backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Хато ҳангоми фиристодани шарҳ'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l.errorSendingReview),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
     }
   }
@@ -706,7 +713,7 @@ class _AddReviewSheetState extends ConsumerState<_AddReviewSheet> {
         Center(child: Container(width: 40, height: 4,
             decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
         const SizedBox(height: 16),
-        Text('Баҳои худро гузоред', style: TextStyle(
+        Text(AppL10n.of(context).rateThis, style: TextStyle(
             color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 16),
         Center(child: Row(mainAxisSize: MainAxisSize.min, children: List.generate(5, (i) =>
@@ -723,11 +730,11 @@ class _AddReviewSheetState extends ConsumerState<_AddReviewSheet> {
           child: SafeInput(
             controller: _ctrl,
             maxLines: 3,
-            hint: 'Фикри худро нависед (ихтиёрӣ)...',
+            hint: AppL10n.of(context).reviewHint,
             textColor: context.pal.textPrimary, fontSize: 14),
         ),
         const SizedBox(height: 20),
-        AppButton(text: 'Фиристодан', onTap: _submit, isLoading: _loading),
+        AppButton(text: AppL10n.of(context).send, onTap: _submit, isLoading: _loading),
       ]),
     );
   }
@@ -763,8 +770,8 @@ class _ReviewTileState extends ConsumerState<_ReviewTile> {
   Future<void> _toggle() async {
     if (_busy) return;
     if (!ref.read(authProvider).isAuthenticated) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Барои овоз додан ворид шавед'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AppL10n.of(context).loginToVote),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
       return;
     }
@@ -790,7 +797,7 @@ class _ReviewTileState extends ConsumerState<_ReviewTile> {
             child: (r.userAvatar == null || r.userAvatar!.isEmpty)
                 ? Icon(Icons.person, size: 16, color: context.pal.textMuted) : null),
           const SizedBox(width: 8),
-          Expanded(child: Text(r.userName?.isNotEmpty == true ? r.userName! : 'Корбар',
+          Expanded(child: Text(r.userName?.isNotEmpty == true ? r.userName! : AppL10n.of(context).userWord,
               style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w600))),
           Text(DateFormat('dd.MM.yyyy').format(r.createdAt),
               style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
@@ -810,7 +817,7 @@ class _ReviewTileState extends ConsumerState<_ReviewTile> {
             Icon(_liked ? Icons.thumb_up_alt_rounded : Icons.thumb_up_off_alt_rounded,
                 size: 15, color: _liked ? AppColors.primary : context.pal.textMuted),
             const SizedBox(width: 5),
-            Text('Фоиданок${_count > 0 ? ' ($_count)' : ''}',
+            Text('${AppL10n.of(context).helpful}${_count > 0 ? ' ($_count)' : ''}',
                 style: TextStyle(color: _liked ? AppColors.primary : context.pal.textMuted, fontSize: 12)),
           ]),
         ),
