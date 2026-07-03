@@ -11,6 +11,13 @@ import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/safe_input.dart';
 
+/// Градиенти сабз (ecommerce_int2 look, ранги бренди TajikShop).
+const LinearGradient _greenGradient = LinearGradient(
+  colors: [Color(0xFF00D084), Color(0xFF00A3FF)],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+);
+
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
   @override
@@ -63,48 +70,84 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Search Bar
+            // ── Header (template "Search" title + close) ──
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: Row(children: [
-                IconButton(
-                  icon: Icon(Icons.arrow_back_ios_new, color: context.pal.textPrimary, size: 20),
-                  onPressed: () => context.go('/home'),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Container(
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: context.pal.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.primary, width: 1.5),
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Ҷустуҷӯ',
+                    style: TextStyle(
+                      color: context.pal.textPrimary,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
-                    child: Row(children: [
-                      const SizedBox(width: 12),
-                      const Icon(Icons.search_rounded, color: AppColors.primary, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(child: SafeInput(
-                        controller: _ctrl,
-                        focusNode: _focus,
-                        hint: AppL10n.of(context).searchProductsHint,
-                        textInputAction: TextInputAction.search,
-                        fontSize: 14,
-                        textColor: context.pal.textPrimary,
-                        onChanged: (v) => ref.read(searchQueryProvider.notifier).state = v,
-                        onSubmitted: _search,
-                      )),
-                      if (query.isNotEmpty) IconButton(
-                        icon: Icon(Icons.close_rounded, color: context.pal.textMuted, size: 18),
-                        onPressed: () { _ctrl.clear(); ref.read(searchQueryProvider.notifier).state = ''; },
-                      ),
-                      const SizedBox(width: 4),
-                    ]),
                   ),
+                  IconButton(
+                    icon: Icon(Icons.close_rounded,
+                        color: context.pal.textPrimary, size: 24),
+                    onPressed: () => context.go('/home'),
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Prominent rounded search bar ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  color: context.pal.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x1A00D084),
+                      offset: Offset(0, 4),
+                      blurRadius: 16,
+                    ),
+                  ],
                 ),
-              ]),
+                child: Row(children: [
+                  const SizedBox(width: 8),
+                  // Градиенти сабз дар иконаи ҷустуҷӯ
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: _greenGradient,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.search_rounded,
+                        color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SafeInput(
+                      controller: _ctrl,
+                      focusNode: _focus,
+                      hint: AppL10n.of(context).searchProductsHint,
+                      textInputAction: TextInputAction.search,
+                      fontSize: 15,
+                      textColor: context.pal.textPrimary,
+                      onChanged: (v) =>
+                          ref.read(searchQueryProvider.notifier).state = v,
+                      onSubmitted: _search,
+                    ),
+                  ),
+                  if (query.isNotEmpty)
+                    IconButton(
+                      icon: Icon(Icons.close_rounded,
+                          color: context.pal.textMuted, size: 20),
+                      onPressed: () {
+                        _ctrl.clear();
+                        ref.read(searchQueryProvider.notifier).state = '';
+                      },
+                    ),
+                  const SizedBox(width: 4),
+                ]),
+              ),
             ),
 
             Expanded(
@@ -112,51 +155,76 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ? _buildEmptyState(categories)
                   : results.when(
                       loading: () => GridView.builder(
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.68),
+                        padding: const EdgeInsets.all(20),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 0.68),
                         itemCount: 6,
-                        itemBuilder: (_, __) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          ShimmerCard(height: 150, radius: 16),
-                          const SizedBox(height: 8),
-                          ShimmerCard(height: 14, width: 120, radius: 4),
-                          const SizedBox(height: 4),
-                          ShimmerCard(height: 14, width: 80, radius: 4),
-                        ]),
+                        itemBuilder: (_, __) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ShimmerCard(height: 150, radius: 16),
+                              const SizedBox(height: 8),
+                              ShimmerCard(height: 14, width: 120, radius: 4),
+                              const SizedBox(height: 4),
+                              ShimmerCard(height: 14, width: 80, radius: 4),
+                            ]),
                       ),
                       error: (e, _) => Center(
-                        child: Text('Хато: $e', style: const TextStyle(color: AppColors.error)),
+                        child: Text('Хато: $e',
+                            style: const TextStyle(color: AppColors.error)),
                       ),
                       data: (list) => list.isEmpty
                           ? Center(
-                              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                                Icon(Icons.search_off_rounded, size: 80, color: context.pal.textMuted),
-                                const SizedBox(height: 16),
-                                Text('"$query" — ёфт нашуд',
-                                    style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
-                                const SizedBox(height: 8),
-                                Text('Калимаи дигар истифода кунед',
-                                    style: TextStyle(color: context.pal.textMuted, fontSize: 13)),
-                              ]),
+                              child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.search_off_rounded,
+                                        size: 80, color: context.pal.textMuted),
+                                    const SizedBox(height: 16),
+                                    Text('"$query" — ёфт нашуд',
+                                        style: TextStyle(
+                                            color: context.pal.textSecondary,
+                                            fontSize: 15)),
+                                    const SizedBox(height: 8),
+                                    Text('Калимаи дигар истифода кунед',
+                                        style: TextStyle(
+                                            color: context.pal.textMuted,
+                                            fontSize: 13)),
+                                  ]),
                             )
                           : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                                  padding: const EdgeInsets.fromLTRB(
+                                      20, 0, 20, 12),
                                   child: Row(children: [
-                                    Expanded(child: Text('${list.length} натиҷа барои "$query"',
-                                        style: TextStyle(color: context.pal.textMuted, fontSize: 13))),
+                                    Expanded(
+                                        child: Text(
+                                            '${list.length} натиҷа барои "$query"',
+                                            style: TextStyle(
+                                                color: context.pal.textMuted,
+                                                fontSize: 13))),
                                     _sortButton(),
                                   ]),
                                 ),
                                 Expanded(
                                   child: GridView.builder(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.68),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20),
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: 2,
+                                            crossAxisSpacing: 12,
+                                            mainAxisSpacing: 12,
+                                            childAspectRatio: 0.68),
                                     itemCount: list.length,
-                                    itemBuilder: (_, i) => ProductCard(product: list[i]),
+                                    itemBuilder: (_, i) =>
+                                        ProductCard(product: list[i]),
                                   ),
                                 ),
                               ],
@@ -171,29 +239,40 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _sortButton() {
     const opts = {
-      null: 'Нав', 'price_asc': 'Арзон → Қимат',
-      'price_desc': 'Қимат → Арзон', 'popular': 'Машҳур',
+      null: 'Нав',
+      'price_asc': 'Арзон → Қимат',
+      'price_desc': 'Қимат → Арзон',
+      'popular': 'Машҳур',
     };
     final current = ref.watch(searchSortProvider);
     return PopupMenuButton<String?>(
       color: context.pal.elevated,
       onSelected: (v) => ref.read(searchSortProvider.notifier).state = v,
-      itemBuilder: (_) => opts.entries.map((e) => PopupMenuItem<String?>(
-        value: e.key,
-        child: Row(children: [
-          if (current == e.key) const Icon(Icons.check, color: AppColors.primary, size: 16)
-          else const SizedBox(width: 16),
-          const SizedBox(width: 8),
-          Text(e.value, style: TextStyle(color: context.pal.textPrimary)),
-        ]))).toList(),
+      itemBuilder: (_) => opts.entries
+          .map((e) => PopupMenuItem<String?>(
+              value: e.key,
+              child: Row(children: [
+                if (current == e.key)
+                  const Icon(Icons.check, color: AppColors.primary, size: 16)
+                else
+                  const SizedBox(width: 16),
+                const SizedBox(width: 8),
+                Text(e.value,
+                    style: TextStyle(color: context.pal.textPrimary)),
+              ])))
+          .toList(),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(20),
+        decoration: BoxDecoration(
+            color: context.pal.card,
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(color: context.pal.border, width: 0.5)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.swap_vert_rounded, color: AppColors.primary, size: 16),
+          const Icon(Icons.swap_vert_rounded,
+              color: AppColors.primary, size: 16),
           const SizedBox(width: 4),
-          Text(opts[current] ?? 'Нав', style: TextStyle(color: context.pal.textPrimary, fontSize: 12)),
+          Text(opts[current] ?? 'Нав',
+              style: TextStyle(color: context.pal.textPrimary, fontSize: 12)),
         ]),
       ),
     );
@@ -207,31 +286,51 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Text('Ҷустуҷӯҳои охирин',
-                style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                style: TextStyle(
+                    color: context.pal.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold)),
             const Spacer(),
             GestureDetector(
-              onTap: () => SearchHistoryService.clear().then((_) => ref.invalidate(searchHistoryProvider)),
-              child: const Text('Тоза кардан', style: TextStyle(color: AppColors.primary, fontSize: 12))),
+                onTap: () => SearchHistoryService.clear()
+                    .then((_) => ref.invalidate(searchHistoryProvider)),
+                child: const Text('Тоза кардан',
+                    style: TextStyle(color: AppColors.primary, fontSize: 12))),
           ]),
-          const SizedBox(height: 10),
-          Wrap(spacing: 8, runSpacing: 8, children: list.map((q) => GestureDetector(
-            onTap: () => _search(q),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-              decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: context.pal.border, width: 0.5)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.history_rounded, color: context.pal.textMuted, size: 15),
-                const SizedBox(width: 6),
-                Text(q, style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
-                const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: () => SearchHistoryService.remove(q).then((_) => ref.invalidate(searchHistoryProvider)),
-                  child: Icon(Icons.close_rounded, color: context.pal.textMuted, size: 15)),
-              ]),
-            ),
-          )).toList()),
-          const SizedBox(height: 24),
+          const SizedBox(height: 12),
+          Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: list
+                  .map((q) => GestureDetector(
+                        onTap: () => _search(q),
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(14, 9, 10, 9),
+                          decoration: BoxDecoration(
+                              color: context.pal.card,
+                              borderRadius: BorderRadius.circular(45),
+                              border: Border.all(
+                                  color: context.pal.border, width: 0.5)),
+                          child: Row(mainAxisSize: MainAxisSize.min, children: [
+                            Icon(Icons.history_rounded,
+                                color: context.pal.textMuted, size: 15),
+                            const SizedBox(width: 6),
+                            Text(q,
+                                style: TextStyle(
+                                    color: context.pal.textSecondary,
+                                    fontSize: 13)),
+                            const SizedBox(width: 6),
+                            GestureDetector(
+                                onTap: () => SearchHistoryService.remove(q).then(
+                                    (_) =>
+                                        ref.invalidate(searchHistoryProvider)),
+                                child: Icon(Icons.close_rounded,
+                                    color: context.pal.textMuted, size: 15)),
+                          ]),
+                        ),
+                      ))
+                  .toList()),
+          const SizedBox(height: 28),
         ]);
       },
       orElse: () => const SizedBox.shrink(),
@@ -245,36 +344,67 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         if (list.isEmpty) return const SizedBox.shrink();
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Бознигаристашуда',
-              style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              style: TextStyle(
+                  color: context.pal.textPrimary,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
-          SizedBox(height: 150, child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: list.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (_, i) {
-              final m = list[i];
-              final id = m['id']?.toString() ?? '';
-              final image = m['image']?.toString() ?? '';
-              final price = (m['price'] as num?)?.toDouble() ?? 0;
-              return GestureDetector(
-                onTap: () => context.push('/product/$id'),
-                child: SizedBox(width: 100, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  ClipRRect(borderRadius: BorderRadius.circular(12),
-                    child: image.isNotEmpty
-                        ? CachedNetworkImage(imageUrl: image, width: 100, height: 100, fit: BoxFit.cover,
-                            errorWidget: (_, __, ___) => Container(width: 100, height: 100, color: context.pal.surface,
-                                child: Icon(Icons.image_outlined, color: context.pal.textMuted)))
-                        : Container(width: 100, height: 100, color: context.pal.surface,
-                            child: Icon(Icons.image_outlined, color: context.pal.textMuted))),
-                  const SizedBox(height: 4),
-                  Text(m['title']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: context.pal.textSecondary, fontSize: 11)),
-                  Text('${price.toStringAsFixed(0)} сом.',
-                      style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
-                ])),
-              );
-            })),
-          const SizedBox(height: 24),
+          SizedBox(
+              height: 150,
+              child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: list.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (_, i) {
+                    final m = list[i];
+                    final id = m['id']?.toString() ?? '';
+                    final image = m['image']?.toString() ?? '';
+                    final price = (m['price'] as num?)?.toDouble() ?? 0;
+                    return GestureDetector(
+                      onTap: () => context.push('/product/$id'),
+                      child: SizedBox(
+                          width: 100,
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: image.isNotEmpty
+                                        ? CachedNetworkImage(
+                                            imageUrl: image,
+                                            width: 100,
+                                            height: 100,
+                                            fit: BoxFit.cover,
+                                            errorWidget: (_, __, ___) => Container(
+                                                width: 100,
+                                                height: 100,
+                                                color: context.pal.surface,
+                                                child: Icon(
+                                                    Icons.image_outlined,
+                                                    color:
+                                                        context.pal.textMuted)))
+                                        : Container(
+                                            width: 100,
+                                            height: 100,
+                                            color: context.pal.surface,
+                                            child: Icon(Icons.image_outlined,
+                                                color: context.pal.textMuted))),
+                                const SizedBox(height: 4),
+                                Text(m['title']?.toString() ?? '',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        color: context.pal.textSecondary,
+                                        fontSize: 11)),
+                                Text('${price.toStringAsFixed(0)} сом.',
+                                    style: const TextStyle(
+                                        color: AppColors.primary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700)),
+                              ])),
+                    );
+                  })),
+          const SizedBox(height: 28),
         ]);
       },
       orElse: () => const SizedBox.shrink(),
@@ -283,7 +413,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildEmptyState(AsyncValue categories) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -291,60 +421,109 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           _recentlyViewed(),
           // Popular searches
           Text(AppL10n.of(context).popularSearches,
-              style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              style: TextStyle(
+                  color: context.pal.textPrimary,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           Wrap(
-            spacing: 8, runSpacing: 8,
-            children: ['iPhone', 'Телевизор', 'Либос', 'Пойафзол', 'Ноутбук', 'Гӯшвора',
-                'Смартфон', 'Мебел'].map((tag) => GestureDetector(
-              onTap: () => _search(tag),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: context.pal.card,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: context.pal.border, width: 0.5),
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              'iPhone',
+              'Телевизор',
+              'Либос',
+              'Пойафзол',
+              'Ноутбук',
+              'Гӯшвора',
+              'Смартфон',
+              'Мебел'
+            ].map((tag) {
+              final active = ref.watch(searchQueryProvider) == tag;
+              return GestureDetector(
+                onTap: () => _search(tag),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                  decoration: BoxDecoration(
+                    gradient: active ? _greenGradient : null,
+                    color: active ? null : context.pal.card,
+                    borderRadius: BorderRadius.circular(45),
+                    border: Border.all(color: context.pal.border, width: 0.5),
+                  ),
+                  child: Text(tag,
+                      style: TextStyle(
+                          color: active
+                              ? Colors.white
+                              : context.pal.textSecondary,
+                          fontSize: 13,
+                          fontWeight:
+                              active ? FontWeight.w600 : FontWeight.normal)),
                 ),
-                child: Text(tag, style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
-              ),
-            )).toList(),
+              );
+            }).toList(),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 32),
           // Categories
           Text(AppL10n.of(context).categories,
-              style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+              style: TextStyle(
+                  color: context.pal.textPrimary,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           categories.when(
             data: (cats) => GridView.builder(
-              shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.1),
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.1),
               itemCount: cats.length > 9 ? 9 : cats.length,
               itemBuilder: (_, i) => GestureDetector(
                 onTap: () => _search(cats[i].name),
                 child: Container(
                   decoration: BoxDecoration(
                     color: context.pal.card,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: context.pal.border, width: 0.5),
                   ),
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    const Icon(Icons.category_outlined, color: AppColors.primary, size: 28),
-                    const SizedBox(height: 6),
-                    Text(cats[i].name,
-                        maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: context.pal.textSecondary, fontSize: 11),
-                        textAlign: TextAlign.center),
-                  ]),
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            gradient: _greenGradient,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(Icons.category_outlined,
+                              color: Colors.white, size: 24),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(cats[i].name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                color: context.pal.textSecondary,
+                                fontSize: 11),
+                            textAlign: TextAlign.center),
+                      ]),
                 ),
               ),
             ),
             loading: () => GridView.builder(
-              shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.1),
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.1),
               itemCount: 6,
-              itemBuilder: (_, __) => ShimmerCard(radius: 14),
+              itemBuilder: (_, __) => ShimmerCard(radius: 18),
             ),
             error: (_, __) => const SizedBox(),
           ),
