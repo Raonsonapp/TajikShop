@@ -358,7 +358,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         const SizedBox(width: 12),
         // Big rounded GREEN gradient primary button
         Expanded(flex: 2, child: _gradientButton(
-          enabled: !busy,
+          enabled: true,
           onTap: busy ? null : () {
             if (_step == 1) {
               if (_images.isEmpty) { setState(() => _error = AppL10n.of(context).addPhoto); return; }
