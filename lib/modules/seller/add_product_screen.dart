@@ -49,9 +49,11 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       await ApiClient.instance.dio.post(ApiEndpoints.products, data: formData);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Маҳсулот нашр шуд!'),
+          SnackBar(
+            content: const Text('✅ Маҳсулот нашр шуд!'),
             backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
         Navigator.of(context).pop();
@@ -76,6 +78,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(
         backgroundColor: context.pal.scaffold,
+        elevation: 0,
         title: Text('Маҳсулот илова кунед',
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         iconTheme: IconThemeData(color: context.pal.textPrimary),
@@ -88,31 +91,48 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Images Section
-              Text('Расмҳо (то 5)',
-                  style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 10),
+              _sectionHeader('Расмҳо (то 5)'),
+              const SizedBox(height: 12),
+              // Rounded dashed green image picker area
               GestureDetector(
                 onTap: _pickImage,
-                child: Container(
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: context.pal.card,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.5), style: BorderStyle.solid),
-                  ),
-                  child: const Center(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary, size: 32),
-                      SizedBox(height: 8),
-                      Text('Расм илова кунед', style: TextStyle(color: AppColors.primary, fontSize: 13)),
-                    ]),
+                child: CustomPaint(
+                  painter: _DashedBorderPainter(color: AppColors.primary, radius: 16),
+                  child: Container(
+                    height: 130,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 54, height: 54,
+                          decoration: BoxDecoration(
+                            gradient: AppColors.primaryGradient,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.35),
+                                blurRadius: 14, offset: const Offset(0, 6)),
+                            ],
+                          ),
+                          child: const Icon(Icons.add_photo_alternate_outlined, color: Colors.white, size: 26),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text('Расм илова кунед',
+                            style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
                   ),
                 ),
               ),
               if (_images.isNotEmpty) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 SizedBox(
-                  height: 80,
+                  height: 82,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: _images.length,
@@ -120,20 +140,25 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                       children: [
                         Container(
                           margin: const EdgeInsets.only(right: 8),
-                          width: 75, height: 75,
+                          width: 78, height: 78,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 8, offset: const Offset(0, 3)),
+                            ],
                             image: DecorationImage(image: FileImage(_images[i]), fit: BoxFit.cover),
                           ),
                         ),
                         Positioned(
-                          top: 0, right: 0,
+                          top: 0, right: 4,
                           child: GestureDetector(
                             onTap: () => setState(() => _images.removeAt(i)),
                             child: Container(
-                              width: 20, height: 20,
+                              width: 22, height: 22,
                               decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-                              child: const Icon(Icons.close, size: 12, color: Colors.white),
+                              child: const Icon(Icons.close, size: 13, color: Colors.white),
                             ),
                           ),
                         ),
@@ -142,12 +167,11 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               // Fields
-              const Text('Маълумоти маҳсулот',
-                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 12),
+              _sectionHeader('Маълумоти маҳсулот'),
+              const SizedBox(height: 14),
               AppTextField(
                 hint: 'Номи маҳсулот*', controller: _titleCtrl,
                 prefixIcon: Icons.inventory_2_outlined,
@@ -180,20 +204,25 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 maxLines: 4,
                 validator: (v) => v!.trim().isEmpty ? 'Тавсиф лозим аст' : null,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               if (_error != null)
                 Container(
                   margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                    color: AppColors.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                   ),
-                  child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                  child: Row(children: [
+                    const Icon(Icons.error_outline, color: AppColors.error, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13))),
+                  ]),
                 ),
 
+              // Big rounded GREEN gradient submit button (AppButton uses primaryGradient)
               AppButton(text: 'Нашр кардан', onTap: _submit, isLoading: _loading),
               const SizedBox(height: 40),
             ],
@@ -202,4 +231,57 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       ),
     );
   }
+
+  Widget _sectionHeader(String t) => Row(children: [
+        Container(
+          width: 4, height: 18,
+          decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(t,
+            style: TextStyle(
+                color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 16)),
+      ]);
+}
+
+/// Ҳошияи чиндор (dashed) барои майдони интихоби расм — услуби template.
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  final double dash;
+  final double gap;
+  final double strokeWidth;
+  _DashedBorderPainter({
+    required this.color,
+    this.radius = 16,
+    this.dash = 6,
+    this.gap = 4,
+    this.strokeWidth = 1.5,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+    final rrect = RRect.fromRectAndRadius(
+        Offset.zero & size, Radius.circular(radius));
+    final path = Path()..addRRect(rrect);
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final next = distance + dash;
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance = next + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter old) =>
+      old.color != color || old.radius != radius;
 }

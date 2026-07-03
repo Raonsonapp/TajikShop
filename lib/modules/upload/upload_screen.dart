@@ -169,13 +169,24 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
                 style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)))],
       ),
       body: Column(children: [
-        Container(color: context.pal.scaffold, padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        // Step indicator with green gradient progress bar
+        Container(color: context.pal.scaffold, padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
           child: Row(children: [
-            Text('$_step / 2', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 16)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(20)),
+              child: Text('$_step / 2', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13))),
             const SizedBox(width: 12),
-            Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(value: _step == 1 ? 0.5 : 1.0,
-                  backgroundColor: context.pal.surface, color: AppColors.primary, minHeight: 5))),
+            Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(6),
+              child: Stack(children: [
+                Container(height: 6, color: context.pal.surface),
+                FractionallySizedBox(
+                  widthFactor: _step == 1 ? 0.5 : 1.0,
+                  child: Container(height: 6,
+                    decoration: const BoxDecoration(gradient: AppColors.primaryGradient))),
+              ]))),
           ])),
         Expanded(child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -187,53 +198,58 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
   Widget _step1(AsyncValue cats) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     _sec('1. ${AppL10n.of(context).photos}', AppL10n.of(context).photosHint),
-    GestureDetector(onTap: _pick, child: Container(
-      width: double.infinity, height: 130,
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.primary, width: 1.5)),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Container(width: 48, height: 48,
-          decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.15), shape: BoxShape.circle),
-          child: const Icon(Icons.camera_alt_rounded, color: AppColors.primary, size: 26)),
-        const SizedBox(height: 8),
-        Text(AppL10n.of(context).addPhoto, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 14)),
-        const SizedBox(height: 3),
-        Text(AppL10n.of(context).photosSubHint, style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
-      ]))),
-    const SizedBox(height: 10),
-    if (_images.isNotEmpty) SizedBox(height: 86, child: ListView.builder(
+    // Rounded dashed green image picker area
+    GestureDetector(onTap: _pick, child: CustomPaint(
+      painter: _DashedBorderPainter(color: AppColors.primary, radius: 16),
+      child: Container(
+        width: double.infinity, height: 140,
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(16)),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(width: 54, height: 54,
+            decoration: BoxDecoration(gradient: AppColors.primaryGradient, shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 6))]),
+            child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 26)),
+          const SizedBox(height: 10),
+          Text(AppL10n.of(context).addPhoto, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 14)),
+          const SizedBox(height: 3),
+          Text(AppL10n.of(context).photosSubHint, style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
+        ])))),
+    const SizedBox(height: 12),
+    if (_images.isNotEmpty) SizedBox(height: 88, child: ListView.builder(
       scrollDirection: Axis.horizontal,
       itemCount: _images.length < 5 ? _images.length + 1 : _images.length,
       itemBuilder: (_, i) {
         if (i == _images.length) return GestureDetector(onTap: _pick,
-          child: Container(width: 78, height: 78, margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(border: Border.all(color: AppColors.primary, width: 1.5),
-                borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.add_rounded, color: AppColors.primary, size: 30)));
+          child: CustomPaint(
+            painter: _DashedBorderPainter(color: AppColors.primary, radius: 14),
+            child: Container(width: 80, height: 80, margin: const EdgeInsets.only(right: 8),
+              alignment: Alignment.center,
+              child: const Icon(Icons.add_rounded, color: AppColors.primary, size: 30))));
         return Stack(children: [
-          Container(width: 78, height: 78, margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(10),
+          Container(width: 80, height: 80, margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(14),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 3))],
               image: DecorationImage(image: FileImage(_images[i]), fit: BoxFit.cover))),
           Positioned(bottom: 2, left: 2,
-            child: Container(padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-              decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
+            child: Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
               child: Text(_fsize(_images[i]), style: const TextStyle(color: Colors.white, fontSize: 9)))),
           Positioned(top: -2, right: 4, child: GestureDetector(
             onTap: () => setState(() => _images.removeAt(i)),
-            child: Container(width: 20, height: 20,
+            child: Container(width: 22, height: 22,
               decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
               child: const Icon(Icons.close, size: 13, color: Colors.white)))),
         ]);
       })),
-    const SizedBox(height: 20),
+    const SizedBox(height: 22),
     _sec('2. ${AppL10n.of(context).basicInfo}', null),
     _field('${AppL10n.of(context).productName} *', _titleCtrl, hint: AppL10n.of(context).productNameHint),
-    const SizedBox(height: 12),
+    const SizedBox(height: 14),
     Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Expanded(child: _field('${AppL10n.of(context).price} (сомонӣ) *', _priceCtrl, hint: '0', type: TextInputType.number)),
-      const SizedBox(width: 10),
+      const SizedBox(width: 12),
       Expanded(child: _drop<String>(label: AppL10n.of(context).category, value: _catId, hint: AppL10n.of(context).selectHint,
         items: cats.when(
           data: (l) => l.map<DropdownMenuItem<String>>((c) =>
@@ -241,13 +257,11 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           loading: () => [], error: (_, __) => []),
         onChanged: (v) => setState(() => _catId = v))),
     ]),
-    const SizedBox(height: 20),
+    const SizedBox(height: 22),
     _sec('3. ${AppL10n.of(context).description}', null),
-    Container(
-      height: 120,
-      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.pal.border, width: 0.5)),
-      padding: const EdgeInsets.all(12),
+    _card(
+      height: 128,
+      padding: const EdgeInsets.all(14),
       child: SafeInput(
         controller: _descCtrl,
         maxLines: 5,
@@ -266,19 +280,19 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       Expanded(child: _drop<String>(label: AppL10n.of(context).conditionLabel, value: _condition, hint: '',
         items: _conditions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
         onChanged: (v) => setState(() => _condition = v ?? _condition))),
-      const SizedBox(width: 10),
+      const SizedBox(width: 12),
       Expanded(child: _drop<String>(label: AppL10n.of(context).city, value: _city, hint: '',
         items: _cities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
         onChanged: (v) => setState(() => _city = v ?? _city))),
     ]),
-    const SizedBox(height: 12),
+    const SizedBox(height: 14),
     _field(AppL10n.of(context).quantity, _stockCtrl, hint: '1', type: TextInputType.number),
-    const SizedBox(height: 20),
+    const SizedBox(height: 22),
 
     // Seller info notice
     Container(padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.primary.withValues(alpha: 0.3))),
       child: Row(children: [
         const Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 20),
@@ -293,17 +307,17 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       ])),
     const SizedBox(height: 20),
 
-    if (_becomingS) Container(padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12)),
+    if (_becomingS) Container(padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(16)),
       child: Row(children: [
         const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
         const SizedBox(width: 12),
         Text(AppL10n.of(context).becomingSeller, style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
       ])),
 
-    if (_error != null) Container(padding: const EdgeInsets.all(12),
+    if (_error != null) Container(padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.error.withValues(alpha: 0.3))),
       child: Row(children: [
         const Icon(Icons.error_outline, color: AppColors.error, size: 18),
@@ -312,78 +326,119 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       ])),
 
     if (_loading && _progress > 0) Column(children: [
-      const SizedBox(height: 12),
+      const SizedBox(height: 14),
       ClipRRect(borderRadius: BorderRadius.circular(8),
-        child: LinearProgressIndicator(value: _progress,
-            backgroundColor: context.pal.surface, color: AppColors.primary, minHeight: 8)),
+        child: Stack(children: [
+          Container(height: 8, color: context.pal.surface),
+          FractionallySizedBox(
+            widthFactor: _progress.clamp(0.0, 1.0),
+            child: Container(height: 8,
+              decoration: const BoxDecoration(gradient: AppColors.primaryGradient))),
+        ])),
       const SizedBox(height: 6),
       Text('${(_progress * 100).round()}% ${AppL10n.of(context).uploaded}', style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
     ]),
   ]);
 
-  Widget _bottomBar() => Container(
-    padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
-    decoration: BoxDecoration(color: context.pal.card,
-        border: Border(top: BorderSide(color: context.pal.border))),
-    child: Row(children: [
-      Expanded(child: OutlinedButton.icon(
-        onPressed: _loading ? null : (_step == 2 ? () => setState(() { _step = 1; _error = null; }) : () {}),
-        icon: Icon(_step == 2 ? Icons.arrow_back_rounded : Icons.visibility_outlined, size: 18, color: AppColors.primary),
-        label: Text(_step == 2 ? AppL10n.of(context).back : AppL10n.of(context).preview,
-            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
-        style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.primary),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))),
-      const SizedBox(width: 12),
-      Expanded(child: ElevatedButton.icon(
-        onPressed: (_loading || _becomingS) ? null : () {
-          if (_step == 1) {
-            if (_images.isEmpty) { setState(() => _error = AppL10n.of(context).addPhoto); return; }
-            if (_titleCtrl.text.trim().isEmpty) { setState(() => _error = AppL10n.of(context).enterName); return; }
-            final p = double.tryParse(_priceCtrl.text.replaceAll(',', '.'));
-            if (p == null || p <= 0) { setState(() => _error = AppL10n.of(context).enterPrice); return; }
-            setState(() { _step = 2; _error = null; });
-          } else { _submit(); }
-        },
-        icon: (_loading || _becomingS)
-            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : Icon(_step == 1 ? Icons.arrow_forward_rounded : Icons.send_rounded, size: 18),
-        label: Text((_loading || _becomingS) ? AppL10n.of(context).processing : _step == 1 ? AppL10n.of(context).continueWord : AppL10n.of(context).publish,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))),
-    ]),
-  );
+  Widget _bottomBar() {
+    final busy = _loading || _becomingS;
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
+      decoration: BoxDecoration(color: context.pal.card,
+          border: Border(top: BorderSide(color: context.pal.border))),
+      child: Row(children: [
+        Expanded(child: OutlinedButton.icon(
+          onPressed: _loading ? null : (_step == 2 ? () => setState(() { _step = 1; _error = null; }) : () {}),
+          icon: Icon(_step == 2 ? Icons.arrow_back_rounded : Icons.visibility_outlined, size: 18, color: AppColors.primary),
+          label: Text(_step == 2 ? AppL10n.of(context).back : AppL10n.of(context).preview,
+              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+          style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.primary, width: 1.5),
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))))),
+        const SizedBox(width: 12),
+        // Big rounded GREEN gradient primary button
+        Expanded(flex: 2, child: _gradientButton(
+          enabled: true,
+          onTap: busy ? null : () {
+            if (_step == 1) {
+              if (_images.isEmpty) { setState(() => _error = AppL10n.of(context).addPhoto); return; }
+              if (_titleCtrl.text.trim().isEmpty) { setState(() => _error = AppL10n.of(context).enterName); return; }
+              final p = double.tryParse(_priceCtrl.text.replaceAll(',', '.'));
+              if (p == null || p <= 0) { setState(() => _error = AppL10n.of(context).enterPrice); return; }
+              setState(() { _step = 2; _error = null; });
+            } else { _submit(); }
+          },
+          child: busy
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(_step == 1 ? Icons.arrow_forward_rounded : Icons.send_rounded, size: 18, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(_step == 1 ? AppL10n.of(context).continueWord : AppL10n.of(context).publish,
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Colors.white)),
+                ]),
+        )),
+      ]),
+    );
+  }
 
-  Widget _sec(String t, String? s) => Padding(padding: const EdgeInsets.only(bottom: 10),
+  // Big rounded green gradient button
+  Widget _gradientButton({required bool enabled, required VoidCallback? onTap, required Widget child}) =>
+    DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: enabled ? AppColors.primaryGradient : null,
+        color: enabled ? null : context.pal.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: enabled
+            ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))]
+            : null,
+      ),
+      child: Material(color: Colors.transparent,
+        child: InkWell(borderRadius: BorderRadius.circular(16), onTap: onTap,
+          child: Container(height: 52, alignment: Alignment.center, child: child))),
+    );
+
+  Widget _sec(String t, String? s) => Padding(padding: const EdgeInsets.only(bottom: 12),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(t, style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-      if (s != null) ...[const SizedBox(height: 2),
-        Text(s, style: TextStyle(color: context.pal.textSecondary, fontSize: 12))],
+      Row(children: [
+        Container(width: 4, height: 18,
+          decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(2))),
+        const SizedBox(width: 10),
+        Text(t, style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+      ]),
+      if (s != null) ...[const SizedBox(height: 4),
+        Padding(padding: const EdgeInsets.only(left: 14),
+          child: Text(s, style: TextStyle(color: context.pal.textSecondary, fontSize: 12)))],
     ]));
+
+  // Soft rounded card container (radius 16 + soft shadow)
+  Widget _card({required Widget child, double? height, EdgeInsets? padding}) => Container(
+    height: height,
+    padding: padding,
+    decoration: BoxDecoration(
+      color: context.pal.card,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: context.pal.border, width: 0.5),
+      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4))],
+    ),
+    child: child,
+  );
 
   Widget _field(String label, TextEditingController c,
       {String? hint, TextInputType? type, List<TextInputFormatter>? formatters}) =>
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: TextStyle(color: context.pal.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
-      const SizedBox(height: 5),
-      Container(
-        height: 50,
-        decoration: BoxDecoration(
-          color: context.pal.card,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.pal.border, width: 0.5),
-        ),
+      const SizedBox(height: 6),
+      _card(
+        height: 54,
         padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: SafeInput(
+        child: Align(alignment: Alignment.centerLeft, child: SafeInput(
           controller: c,
           keyboardType: type,
           formatters: formatters,
           hint: hint ?? '',
           textColor: context.pal.textPrimary,
           fontSize: 14,
-        ),
+        )),
       ),
     ]);
 
@@ -391,16 +446,17 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       required List<DropdownMenuItem<T>> items, required void Function(T?) onChanged}) =>
     Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: TextStyle(color: context.pal.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
-      const SizedBox(height: 5),
-      Container(padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: context.pal.border, width: 0.5)),
+      const SizedBox(height: 6),
+      _card(
+        height: 54,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         child: DropdownButtonHideUnderline(child: DropdownButton<T>(
           value: value, isExpanded: true, dropdownColor: context.pal.card,
           hint: Text(hint, style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
           icon: Icon(Icons.keyboard_arrow_down_rounded, color: context.pal.textMuted),
           items: items, onChanged: onChanged,
-          style: TextStyle(color: context.pal.textPrimary, fontSize: 13)))),
+          style: TextStyle(color: context.pal.textPrimary, fontSize: 13))),
+      ),
     ]);
 
   Widget _notAuth() => Scaffold(backgroundColor: context.pal.scaffold,
@@ -413,4 +469,43 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       const SizedBox(height: 20),
       AppButton(text: AppL10n.of(context).signIn, width: 200, height: 46, onTap: () => context.go(RouteNames.login)),
     ])));
+}
+
+/// Ҳошияи чиндор (dashed) барои майдони интихоби расм — услуби template.
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  final double dash;
+  final double gap;
+  final double strokeWidth;
+  _DashedBorderPainter({
+    required this.color,
+    this.radius = 16,
+    this.dash = 6,
+    this.gap = 4,
+    this.strokeWidth = 1.5,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+    final rrect = RRect.fromRectAndRadius(
+        Offset.zero & size, Radius.circular(radius));
+    final path = Path()..addRRect(rrect);
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final next = distance + dash;
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance = next + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter old) =>
+      old.color != color || old.radius != radius;
 }
