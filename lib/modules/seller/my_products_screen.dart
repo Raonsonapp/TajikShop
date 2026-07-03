@@ -26,6 +26,7 @@ class MyProductsScreen extends ConsumerWidget {
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(
         backgroundColor: context.pal.scaffold,
+        elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text('Маҳсулотҳоям',
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
@@ -76,50 +77,85 @@ class _ProductRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = product;
+    final active = p.inStock;
+    final statusColor = active ? AppColors.success : AppColors.error;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: context.pal.border, width: 0.5)),
-      child: Row(children: [
-        ClipRRect(borderRadius: BorderRadius.circular(10),
-          child: p.mainImage.isNotEmpty
-              ? CachedNetworkImage(imageUrl: p.mainImage, width: 64, height: 64, fit: BoxFit.cover,
-                  errorWidget: (_, __, ___) => _ph())
-              : _ph()),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(p.title, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 3),
-          Text('${p.price.toStringAsFixed(0)} сом. • Захира: ${p.stock}',
-              style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: context.pal.card,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            ClipRRect(borderRadius: BorderRadius.circular(16),
+              child: p.mainImage.isNotEmpty
+                  ? CachedNetworkImage(imageUrl: p.mainImage, width: 68, height: 68, fit: BoxFit.cover,
+                      errorWidget: (_, __, ___) => _ph())
+                  : _ph()),
+            const SizedBox(width: 14),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(p.title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 5),
+              Row(children: [
+                Text('${p.price.toStringAsFixed(0)} сом.',
+                    style: const TextStyle(color: AppColors.primary, fontSize: 15, fontWeight: FontWeight.w800)),
+                const SizedBox(width: 10),
+                Icon(Icons.inventory_2_outlined, size: 13, color: context.pal.textMuted),
+                const SizedBox(width: 3),
+                Text('${p.stock}',
+                    style: TextStyle(color: context.pal.textMuted, fontSize: 12.5)),
+              ]),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10)),
+                child: Text(active ? 'Фаъол' : 'Ғайрифаъол',
+                    style: TextStyle(color: statusColor,
+                        fontSize: 10.5, fontWeight: FontWeight.w700))),
+            ])),
+          ]),
+          const SizedBox(height: 10),
+          Divider(height: 1, thickness: 0.6, color: context.pal.divider),
           const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-                color: (p.inStock ? AppColors.success : AppColors.error).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8)),
-            child: Text(p.inStock ? 'Фаъол' : 'Ғайрифаъол',
-                style: TextStyle(color: p.inStock ? AppColors.success : AppColors.error,
-                    fontSize: 10, fontWeight: FontWeight.w600))),
-        ])),
-        IconButton(
-          icon: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
-          tooltip: 'Вариантҳо',
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => ManageVariantsScreen(productId: p.id, title: p.title)))),
-        IconButton(
-          icon: const Icon(Icons.edit_outlined, color: AppColors.info, size: 20),
-          onPressed: () => _openEdit(context)),
-        IconButton(
-          icon: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
-          onPressed: () => _confirmDelete(context)),
-      ]),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _RowAction(
+                icon: Icons.tune_rounded,
+                label: 'Вариантҳо',
+                color: AppColors.primary,
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => ManageVariantsScreen(productId: p.id, title: p.title))),
+              ),
+              _RowAction(
+                icon: Icons.edit_outlined,
+                label: 'Таҳрир',
+                color: AppColors.info,
+                onTap: () => _openEdit(context),
+              ),
+              _RowAction(
+                icon: Icons.delete_outline_rounded,
+                label: 'Нест',
+                color: AppColors.error,
+                onTap: () => _confirmDelete(context),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _ph() => Container(width: 64, height: 64, color: AppColors.bgSurface,
+  Widget _ph() => Container(width: 68, height: 68, color: AppColors.bgSurface,
       child: const Icon(Icons.image_outlined, color: AppColors.textMuted));
 
   void _openEdit(BuildContext context) {
@@ -160,6 +196,35 @@ class _ProductRow extends StatelessWidget {
       ],
     ));
   }
+}
+
+class _RowAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _RowAction({required this.icon, required this.label, required this.color, required this.onTap});
+  @override
+  Widget build(BuildContext context) => Expanded(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: color, size: 18),
+                  const SizedBox(width: 6),
+                  Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 // ── Таҳрири маҳсулот ────────────────────────────────────────────────────────
