@@ -20,20 +20,32 @@ class OrdersScreen extends ConsumerWidget {
     final orders = ref.watch(ordersProvider);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
-      appBar: AppBar(backgroundColor: context.pal.scaffold,
+      appBar: AppBar(
+        backgroundColor: context.pal.scaffold,
+        elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text(AppL10n.of(context).myOrders, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
-            onPressed: () => ref.invalidate(ordersProvider))]),
+        title: Text(AppL10n.of(context).myOrders,
+            style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [
+          IconButton(
+              icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+              onPressed: () => ref.invalidate(ordersProvider))
+        ],
+      ),
       body: orders.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(ordersProvider)),
         data: (list) => list.isEmpty
-            ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+            ? Center(
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.receipt_long_outlined, size: 80, color: context.pal.textMuted),
                 const SizedBox(height: 16),
-                Text(AppL10n.of(context).noOrders, style: TextStyle(color: context.pal.textSecondary, fontSize: 16))]))
-            : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
+                Text(AppL10n.of(context).noOrders,
+                    style: TextStyle(color: context.pal.textSecondary, fontSize: 16))
+              ]))
+            : ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                itemCount: list.length,
                 itemBuilder: (_, i) => _OCard(order: list[i])),
       ),
     );
@@ -43,35 +55,111 @@ class OrdersScreen extends ConsumerWidget {
 class _OCard extends StatelessWidget {
   final OrderModel order;
   const _OCard({required this.order});
-  Color _c() { switch (order.status.toLowerCase()) { case 'pending': return AppColors.warning; case 'delivered': return AppColors.success; case 'cancelled': return AppColors.error; default: return AppColors.info; } }
-  String _l(BuildContext context) { final l = AppL10n.of(context); switch (order.status.toLowerCase()) { case 'pending': return l.statusPending; case 'processing': return l.statusProcessing; case 'shipped': return l.statusShipped; case 'delivered': return l.statusDelivered; case 'cancelled': return l.statusCancelled; default: return order.status; } }
+
+  Color _c() {
+    switch (order.status.toLowerCase()) {
+      case 'pending':
+        return AppColors.warning;
+      case 'delivered':
+      case 'completed':
+        return AppColors.success;
+      case 'cancelled':
+        return AppColors.error;
+      default:
+        return AppColors.info;
+    }
+  }
+
+  String _l(BuildContext context) {
+    final l = AppL10n.of(context);
+    switch (order.status.toLowerCase()) {
+      case 'pending':
+        return l.statusPending;
+      case 'processing':
+        return l.statusProcessing;
+      case 'shipped':
+        return l.statusShipped;
+      case 'delivered':
+        return l.statusDelivered;
+      case 'cancelled':
+        return l.statusCancelled;
+      default:
+        return order.status;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = _c();
+    final pal = context.pal;
+    final isDark = pal.scaffold.computeLuminance() < 0.5;
     return GestureDetector(
       onTap: () => context.push('/orders/${order.id}'),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.pal.border, width: 0.5)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('#${(order.id.length > 8 ? order.id.substring(0,8) : order.id).toUpperCase()}',
-              style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 15)),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-            child: Text(_l(context), style: TextStyle(color: c, fontSize: 12, fontWeight: FontWeight.w600))),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: pal.card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: pal.border, width: 0.6),
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black26 : Colors.black.withValues(alpha: 0.05),
+              offset: const Offset(0, 4),
+              blurRadius: 14,
+            )
+          ],
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            // Gradient avatar (green)
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('#${(order.id.length > 8 ? order.id.substring(0, 8) : order.id).toUpperCase()}',
+                    style: TextStyle(
+                        color: pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 15)),
+                const SizedBox(height: 4),
+                Text(DateFormat('dd.MM.yyyy • HH:mm').format(order.createdAt),
+                    style: TextStyle(color: pal.textMuted, fontSize: 12)),
+              ]),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+              decoration: BoxDecoration(
+                  color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+              child: Text(_l(context),
+                  style: TextStyle(color: c, fontSize: 12, fontWeight: FontWeight.w600)),
+            ),
+          ]),
+          const SizedBox(height: 14),
+          Divider(color: pal.divider, height: 1),
+          const SizedBox(height: 12),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text('${order.itemCount} ${AppL10n.of(context).itemsWord}',
+                style: TextStyle(color: pal.textSecondary, fontSize: 13)),
+            Row(crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+              Text('${order.total.toStringAsFixed(0)} ',
+                  style: const TextStyle(
+                      color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 17)),
+              Text('сом.',
+                  style: TextStyle(
+                      color: AppColors.primary.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12)),
+            ]),
+          ]),
         ]),
-        const SizedBox(height: 10),
-        Divider(color: context.pal.divider),
-        const SizedBox(height: 6),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('${order.itemCount} ${AppL10n.of(context).itemsWord} • ${DateFormat('dd.MM.yyyy').format(order.createdAt)}',
-              style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
-          Text('${order.total.toStringAsFixed(0)} сом.',
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 15)),
-        ]),
-      ]),
-    ));
+      ),
+    );
   }
 }

@@ -53,6 +53,7 @@ class OrderDetailScreen extends ConsumerWidget {
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(
         backgroundColor: context.pal.scaffold,
+        elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
@@ -172,11 +173,11 @@ class OrderDetailScreen extends ConsumerWidget {
         return Padding(padding: const EdgeInsets.only(top: 16),
           child: SizedBox(width: double.infinity, child: OutlinedButton.icon(
             onPressed: () => _requestReturn(context, ref, o),
-            icon: const Icon(Icons.assignment_return_outlined, size: 18, color: AppColors.warning),
-            label: const Text('Бозгашт ё иваз кардан', style: TextStyle(color: AppColors.warning, fontWeight: FontWeight.w600)),
-            style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.warning),
+            icon: const Icon(Icons.assignment_return_outlined, size: 18, color: AppColors.primary),
+            label: const Text('Бозгашт ё иваз кардан', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+            style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.primary),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))));
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))))));
       },
       orElse: () => const SizedBox.shrink(),
     );
@@ -247,34 +248,47 @@ class OrderDetailScreen extends ConsumerWidget {
   }
 
   Widget _build(BuildContext context, WidgetRef ref, OrderModel o) {
+    final pal = context.pal;
     final cancelled = o.status.toLowerCase() == 'cancelled';
     final completed = o.status.toLowerCase() == 'completed';
     final current = _statusIndex(o.status);
+    final isDark = pal.scaffold.computeLuminance() < 0.5;
     return ListView(padding: const EdgeInsets.all(16), children: [
-      // Header card
+      // Header card — tracking hero with green gradient accent
       Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.pal.border, width: 0.5)),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.30),
+              offset: const Offset(0, 8),
+              blurRadius: 20,
+            )
+          ],
+        ),
         child: Row(children: [
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('#${(o.id.length > 8 ? o.id.substring(0, 8) : o.id).toUpperCase()}',
-                style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 4),
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
             Text(DateFormat('dd.MM.yyyy • HH:mm').format(o.createdAt),
-                style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12)),
           ]),
           const Spacer(),
-          Text('${o.total.toStringAsFixed(0)} сом.',
-              style: const TextStyle(color: AppColors.primary, fontSize: 20, fontWeight: FontWeight.w800)),
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text('${o.total.toStringAsFixed(0)} сом.',
+                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
+          ]),
         ]),
       ),
-      const SizedBox(height: 20),
+      const SizedBox(height: 24),
 
       // Tracking timeline
       Text('Ҳолати расонидан',
-          style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-      const SizedBox(height: 12),
+          style: TextStyle(color: pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+      const SizedBox(height: 14),
       if (cancelled)
         Container(
           padding: const EdgeInsets.all(14),
@@ -287,56 +301,65 @@ class OrderDetailScreen extends ConsumerWidget {
             Text('Фармоиш бекор карда шуд', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),
           ]))
       else
-        Column(children: List.generate(_steps.length, (i) {
-          final done = i <= current;
-          final isLast = i == _steps.length - 1;
-          return IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Column(children: [
-              Container(width: 34, height: 34,
-                decoration: BoxDecoration(
-                  color: done ? AppColors.primary : context.pal.surface,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: done ? AppColors.primary : context.pal.border, width: 1.5)),
-                child: Icon(_steps[i].$3, color: done ? Colors.white : context.pal.textMuted, size: 18)),
-              if (!isLast)
-                Expanded(child: Container(width: 2,
-                    color: i < current ? AppColors.primary : context.pal.border)),
-            ]),
-            const SizedBox(width: 14),
-            Padding(padding: const EdgeInsets.only(top: 6, bottom: 18),
-              child: Text(_steps[i].$2, style: TextStyle(
-                  color: done ? context.pal.textPrimary : context.pal.textMuted,
-                  fontSize: 14, fontWeight: done ? FontWeight.w600 : FontWeight.w400))),
-          ]));
-        })),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: pal.card,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: pal.border, width: 0.6),
+          ),
+          child: Column(children: List.generate(_steps.length, (i) {
+            final done = i <= current;
+            final isLast = i == _steps.length - 1;
+            return IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Column(children: [
+                Container(width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    gradient: done ? AppColors.primaryGradient : null,
+                    color: done ? null : pal.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: done ? Colors.transparent : pal.border, width: 1.5)),
+                  child: Icon(_steps[i].$3, color: done ? Colors.white : pal.textMuted, size: 18)),
+                if (!isLast)
+                  Expanded(child: Container(width: 2,
+                      color: i < current ? AppColors.primary : pal.border)),
+              ]),
+              const SizedBox(width: 14),
+              Padding(padding: const EdgeInsets.only(top: 8, bottom: 20),
+                child: Text(_steps[i].$2, style: TextStyle(
+                    color: done ? pal.textPrimary : pal.textMuted,
+                    fontSize: 14, fontWeight: done ? FontWeight.w600 : FontWeight.w400))),
+            ]));
+          })),
+        ),
 
-      const SizedBox(height: 12),
+      const SizedBox(height: 20),
 
       // Payment proof
       if (o.paymentProof != null && o.paymentProof!.isNotEmpty) ...[
         Text('Чеки пардохт',
-            style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
         const SizedBox(height: 10),
-        ClipRRect(borderRadius: BorderRadius.circular(12),
+        ClipRRect(borderRadius: BorderRadius.circular(14),
           child: CachedNetworkImage(imageUrl: o.paymentProof!, height: 180, width: double.infinity, fit: BoxFit.cover,
-            placeholder: (_, __) => Container(height: 180, color: context.pal.surface),
-            errorWidget: (_, __, ___) => Container(height: 180, color: context.pal.surface,
-                child: Icon(Icons.broken_image_outlined, color: context.pal.textMuted)))),
+            placeholder: (_, __) => Container(height: 180, color: pal.surface),
+            errorWidget: (_, __, ___) => Container(height: 180, color: pal.surface,
+                child: Icon(Icons.broken_image_outlined, color: pal.textMuted)))),
         const SizedBox(height: 20),
       ],
 
-      // Items count + note
+      // Items count + totals
       Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: context.pal.border, width: 0.5)),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: pal.card, borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: pal.border, width: 0.6)),
         child: Column(children: [
-          _row('Маҳсулот', '${o.itemCount}'),
-          const SizedBox(height: 8),
-          _row('Ҷамъи фармоиш', '${o.total.toStringAsFixed(0)} сом.', bold: true),
+          _row(context, 'Маҳсулот', '${o.itemCount}'),
+          const SizedBox(height: 10),
+          _row(context, 'Ҷамъи фармоиш', '${o.total.toStringAsFixed(0)} сом.', bold: true),
           if (o.note != null && o.note!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            _row('Эзоҳ', o.note!),
+            const SizedBox(height: 10),
+            _row(context, 'Эзоҳ', o.note!),
           ],
         ]),
       ),
@@ -372,14 +395,13 @@ class OrderDetailScreen extends ConsumerWidget {
             Expanded(child: Text('Ҳимоя: пули шумо то тасдиқи расидани мол нигоҳ дошта мешавад.',
                 style: TextStyle(color: AppColors.info, fontSize: 12))),
           ])),
-        const SizedBox(height: 10),
-        SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(
-          onPressed: () => _confirm(context, ref),
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.success,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-          icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white),
-          label: const Text('Расидани молро тасдиқ мекунам',
-              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)))),
+        const SizedBox(height: 12),
+        // Green gradient confirm button
+        _GradientButton(
+          onTap: () => _confirm(context, ref),
+          icon: Icons.check_circle_outline_rounded,
+          label: 'Расидани молро тасдиқ мекунам',
+        ),
       ],
 
       if (_canCancel(o.status)) ...[
@@ -391,16 +413,57 @@ class OrderDetailScreen extends ConsumerWidget {
           style: OutlinedButton.styleFrom(
               side: const BorderSide(color: AppColors.error),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))))),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))))),
       ],
     ]);
   }
 
-  Widget _row(String label, String value, {bool bold = false}) =>
+  Widget _row(BuildContext context, String label, String value, {bool bold = false}) =>
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+        Text(label, style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
         Flexible(child: Text(value, textAlign: TextAlign.right,
-            style: TextStyle(color: bold ? AppColors.primary : AppColors.textPrimary,
+            style: TextStyle(color: bold ? AppColors.primary : context.pal.textPrimary,
                 fontSize: bold ? 15 : 13, fontWeight: bold ? FontWeight.w800 : FontWeight.w500))),
       ]);
+}
+
+class _GradientButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final IconData icon;
+  final String label;
+  const _GradientButton({required this.onTap, required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.30),
+              offset: const Offset(0, 6),
+              blurRadius: 16,
+            )
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: onTap,
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(icon, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Text(label,
+                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
 }
