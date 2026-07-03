@@ -71,17 +71,33 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                   const SizedBox(height: 24),
                   AppButton(text: AppL10n.of(context).shopNow, width: 200, height: 46, onTap: () => context.go(RouteNames.home))]))
               : Column(children: [
-                  Expanded(child: ListView.builder(padding: const EdgeInsets.all(16),
+                  // Subtotal header bar (template style, green)
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: const [BoxShadow(color: Color.fromRGBO(0, 208, 132, 0.28), offset: Offset(0, 4), blurRadius: 10)]),
+                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Text('${AppL10n.of(context).productsWord} (${cart.itemCount})',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text('${cart.total.toStringAsFixed(0)} сом.',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                    ]),
+                  ),
+                  Expanded(child: ListView.builder(padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                     itemCount: cart.items.length,
                     itemBuilder: (_, i) => _Item(item: cart.items[i],
                       onRemove: () => ref.read(cartProvider.notifier).removeItem(cart.items[i].id),
                       onQuantity: (q) => ref.read(cartProvider.notifier).updateQuantity(cart.items[i].id, q)))),
                   // Summary + DC Checkout
                   Container(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
                     decoration: BoxDecoration(color: context.pal.card,
                         border: Border(top: BorderSide(color: context.pal.border, width: 0.5)),
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                        boxShadow: const [BoxShadow(color: Colors.black12, offset: Offset(0, -3), blurRadius: 10)]),
                     child: Column(children: [
                       _row('${AppL10n.of(context).productsWord} (${cart.itemCount})', '${cart.total.toStringAsFixed(0)} сом.'),
                       const SizedBox(height: 6),
@@ -90,8 +106,21 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                       Divider(color: context.pal.divider),
                       const SizedBox(height: 10),
                       _row(AppL10n.of(context).total, '${(cart.total + 20).toStringAsFixed(0)} сом.', bold: true),
-                      const SizedBox(height: 16),
-                      AppButton(text: AppL10n.of(context).payNow, onTap: () => _dcCheckout(context)),
+                      const SizedBox(height: 20),
+                      // Big rounded gradient checkout button (template style)
+                      Center(child: GestureDetector(
+                        onTap: () => _dcCheckout(context),
+                        child: Container(
+                          height: 62,
+                          width: MediaQuery.of(context).size.width / 1.5,
+                          decoration: BoxDecoration(
+                            gradient: AppColors.primaryGradient,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [BoxShadow(color: Color.fromRGBO(0, 208, 132, 0.35), offset: Offset(0, 6), blurRadius: 14)]),
+                          child: Center(child: Text(AppL10n.of(context).payNow,
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18))),
+                        ),
+                      )),
                     ]),
                   ),
                 ]),
@@ -425,51 +454,54 @@ class _Item extends StatelessWidget {
   const _Item({required this.item, required this.onRemove, required this.onQuantity});
 
   @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: context.pal.border, width: 0.5)),
-    child: Row(children: [
-      ClipRRect(borderRadius: BorderRadius.circular(10),
-        child: item.image != null ? CachedNetworkImage(imageUrl: item.image!, width: 72, height: 72, fit: BoxFit.cover,
-            errorWidget: (_, __, ___) => _ph()) : _ph()),
-      const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Expanded(child: Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w500))),
-          GestureDetector(onTap: onRemove,
-            child: const Padding(padding: EdgeInsets.only(left: 6),
-              child: Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20))),
-        ]),
-        const SizedBox(height: 4),
-        Text('${item.total.toStringAsFixed(0)} сом.',
-            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 14)),
-        const SizedBox(height: 8),
-        // Stepper-и миқдор
-        Row(children: [
-          _qtyBtn(Icons.remove_rounded, () => onQuantity(item.quantity - 1)),
-          Container(
-            constraints: const BoxConstraints(minWidth: 34),
-            alignment: Alignment.center,
-            child: Text('${item.quantity}',
-                style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w700))),
-          _qtyBtn(Icons.add_rounded, () => onQuantity(item.quantity + 1)),
-        ]),
-      ])),
-    ]));
+  Widget build(BuildContext context) {
+    final pal = context.pal;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16), padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: pal.card, borderRadius: BorderRadius.circular(16),
+          boxShadow: const [BoxShadow(color: Colors.black12, offset: Offset(0, 3), blurRadius: 8)]),
+      child: Row(children: [
+        ClipRRect(borderRadius: BorderRadius.circular(12),
+          child: item.image != null ? CachedNetworkImage(imageUrl: item.image!, width: 84, height: 84, fit: BoxFit.cover,
+              errorWidget: (_, __, ___) => _ph(pal)) : _ph(pal)),
+        const SizedBox(width: 14),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Expanded(child: Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: pal.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w700))),
+            GestureDetector(onTap: onRemove,
+              child: Padding(padding: const EdgeInsets.only(left: 6),
+                child: Icon(Icons.close_rounded, color: pal.textMuted, size: 20))),
+          ]),
+          const SizedBox(height: 6),
+          Text('${item.total.toStringAsFixed(0)} сом.',
+              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 17)),
+          const SizedBox(height: 10),
+          // Stepper-и миқдор (template style, green)
+          Row(children: [
+            _qtyBtn(Icons.remove_rounded, () => onQuantity(item.quantity - 1)),
+            Container(
+              constraints: const BoxConstraints(minWidth: 38),
+              alignment: Alignment.center,
+              child: Text('${item.quantity}',
+                  style: TextStyle(color: pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w700))),
+            _qtyBtn(Icons.add_rounded, () => onQuantity(item.quantity + 1)),
+          ]),
+        ])),
+      ]),
+    );
+  }
 
   Widget _qtyBtn(IconData icon, VoidCallback onTap) => GestureDetector(
     onTap: onTap,
     child: Container(
-      width: 30, height: 30,
-      decoration: BoxDecoration(color: AppColors.bgSurface, borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.border, width: 0.5)),
-      child: Icon(icon, color: AppColors.textPrimary, size: 18)),
+      width: 32, height: 32,
+      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(9)),
+      child: Icon(icon, color: AppColors.primary, size: 18)),
   );
 
-  Widget _ph() => Container(width: 72, height: 72, color: AppColors.bgSurface,
-      child: const Icon(Icons.image_outlined, color: AppColors.textMuted));
+  Widget _ph(AppPalette pal) => Container(width: 84, height: 84, color: pal.surface,
+      child: Icon(Icons.image_outlined, color: pal.textMuted));
 }
 
 class _row extends StatelessWidget {
