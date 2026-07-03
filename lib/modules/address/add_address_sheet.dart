@@ -14,7 +14,8 @@ Future<bool?> showAddAddress(BuildContext context) {
     context: context,
     backgroundColor: context.pal.card,
     isScrollControlled: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
     builder: (_) => const AddAddressSheet(),
   );
 }
@@ -35,100 +36,190 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
 
   @override
   void dispose() {
-    _title.dispose(); _city.dispose(); _street.dispose(); _zip.dispose();
+    _title.dispose();
+    _city.dispose();
+    _street.dispose();
+    _zip.dispose();
     super.dispose();
   }
 
   Future<void> _pickOnMap() async {
     final result = await Navigator.of(context).push<LatLng>(MaterialPageRoute(
       builder: (_) => MapPickerScreen(
-        initial: LatLng(_lat != 0 ? _lat : 38.5598, _lng != 0 ? _lng : 68.7870)),
+          initial:
+              LatLng(_lat != 0 ? _lat : 38.5598, _lng != 0 ? _lng : 68.7870)),
     ));
     if (result != null) {
-      setState(() { _lat = result.latitude; _lng = result.longitude; });
+      setState(() {
+        _lat = result.latitude;
+        _lng = result.longitude;
+      });
     }
   }
 
   Future<void> _save() async {
     if (_street.text.trim().isEmpty || _city.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Шаҳр ва кӯчаро пур кунед'),
-        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+          content: Text('Шаҳр ва кӯчаро пур кунед'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating));
       return;
     }
     setState(() => _loading = true);
     try {
       await AddressService.add(
-        title: _title.text.trim().isEmpty ? 'Суроға' : _title.text.trim(),
-        city: _city.text.trim(),
-        street: _street.text.trim(),
-        zip: _zip.text.trim(),
-        lat: _lat, lng: _lng);
+          title: _title.text.trim().isEmpty ? 'Суроға' : _title.text.trim(),
+          city: _city.text.trim(),
+          street: _street.text.trim(),
+          zip: _zip.text.trim(),
+          lat: _lat,
+          lng: _lng);
       if (mounted) Navigator.pop(context, true);
     } catch (_) {
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Суроға захира нашуд'),
-          backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+            content: Text('Суроға захира нашуд'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating));
       }
     }
   }
 
-  Widget _f(String hint, TextEditingController c) => Container(
-    margin: const EdgeInsets.only(bottom: 10),
-    decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.pal.border, width: 0.5)),
-    padding: const EdgeInsets.symmetric(horizontal: 14),
-    child: SafeInput(
-      controller: c,
-      hint: hint,
-      textColor: context.pal.textPrimary,
-      fontSize: 14,
-    ),
-  );
+  // Нишонаи болои гурӯҳи майдонҳо
+  Widget _label(String text) => Padding(
+        padding: const EdgeInsets.only(left: 4, bottom: 6, top: 4),
+        child: Text(text,
+            style: TextStyle(
+                color: context.pal.textSecondary,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2)),
+      );
+
+  // Майдони мудаввар (SafeInput дар дохил)
+  Widget _f(String hint, TextEditingController c,
+          {TextInputType? keyboardType}) =>
+      Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+            color: context.pal.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: context.pal.border, width: 0.6)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        child: SafeInput(
+          controller: c,
+          hint: hint,
+          keyboardType: keyboardType,
+          textColor: context.pal.textPrimary,
+          fontSize: 15,
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
+    final picked = _lat != 0;
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Center(child: Container(width: 40, height: 4,
-            decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
-        const SizedBox(height: 16),
-        Text('Суроғаи нав', style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 16),
-        _f('Номи суроға (Хона, Кор...)', _title),
-        _f('Шаҳр *', _city),
-        _f('Кӯча, хона, манзил *', _street),
-        _f('Индекс (ихтиёрӣ)', _zip),
-        GestureDetector(
-          onTap: _pickOnMap,
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(13),
-            decoration: BoxDecoration(
-              color: (_lat != 0 ? AppColors.success : AppColors.primary).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: (_lat != 0 ? AppColors.success : AppColors.primary).withValues(alpha: 0.4))),
-            child: Row(children: [
-              Icon(_lat != 0 ? Icons.check_circle_rounded : Icons.map_outlined,
-                  color: _lat != 0 ? AppColors.success : AppColors.primary, size: 20),
-              const SizedBox(width: 10),
-              Expanded(child: Text(
-                  _lat != 0
-                      ? 'Ҷой дар харита интихоб шуд (${_lat.toStringAsFixed(4)}, ${_lng.toStringAsFixed(4)})'
-                      : 'Ҷойро дар харита интихоб кунед',
-                  style: TextStyle(
-                      color: _lat != 0 ? AppColors.success : AppColors.primary,
-                      fontSize: 13, fontWeight: FontWeight.w600))),
-              Icon(Icons.chevron_right_rounded, color: context.pal.textMuted),
-            ]),
-          ),
+      padding: EdgeInsets.fromLTRB(
+          20, 14, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: context.pal.border,
+                      borderRadius: BorderRadius.circular(2))),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: const Icon(Icons.add_location_alt_rounded,
+                      color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Text('Суроғаи нав',
+                    style: TextStyle(
+                        color: context.pal.textPrimary,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800)),
+              ],
+            ),
+            const SizedBox(height: 22),
+            _label('Номи суроға'),
+            _f('Хона, Кор, Офис...', _title),
+            _label('Шаҳр'),
+            _f('Шаҳр *', _city),
+            _label('Суроғаи пурра'),
+            _f('Кӯча, хона, манзил *', _street),
+            _label('Индекс'),
+            _f('Индекс (ихтиёрӣ)', _zip,
+                keyboardType: TextInputType.number),
+            const SizedBox(height: 4),
+            _label('Ҷойгиршавӣ дар харита'),
+            // ── Тугмаи интихоб дар харита (сабз) ────────────────────────
+            GestureDetector(
+              onTap: _pickOnMap,
+              child: Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: (picked ? AppColors.success : AppColors.primary)
+                      .withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: (picked ? AppColors.success : AppColors.primary)
+                          .withValues(alpha: 0.45),
+                      width: 1),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                        picked
+                            ? Icons.check_circle_rounded
+                            : Icons.map_outlined,
+                        color: picked ? AppColors.success : AppColors.primary,
+                        size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                          picked
+                              ? 'Ҷой интихоб шуд (${_lat.toStringAsFixed(4)}, ${_lng.toStringAsFixed(4)})'
+                              : 'Ҷойро дар харита интихоб кунед',
+                          style: TextStyle(
+                              color: picked
+                                  ? AppColors.success
+                                  : AppColors.primary,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700)),
+                    ),
+                    Icon(Icons.chevron_right_rounded,
+                        color: context.pal.textMuted),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 22),
+            // ── Тугмаи захира (градиенти калони сабз) ───────────────────
+            AppButton(
+              text: 'Захира кардан',
+              onTap: _save,
+              isLoading: _loading,
+              height: 58,
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        AppButton(text: 'Захира кардан', onTap: _save, isLoading: _loading),
-      ]),
+      ),
     );
   }
 }
