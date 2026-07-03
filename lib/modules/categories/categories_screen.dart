@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/search_provider.dart';
@@ -31,7 +32,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          _selected?.name ?? 'Категорияҳо',
+          _selected?.name ?? AppL10n.of(context).categories,
           style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700),
         ),
       ),
@@ -110,7 +111,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.category_outlined, size: 70, color: context.pal.textMuted),
                       const SizedBox(height: 14),
-                      Text('Категорияро интихоб кунед',
+                      Text(AppL10n.of(context).selectCategory,
                           style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
                     ]),
                   )
@@ -127,7 +128,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                             child: Column(mainAxisSize: MainAxisSize.min, children: [
                               Icon(Icons.inventory_2_outlined, size: 60, color: context.pal.textMuted),
                               const SizedBox(height: 12),
-                              Text('Маҳсулот нест',
+                              Text(AppL10n.of(context).noProducts,
                                   style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
                             ]),
                           )

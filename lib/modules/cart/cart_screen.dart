@@ -301,10 +301,10 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
 
         // Усули пардохт
         Align(alignment: Alignment.centerLeft,
-          child: Text('Усули пардохт', style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
+          child: Text(AppL10n.of(context).paymentMethod, style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
         const SizedBox(height: 8),
-        _payOption('dc', Icons.account_balance_wallet_outlined, 'Корти DC', 'Интиқол + чеки пардохт'),
-        _payOption('cod', Icons.local_shipping_outlined, 'Пардохт ҳангоми расонидан', 'Накд ба курьер'),
+        _payOption('dc', Icons.account_balance_wallet_outlined, AppL10n.of(context).dcCard, AppL10n.of(context).dcCardDesc),
+        _payOption('cod', Icons.local_shipping_outlined, AppL10n.of(context).codTitle, AppL10n.of(context).codDesc),
         _walletOption(),
         const SizedBox(height: 16),
 
@@ -315,11 +315,11 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
                 border: Border.all(color: AppColors.primary.withValues(alpha: 0.3))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [const Icon(Icons.account_balance_wallet_outlined, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8), Text('Рақами DC-и фурӯшанда', style: TextStyle(color: context.pal.textMuted, fontSize: 12))]),
+                const SizedBox(width: 8), Text(AppL10n.of(context).sellerDcNumber, style: TextStyle(color: context.pal.textMuted, fontSize: 12))]),
               const SizedBox(height: 8),
               Text('+992 XX XXX XXXX', style: TextStyle(color: context.pal.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
-              Text('Пулро ба ин рақам интиқол диҳед, баъд чекро бор кунед', style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
+              Text(AppL10n.of(context).dcInstructions, style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
             ])),
           const SizedBox(height: 12),
           GestureDetector(
@@ -328,10 +328,10 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
               decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: _receipt != null ? AppColors.success : context.pal.border, width: 1.5),
                   image: _receipt != null ? DecorationImage(image: FileImage(_receipt!), fit: BoxFit.cover) : null),
-              child: _receipt == null ? const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.upload_file_rounded, color: AppColors.primary, size: 32),
-                SizedBox(height: 6),
-                Text('Чеки пардохтро бор кунед', style: TextStyle(color: AppColors.primary, fontSize: 13)),
+              child: _receipt == null ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.upload_file_rounded, color: AppColors.primary, size: 32),
+                const SizedBox(height: 6),
+                Text(AppL10n.of(context).uploadReceipt, style: const TextStyle(color: AppColors.primary, fontSize: 13)),
               ])) : null)),
           const SizedBox(height: 16),
         ],
@@ -340,15 +340,15 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
         Container(padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(12)),
           child: Column(children: [
-            _row('Маҳсулот + доставка', '${(_cartTotal + 20).toStringAsFixed(0)} сом.'),
+            _row(AppL10n.of(context).productsPlusDelivery, '${(_cartTotal + 20).toStringAsFixed(0)} сом.'),
             if (_discountPct > 0) ...[
               const SizedBox(height: 6),
-              _row('Тахфиф ($_discountPct%)', '-${((_cartTotal + 20) * _discountPct / 100).toStringAsFixed(0)} сом.'),
+              _row('${AppL10n.of(context).discountWord} ($_discountPct%)', '-${((_cartTotal + 20) * _discountPct / 100).toStringAsFixed(0)} сом.'),
             ],
             const SizedBox(height: 8),
             Divider(color: context.pal.divider, height: 1),
             const SizedBox(height: 8),
-            _row('Ҷамъи пардохт', '${_finalTotal.toStringAsFixed(0)} сом.', bold: true),
+            _row(AppL10n.of(context).totalPayment, '${_finalTotal.toStringAsFixed(0)} сом.', bold: true),
           ])),
 
         if (_error != null) Padding(padding: const EdgeInsets.only(top: 12),
@@ -356,7 +356,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
 
         const SizedBox(height: 16),
         AppButton(
-          text: _method == 'wallet' ? 'Пардохт аз ҳамён' : (_method == 'cod' ? 'Тасдиқи фармоиш' : 'Фиристодан ✓'),
+          text: _method == 'wallet' ? AppL10n.of(context).payFromWallet : (_method == 'cod' ? AppL10n.of(context).confirmOrder : '${AppL10n.of(context).send} ✓'),
           isLoading: _loading,
           onTap: _submit,
         ),
@@ -408,8 +408,8 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
           Icon(Icons.savings_outlined, color: context.pal.textSecondary, size: 20),
           const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Ҳамён', style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-            Text('Тавозун: ${balance.toStringAsFixed(0)} сом.${enough ? '' : ' (нокифоя)'}',
+            Text(AppL10n.of(context).wallet, style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text('${AppL10n.of(context).balance}: ${balance.toStringAsFixed(0)} сом.${enough ? '' : ' (${AppL10n.of(context).insufficient})'}',
                 style: TextStyle(color: enough ? context.pal.textMuted : AppColors.error, fontSize: 11)),
           ])),
         ]),

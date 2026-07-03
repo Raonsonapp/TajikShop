@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../data/models/order_model.dart';
@@ -21,7 +22,7 @@ class OrdersScreen extends ConsumerWidget {
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(backgroundColor: context.pal.scaffold,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Фармоишҳоям', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        title: Text(AppL10n.of(context).myOrders, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(ordersProvider))]),
       body: orders.when(
@@ -31,7 +32,7 @@ class OrdersScreen extends ConsumerWidget {
             ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.receipt_long_outlined, size: 80, color: context.pal.textMuted),
                 const SizedBox(height: 16),
-                Text('Фармоише нест', style: TextStyle(color: context.pal.textSecondary, fontSize: 16))]))
+                Text(AppL10n.of(context).noOrders, style: TextStyle(color: context.pal.textSecondary, fontSize: 16))]))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) => _OCard(order: list[i])),
       ),
@@ -43,7 +44,7 @@ class _OCard extends StatelessWidget {
   final OrderModel order;
   const _OCard({required this.order});
   Color _c() { switch (order.status.toLowerCase()) { case 'pending': return AppColors.warning; case 'delivered': return AppColors.success; case 'cancelled': return AppColors.error; default: return AppColors.info; } }
-  String _l() { switch (order.status.toLowerCase()) { case 'pending': return 'Дар интизор'; case 'processing': return 'Коркард'; case 'shipped': return 'Фиристода шуд'; case 'delivered': return 'Расид'; case 'cancelled': return 'Бекор'; default: return order.status; } }
+  String _l(BuildContext context) { final l = AppL10n.of(context); switch (order.status.toLowerCase()) { case 'pending': return l.statusPending; case 'processing': return l.statusProcessing; case 'shipped': return l.statusShipped; case 'delivered': return l.statusDelivered; case 'cancelled': return l.statusCancelled; default: return order.status; } }
   @override
   Widget build(BuildContext context) {
     final c = _c();
@@ -59,13 +60,13 @@ class _OCard extends StatelessWidget {
               style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 15)),
           Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-            child: Text(_l(), style: TextStyle(color: c, fontSize: 12, fontWeight: FontWeight.w600))),
+            child: Text(_l(context), style: TextStyle(color: c, fontSize: 12, fontWeight: FontWeight.w600))),
         ]),
         const SizedBox(height: 10),
         Divider(color: context.pal.divider),
         const SizedBox(height: 6),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('${order.itemCount} маҳсулот • ${DateFormat('dd.MM.yyyy').format(order.createdAt)}',
+          Text('${order.itemCount} ${AppL10n.of(context).itemsWord} • ${DateFormat('dd.MM.yyyy').format(order.createdAt)}',
               style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
           Text('${order.total.toStringAsFixed(0)} сом.',
               style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 15)),
