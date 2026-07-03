@@ -18,54 +18,153 @@ class WalletScreen extends ConsumerWidget {
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(
         backgroundColor: context.pal.scaffold,
+        elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Ҳамёни ман', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
-            onPressed: () => ref.invalidate(walletProvider))],
+        title: Text('Ҳамёни ман',
+            style: TextStyle(
+                color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [
+          IconButton(
+              icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+              onPressed: () => ref.invalidate(walletProvider))
+        ],
       ),
       body: wallet.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(walletProvider)),
+        loading: () =>
+            const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        error: (e, _) => ErrorScreen(
+            message: e.toString(), onRetry: () => ref.invalidate(walletProvider)),
         data: (data) {
           final balance = (data['balance'] as num?)?.toDouble() ?? 0;
           final txs = (data['transactions'] as List?) ?? [];
-          return ListView(padding: const EdgeInsets.all(16), children: [
-            // Balance card
-            Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))]),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Row(children: [
-                  Icon(Icons.account_balance_wallet_rounded, color: Colors.white70, size: 20),
-                  SizedBox(width: 8),
-                  Text('Тавозун', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                ]),
-                const SizedBox(height: 10),
-                Text('${balance.toStringAsFixed(0)} сом.',
-                    style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w800)),
-              ]),
-            ),
-            const SizedBox(height: 16),
-            AppButton(text: '➕ Пополнение кардан', onTap: () => _topUp(context, ref)),
-            const SizedBox(height: 24),
-            Text('Таърихи амалиётҳо',
-                style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            if (txs.isEmpty)
-              Padding(padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: Text('Ҳоло амалиёте нест', style: TextStyle(color: context.pal.textMuted))))
-            else
-              ...txs.whereType<Map>().map((t) => _txTile(Map<String, dynamic>.from(t))),
-          ]);
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: [
+              _balanceCard(context, balance),
+              const SizedBox(height: 20),
+              AppButton(
+                  text: 'Пополнение кардан',
+                  icon: Icons.add_rounded,
+                  onTap: () => _topUp(context, ref)),
+              const SizedBox(height: 28),
+              Text('Таърихи амалиётҳо',
+                  style: TextStyle(
+                      color: context.pal.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700)),
+              const SizedBox(height: 12),
+              if (txs.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.receipt_long_rounded,
+                            color: context.pal.textMuted, size: 44),
+                        const SizedBox(height: 10),
+                        Text('Ҳоло амалиёте нест',
+                            style: TextStyle(color: context.pal.textMuted)),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                ...txs.whereType<Map>().map(
+                    (t) => _txTile(context, Map<String, dynamic>.from(t))),
+            ],
+          );
         },
       ),
     );
   }
 
-  Widget _txTile(Map<String, dynamic> t) {
+  // ── Корти тавозун (намуди корти пардохт бо градиенти сабз) ──────────────────
+  Widget _balanceCard(BuildContext context, double balance) {
+    return Container(
+      height: 200,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.35),
+              blurRadius: 28,
+              offset: const Offset(0, 12))
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Ороиши доиравӣ дар кунҷ
+          Positioned(
+            right: -30,
+            top: -30,
+            child: Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.10)),
+            ),
+          ),
+          Positioned(
+            right: 20,
+            bottom: -40,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.08)),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.account_balance_wallet_rounded,
+                          color: Colors.white70, size: 20),
+                      SizedBox(width: 8),
+                      Text('Тавозун',
+                          style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    ],
+                  ),
+                  // «Чипи» корт
+                  Container(
+                    width: 40,
+                    height: 30,
+                    decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(7)),
+                    child: const Icon(Icons.credit_card_rounded,
+                        color: Colors.white, size: 20),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text('${balance.toStringAsFixed(0)} сом.',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 40,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              Text('TajikShop • Ҳамён',
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 13,
+                      letterSpacing: 1.5)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _txTile(BuildContext context, Map<String, dynamic> t) {
     final amount = (t['amount'] as num?)?.toDouble() ?? 0;
     final type = t['type']?.toString() ?? '';
     final status = t['status']?.toString() ?? '';
@@ -73,73 +172,137 @@ class WalletScreen extends ConsumerWidget {
     DateTime? date;
     if (t['created_at'] != null) date = DateTime.tryParse(t['created_at'].toString());
     final labels = {'topup': 'Пополнение', 'purchase': 'Харид', 'refund': 'Бозгашт'};
-    final statusLabels = {'pending': 'Интизор', 'completed': 'Иҷрошуда', 'rejected': 'Радшуда'};
+    final statusLabels = {
+      'pending': 'Интизор',
+      'completed': 'Иҷрошуда',
+      'rejected': 'Радшуда'
+    };
     return Container(
-      margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.bgCard, borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border, width: 0.5)),
-      child: Row(children: [
-        Container(width: 38, height: 38,
-          decoration: BoxDecoration(
-            color: (positive ? AppColors.success : AppColors.error).withValues(alpha: 0.15),
-            shape: BoxShape.circle),
-          child: Icon(positive ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-              color: positive ? AppColors.success : AppColors.error, size: 18)),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(labels[type] ?? type,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
-          if (date != null)
-            Text(DateFormat('dd.MM.yyyy • HH:mm').format(date),
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
-        ])),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('${positive ? '+' : ''}${amount.toStringAsFixed(0)} сом.',
-              style: TextStyle(color: positive ? AppColors.success : AppColors.error,
-                  fontSize: 14, fontWeight: FontWeight.w700)),
-          Text(statusLabels[status] ?? status,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 10)),
-        ]),
-      ]),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+          color: context.pal.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.pal.border, width: 0.5)),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+                color: (positive ? AppColors.success : AppColors.error)
+                    .withValues(alpha: 0.15),
+                shape: BoxShape.circle),
+            child: Icon(
+                positive
+                    ? Icons.arrow_downward_rounded
+                    : Icons.arrow_upward_rounded,
+                color: positive ? AppColors.success : AppColors.error,
+                size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(labels[type] ?? type,
+                    style: TextStyle(
+                        color: context.pal.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600)),
+                if (date != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(DateFormat('dd.MM.yyyy • HH:mm').format(date),
+                        style: TextStyle(
+                            color: context.pal.textMuted, fontSize: 11)),
+                  ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('${positive ? '+' : ''}${amount.toStringAsFixed(0)} сом.',
+                  style: TextStyle(
+                      color: positive ? AppColors.success : AppColors.error,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(statusLabels[status] ?? status,
+                  style: TextStyle(color: context.pal.textMuted, fontSize: 10)),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   void _topUp(BuildContext context, WidgetRef ref) {
     final ctrl = TextEditingController();
-    showDialog(context: context, builder: (ctx) => AlertDialog(
-      backgroundColor: context.pal.card,
-      title: Text('Пополнение', style: TextStyle(color: context.pal.textPrimary)),
-      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Маблағро ворид кунед. Баъди тасдиқи админ ба ҳамён илова мешавад.',
-            style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
-        const SizedBox(height: 12),
-        SafeInput(controller: ctrl, autofocus: true, keyboardType: TextInputType.number,
-          hint: 'Маблағ (сом.)',
-          textColor: context.pal.textPrimary),
-      ]),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx),
-            child: Text('Бекор', style: TextStyle(color: context.pal.textMuted))),
-        TextButton(
-          onPressed: () async {
-            final amount = double.tryParse(ctrl.text.replaceAll(',', '.')) ?? 0;
-            if (amount <= 0) return;
-            Navigator.pop(ctx);
-            final messenger = ScaffoldMessenger.of(context);
-            try {
-              await WalletService.topUp(amount);
-              ref.invalidate(walletProvider);
-              messenger.showSnackBar(const SnackBar(
-                content: Text('Дархост фиристода шуд. Интизори тасдиқи админ.'),
-                backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
-            } catch (_) {
-              messenger.showSnackBar(const SnackBar(
-                content: Text('Хато'),
-                backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
-            }
-          },
-          child: const Text('Фиристодан', style: TextStyle(color: AppColors.primary))),
-      ],
-    ));
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.pal.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Пополнение',
+            style: TextStyle(color: context.pal.textPrimary)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                'Маблағро ворид кунед. Баъди тасдиқи админ ба ҳамён илова мешавад.',
+                style:
+                    TextStyle(color: context.pal.textSecondary, fontSize: 12)),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                  color: context.pal.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: context.pal.border)),
+              child: SafeInput(
+                controller: ctrl,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                hint: 'Маблағ (сом.)',
+                textColor: context.pal.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child:
+                  Text('Бекор', style: TextStyle(color: context.pal.textMuted))),
+          TextButton(
+            onPressed: () async {
+              final amount = double.tryParse(ctrl.text.replaceAll(',', '.')) ?? 0;
+              if (amount <= 0) return;
+              Navigator.pop(ctx);
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await WalletService.topUp(amount);
+                ref.invalidate(walletProvider);
+                messenger.showSnackBar(const SnackBar(
+                    content:
+                        Text('Дархост фиристода шуд. Интизори тасдиқи админ.'),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating));
+              } catch (_) {
+                messenger.showSnackBar(const SnackBar(
+                    content: Text('Хато'),
+                    backgroundColor: AppColors.error,
+                    behavior: SnackBarBehavior.floating));
+              }
+            },
+            child: const Text('Фиристодан',
+                style: TextStyle(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
   }
 }
