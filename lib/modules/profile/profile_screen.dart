@@ -199,163 +199,185 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user   = auth.user;
     final isDark = ref.watch(themeProvider) == ThemeMode.dark;
     final l      = AppL10n.of(context);
+    final isSeller = user?.isSeller == true || user?.role == 'seller';
+
+    final displayName = (user?.fullName != null && user!.fullName.isNotEmpty)
+        ? user.fullName
+        : (user?.email.split('@').first ?? 'Корбар');
 
     return Scaffold(
       backgroundColor: context.pal.scaffold,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
 
-          // ── App Bar ────────────────────────────────────────────────────────
-          SliverAppBar(
-            backgroundColor: context.pal.scaffold,
-            floating: true, elevation: 0,
-            title: Text(l.profile, style: TextStyle(color: context.pal.textPrimary,
-                fontWeight: FontWeight.w700, fontSize: 20)),
-          ),
+            // ── App Bar ──────────────────────────────────────────────────
+            SliverAppBar(
+              backgroundColor: context.pal.scaffold,
+              floating: true, elevation: 0,
+              centerTitle: true,
+              title: Text(l.profile, style: TextStyle(color: context.pal.textPrimary,
+                  fontWeight: FontWeight.w700, fontSize: 20)),
+            ),
 
-          SliverToBoxAdapter(child: Column(children: [
+            SliverToBoxAdapter(child: Column(children: [
 
-            // ── Avatar & Name ──────────────────────────────────────────────
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                    colors: [AppColors.primary.withValues(alpha: 0.15), context.pal.card],
-                    begin: Alignment.topLeft, end: Alignment.bottomRight),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: context.pal.border)),
-              child: Row(children: [
-                // Avatar
-                GestureDetector(
-                  onTap: _pickAvatar,
-                  child: Stack(children: [
-                    CircleAvatar(radius: 36,
-                      backgroundColor: context.pal.surface,
-                      backgroundImage: user?.avatar != null && user!.avatar!.isNotEmpty
-                          ? CachedNetworkImageProvider(user.avatar!) : null,
-                      child: user?.avatar == null || user!.avatar!.isEmpty
-                          ? Icon(Icons.person_rounded, color: context.pal.textMuted, size: 36)
-                          : null),
-                    Positioned(bottom: 0, right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: const BoxDecoration(
-                            gradient: LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
-                            shape: BoxShape.circle),
-                        child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 12))),
-                  ])),
-                const SizedBox(width: 16),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Flexible(
-                      child: Text(
-                        (user?.fullName != null && user!.fullName.isNotEmpty)
-                            ? user.fullName
-                            : (user?.email.split('@').first ?? 'Корбар'),
-                        style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (user?.fullName == 'tajikshop' || user?.isVerified == true) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1DA1F2).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF1DA1F2).withValues(alpha: 0.5)),
-                        ),
-                        child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.verified_rounded, color: Color(0xFF1DA1F2), size: 12),
-                          SizedBox(width: 3),
-                          Text('✓', style: TextStyle(color: Color(0xFF1DA1F2), fontSize: 10, fontWeight: FontWeight.w800)),
-                        ]),
-                      ),
-                    ],
-                  ]),
-                  const SizedBox(height: 4),
-                  Text(user?.email ?? '',
-                      style: TextStyle(color: context.pal.textMuted, fontSize: 13)),
-                  const SizedBox(height: 8),
-                  _RoleBadge(role: user?.role ?? 'buyer', l: l),
-                ])),
-                IconButton(
-                  icon: Icon(Icons.edit_outlined, color: context.pal.textSecondary, size: 20),
-                  onPressed: _editProfile),
-              ])),
+              // ── Header: большой аватар + имя + email + роль ─────────────
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: _pickAvatar,
+                child: Stack(children: [
+                  CircleAvatar(radius: 48,
+                    backgroundColor: context.pal.surface,
+                    backgroundImage: user?.avatar != null && user!.avatar!.isNotEmpty
+                        ? CachedNetworkImageProvider(user.avatar!) : null,
+                    child: user?.avatar == null || user!.avatar!.isEmpty
+                        ? Icon(Icons.person_rounded, color: context.pal.textMuted, size: 48)
+                        : null),
+                  Positioned(bottom: 2, right: 2,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                          gradient: _greenGradient,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: context.pal.scaffold, width: 2)),
+                      child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14))),
+                ]),
+              ),
+              const SizedBox(height: 12),
+              Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
+                Flexible(
+                  child: Text(displayName,
+                      style: TextStyle(color: context.pal.textPrimary, fontSize: 20, fontWeight: FontWeight.w700),
+                      overflow: TextOverflow.ellipsis),
+                ),
+                if (user?.fullName == 'tajikshop' || user?.isVerified == true) ...[
+                  const SizedBox(width: 6),
+                  const Icon(Icons.verified_rounded, color: Color(0xFF1DA1F2), size: 18),
+                ],
+              ]),
+              const SizedBox(height: 4),
+              Text(user?.email ?? '',
+                  style: TextStyle(color: context.pal.textMuted, fontSize: 13)),
+              const SizedBox(height: 10),
+              _RoleBadge(role: user?.role ?? 'buyer', l: l),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: _editProfile,
+                icon: const Icon(Icons.edit_outlined, size: 16),
+                label: Text(l.profile),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                ),
+              ),
 
-            // ── Seller / Become Seller ─────────────────────────────────────
-            if (user?.isSeller == true || user?.role == 'seller') ...[
-              _MenuItem(icon: Icons.store_rounded, iconColor: const Color(0xFF00D084),
-                  label: l.sellerDashboard,
-                  onTap: () => context.go(RouteNames.sellerDashboard)),
-              _MenuItem(icon: Icons.location_on_rounded, iconColor: const Color(0xFFFF6B2C),
-                  label: l.storeLocation,
-                  onTap: _setStoreLocation),
-            ]
-            else
+              // ── Быстрые действия (карточка со «шэдоу», как в шаблоне) ────
+              const SizedBox(height: 20),
+              _QuickCard(children: [
+                _QuickAction(icon: Icons.account_balance_wallet_rounded, color: const Color(0xFFFFB800),
+                    label: l.myWallet, onTap: () => context.push(RouteNames.wallet)),
+                _QuickAction(icon: Icons.receipt_long_rounded, color: const Color(0xFF00A3FF),
+                    label: l.orders, onTap: () => context.go(RouteNames.orders)),
+                _QuickAction(icon: Icons.favorite_rounded, color: const Color(0xFF00D084),
+                    label: l.favorites, onTap: () => context.go(RouteNames.favorites)),
+                _QuickAction(icon: Icons.location_on_outlined, color: const Color(0xFFFF6B2C),
+                    label: l.myAddresses, onTap: () => context.push(RouteNames.addresses)),
+              ]),
+
+              // ── Seller / Become Seller ──────────────────────────────────
+              if (isSeller) ...[
+                _SectionLabel(l.sellerDashboard),
+                _GroupCard(children: [
+                  _Tile(icon: Icons.store_rounded, iconColor: const Color(0xFF00D084),
+                      label: l.sellerDashboard,
+                      onTap: () => context.go(RouteNames.sellerDashboard)),
+                  _Tile(icon: Icons.location_on_rounded, iconColor: const Color(0xFFFF6B2C),
+                      label: l.storeLocation,
+                      onTap: _setStoreLocation),
+                ]),
+              ] else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: AppButton(
+                    text: '🏪 ${l.becomeSeller}',
+                    onTap: _becomeSeller,
+                  )),
+
+              // ── Настройки ───────────────────────────────────────────────
+              _SectionLabel(l.settings),
+              _GroupCard(children: [
+                // Тема
+                _SwitchTile(
+                  icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                  iconColor: const Color(0xFFFFB800),
+                  label: isDark ? l.darkMode : l.lightMode,
+                  value: isDark,
+                  onChanged: (v) => ref.read(themeProvider.notifier).toggle()),
+                // Забон
+                _Tile(
+                  icon: Icons.language_rounded, iconColor: const Color(0xFF00A3FF),
+                  label: '${l.language}: ${LocaleNotifier.langName(ref.watch(localeProvider).languageCode)}',
+                  onTap: _showLanguagePicker),
+                _Tile(icon: Icons.notifications_outlined, iconColor: const Color(0xFFE040FB),
+                    label: l.notifications, onTap: () => context.go(RouteNames.notifications)),
+              ]),
+
+              // ── О приложении ────────────────────────────────────────────
+              _SectionLabel(l.about),
+              _GroupCard(children: [
+                _Tile(icon: Icons.info_outline_rounded, iconColor: context.pal.textMuted,
+                    label: l.about, onTap: () => _showAbout(l)),
+              ]),
+
+              // ── Выход ───────────────────────────────────────────────────
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: AppButton(
-                  text: '🏪 ${l.becomeSeller}',
-                  onTap: _becomeSeller,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                child: Material(
+                  color: const Color(0xFFFF3B5C).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () async {
+                      await ref.read(authProvider.notifier).logout();
+                      if (context.mounted) context.go(RouteNames.login);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const Icon(Icons.logout_rounded, color: Color(0xFFFF3B5C), size: 20),
+                        const SizedBox(width: 8),
+                        Text(l.logout, style: const TextStyle(
+                            color: Color(0xFFFF3B5C), fontWeight: FontWeight.w700, fontSize: 15)),
+                      ]),
+                    ),
+                  ),
                 )),
-
-            const SizedBox(height: 8),
-            _SectionLabel(l.orders),
-            _MenuItem(icon: Icons.receipt_long_rounded, iconColor: const Color(0xFF00A3FF),
-                label: l.orders, onTap: () => context.go(RouteNames.orders)),
-            _MenuItem(icon: Icons.account_balance_wallet_rounded, iconColor: const Color(0xFFFFB800),
-                label: l.myWallet, onTap: () => context.push(RouteNames.wallet)),
-            _MenuItem(icon: Icons.location_on_outlined, iconColor: const Color(0xFFFF6B2C),
-                label: l.myAddresses, onTap: () => context.push(RouteNames.addresses)),
-            _MenuItem(icon: Icons.favorite_rounded, iconColor: const Color(0xFF00D084),
-                label: l.favorites, onTap: () => context.go(RouteNames.favorites)),
-
-            const SizedBox(height: 8),
-            _SectionLabel(l.settings),
-            // ── Тема ─────────────────────────────────────────────────────
-            _SwitchTile(
-              icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-              iconColor: const Color(0xFFFFB800),
-              label: isDark ? l.darkMode : l.lightMode,
-              value: isDark,
-              onChanged: (v) => ref.read(themeProvider.notifier).toggle()),
-
-            // ── Забон ────────────────────────────────────────────────────
-            _MenuItem(
-              icon: Icons.language_rounded, iconColor: const Color(0xFF00A3FF),
-              label: '${l.language}: ${LocaleNotifier.langName(ref.watch(localeProvider).languageCode)}',
-              onTap: _showLanguagePicker),
-
-            _MenuItem(icon: Icons.notifications_outlined, iconColor: const Color(0xFFE040FB),
-                label: l.notifications, onTap: () => context.go(RouteNames.notifications)),
-
-            const SizedBox(height: 8),
-            _SectionLabel(l.about),
-            _MenuItem(icon: Icons.info_outline_rounded, iconColor: context.pal.textMuted,
-                label: l.about, onTap: () => _showAbout(l)),
-
-            // ── Logout ─────────────────────────────────────────────────
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-              child: ListTile(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                tileColor: const Color(0xFFFF3B5C).withValues(alpha: 0.1),
-                leading: const Icon(Icons.logout_rounded, color: Color(0xFFFF3B5C)),
-                title: Text(l.logout, style: const TextStyle(
-                    color: Color(0xFFFF3B5C), fontWeight: FontWeight.w600)),
-                onTap: () async {
-                  await ref.read(authProvider.notifier).logout();
-                  if (context.mounted) context.go(RouteNames.login);
-                })),
-          ])),
-        ]));
+            ])),
+          ]),
+      ));
   }
 }
+
+// ── Green gradient (замена жёлтому/оранжевому шаблона) ───────────────────────
+const LinearGradient _greenGradient = LinearGradient(
+  colors: [Color(0xFF00D084), Color(0xFF00A3FF)],
+  begin: Alignment.topLeft, end: Alignment.bottomRight,
+);
+
+List<BoxShadow> _softShadow(BuildContext context) => [
+  BoxShadow(
+    color: context.pal.textMuted.withValues(alpha: 0.12),
+    blurRadius: 16,
+    spreadRadius: 0,
+    offset: const Offset(0, 6),
+  ),
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 class _RoleBadge extends StatelessWidget {
@@ -385,37 +407,77 @@ class _SectionLabel extends StatelessWidget {
   final String label;
   const _SectionLabel(this.label);
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 8, 20, 6),
-    child: Text(label.toUpperCase(), style: TextStyle(
-        color: context.pal.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)));
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.centerLeft,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+      child: Text(label.toUpperCase(), style: TextStyle(
+          color: context.pal.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+    ));
 }
 
-class _MenuItem extends StatelessWidget {
+/// Карточка-контейнер с мягкой тенью (как «shadow» в шаблоне), разделители между строками.
+class _GroupCard extends StatelessWidget {
+  final List<Widget> children;
+  const _GroupCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    for (var i = 0; i < children.length; i++) {
+      rows.add(children[i]);
+      if (i != children.length - 1) {
+        rows.add(Divider(height: 1, thickness: 0.6, indent: 60, endIndent: 16,
+            color: context.pal.border));
+      }
+    }
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: context.pal.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: context.pal.border),
+        boxShadow: _softShadow(context),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Column(children: rows),
+      ),
+    );
+  }
+}
+
+/// Строка списка в стиле шаблона: цветной значок в мягком квадрате, заголовок, шеврон.
+class _Tile extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String label;
   final VoidCallback onTap;
-  const _MenuItem({required this.icon, required this.iconColor,
+  const _Tile({required this.icon, required this.iconColor,
       required this.label, required this.onTap});
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-    child: ListTile(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      tileColor: context.pal.card,
-      leading: Container(padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: iconColor, size: 18)),
-      title: Text(label, style: TextStyle(color: context.pal.textPrimary,
-          fontSize: 14, fontWeight: FontWeight.w500)),
-      trailing: Icon(Icons.chevron_right_rounded,
-          color: context.pal.textMuted, size: 20),
-      onTap: onTap));
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(children: [
+          Container(width: 36, height: 36, alignment: Alignment.center,
+              decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: iconColor, size: 20)),
+          const SizedBox(width: 12),
+          Expanded(child: Text(label, style: TextStyle(color: context.pal.textPrimary,
+              fontSize: 15, fontWeight: FontWeight.w500))),
+          Icon(Icons.chevron_right_rounded, color: context.pal.textMuted, size: 22),
+        ]),
+      ),
+    ));
 }
 
+/// Как _Tile, но с переключателем (тема) — остаётся полностью функциональной.
 class _SwitchTile extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
@@ -427,16 +489,64 @@ class _SwitchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-    child: ListTile(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      tileColor: context.pal.card,
-      leading: Container(padding: const EdgeInsets.all(8),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    child: Row(children: [
+      Container(width: 36, height: 36, alignment: Alignment.center,
           decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: iconColor, size: 18)),
-      title: Text(label, style: TextStyle(color: context.pal.textPrimary,
-          fontSize: 14, fontWeight: FontWeight.w500)),
-      trailing: Switch.adaptive(value: value, onChanged: onChanged,
-          activeColor: AppColors.primary)));
+          child: Icon(icon, color: iconColor, size: 20)),
+      const SizedBox(width: 12),
+      Expanded(child: Text(label, style: TextStyle(color: context.pal.textPrimary,
+          fontSize: 15, fontWeight: FontWeight.w500))),
+      Switch.adaptive(value: value, onChanged: onChanged,
+          activeColor: AppColors.primary),
+    ]));
+}
+
+/// Полоса быстрых действий (карточка с тенью, ряд иконок — как в шаблоне).
+class _QuickCard extends StatelessWidget {
+  final List<Widget> children;
+  const _QuickCard({required this.children});
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16),
+    padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+    decoration: BoxDecoration(
+      color: context.pal.card,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: context.pal.border),
+      boxShadow: _softShadow(context),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: children,
+    ),
+  );
+}
+
+class _QuickAction extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final VoidCallback onTap;
+  const _QuickAction({required this.icon, required this.color,
+      required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    borderRadius: BorderRadius.circular(14),
+    onTap: onTap,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 46, height: 46, alignment: Alignment.center,
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14)),
+            child: Icon(icon, color: color, size: 22)),
+        const SizedBox(height: 6),
+        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: context.pal.textSecondary,
+                fontSize: 11, fontWeight: FontWeight.w600)),
+      ]),
+    ));
 }

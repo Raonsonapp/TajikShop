@@ -1,147 +1,278 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
+import '../../routes/route_names.dart';
 import '../../providers/search_provider.dart';
-import '../../providers/product_provider.dart';
 import '../../data/models/category_model.dart';
 import '../../shared/widgets/shimmer_card.dart';
-import '../../shared/widgets/product_card.dart';
 
-class CategoriesScreen extends ConsumerStatefulWidget {
+/// Экрани рӯйхати категорияҳо — намуди «staggered» бо аксенти сабз.
+/// Тап -> ҷустуҷӯ аз рӯи номи категория (searchQueryProvider + RouteNames.search).
+class CategoriesScreen extends ConsumerWidget {
   const CategoriesScreen({super.key});
-  @override
-  ConsumerState<CategoriesScreen> createState() => _CategoriesScreenState();
-}
 
-class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
-  CategoryModel? _selected;
+  // Гардиенти сабз (талаботи accent)
+  static const _greenGradient = LinearGradient(
+    colors: [Color(0xFF00D084), Color(0xFF00A3FF)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Баландиҳои гуногун барои намуди staggered
+  static const _tileHeights = [210.0, 158.0, 240.0, 176.0, 196.0, 150.0];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cats = ref.watch(categoriesProvider);
-    final products = ref.watch(productsProvider);
 
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(
         backgroundColor: context.pal.scaffold,
+        elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: context.pal.textPrimary, size: 20),
-          onPressed: () => Navigator.pop(context),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: context.pal.textPrimary, size: 20),
+          onPressed: () => Navigator.canPop(context)
+              ? Navigator.pop(context)
+              : context.go(RouteNames.home),
         ),
         title: Text(
-          _selected?.name ?? AppL10n.of(context).categories,
-          style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700),
+          AppL10n.of(context).categories,
+          style: TextStyle(
+              color: context.pal.textPrimary, fontWeight: FontWeight.w700),
         ),
       ),
-      body: Row(
-        children: [
-          // Left: category list
-          Container(
-            width: 90,
-            color: context.pal.card,
-            child: cats.when(
-              loading: () => ListView.builder(
-                itemCount: 8,
-                itemBuilder: (_, i) => Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: ShimmerCard(height: 70, radius: 12),
-                ),
-              ),
-              error: (_, __) => const SizedBox(),
-              data: (list) => ListView.builder(
-                itemCount: list.length,
-                itemBuilder: (_, i) {
-                  final isSelected = _selected?.id == list[i].id;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() => _selected = list[i]);
-                      ref.read(productsProvider.notifier)
-                          .loadProducts(categoryId: list[i].id, refresh: true);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
-                      decoration: BoxDecoration(
-                        color: isSelected ? context.pal.scaffold : Colors.transparent,
-                        border: Border(
-                          left: BorderSide(
-                            color: isSelected ? AppColors.primary : Colors.transparent,
-                            width: 3,
-                          ),
-                        ),
-                      ),
-                      child: Column(children: [
-                        Container(
-                          width: 44, height: 44,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primary.withOpacity(0.15)
-                                : context.pal.surface,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(Icons.category_outlined,
-                              color: isSelected ? AppColors.primary : context.pal.textMuted,
-                              size: 22),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          list[i].name,
-                          maxLines: 2, overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: isSelected ? AppColors.primary : context.pal.textSecondary,
-                            fontSize: 10,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                          ),
-                        ),
-                      ]),
-                    ),
-                  );
-                },
-              ),
+      body: cats.when(
+        loading: () => _buildLoading(context),
+        error: (_, __) => _buildError(context, ref),
+        data: (list) {
+          if (list.isEmpty) return _buildEmpty(context);
+          return MasonryGridView.count(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            itemCount: list.length,
+            itemBuilder: (_, i) => _CategoryTile(
+              category: list[i],
+              height: _tileHeights[i % _tileHeights.length],
+              gradient: _greenGradient,
+              onTap: () {
+                ref.read(searchQueryProvider.notifier).state = list[i].name;
+                context.push(RouteNames.search);
+              },
             ),
-          ),
-          // Right: products
-          Expanded(
-            child: _selected == null
-                ? Center(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.category_outlined, size: 70, color: context.pal.textMuted),
-                      const SizedBox(height: 14),
-                      Text(AppL10n.of(context).selectCategory,
-                          style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
-                    ]),
-                  )
-                : products.isLoading && products.products.isEmpty
-                    ? GridView.builder(
-                        padding: const EdgeInsets.all(12),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 0.68),
-                        itemCount: 6,
-                        itemBuilder: (_, __) => ShimmerCard(radius: 14),
-                      )
-                    : products.products.isEmpty
-                        ? Center(
-                            child: Column(mainAxisSize: MainAxisSize.min, children: [
-                              Icon(Icons.inventory_2_outlined, size: 60, color: context.pal.textMuted),
-                              const SizedBox(height: 12),
-                              Text(AppL10n.of(context).noProducts,
-                                  style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
-                            ]),
-                          )
-                        : GridView.builder(
-                            padding: const EdgeInsets.all(12),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 0.68),
-                            itemCount: products.products.length,
-                            itemBuilder: (_, i) => ProductCard(product: products.products[i]),
-                          ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
+
+  Widget _buildLoading(BuildContext context) => MasonryGridView.count(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        crossAxisCount: 2,
+        mainAxisSpacing: 16,
+        crossAxisSpacing: 16,
+        itemCount: 8,
+        itemBuilder: (_, i) => ShimmerCard(
+          height: _tileHeights[i % _tileHeights.length],
+          radius: 20,
+        ),
+      );
+
+  Widget _buildError(BuildContext context, WidgetRef ref) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.wifi_off_rounded,
+                size: 60, color: context.pal.textMuted),
+            const SizedBox(height: 14),
+            Text(AppL10n.of(context).error,
+                style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
+            const SizedBox(height: 14),
+            OutlinedButton(
+              onPressed: () => ref.invalidate(categoriesProvider),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.primary),
+                foregroundColor: AppColors.primary,
+              ),
+              child: Text(AppL10n.of(context).retry),
+            ),
+          ],
+        ),
+      );
+
+  Widget _buildEmpty(BuildContext context) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.category_outlined,
+                size: 70, color: context.pal.textMuted),
+            const SizedBox(height: 14),
+            Text(AppL10n.of(context).selectCategory,
+                style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
+          ],
+        ),
+      );
+}
+
+class _CategoryTile extends StatelessWidget {
+  final CategoryModel category;
+  final double height;
+  final Gradient gradient;
+  final VoidCallback onTap;
+
+  const _CategoryTile({
+    required this.category,
+    required this.height,
+    required this.gradient,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: context.pal.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: context.pal.border, width: 0.8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.18),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Расм ё гардиенти сабз ҳамчун замина
+            _buildImage(context),
+
+            // Overlay-и нарм барои хондани матн
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                height: height * 0.62,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Color(0xE6000000), Color(0x00000000)],
+                  ),
+                ),
+              ),
+            ),
+
+            // Нишони теъдоди маҳсулот (аксенти сабз)
+            if (category.productCount > 0)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: gradient,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.4),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    '${category.productCount}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+
+            // Ном + тугмаи «намоиш»
+            Positioned(
+              left: 14,
+              right: 14,
+              bottom: 14,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    category.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: const Text(
+                      'Намоиш',
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImage(BuildContext context) {
+    final img = category.image;
+    if (img == null || img.isEmpty) return _fallback();
+    final url = img.startsWith('http')
+        ? img
+        : 'https://mahmadmurodov-tajikshop.hf.space$img';
+    return CachedNetworkImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      placeholder: (_, __) => Container(
+        decoration: BoxDecoration(gradient: gradient),
+      ),
+      errorWidget: (_, __, ___) => _fallback(),
+    );
+  }
+
+  Widget _fallback() => Container(
+        decoration: BoxDecoration(gradient: gradient),
+        child: const Center(
+          child: Icon(Icons.category_rounded, color: Colors.white, size: 44),
+        ),
+      );
 }
