@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/orders_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/address_provider.dart';
@@ -59,8 +61,8 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
 
   Future<void> _save() async {
     if (_street.text.trim().isEmpty || _city.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Шаҳр ва кӯчаро пур кунед'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppL10n.of(context).fillCityStreet),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
       return;
@@ -78,8 +80,8 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
     } catch (_) {
       if (mounted) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Суроға захира нашуд'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppL10n.of(context).addressSaveFailed),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating));
       }
@@ -118,6 +120,7 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final picked = _lat != 0;
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -149,7 +152,7 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
                       color: Colors.white, size: 22),
                 ),
                 const SizedBox(width: 12),
-                Text('Суроғаи нав',
+                Text(l.newAddress,
                     style: TextStyle(
                         color: context.pal.textPrimary,
                         fontSize: 20,
@@ -157,17 +160,17 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
               ],
             ),
             const SizedBox(height: 22),
-            _label('Номи суроға'),
-            _f('Хона, Кор, Офис...', _title),
-            _label('Шаҳр'),
-            _f('Шаҳр *', _city),
-            _label('Суроғаи пурра'),
-            _f('Кӯча, хона, манзил *', _street),
-            _label('Индекс'),
-            _f('Индекс (ихтиёрӣ)', _zip,
+            _label(l.addressNameLabel),
+            _f(l.addressNameHint, _title),
+            _label(l.city),
+            _f(l.cityHint, _city),
+            _label(l.fullAddressLabel),
+            _f(l.streetHint, _street),
+            _label(l.indexLabel),
+            _f(l.indexHint, _zip,
                 keyboardType: TextInputType.number),
             const SizedBox(height: 4),
-            _label('Ҷойгиршавӣ дар харита'),
+            _label(l.locationOnMap),
             // ── Тугмаи интихоб дар харита (сабз) ────────────────────────
             GestureDetector(
               onTap: _pickOnMap,
@@ -194,8 +197,8 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
                     Expanded(
                       child: Text(
                           picked
-                              ? 'Ҷой интихоб шуд (${_lat.toStringAsFixed(4)}, ${_lng.toStringAsFixed(4)})'
-                              : 'Ҷойро дар харита интихоб кунед',
+                              ? '${l.locationPicked} (${_lat.toStringAsFixed(4)}, ${_lng.toStringAsFixed(4)})'
+                              : l.pickLocationOnMap,
                           style: TextStyle(
                               color: picked
                                   ? AppColors.success
@@ -212,7 +215,7 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
             const SizedBox(height: 22),
             // ── Тугмаи захира (градиенти калони сабз) ───────────────────
             AppButton(
-              text: 'Захира кардан',
+              text: l.save,
               onTap: _save,
               isLoading: _loading,
               height: 58,

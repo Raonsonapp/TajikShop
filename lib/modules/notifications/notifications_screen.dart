@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
@@ -28,7 +29,7 @@ class NotificationsScreen extends ConsumerWidget {
         elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(
-          'Огоҳиномаҳо',
+          AppL10n.of(context).notifications,
           style: TextStyle(
             color: context.pal.textPrimary,
             fontWeight: FontWeight.bold,
@@ -46,9 +47,9 @@ class NotificationsScreen extends ConsumerWidget {
                 } catch (_) {}
               },
               icon: const Icon(Icons.done_all_rounded, size: 18, color: AppColors.primary),
-              label: const Text(
-                'Ҳама хонда',
-                style: TextStyle(
+              label: Text(
+                AppL10n.of(context).markAllRead,
+                style: const TextStyle(
                   color: AppColors.primary,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -78,7 +79,7 @@ class NotificationsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Огоҳиноме нест',
+                      AppL10n.of(context).noNotifications,
                       style: TextStyle(
                         color: context.pal.textSecondary,
                         fontSize: 16,

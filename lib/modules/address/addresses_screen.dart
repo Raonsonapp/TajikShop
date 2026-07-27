@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/orders_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../data/models/address_model.dart';
@@ -28,7 +30,7 @@ class AddressesScreen extends ConsumerWidget {
         backgroundColor: context.pal.scaffold,
         elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Суроғаҳои ман',
+        title: Text(AppL10n.of(context).myAddresses,
             style: TextStyle(
                 color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
       ),
@@ -57,13 +59,13 @@ class AddressesScreen extends ConsumerWidget {
                                 size: 44, color: AppColors.primary),
                           ),
                           const SizedBox(height: 18),
-                          Text('Суроға нест',
+                          Text(AppL10n.of(context).noAddresses,
                               style: TextStyle(
                                   color: context.pal.textPrimary,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700)),
                           const SizedBox(height: 6),
-                          Text('Суроғаи навро илова кунед',
+                          Text(AppL10n.of(context).addNewAddressHint,
                               style: TextStyle(
                                   color: context.pal.textSecondary,
                                   fontSize: 13)),
@@ -101,15 +103,15 @@ class AddressesScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.add_location_alt_rounded,
+                        const Icon(Icons.add_location_alt_rounded,
                             color: Colors.white, size: 22),
-                        SizedBox(width: 10),
-                        Text('Иловаи суроға',
-                            style: TextStyle(
+                        const SizedBox(width: 10),
+                        Text(AppL10n.of(context).addAddress,
+                            style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700)),
@@ -189,8 +191,8 @@ class _AddressCard extends StatelessWidget {
                           color: AppColors.primary.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text('Пешфарз',
-                            style: TextStyle(
+                        child: Text(AppL10n.of(context).defaultBadge,
+                            style: const TextStyle(
                                 color: AppColors.primary,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700)),
@@ -219,8 +221,8 @@ class _AddressCard extends StatelessWidget {
                 if (v == 'delete') await AddressService.remove(a.id);
                 ref.invalidate(addressesProvider);
               } catch (_) {
-                messenger.showSnackBar(const SnackBar(
-                    content: Text('Хато'),
+                messenger.showSnackBar(SnackBar(
+                    content: Text(AppL10n.of(context).error),
                     backgroundColor: AppColors.error,
                     behavior: SnackBarBehavior.floating));
               }
@@ -233,18 +235,18 @@ class _AddressCard extends StatelessWidget {
                     const Icon(Icons.check_circle_outline_rounded,
                         color: AppColors.primary, size: 18),
                     const SizedBox(width: 10),
-                    Text('Пешфарз кардан',
+                    Text(AppL10n.of(context).setDefaultAction,
                         style: TextStyle(color: context.pal.textPrimary)),
                   ]),
                 ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'delete',
                 child: Row(children: [
-                  Icon(Icons.delete_outline_rounded,
+                  const Icon(Icons.delete_outline_rounded,
                       color: AppColors.error, size: 18),
-                  SizedBox(width: 10),
-                  Text('Нест кардан',
-                      style: TextStyle(color: AppColors.error)),
+                  const SizedBox(width: 10),
+                  Text(AppL10n.of(context).deleteAction,
+                      style: const TextStyle(color: AppColors.error)),
                 ]),
               ),
             ],
