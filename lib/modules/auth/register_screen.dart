@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/misc_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
@@ -36,11 +38,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final email = _emailCtrl.text.trim();
     final pass = _passCtrl.text;
     if (name.isEmpty || email.isEmpty || pass.isEmpty) {
-      setState(() => _error = 'Ҳамаи майдонҳоро пур кунед');
+      setState(() => _error = AppL10n.of(context).fillAllFields);
       return;
     }
     if (pass.length < 6) {
-      setState(() => _error = 'Парол ҳадди ақал 6 аломат');
+      setState(() => _error = AppL10n.of(context).passwordMin6Error);
       return;
     }
     setState(() { _loading = true; _error = null; });
@@ -50,7 +52,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (ok) {
         context.go(RouteNames.home);
       } else {
-        setState(() { _loading = false; _error = ref.read(authProvider).error ?? 'Хато'; });
+        setState(() { _loading = false; _error = ref.read(authProvider).error ?? AppL10n.of(context).error; });
       }
     } catch (e) {
       if (!mounted) return;
@@ -60,15 +62,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       resizeToAvoidBottomInset: true,
       body: Column(
         children: [
           // Branded curved green header (intro_page vibe)
-          const _AuthHeader(
-            title: 'Ҳисоб созед 🚀',
-            subtitle: 'Ба бозори Тоҷикистон хуш омадед —\nдар як дақиқа ҳисоб созед',
+          _AuthHeader(
+            title: l.registerWelcomeTitle,
+            subtitle: l.registerWelcomeSubtitle,
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -76,13 +79,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Сабтном',
+                  Text(l.register,
                       style: TextStyle(
                           color: context.pal.textPrimary,
                           fontSize: 22,
                           fontWeight: FontWeight.w800)),
                   const SizedBox(height: 4),
-                  Text('Маълумоти худро барои сохтани ҳисоб ворид кунед',
+                  Text(l.registerPrompt,
                       style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
                   const SizedBox(height: 22),
 
@@ -102,20 +105,20 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ]),
                     ),
 
-                  DarkTextField(controller: _nameCtrl, hint: 'Номи корбар', icon: Icons.person_outline_rounded,
+                  DarkTextField(controller: _nameCtrl, hint: l.usernameHint, icon: Icons.person_outline_rounded,
                       formatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_.]')),
                         LengthLimitingTextInputFormatter(30),
                       ]),
                   Padding(
                     padding: const EdgeInsets.only(left: 6, top: 6, bottom: 12),
-                    child: Text('Танҳо ҳарфҳои хурд, рақам ва _',
+                    child: Text(l.usernameRule,
                         style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
                   ),
                   DarkTextField(controller: _emailCtrl, hint: 'Email', icon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress),
                   const SizedBox(height: 14),
-                  DarkTextField(controller: _passCtrl, hint: 'Парол (ҳадди ақал 6)', icon: Icons.lock_outline_rounded,
+                  DarkTextField(controller: _passCtrl, hint: l.passwordMin6Hint, icon: Icons.lock_outline_rounded,
                       obscure: _obscure,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _loading ? null : _register(),
@@ -126,7 +129,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   const SizedBox(height: 26),
 
                   _GradientButton(
-                    label: 'Сабтном',
+                    label: l.register,
                     loading: _loading,
                     onTap: _loading ? null : _register,
                   ),
@@ -137,11 +140,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       child: RichText(
                         text: TextSpan(
                           style: TextStyle(color: context.pal.textSecondary, fontSize: 14),
-                          children: const [
-                            TextSpan(text: 'Ҳисоб доред? '),
+                          children: [
+                            TextSpan(text: l.haveAccountPrefix),
                             TextSpan(
-                                text: 'Ворид шавед',
-                                style: TextStyle(
+                                text: l.signIn,
+                                style: const TextStyle(
                                     color: AppColors.primary, fontWeight: FontWeight.w700)),
                           ],
                         ),
