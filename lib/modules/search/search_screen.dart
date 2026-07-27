@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/app_l10n.dart';
+import '../../core/l10n/shop_l10n.dart';
 import '../../core/services/search_history_service.dart';
 import '../../providers/search_provider.dart';
 import '../../shared/widgets/product_card.dart';
@@ -77,7 +78,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Ҷустуҷӯ',
+                    AppL10n.of(context).search,
                     style: TextStyle(
                       color: context.pal.textPrimary,
                       fontSize: 24,
@@ -174,7 +175,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             ]),
                       ),
                       error: (e, _) => Center(
-                        child: Text('Хато: $e',
+                        child: Text('${AppL10n.of(context).error}: $e',
                             style: const TextStyle(color: AppColors.error)),
                       ),
                       data: (list) => list.isEmpty
@@ -185,12 +186,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                     Icon(Icons.search_off_rounded,
                                         size: 80, color: context.pal.textMuted),
                                     const SizedBox(height: 16),
-                                    Text('"$query" — ёфт нашуд',
+                                    Text(
+                                        '"$query" — ${AppL10n.of(context).searchNotFound}',
                                         style: TextStyle(
                                             color: context.pal.textSecondary,
                                             fontSize: 15)),
                                     const SizedBox(height: 8),
-                                    Text('Калимаи дигар истифода кунед',
+                                    Text(AppL10n.of(context).searchTryAnother,
                                         style: TextStyle(
                                             color: context.pal.textMuted,
                                             fontSize: 13)),
@@ -205,7 +207,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                   child: Row(children: [
                                     Expanded(
                                         child: Text(
-                                            '${list.length} натиҷа барои "$query"',
+                                            '${list.length} ${AppL10n.of(context).resultsForWord} "$query"',
                                             style: TextStyle(
                                                 color: context.pal.textMuted,
                                                 fontSize: 13))),
@@ -238,11 +240,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Widget _sortButton() {
-    const opts = {
-      null: 'Нав',
-      'price_asc': 'Арзон → Қимат',
-      'price_desc': 'Қимат → Арзон',
-      'popular': 'Машҳур',
+    final l = AppL10n.of(context);
+    final opts = <String?, String>{
+      null: l.sortNewest,
+      'price_asc': l.sortPriceAsc,
+      'price_desc': l.sortPriceDesc,
+      'popular': l.sortPopular,
     };
     final current = ref.watch(searchSortProvider);
     return PopupMenuButton<String?>(
@@ -271,7 +274,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           const Icon(Icons.swap_vert_rounded,
               color: AppColors.primary, size: 16),
           const SizedBox(width: 4),
-          Text(opts[current] ?? 'Нав',
+          Text(opts[current] ?? l.sortNewest,
               style: TextStyle(color: context.pal.textPrimary, fontSize: 12)),
         ]),
       ),
@@ -285,7 +288,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         if (list.isEmpty) return const SizedBox.shrink();
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Text('Ҷустуҷӯҳои охирин',
+            Text(AppL10n.of(context).recentSearches,
                 style: TextStyle(
                     color: context.pal.textPrimary,
                     fontSize: 17,
@@ -294,8 +297,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             GestureDetector(
                 onTap: () => SearchHistoryService.clear()
                     .then((_) => ref.invalidate(searchHistoryProvider)),
-                child: const Text('Тоза кардан',
-                    style: TextStyle(color: AppColors.primary, fontSize: 12))),
+                child: Text(AppL10n.of(context).clearAll,
+                    style: const TextStyle(
+                        color: AppColors.primary, fontSize: 12))),
           ]),
           const SizedBox(height: 12),
           Wrap(
@@ -343,7 +347,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       data: (list) {
         if (list.isEmpty) return const SizedBox.shrink();
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Бознигаристашуда',
+          Text(AppL10n.of(context).recentlyViewed,
               style: TextStyle(
                   color: context.pal.textPrimary,
                   fontSize: 17,

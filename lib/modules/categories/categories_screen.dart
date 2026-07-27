@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../core/app_l10n.dart';
+import '../../core/l10n/shop_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../routes/route_names.dart';
@@ -235,9 +236,9 @@ class _CategoryTile extends StatelessWidget {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    child: const Text(
-                      'Намоиш',
-                      style: TextStyle(
+                    child: Text(
+                      AppL10n.of(context).categoryViewAction,
+                      style: const TextStyle(
                         color: AppColors.primary,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
