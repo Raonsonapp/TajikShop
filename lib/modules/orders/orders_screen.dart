@@ -151,7 +151,7 @@ class _OCard extends StatelessWidget {
               Text('${order.total.toStringAsFixed(0)} ',
                   style: const TextStyle(
                       color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 17)),
-              Text('сом.',
+              Text(AppL10n.of(context).som,
                   style: TextStyle(
                       color: AppColors.primary.withValues(alpha: 0.8),
                       fontWeight: FontWeight.w600,

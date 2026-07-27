@@ -9,6 +9,8 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/seller_l10n.dart';
 
 class AddProductScreen extends ConsumerStatefulWidget {
   const AddProductScreen({super.key});
@@ -50,7 +52,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('✅ Маҳсулот нашр шуд!'),
+            content: Text(AppL10n.of(context).sellerProductPublished),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -74,12 +76,13 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(
         backgroundColor: context.pal.scaffold,
         elevation: 0,
-        title: Text('Маҳсулот илова кунед',
+        title: Text(l.sellerAddProduct,
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         iconTheme: IconThemeData(color: context.pal.textPrimary),
       ),
@@ -91,7 +94,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Images Section
-              _sectionHeader('Расмҳо (то 5)'),
+              _sectionHeader(l.sellerPhotosUpTo5),
               const SizedBox(height: 12),
               // Rounded dashed green image picker area
               GestureDetector(
@@ -122,8 +125,8 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                           child: const Icon(Icons.add_photo_alternate_outlined, color: Colors.white, size: 26),
                         ),
                         const SizedBox(height: 10),
-                        const Text('Расм илова кунед',
-                            style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w700)),
+                        Text(l.addPhoto,
+                            style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w700)),
                       ],
                     ),
                   ),
@@ -170,39 +173,39 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               const SizedBox(height: 24),
 
               // Fields
-              _sectionHeader('Маълумоти маҳсулот'),
+              _sectionHeader(l.sellerProductInfo),
               const SizedBox(height: 14),
               AppTextField(
-                hint: 'Номи маҳсулот*', controller: _titleCtrl,
+                hint: '${l.productName}*', controller: _titleCtrl,
                 prefixIcon: Icons.inventory_2_outlined,
-                validator: (v) => v!.trim().isEmpty ? 'Ном лозим аст' : null,
+                validator: (v) => v!.trim().isEmpty ? l.sellerNameRequired : null,
               ),
               const SizedBox(height: 12),
               Row(children: [
                 Expanded(
                   child: AppTextField(
-                    hint: 'Нарх (сом.)*', controller: _priceCtrl,
+                    hint: '${l.price} (${l.som})*', controller: _priceCtrl,
                     prefixIcon: Icons.monetization_on_outlined,
                     keyboardType: TextInputType.number,
-                    validator: (v) => v!.isEmpty ? 'Нарх лозим' : null,
+                    validator: (v) => v!.isEmpty ? l.sellerPriceRequired : null,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: AppTextField(
-                    hint: 'Захира*', controller: _stockCtrl,
+                    hint: '${l.sellerStock}*', controller: _stockCtrl,
                     prefixIcon: Icons.warehouse_outlined,
                     keyboardType: TextInputType.number,
-                    validator: (v) => v!.isEmpty ? 'Захира лозим' : null,
+                    validator: (v) => v!.isEmpty ? l.sellerStockRequired : null,
                   ),
                 ),
               ]),
               const SizedBox(height: 12),
               AppTextField(
-                hint: 'Тавсифи маҳсулот*', controller: _descCtrl,
+                hint: '${l.sellerProductDescField}*', controller: _descCtrl,
                 prefixIcon: Icons.description_outlined,
                 maxLines: 4,
-                validator: (v) => v!.trim().isEmpty ? 'Тавсиф лозим аст' : null,
+                validator: (v) => v!.trim().isEmpty ? l.sellerDescRequired : null,
               ),
               const SizedBox(height: 24),
 
@@ -223,7 +226,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 ),
 
               // Big rounded GREEN gradient submit button (AppButton uses primaryGradient)
-              AppButton(text: 'Нашр кардан', onTap: _submit, isLoading: _loading),
+              AppButton(text: l.publish, onTap: _submit, isLoading: _loading),
               const SizedBox(height: 40),
             ],
           ),

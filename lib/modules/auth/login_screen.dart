@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/misc_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
@@ -32,7 +34,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final email = _emailCtrl.text.trim();
     final pass = _passCtrl.text.trim();
     if (email.isEmpty || pass.isEmpty) {
-      setState(() => _error = 'Email ва паролро ворид кунед');
+      setState(() => _error = AppL10n.of(context).enterEmailPassword);
       return;
     }
     setState(() { _loading = true; _error = null; });
@@ -42,7 +44,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (ok) {
         context.go(RouteNames.home);
       } else {
-        setState(() { _loading = false; _error = ref.read(authProvider).error ?? 'Хато'; });
+        setState(() { _loading = false; _error = ref.read(authProvider).error ?? AppL10n.of(context).error; });
       }
     } catch (e) {
       if (!mounted) return;
@@ -52,15 +54,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       resizeToAvoidBottomInset: true,
       body: Column(
         children: [
           // Branded curved green header (intro_page vibe)
-          const _AuthHeader(
-            title: 'Хуш омадед 👋',
-            subtitle: 'Ба ҳисоби худ ворид шавед\nва хариди худро идома диҳед',
+          _AuthHeader(
+            title: l.loginWelcomeTitle,
+            subtitle: l.loginWelcomeSubtitle,
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -68,13 +71,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Ворид шавед',
+                  Text(l.signIn,
                       style: TextStyle(
                           color: context.pal.textPrimary,
                           fontSize: 22,
                           fontWeight: FontWeight.w800)),
                   const SizedBox(height: 4),
-                  Text('Барои идома email ва паролро ворид кунед',
+                  Text(l.loginPrompt,
                       style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
                   const SizedBox(height: 24),
 
@@ -97,7 +100,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   DarkTextField(controller: _emailCtrl, hint: 'Email', icon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress),
                   const SizedBox(height: 14),
-                  DarkTextField(controller: _passCtrl, hint: 'Парол', icon: Icons.lock_outline_rounded,
+                  DarkTextField(controller: _passCtrl, hint: l.password, icon: Icons.lock_outline_rounded,
                       obscure: _obscure,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _loading ? null : _login(),
@@ -108,7 +111,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 28),
 
                   _GradientButton(
-                    label: 'Ворид шавед',
+                    label: l.signIn,
                     loading: _loading,
                     onTap: _loading ? null : _login,
                   ),
@@ -119,11 +122,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: RichText(
                         text: TextSpan(
                           style: TextStyle(color: context.pal.textSecondary, fontSize: 14),
-                          children: const [
-                            TextSpan(text: 'Ҳисоб надоред? '),
+                          children: [
+                            TextSpan(text: l.noAccountPrefix),
                             TextSpan(
-                                text: 'Сабтном',
-                                style: TextStyle(
+                                text: l.register,
+                                style: const TextStyle(
                                     color: AppColors.primary, fontWeight: FontWeight.w700)),
                           ],
                         ),

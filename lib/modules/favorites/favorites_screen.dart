@@ -84,7 +84,7 @@ class _FavCard extends StatelessWidget {
           Text(product.title, maxLines: 2, overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w500)),
           const SizedBox(height: 4),
-          Text('${product.price.toStringAsFixed(0)} сом.',
+          Text('${product.price.toStringAsFixed(0)} ${AppL10n.of(context).som}',
               style: const TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w700)),
         ])),
       ]),

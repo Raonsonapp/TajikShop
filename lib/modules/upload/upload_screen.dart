@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import '../../core/app_l10n.dart';
+import '../../core/l10n/misc_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
@@ -49,6 +50,18 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     _titleCtrl.dispose(); _priceCtrl.dispose();
     _descCtrl.dispose(); _stockCtrl.dispose();
     super.dispose();
+  }
+
+  // Localized label for a stored condition value (value itself stays in TG).
+  String _condLabel(String c) {
+    final l = AppL10n.of(context);
+    switch (c) {
+      case 'Нав':       return l.conditionNew;
+      case 'Хуб':       return l.conditionGood;
+      case 'Қабулшуда': return l.conditionAcceptable;
+      case 'Кӯҳна':     return l.conditionOld;
+      default:          return c;
+    }
   }
 
   String _fsize(File f) {
@@ -248,7 +261,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     _field('${AppL10n.of(context).productName} *', _titleCtrl, hint: AppL10n.of(context).productNameHint),
     const SizedBox(height: 14),
     Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(child: _field('${AppL10n.of(context).price} (сомонӣ) *', _priceCtrl, hint: '0', type: TextInputType.number)),
+      Expanded(child: _field('${AppL10n.of(context).price} (${AppL10n.of(context).currencySomoni}) *', _priceCtrl, hint: '0', type: TextInputType.number)),
       const SizedBox(width: 12),
       Expanded(child: _drop<String>(label: AppL10n.of(context).category, value: _catId, hint: AppL10n.of(context).selectHint,
         items: cats.when(
@@ -278,7 +291,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     _sec('4. ${AppL10n.of(context).details}', null),
     Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Expanded(child: _drop<String>(label: AppL10n.of(context).conditionLabel, value: _condition, hint: '',
-        items: _conditions.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+        items: _conditions.map((c) => DropdownMenuItem(value: c, child: Text(_condLabel(c)))).toList(),
         onChanged: (v) => setState(() => _condition = v ?? _condition))),
       const SizedBox(width: 12),
       Expanded(child: _drop<String>(label: AppL10n.of(context).city, value: _city, hint: '',

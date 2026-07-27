@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../routes/route_names.dart';
 import '../../core/app_l10n.dart';
+import '../../core/l10n/misc_l10n.dart';
 
 // SMS верификация — Firebase тайёр шавад баъд фаъол мешавад
 // Ҳозир барои email/password login истифода кунед
@@ -26,10 +27,10 @@ class PhoneAuthScreen extends ConsumerWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const Text('📱', style: TextStyle(fontSize: 60)),
           const SizedBox(height: 24),
-          Text('SMS верификация',
+          Text(l.smsVerification,
               style: TextStyle(color: context.pal.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
-          Text('Ин функсия тез фаъол мешавад.\nҲозир бо Email ворид шавед.',
+          Text(l.smsComingSoon,
               textAlign: TextAlign.center,
               style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
           const SizedBox(height: 32),

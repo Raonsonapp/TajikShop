@@ -6,6 +6,8 @@ import '../../providers/seller_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/error_screen.dart';
 import '../../shared/widgets/safe_input.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/seller_l10n.dart';
 
 class ManageVariantsScreen extends ConsumerWidget {
   final String productId;
@@ -14,20 +16,21 @@ class ManageVariantsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppL10n.of(context);
     final variants = ref.watch(productVariantsProvider(productId));
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(
         backgroundColor: context.pal.scaffold,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Вариантҳо (андоза/ранг)',
+        title: Text(l.sellerVariantsTitle,
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 16)),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         onPressed: () => _add(context, ref),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Вариант', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        label: Text(l.sellerVariant, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
       ),
       body: variants.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -36,7 +39,7 @@ class ManageVariantsScreen extends ConsumerWidget {
             ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.tune_rounded, size: 72, color: context.pal.textMuted),
                 const SizedBox(height: 12),
-                Text('Вариант нест.\nАндоза/рангро илова кунед.',
+                Text(l.sellerNoVariants,
                     textAlign: TextAlign.center, style: TextStyle(color: context.pal.textSecondary)),
               ]))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
@@ -50,7 +53,7 @@ class ManageVariantsScreen extends ConsumerWidget {
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(v.label, style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 3),
-                        Text('${v.price > 0 ? '${v.price.toStringAsFixed(0)} сом. • ' : ''}Захира: ${v.stock}'
+                        Text('${v.price > 0 ? '${v.price.toStringAsFixed(0)} ${l.som} • ' : ''}${l.sellerStock}: ${v.stock}'
                             '${v.sku.isNotEmpty ? ' • SKU: ${v.sku}' : ''}',
                             style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
                       ])),
@@ -69,6 +72,7 @@ class ManageVariantsScreen extends ConsumerWidget {
   }
 
   void _add(BuildContext context, WidgetRef ref) {
+    final l = AppL10n.of(context);
     final size = TextEditingController();
     final color = TextEditingController();
     final sku = TextEditingController();
@@ -90,16 +94,16 @@ class ManageVariantsScreen extends ConsumerWidget {
         return Padding(
           padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('Варианти нав', style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(l.sellerNewVariant, style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 16),
-            Row(children: [Expanded(child: f('Андоза (S, M, 42...)', size)), const SizedBox(width: 10), Expanded(child: f('Ранг', color))]),
-            Row(children: [Expanded(child: f('Нарх (ихтиёрӣ)', price, num: true)), const SizedBox(width: 10), Expanded(child: f('Захира', stock, num: true))]),
-            f('SKU (ихтиёрӣ)', sku),
+            Row(children: [Expanded(child: f(l.sellerSizeHint, size)), const SizedBox(width: 10), Expanded(child: f(l.sellerColor, color))]),
+            Row(children: [Expanded(child: f(l.sellerPriceOptional, price, num: true)), const SizedBox(width: 10), Expanded(child: f(l.sellerStock, stock, num: true))]),
+            f(l.sellerSkuOptional, sku),
             const SizedBox(height: 6),
-            AppButton(text: 'Илова кардан', onTap: () async {
+            AppButton(text: l.sellerAddAction, onTap: () async {
               if (size.text.trim().isEmpty && color.text.trim().isEmpty) {
-                ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(
-                  content: Text('Андоза ё рангро ворид кунед'),
+                ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                  content: Text(l.sellerEnterSizeOrColor),
                   backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
                 return;
               }

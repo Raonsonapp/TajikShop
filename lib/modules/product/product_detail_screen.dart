@@ -646,7 +646,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       return;
     }
     if (p.sellerId.isEmpty) return;
-    final name = Uri.encodeComponent(p.sellerName ?? 'Фурӯшанда');
+    final name =
+        Uri.encodeComponent(p.sellerName ?? AppL10n.of(context).seller);
     context.push('${RouteNames.chat}/${p.sellerId}?name=$name');
   }
 
@@ -714,7 +715,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   void _openSeller(ProductModel p) {
     if (p.sellerId.isEmpty) return;
-    final name = Uri.encodeComponent(p.sellerName ?? 'Фурӯшанда');
+    final name =
+        Uri.encodeComponent(p.sellerName ?? AppL10n.of(context).seller);
     context.push('/seller/${p.sellerId}?name=$name');
   }
 

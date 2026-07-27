@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/app_l10n.dart';
+import '../../core/l10n/shop_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../data/models/product_model.dart';
@@ -37,7 +38,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _scroll = ScrollController();
 
   // Template "timeline" selector (Weekly featured / Best of June / Best of 2018).
-  final List<String> _timelines = const ['Нав', 'Оммавӣ', 'Тахфиф'];
+  List<String> get _timelines {
+    final l = AppL10n.of(context);
+    return [l.homeTabNew, l.homeTabPopular, l.homeTabDiscount];
+  }
+
   int _selectedTimeline = 0;
 
   @override
@@ -120,7 +125,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SliverToBoxAdapter(child: _CategoryRow()),
 
               // ── "Recommended" section title ───────────────────────────
-              SliverToBoxAdapter(child: _sectionTitle('Тавсияшуда')),
+              SliverToBoxAdapter(
+                  child: _sectionTitle(AppL10n.of(context).homeRecommended)),
 
               // ── Recommended grid + states ─────────────────────────────
               if (ps.error != null && ps.products.isEmpty)

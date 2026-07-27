@@ -11,6 +11,8 @@ import '../../providers/follow_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/seller_l10n.dart';
 
 class SellerProfileScreen extends ConsumerWidget {
   final String id;
@@ -19,6 +21,7 @@ class SellerProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppL10n.of(context);
     final info = ref.watch(sellerPublicProvider(id));
     final products = ref.watch(sellerProductsProvider(id));
     final following = ref.watch(followProvider).contains(id);
@@ -50,7 +53,7 @@ class SellerProfileScreen extends ConsumerWidget {
             error: (_, __) => const SliverToBoxAdapter(child: SizedBox()),
             data: (list) => list.isEmpty
                 ? SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.symmetric(vertical: 50),
-                    child: Center(child: Text('Маҳсулоте нест', style: TextStyle(color: context.pal.textMuted)))))
+                    child: Center(child: Text(l.noProducts, style: TextStyle(color: context.pal.textMuted)))))
                 : SliverPadding(padding: const EdgeInsets.fromLTRB(14, 0, 14, 100),
                     sliver: SliverGrid(
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -64,6 +67,7 @@ class SellerProfileScreen extends ConsumerWidget {
   }
 
   Widget _header(BuildContext context, WidgetRef ref, Map<String, dynamic> d, bool following) {
+    final l = AppL10n.of(context);
     final avatar = d['avatar_url']?.toString() ?? '';
     final verified = d['is_verified'] == true;
     final rating = (d['rating'] as num?)?.toDouble() ?? 0;
@@ -85,15 +89,15 @@ class SellerProfileScreen extends ConsumerWidget {
           const SizedBox(width: 16),
           Expanded(child: Column(children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-              _stat('$products', 'Маҳсулот'),
-              _stat('$followers', 'Пайравон'),
-              _stat(rating > 0 ? rating.toStringAsFixed(1) : '—', 'Баҳо'),
+              _stat('$products', l.productsWord),
+              _stat('$followers', l.sellerFollowers),
+              _stat(rating > 0 ? rating.toStringAsFixed(1) : '—', l.sellerRating),
             ]),
           ])),
         ]),
         const SizedBox(height: 12),
         Row(children: [
-          Text(d['name']?.toString() ?? 'Фурӯшанда',
+          Text(d['name']?.toString() ?? l.seller,
               style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w800)),
           if (verified) const Padding(padding: EdgeInsets.only(left: 6),
               child: Icon(Icons.verified_rounded, color: AppColors.info, size: 18)),
@@ -116,25 +120,25 @@ class SellerProfileScreen extends ConsumerWidget {
                 color: following ? Colors.transparent : AppColors.primary,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.primary)),
-              child: Text(following ? 'Пайгирӣ шуд' : 'Пайгирӣ кардан',
+              child: Text(following ? l.following : l.sellerFollowAction,
                   style: TextStyle(color: following ? AppColors.primary : Colors.white, fontWeight: FontWeight.w700)),
             ),
           )),
           const SizedBox(width: 10),
           Expanded(child: GestureDetector(
-            onTap: () => context.push('${RouteNames.chat}/$id?name=${Uri.encodeComponent(d['name']?.toString() ?? 'Фурӯшанда')}'),
+            onTap: () => context.push('${RouteNames.chat}/$id?name=${Uri.encodeComponent(d['name']?.toString() ?? l.seller)}'),
             child: Container(
               height: 42, alignment: Alignment.center,
               decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: context.pal.border)),
-              child: Text('Паём', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+              child: Text(l.messageWord, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
             ),
           )),
         ]),
         const SizedBox(height: 16),
         Divider(color: context.pal.border, height: 1),
         const SizedBox(height: 8),
-        Text('Маҳсулоти дӯкон',
+        Text(l.sellerStoreProducts,
             style: TextStyle(color: context.pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
       ]),

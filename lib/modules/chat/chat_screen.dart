@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/misc_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
@@ -49,8 +51,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ref.invalidate(conversationProvider(widget.userId));
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Паём фиристода нашуд'),
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppL10n.of(context).messageNotSent),
           backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
         _ctrl.text = text;
       }
@@ -82,7 +84,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             Text(widget.userName, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: context.pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
-            Text('Фурӯшанда', style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
+            Text(AppL10n.of(context).seller, style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
           ])),
         ]),
         actions: [IconButton(
@@ -92,9 +94,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: Column(children: [
         Expanded(child: convo.when(
           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-          error: (e, _) => _emptyChat('Паёмҳо бор нашуд'),
+          error: (e, _) => _emptyChat(AppL10n.of(context).messagesLoadFailed),
           data: (msgs) {
-            if (msgs.isEmpty) return _emptyChat('Ҳоло паёме нест.\nАввалин шуда паём нависед!');
+            if (msgs.isEmpty) return _emptyChat(AppL10n.of(context).noMessagesYet);
             _jumpToBottom();
             return ListView.builder(
               controller: _scroll,
@@ -161,7 +163,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           textColor: AppColors.textPrimary,
           textInputAction: TextInputAction.send,
           onSubmitted: (_) => _send(),
-          hint: 'Паём нависед...',
+          hint: AppL10n.of(context).writeMessageHint,
         ),
       )),
       const SizedBox(width: 8),

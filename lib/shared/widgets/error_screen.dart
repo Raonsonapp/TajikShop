@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/admin_l10n.dart';
 
 class ErrorScreen extends StatelessWidget {
   final String message;
@@ -9,6 +11,7 @@ class ErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(backgroundColor: context.pal.scaffold,
@@ -19,11 +22,11 @@ class ErrorScreen extends StatelessWidget {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Icon(Icons.wifi_off_rounded, size: 72, color: context.pal.textMuted),
             const SizedBox(height: 20),
-            Text('Пайвастшавӣ мавҷуд нест',
+            Text(l.noConnection,
                 style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
                 textAlign: TextAlign.center),
             const SizedBox(height: 8),
-            Text('Интернетро санҷед ва дубора кӯшиш кунед',
+            Text(l.checkInternet,
                 style: TextStyle(color: context.pal.textSecondary, fontSize: 14),
                 textAlign: TextAlign.center),
             if (onRetry != null) ...[
@@ -31,7 +34,7 @@ class ErrorScreen extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Такрор кунед'),
+                label: Text(l.tryAgain),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),

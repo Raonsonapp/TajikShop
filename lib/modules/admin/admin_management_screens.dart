@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/admin_l10n.dart';
 import '../../providers/admin_provider.dart';
 import '../../providers/report_provider.dart';
 import '../../providers/return_provider.dart';
@@ -20,18 +22,19 @@ class AdminUsersScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final users = ref.watch(adminUsersProvider);
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(backgroundColor: context.pal.scaffold,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Корбарон', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        title: Text(l.usersLabel, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminUsersProvider))]),
       body: users.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminUsersProvider)),
         data: (list) => list.isEmpty
-            ? Center(child: Text('Корбар нест', style: TextStyle(color: context.pal.textSecondary)))
+            ? Center(child: Text(l.noUsers, style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) => _UserCard(user: list[i],
                     onChanged: () => ref.invalidate(adminUsersProvider))),
@@ -47,8 +50,9 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final id = user['id']?.toString() ?? '';
-    final name = user['name']?.toString() ?? user['full_name']?.toString() ?? 'Корбар';
+    final name = user['name']?.toString() ?? user['full_name']?.toString() ?? l.userWord;
     final email = user['email']?.toString() ?? '';
     final role = user['role']?.toString() ?? 'buyer';
     final banned = user['is_banned'] == true;
@@ -76,12 +80,12 @@ class _UserCard extends StatelessWidget {
           const SizedBox(height: 4),
           Row(children: [
             _chip(role, AppColors.primary),
-            if (banned) ...[const SizedBox(width: 6), _chip('Манъшуда', AppColors.error)],
+            if (banned) ...[const SizedBox(width: 6), _chip(l.bannedLabel, AppColors.error)],
             if (passport.isNotEmpty) ...[
               const SizedBox(width: 6),
               GestureDetector(
                 onTap: () => _viewPassport(context, passport),
-                child: _chip('📄 Паспорт', AppColors.info)),
+                child: _chip(l.passportChip, AppColors.info)),
             ],
           ]),
         ])),
@@ -95,20 +99,20 @@ class _UserCard extends StatelessWidget {
               if (v == 'unban') await AdminService.unbanUser(id);
               if (v == 'verify') await AdminService.verifySeller(id);
               onChanged();
-              messenger.showSnackBar(const SnackBar(content: Text('Иҷро шуд ✅'),
+              messenger.showSnackBar(SnackBar(content: Text(l.executedDone),
                   backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
             } catch (_) {
-              messenger.showSnackBar(const SnackBar(content: Text('Хато'),
+              messenger.showSnackBar(SnackBar(content: Text(l.error),
                   backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
             }
           },
           itemBuilder: (_) => [
             if (!verified) PopupMenuItem(value: 'verify',
-                child: Text('Тасдиқи фурӯшанда', style: TextStyle(color: context.pal.textPrimary))),
-            if (!banned) const PopupMenuItem(value: 'ban',
-                child: Text('Манъ кардан', style: TextStyle(color: AppColors.error)))
-            else const PopupMenuItem(value: 'unban',
-                child: Text('Кушодан', style: TextStyle(color: AppColors.success))),
+                child: Text(l.verifySellerAction, style: TextStyle(color: context.pal.textPrimary))),
+            if (!banned) PopupMenuItem(value: 'ban',
+                child: Text(l.banUserAction, style: const TextStyle(color: AppColors.error)))
+            else PopupMenuItem(value: 'unban',
+                child: Text(l.unbanAction, style: const TextStyle(color: AppColors.success))),
           ],
         ),
       ]),
@@ -121,11 +125,12 @@ class _UserCard extends StatelessWidget {
     child: Text(t, style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w600)));
 
   void _viewPassport(BuildContext context, String url) {
+    final l = AppL10n.of(context);
     showDialog(context: context, builder: (_) => Dialog(
       backgroundColor: context.pal.card,
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Padding(padding: const EdgeInsets.all(12),
-          child: Text('Паспорти корбар', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
+          child: Text(l.userPassport, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
         ClipRRect(borderRadius: BorderRadius.circular(8),
           child: InteractiveViewer(child: Image.network(url, fit: BoxFit.contain,
             errorBuilder: (_, __, ___) => Padding(padding: const EdgeInsets.all(40),
@@ -140,10 +145,25 @@ class _UserCard extends StatelessWidget {
 // ФАРМОИШҲО
 // ════════════════════════════════════════════════════════════════════════════
 const _orderStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-const _statusLabels = {
-  'pending': 'Дар интизор', 'processing': 'Коркард', 'shipped': 'Фиристода шуд',
-  'delivered': 'Расид', 'cancelled': 'Бекор', 'payment_uploaded': 'Пардохт тасдиқ',
-};
+
+String _statusLabel(AppL10n l, String s) {
+  switch (s) {
+    case 'pending':
+      return l.statusPending;
+    case 'processing':
+      return l.statusProcessing;
+    case 'shipped':
+      return l.statusShipped;
+    case 'delivered':
+      return l.statusDelivered;
+    case 'cancelled':
+      return l.statusCancelled;
+    case 'payment_uploaded':
+      return l.paymentConfirmed;
+    default:
+      return s;
+  }
+}
 
 class AdminOrdersScreen extends ConsumerWidget {
   const AdminOrdersScreen({super.key});
@@ -151,18 +171,19 @@ class AdminOrdersScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final orders = ref.watch(adminOrdersProvider);
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(backgroundColor: context.pal.scaffold,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Ҳамаи фармоишҳо', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        title: Text(l.allOrders, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminOrdersProvider))]),
       body: orders.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminOrdersProvider)),
         data: (list) => list.isEmpty
-            ? Center(child: Text('Фармоиш нест', style: TextStyle(color: context.pal.textSecondary)))
+            ? Center(child: Text(l.noOrders, style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) => _OrderCard(order: list[i],
                     onChanged: () => ref.invalidate(adminOrdersProvider))),
@@ -178,6 +199,7 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final id = order['id']?.toString() ?? '';
     final status = order['status']?.toString() ?? 'pending';
     final total = (order['total'] as num?)?.toDouble() ?? 0;
@@ -193,7 +215,7 @@ class _OrderCard extends StatelessWidget {
           Text('#${(id.length > 8 ? id.substring(0, 8) : id).toUpperCase()}',
               style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 14)),
           const Spacer(),
-          Text('${total.toStringAsFixed(0)} сом.',
+          Text('${total.toStringAsFixed(0)} ${l.som}',
               style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 15)),
         ]),
         const SizedBox(height: 4),
@@ -205,19 +227,20 @@ class _OrderCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(color: AppColors.info.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-            child: Text(_statusLabels[status] ?? status,
+            child: Text(_statusLabel(l, status),
                 style: const TextStyle(color: AppColors.info, fontSize: 12, fontWeight: FontWeight.w600))),
           const Spacer(),
           TextButton.icon(
             onPressed: () => _changeStatus(context),
             icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
-            label: const Text('Статус', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
+            label: Text(l.statusWord, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
         ]),
       ]),
     );
   }
 
   void _changeStatus(BuildContext context) {
+    final l = AppL10n.of(context);
     final id = order['id']?.toString() ?? '';
     showModalBottomSheet(context: context, backgroundColor: context.pal.card,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -227,21 +250,21 @@ class _OrderCard extends StatelessWidget {
           Container(width: 40, height: 4,
               decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 12),
-          Text('Статуси нав', style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(l.newStatus, style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           ..._orderStatuses.map((s) => ListTile(
             leading: const Icon(Icons.circle, size: 10, color: AppColors.primary),
-            title: Text(_statusLabels[s] ?? s, style: TextStyle(color: context.pal.textPrimary)),
+            title: Text(_statusLabel(l, s), style: TextStyle(color: context.pal.textPrimary)),
             onTap: () async {
               Navigator.pop(context);
               final messenger = ScaffoldMessenger.of(context);
               try {
                 await AdminService.updateOrderStatus(id, s);
                 onChanged();
-                messenger.showSnackBar(const SnackBar(content: Text('Статус навсозӣ шуд ✅'),
+                messenger.showSnackBar(SnackBar(content: Text(l.statusUpdated),
                     backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
               } catch (_) {
-                messenger.showSnackBar(const SnackBar(content: Text('Хато'),
+                messenger.showSnackBar(SnackBar(content: Text(l.error),
                     backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
               }
             },
@@ -260,21 +283,22 @@ class AdminCategoriesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cats = ref.watch(categoriesProvider);
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(backgroundColor: context.pal.scaffold,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Категорияҳо', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
+        title: Text(l.categories, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         onPressed: () => _addCategory(context, ref),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Илова', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+        label: Text(l.addWord, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
       body: cats.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(categoriesProvider)),
         data: (list) => list.isEmpty
-            ? Center(child: Text('Категория нест', style: TextStyle(color: context.pal.textSecondary)))
+            ? Center(child: Text(l.noCategories, style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) => Container(
                   margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(14),
@@ -290,16 +314,17 @@ class AdminCategoriesScreen extends ConsumerWidget {
   }
 
   void _addCategory(BuildContext context, WidgetRef ref) {
+    final l = AppL10n.of(context);
     final ctrl = TextEditingController();
     showDialog(context: context, builder: (ctx) => AlertDialog(
       backgroundColor: context.pal.card,
-      title: Text('Категорияи нав', style: TextStyle(color: context.pal.textPrimary)),
+      title: Text(l.newCategory, style: TextStyle(color: context.pal.textPrimary)),
       content: SafeInput(controller: ctrl, autofocus: true,
-        hint: 'Номи категория',
+        hint: l.categoryNameHint,
         textColor: context.pal.textPrimary),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx),
-            child: Text('Бекор', style: TextStyle(color: context.pal.textMuted))),
+            child: Text(l.cancelShort, style: TextStyle(color: context.pal.textMuted))),
         TextButton(
           onPressed: () async {
             final name = ctrl.text.trim();
@@ -310,14 +335,14 @@ class AdminCategoriesScreen extends ConsumerWidget {
             try {
               await AdminService.createCategory(name, slug);
               ref.invalidate(categoriesProvider);
-              messenger.showSnackBar(const SnackBar(content: Text('Категория илова шуд ✅'),
+              messenger.showSnackBar(SnackBar(content: Text(l.categoryAdded),
                   backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
             } catch (_) {
-              messenger.showSnackBar(const SnackBar(content: Text('Хато'),
+              messenger.showSnackBar(SnackBar(content: Text(l.error),
                   backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
             }
           },
-          child: const Text('Илова', style: TextStyle(color: AppColors.primary))),
+          child: Text(l.addWord, style: const TextStyle(color: AppColors.primary))),
       ],
     ));
   }
@@ -332,21 +357,22 @@ class AdminCouponsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final coupons = ref.watch(adminCouponsProvider);
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(backgroundColor: context.pal.scaffold,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Купонҳо', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
+        title: Text(l.couponsTitle, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         onPressed: () => _create(context, ref),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Купон', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+        label: Text(l.couponFab, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
       body: coupons.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminCouponsProvider)),
         data: (list) => list.isEmpty
-            ? Center(child: Text('Купон нест', style: TextStyle(color: context.pal.textSecondary)))
+            ? Center(child: Text(l.noCoupons, style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) {
                   final c = list[i];
@@ -364,9 +390,9 @@ class AdminCouponsScreen extends ConsumerWidget {
                             style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 14))),
                       const SizedBox(width: 12),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('-${c['discount_percent'] ?? 0}% тахфиф',
+                        Text('-${c['discount_percent'] ?? 0}% ${l.discountSuffix}',
                             style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
-                        Text('Истифода: $used${max > 0 ? ' / $max' : ' (бемаҳдуд)'}',
+                        Text('${l.usedLabel}: $used${max > 0 ? ' / $max' : ' ${l.unlimitedLabel}'}',
                             style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
                       ])),
                     ]));
@@ -376,20 +402,21 @@ class AdminCouponsScreen extends ConsumerWidget {
   }
 
   void _create(BuildContext context, WidgetRef ref) {
+    final l = AppL10n.of(context);
     final code = TextEditingController();
     final disc = TextEditingController(text: '10');
     final maxU = TextEditingController(text: '0');
     showDialog(context: context, builder: (ctx) => AlertDialog(
       backgroundColor: context.pal.card,
-      title: Text('Купони нав', style: TextStyle(color: context.pal.textPrimary)),
+      title: Text(l.newCoupon, style: TextStyle(color: context.pal.textPrimary)),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
-        _dlgField(code, 'Код (мас. BAHOR50)', cap: true),
-        _dlgField(disc, 'Тахфиф (%)', number: true),
-        _dlgField(maxU, 'Лимити истифода (0 = бемаҳдуд)', number: true),
+        _dlgField(code, l.codeExampleHint, cap: true),
+        _dlgField(disc, l.discountPercentHint, number: true),
+        _dlgField(maxU, l.usageLimitHint, number: true),
       ]),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx),
-            child: Text('Бекор', style: TextStyle(color: context.pal.textMuted))),
+            child: Text(l.cancelShort, style: TextStyle(color: context.pal.textMuted))),
         TextButton(
           onPressed: () async {
             final cd = code.text.trim();
@@ -400,14 +427,14 @@ class AdminCouponsScreen extends ConsumerWidget {
             try {
               await AdminService.createCoupon(cd, pct, int.tryParse(maxU.text.trim()) ?? 0);
               ref.invalidate(adminCouponsProvider);
-              messenger.showSnackBar(const SnackBar(content: Text('Купон сохта шуд ✅'),
+              messenger.showSnackBar(SnackBar(content: Text(l.couponCreated),
                   backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
             } catch (_) {
-              messenger.showSnackBar(const SnackBar(content: Text('Хато (шояд код такрорӣ аст)'),
+              messenger.showSnackBar(SnackBar(content: Text(l.couponDuplicateError),
                   backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
             }
           },
-          child: const Text('Сохтан', style: TextStyle(color: AppColors.primary))),
+          child: Text(l.createWord, style: const TextStyle(color: AppColors.primary))),
       ],
     ));
   }
@@ -430,18 +457,19 @@ class AdminWalletScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pending = ref.watch(adminWalletPendingProvider);
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(backgroundColor: context.pal.scaffold,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Тасдиқи пополнения', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        title: Text(l.topUpApproval, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminWalletPendingProvider))]),
       body: pending.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminWalletPendingProvider)),
         data: (list) => list.isEmpty
-            ? Center(child: Text('Дархости интизор нест', style: TextStyle(color: context.pal.textSecondary)))
+            ? Center(child: Text(l.noPendingRequests, style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) {
                   final t = list[i];
@@ -453,9 +481,9 @@ class AdminWalletScreen extends ConsumerWidget {
                         border: Border.all(color: context.pal.border, width: 0.5)),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
-                        Expanded(child: Text(t['name']?.toString() ?? t['email']?.toString() ?? 'Корбар',
+                        Expanded(child: Text(t['name']?.toString() ?? t['email']?.toString() ?? l.userWord,
                             style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600))),
-                        Text('+${amount.toStringAsFixed(0)} сом.',
+                        Text('+${amount.toStringAsFixed(0)} ${l.som}',
                             style: const TextStyle(color: AppColors.success, fontSize: 16, fontWeight: FontWeight.w800)),
                       ]),
                       const SizedBox(height: 4),
@@ -465,12 +493,12 @@ class AdminWalletScreen extends ConsumerWidget {
                         Expanded(child: OutlinedButton(
                           onPressed: () => _act(context, ref, id, false),
                           style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.error)),
-                          child: const Text('Рад', style: TextStyle(color: AppColors.error)))),
+                          child: Text(l.rejectShort, style: const TextStyle(color: AppColors.error)))),
                         const SizedBox(width: 10),
                         Expanded(child: ElevatedButton(
                           onPressed: () => _act(context, ref, id, true),
                           style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-                          child: const Text('Тасдиқ', style: TextStyle(color: Colors.white)))),
+                          child: Text(l.confirmShort, style: const TextStyle(color: Colors.white)))),
                       ]),
                     ]));
                 }),
@@ -479,6 +507,7 @@ class AdminWalletScreen extends ConsumerWidget {
   }
 
   void _act(BuildContext context, WidgetRef ref, String id, bool approve) async {
+    final l = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
       if (approve) {
@@ -487,10 +516,10 @@ class AdminWalletScreen extends ConsumerWidget {
         await AdminService.rejectWalletTx(id);
       }
       ref.invalidate(adminWalletPendingProvider);
-      messenger.showSnackBar(SnackBar(content: Text(approve ? 'Тасдиқ шуд ✅' : 'Рад шуд'),
+      messenger.showSnackBar(SnackBar(content: Text(approve ? l.confirmedDone : l.rejectedDone),
           backgroundColor: approve ? AppColors.success : AppColors.error, behavior: SnackBarBehavior.floating));
     } catch (_) {
-      messenger.showSnackBar(const SnackBar(content: Text('Хато'),
+      messenger.showSnackBar(SnackBar(content: Text(l.error),
           backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
     }
   }
@@ -505,18 +534,19 @@ class AdminReportsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reports = ref.watch(adminReportsProvider);
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(backgroundColor: context.pal.scaffold,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Гузоришҳо', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        title: Text(l.reportsTitle, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminReportsProvider))]),
       body: reports.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminReportsProvider)),
         data: (list) => list.isEmpty
-            ? Center(child: Text('Гузориш нест', style: TextStyle(color: context.pal.textSecondary)))
+            ? Center(child: Text(l.noReports, style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) {
                   final r = list[i];
@@ -532,18 +562,18 @@ class AdminReportsScreen extends ConsumerWidget {
                       Row(children: [
                         Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(color: AppColors.info.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-                          child: Text(type == 'product' ? 'Маҳсулот' : 'Корбар',
+                          child: Text(type == 'product' ? l.productsCountLabel : l.userWord,
                               style: const TextStyle(color: AppColors.info, fontSize: 10, fontWeight: FontWeight.w600))),
                         const Spacer(),
                         if (resolved)
-                          const Text('Ҳалшуда ✓', style: TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.w600))
+                          Text(l.resolvedLabel, style: const TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.w600))
                         else
                           TextButton(onPressed: () async {
                             try {
                               await ApiClient.instance.dio.post('/admin/reports/${r['id']}/resolve');
                               ref.invalidate(adminReportsProvider);
                             } catch (_) {}
-                          }, child: const Text('Ҳал кардан', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
+                          }, child: Text(l.resolveAction, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
                       ]),
                       const SizedBox(height: 6),
                       Text(r['reason']?.toString() ?? '',
@@ -571,23 +601,24 @@ class AdminReturnsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final returns = ref.watch(adminReturnsProvider);
+    final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(backgroundColor: context.pal.scaffold,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Бозгашт ва иваз', style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        title: Text(l.returnsAndExchange, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminReturnsProvider))]),
       body: returns.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminReturnsProvider)),
         data: (list) => list.isEmpty
-            ? Center(child: Text('Дархост нест', style: TextStyle(color: context.pal.textSecondary)))
+            ? Center(child: Text(l.noRequests, style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) {
                   final r = list[i];
                   final status = r['status']?.toString() ?? 'pending';
-                  final type = r['type']?.toString() == 'exchange' ? 'Иваз' : 'Бозгашти пул';
+                  final type = r['type']?.toString() == 'exchange' ? l.exchangeWord : l.refundWord;
                   final id = r['id']?.toString() ?? '';
                   DateTime? date;
                   if (r['created_at'] != null) date = DateTime.tryParse(r['created_at'].toString());
@@ -609,7 +640,7 @@ class AdminReturnsScreen extends ConsumerWidget {
                       ]),
                       const SizedBox(height: 6),
                       Text(r['reason']?.toString() ?? '', style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
-                      Text('Фармоиш: #${(r['order_id']?.toString() ?? '').padRight(8).substring(0, 8).toUpperCase()}'
+                      Text('${l.orderPrefix}: #${(r['order_id']?.toString() ?? '').padRight(8).substring(0, 8).toUpperCase()}'
                           '${date != null ? ' • ${DateFormat('dd.MM.yyyy').format(date)}' : ''}',
                           style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
                       if (status == 'pending' || status == 'approved') ...[
@@ -619,18 +650,18 @@ class AdminReturnsScreen extends ConsumerWidget {
                             Expanded(child: OutlinedButton(
                               onPressed: () => _update(context, ref, id, 'rejected'),
                               style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.error)),
-                              child: const Text('Рад', style: TextStyle(color: AppColors.error)))),
+                              child: Text(l.rejectShort, style: const TextStyle(color: AppColors.error)))),
                           if (status == 'pending') const SizedBox(width: 8),
                           if (status == 'pending')
                             Expanded(child: ElevatedButton(
                               onPressed: () => _update(context, ref, id, 'approved'),
                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.info),
-                              child: const Text('Қабул', style: TextStyle(color: Colors.white)))),
+                              child: Text(l.acceptShort, style: const TextStyle(color: Colors.white)))),
                           if (status == 'approved')
                             Expanded(child: ElevatedButton(
                               onPressed: () => _update(context, ref, id, 'completed'),
                               style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-                              child: const Text('Анҷом (бозгашти пул)', style: TextStyle(color: Colors.white)))),
+                              child: Text(l.completeRefundAction, style: const TextStyle(color: Colors.white)))),
                         ]),
                       ],
                     ]));
@@ -640,14 +671,15 @@ class AdminReturnsScreen extends ConsumerWidget {
   }
 
   void _update(BuildContext context, WidgetRef ref, String id, String status) async {
+    final l = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ReturnService.adminUpdate(id, status);
       ref.invalidate(adminReturnsProvider);
-      messenger.showSnackBar(const SnackBar(content: Text('Навсозӣ шуд ✅'),
+      messenger.showSnackBar(SnackBar(content: Text(l.updatedDone),
           backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
     } catch (_) {
-      messenger.showSnackBar(const SnackBar(content: Text('Хато'),
+      messenger.showSnackBar(SnackBar(content: Text(l.error),
           backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
     }
   }

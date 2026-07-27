@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/orders_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 
@@ -31,7 +33,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     if (mounted) setState(() => _locating = true);
     try {
       if (!await Geolocator.isLocationServiceEnabled()) {
-        throw 'GPS хомӯш аст';
+        throw mounted ? AppL10n.of(context).gpsOff : 'GPS';
       }
       var perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied) {
@@ -39,7 +41,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       }
       if (perm == LocationPermission.denied ||
           perm == LocationPermission.deniedForever) {
-        throw 'Иҷозати ҷойгиршавӣ дода нашуд';
+        throw mounted ? AppL10n.of(context).locationPermissionDenied : 'Permission denied';
       }
       final pos = await Geolocator.getCurrentPosition();
       final here = LatLng(pos.latitude, pos.longitude);
@@ -65,7 +67,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       appBar: AppBar(
         backgroundColor: context.pal.scaffold,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Ҷойи мағозаро интихоб кунед',
+        title: Text(AppL10n.of(context).pickStoreLocationTitle,
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 16)),
       ),
       body: Stack(children: [
@@ -103,8 +105,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 borderRadius: BorderRadius.circular(12)),
             child: Text(
                 _locating
-                    ? 'Ҷойгиршавии шумо ёфта мешавад…'
-                    : 'Харитаро ҳаракат диҳед, то маркер ба мағозаи шумо ишора кунад',
+                    ? AppL10n.of(context).findingYourLocation
+                    : AppL10n.of(context).moveMapHint,
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.white, fontSize: 12)))),
 
@@ -126,8 +128,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
             icon: const Icon(Icons.check_rounded, color: Colors.white),
-            label: const Text('Ин ҷойро интихоб мекунам',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700))))),
+            label: Text(AppL10n.of(context).pickThisLocation,
+                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700))))),
       ]),
     );
   }

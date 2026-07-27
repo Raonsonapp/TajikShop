@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/orders_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/wallet_provider.dart';
@@ -20,7 +22,7 @@ class WalletScreen extends ConsumerWidget {
         backgroundColor: context.pal.scaffold,
         elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Ҳамёни ман',
+        title: Text(AppL10n.of(context).myWallet,
             style: TextStyle(
                 color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [
@@ -43,11 +45,11 @@ class WalletScreen extends ConsumerWidget {
               _balanceCard(context, balance),
               const SizedBox(height: 20),
               AppButton(
-                  text: 'Пополнение кардан',
+                  text: AppL10n.of(context).topUpAction,
                   icon: Icons.add_rounded,
                   onTap: () => _topUp(context, ref)),
               const SizedBox(height: 28),
-              Text('Таърихи амалиётҳо',
+              Text(AppL10n.of(context).transactionHistory,
                   style: TextStyle(
                       color: context.pal.textPrimary,
                       fontSize: 16,
@@ -62,7 +64,7 @@ class WalletScreen extends ConsumerWidget {
                         Icon(Icons.receipt_long_rounded,
                             color: context.pal.textMuted, size: 44),
                         const SizedBox(height: 10),
-                        Text('Ҳоло амалиёте нест',
+                        Text(AppL10n.of(context).noTransactions,
                             style: TextStyle(color: context.pal.textMuted)),
                       ],
                     ),
@@ -124,13 +126,13 @@ class WalletScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.account_balance_wallet_rounded,
+                      const Icon(Icons.account_balance_wallet_rounded,
                           color: Colors.white70, size: 20),
-                      SizedBox(width: 8),
-                      Text('Тавозун',
-                          style: TextStyle(color: Colors.white70, fontSize: 14)),
+                      const SizedBox(width: 8),
+                      Text(AppL10n.of(context).balance,
+                          style: const TextStyle(color: Colors.white70, fontSize: 14)),
                     ],
                   ),
                   // «Чипи» корт
@@ -146,13 +148,13 @@ class WalletScreen extends ConsumerWidget {
                 ],
               ),
               const Spacer(),
-              Text('${balance.toStringAsFixed(0)} сом.',
+              Text('${balance.toStringAsFixed(0)} ${AppL10n.of(context).som}',
                   style: const TextStyle(
                       color: Colors.white,
                       fontSize: 40,
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 8),
-              Text('TajikShop • Ҳамён',
+              Text(AppL10n.of(context).walletCardTag,
                   style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 13,
@@ -171,11 +173,12 @@ class WalletScreen extends ConsumerWidget {
     final positive = amount >= 0;
     DateTime? date;
     if (t['created_at'] != null) date = DateTime.tryParse(t['created_at'].toString());
-    final labels = {'topup': 'Пополнение', 'purchase': 'Харид', 'refund': 'Бозгашт'};
+    final l = AppL10n.of(context);
+    final labels = {'topup': l.txTopup, 'purchase': l.txPurchase, 'refund': l.txRefund};
     final statusLabels = {
-      'pending': 'Интизор',
-      'completed': 'Иҷрошуда',
-      'rejected': 'Радшуда'
+      'pending': l.txPending,
+      'completed': l.txCompleted,
+      'rejected': l.txRejected
     };
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -223,7 +226,7 @@ class WalletScreen extends ConsumerWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('${positive ? '+' : ''}${amount.toStringAsFixed(0)} сом.',
+              Text('${positive ? '+' : ''}${amount.toStringAsFixed(0)} ${l.som}',
                   style: TextStyle(
                       color: positive ? AppColors.success : AppColors.error,
                       fontSize: 14,
@@ -239,20 +242,21 @@ class WalletScreen extends ConsumerWidget {
   }
 
   void _topUp(BuildContext context, WidgetRef ref) {
+    final l = AppL10n.of(context);
     final ctrl = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: context.pal.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Пополнение',
+        title: Text(l.topUpTitle,
             style: TextStyle(color: context.pal.textPrimary)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-                'Маблағро ворид кунед. Баъди тасдиқи админ ба ҳамён илова мешавад.',
+                l.topUpHintText,
                 style:
                     TextStyle(color: context.pal.textSecondary, fontSize: 12)),
             const SizedBox(height: 14),
@@ -266,7 +270,7 @@ class WalletScreen extends ConsumerWidget {
                 controller: ctrl,
                 autofocus: true,
                 keyboardType: TextInputType.number,
-                hint: 'Маблағ (сом.)',
+                hint: l.amountSomHint,
                 textColor: context.pal.textPrimary,
               ),
             ),
@@ -276,7 +280,7 @@ class WalletScreen extends ConsumerWidget {
           TextButton(
               onPressed: () => Navigator.pop(ctx),
               child:
-                  Text('Бекор', style: TextStyle(color: context.pal.textMuted))),
+                  Text(l.cancel, style: TextStyle(color: context.pal.textMuted))),
           TextButton(
             onPressed: () async {
               final amount = double.tryParse(ctrl.text.replaceAll(',', '.')) ?? 0;
@@ -286,20 +290,20 @@ class WalletScreen extends ConsumerWidget {
               try {
                 await WalletService.topUp(amount);
                 ref.invalidate(walletProvider);
-                messenger.showSnackBar(const SnackBar(
+                messenger.showSnackBar(SnackBar(
                     content:
-                        Text('Дархост фиристода шуд. Интизори тасдиқи админ.'),
+                        Text(l.topUpRequestSent),
                     backgroundColor: AppColors.success,
                     behavior: SnackBarBehavior.floating));
               } catch (_) {
-                messenger.showSnackBar(const SnackBar(
-                    content: Text('Хато'),
+                messenger.showSnackBar(SnackBar(
+                    content: Text(l.error),
                     backgroundColor: AppColors.error,
                     behavior: SnackBarBehavior.floating));
               }
             },
-            child: const Text('Фиристодан',
-                style: TextStyle(color: AppColors.primary)),
+            child: Text(l.send,
+                style: const TextStyle(color: AppColors.primary)),
           ),
         ],
       ),

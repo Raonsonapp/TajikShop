@@ -6,6 +6,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/seller_l10n.dart';
 
 /// Равзанаи KYC — корбар барои фурӯшанда шудан акси паспортро бор мекунад.
 /// Натиҷа: true агар муваффақ.
@@ -37,35 +39,36 @@ class _SellerVerifySheetState extends ConsumerState<SellerVerifySheet> {
   Future<void> _submit() async {
     if (_passport == null) return;
     setState(() => _loading = true);
+    final l = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final ok = await ref.read(authProvider.notifier).submitSellerVerification(_passport!.path);
     if (!mounted) return;
     if (ok) {
       Navigator.pop(context, true);
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Дархост фиристода шуд! Акнун шумо фурӯшандаед ✅'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l.sellerVerifyRequestSent),
         backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
     } else {
       setState(() => _loading = false);
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Хато. Дубора кӯшиш кунед'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l.sellerVerifyError),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Center(child: Container(width: 40, height: 4,
             decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
         const SizedBox(height: 16),
-        Text('Фурӯшанда шудан 🏪',
+        Text(l.sellerVerifyTitle,
             style: TextStyle(color: context.pal.textPrimary, fontSize: 19, fontWeight: FontWeight.w800)),
         const SizedBox(height: 8),
-        Text('Барои бехатарии харидорон, акси паспорт (ё шиноснома)-ро бор кунед. '
-            'Админ онро месанҷад ва нишони «тасдиқшуда» медиҳад.',
+        Text(l.sellerVerifyDesc,
             style: TextStyle(color: context.pal.textSecondary, fontSize: 13, height: 1.4)),
         const SizedBox(height: 16),
         GestureDetector(
@@ -76,22 +79,22 @@ class _SellerVerifySheetState extends ConsumerState<SellerVerifySheet> {
               color: context.pal.surface, borderRadius: BorderRadius.circular(14),
               border: Border.all(color: _passport != null ? AppColors.success : context.pal.border, width: 1.5),
               image: _passport != null ? DecorationImage(image: FileImage(_passport!), fit: BoxFit.cover) : null),
-            child: _passport == null ? const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.badge_outlined, color: AppColors.primary, size: 36),
-              SizedBox(height: 8),
-              Text('Акси паспортро бор кунед', style: TextStyle(color: AppColors.primary, fontSize: 13)),
+            child: _passport == null ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.badge_outlined, color: AppColors.primary, size: 36),
+              const SizedBox(height: 8),
+              Text(l.sellerUploadPassport, style: const TextStyle(color: AppColors.primary, fontSize: 13)),
             ])) : null),
         ),
         const SizedBox(height: 12),
         Row(children: [
           Icon(Icons.lock_outline_rounded, color: context.pal.textMuted, size: 14),
           const SizedBox(width: 6),
-          Expanded(child: Text('Маълумоти шумо махфӣ нигоҳ дошта мешавад.',
+          Expanded(child: Text(l.sellerDataPrivate,
               style: TextStyle(color: context.pal.textMuted, fontSize: 11))),
         ]),
         const SizedBox(height: 16),
         AppButton(
-          text: _passport == null ? 'Аввал акс бор кунед' : 'Фиристодан ва фурӯшанда шудан',
+          text: _passport == null ? l.sellerUploadPhotoFirst : l.sellerSubmitBecomeSeller,
           isLoading: _loading,
           onTap: _passport != null ? _submit : null),
       ]),
