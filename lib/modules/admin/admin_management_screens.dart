@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
@@ -12,6 +13,40 @@ import '../../providers/return_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../shared/widgets/error_screen.dart';
 import '../../shared/widgets/safe_input.dart';
+
+// ────────────────────────────────────────────────────────────────────────────
+// Shared template building blocks
+// ────────────────────────────────────────────────────────────────────────────
+const _cardShadow = [BoxShadow(color: Color(0x12000000), blurRadius: 10, offset: Offset(0, 4))];
+
+BoxDecoration _cardDeco(BuildContext context, {Color? highlight}) => BoxDecoration(
+      color: context.pal.card,
+      borderRadius: BorderRadius.circular(18),
+      border: highlight != null ? Border.all(color: highlight, width: 1) : null,
+      boxShadow: _cardShadow,
+    );
+
+class _GradientButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+  final Gradient gradient;
+  const _GradientButton({required this.label, required this.onPressed, this.gradient = AppColors.primaryGradient});
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onPressed,
+          child: Ink(
+            height: 44,
+            decoration: BoxDecoration(gradient: gradient, borderRadius: BorderRadius.circular(14)),
+            child: Center(
+              child: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ),
+      );
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // КОРБАРОН
@@ -25,7 +60,7 @@ class AdminUsersScreen extends ConsumerWidget {
     final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
-      appBar: AppBar(backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.usersLabel, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
@@ -60,24 +95,32 @@ class _UserCard extends StatelessWidget {
     final passport = user['passport_url']?.toString() ?? '';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: context.pal.border, width: 0.5)),
+      margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(14),
+      decoration: _cardDeco(context),
       child: Row(children: [
-        CircleAvatar(radius: 20, backgroundColor: context.pal.surface,
-          child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700))),
+        Container(
+          width: 46, height: 46,
+          decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+          ),
+        ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Flexible(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600))),
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 14.5, fontWeight: FontWeight.w700))),
             if (verified) const Padding(padding: EdgeInsets.only(left: 4),
-                child: Icon(Icons.verified_rounded, color: AppColors.info, size: 14)),
+                child: Icon(Icons.verified_rounded, color: AppColors.info, size: 15)),
           ]),
+          const SizedBox(height: 2),
           Text(email, maxLines: 1, overflow: TextOverflow.ellipsis,
               style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Row(children: [
             _chip(role, AppColors.primary),
             if (banned) ...[const SizedBox(width: 6), _chip(l.bannedLabel, AppColors.error)],
@@ -91,6 +134,7 @@ class _UserCard extends StatelessWidget {
         ])),
         PopupMenuButton<String>(
           color: context.pal.elevated,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           icon: Icon(Icons.more_vert, color: context.pal.textSecondary),
           onSelected: (v) async {
             final messenger = ScaffoldMessenger.of(context);
@@ -120,22 +164,25 @@ class _UserCard extends StatelessWidget {
   }
 
   Widget _chip(String t, Color c) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-    decoration: BoxDecoration(color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-    child: Text(t, style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w600)));
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(color: c.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
+    child: Text(t, style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w700)));
 
   void _viewPassport(BuildContext context, String url) {
     final l = AppL10n.of(context);
     showDialog(context: context, builder: (_) => Dialog(
       backgroundColor: context.pal.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Padding(padding: const EdgeInsets.all(12),
+        Padding(padding: const EdgeInsets.all(14),
           child: Text(l.userPassport, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
-        ClipRRect(borderRadius: BorderRadius.circular(8),
-          child: InteractiveViewer(child: Image.network(url, fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => Padding(padding: const EdgeInsets.all(40),
+        ClipRRect(borderRadius: BorderRadius.circular(12),
+          child: InteractiveViewer(child: CachedNetworkImage(imageUrl: url, fit: BoxFit.contain,
+            placeholder: (_, __) => const Padding(padding: EdgeInsets.all(40),
+                child: CircularProgressIndicator(color: AppColors.primary)),
+            errorWidget: (_, __, ___) => Padding(padding: const EdgeInsets.all(40),
                 child: Icon(Icons.broken_image_outlined, color: context.pal.textMuted, size: 48))))),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
       ]),
     ));
   }
@@ -174,7 +221,7 @@ class AdminOrdersScreen extends ConsumerWidget {
     final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
-      appBar: AppBar(backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.allOrders, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
@@ -207,13 +254,12 @@ class _OrderCard extends StatelessWidget {
     if (order['created_at'] != null) created = DateTime.tryParse(order['created_at'].toString());
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: context.pal.border, width: 0.5)),
+      margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
+      decoration: _cardDeco(context),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Text('#${(id.length > 8 ? id.substring(0, 8) : id).toUpperCase()}',
-              style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 14)),
+              style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w800, fontSize: 14)),
           const Spacer(),
           Text('${total.toStringAsFixed(0)} ${l.som}',
               style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 15)),
@@ -222,18 +268,18 @@ class _OrderCard extends StatelessWidget {
         if (created != null)
           Text(DateFormat('dd.MM.yyyy • HH:mm').format(created),
               style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         Row(children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(color: AppColors.info.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
             child: Text(_statusLabel(l, status),
-                style: const TextStyle(color: AppColors.info, fontSize: 12, fontWeight: FontWeight.w600))),
+                style: const TextStyle(color: AppColors.info, fontSize: 12, fontWeight: FontWeight.w700))),
           const Spacer(),
           TextButton.icon(
             onPressed: () => _changeStatus(context),
             icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
-            label: Text(l.statusWord, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
+            label: Text(l.statusWord, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700))),
         ]),
       ]),
     );
@@ -286,14 +332,14 @@ class AdminCategoriesScreen extends ConsumerWidget {
     final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
-      appBar: AppBar(backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.categories, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         onPressed: () => _addCategory(context, ref),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(l.addWord, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+        label: Text(l.addWord, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
       body: cats.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(categoriesProvider)),
@@ -301,13 +347,15 @@ class AdminCategoriesScreen extends ConsumerWidget {
             ? Center(child: Text(l.noCategories, style: TextStyle(color: context.pal.textSecondary)))
             : ListView.builder(padding: const EdgeInsets.all(16), itemCount: list.length,
                 itemBuilder: (_, i) => Container(
-                  margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: context.pal.border, width: 0.5)),
+                  margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
+                  decoration: _cardDeco(context),
                   child: Row(children: [
-                    const Icon(Icons.category_outlined, color: AppColors.primary, size: 20),
+                    Container(width: 40, height: 40,
+                        decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
+                        child: const Icon(Icons.category_rounded, color: AppColors.primary, size: 20)),
                     const SizedBox(width: 12),
-                    Text(list[i].name, style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w500)),
+                    Expanded(child: Text(list[i].name,
+                        style: TextStyle(color: context.pal.textPrimary, fontSize: 14.5, fontWeight: FontWeight.w600))),
                   ]))),
       ),
     );
@@ -318,6 +366,7 @@ class AdminCategoriesScreen extends ConsumerWidget {
     final ctrl = TextEditingController();
     showDialog(context: context, builder: (ctx) => AlertDialog(
       backgroundColor: context.pal.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(l.newCategory, style: TextStyle(color: context.pal.textPrimary)),
       content: SafeInput(controller: ctrl, autofocus: true,
         hint: l.categoryNameHint,
@@ -342,7 +391,7 @@ class AdminCategoriesScreen extends ConsumerWidget {
                   backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
             }
           },
-          child: Text(l.addWord, style: const TextStyle(color: AppColors.primary))),
+          child: Text(l.addWord, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700))),
       ],
     ));
   }
@@ -360,14 +409,14 @@ class AdminCouponsScreen extends ConsumerWidget {
     final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
-      appBar: AppBar(backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.couponsTitle, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         onPressed: () => _create(context, ref),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(l.couponFab, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+        label: Text(l.couponFab, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
       body: coupons.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
         error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminCouponsProvider)),
@@ -379,19 +428,19 @@ class AdminCouponsScreen extends ConsumerWidget {
                   final used = (c['used_count'] as num?)?.toInt() ?? 0;
                   final max = (c['max_uses'] as num?)?.toInt() ?? 0;
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: context.pal.border, width: 0.5)),
+                    margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
+                    decoration: _cardDeco(context),
                     child: Row(children: [
-                      Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8)),
+                            borderRadius: BorderRadius.circular(10)),
                         child: Text(c['code']?.toString() ?? '',
                             style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 14))),
                       const SizedBox(width: 12),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text('-${c['discount_percent'] ?? 0}% ${l.discountSuffix}',
-                            style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                            style: TextStyle(color: context.pal.textPrimary, fontSize: 14.5, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 2),
                         Text('${l.usedLabel}: $used${max > 0 ? ' / $max' : ' ${l.unlimitedLabel}'}',
                             style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
                       ])),
@@ -408,6 +457,7 @@ class AdminCouponsScreen extends ConsumerWidget {
     final maxU = TextEditingController(text: '0');
     showDialog(context: context, builder: (ctx) => AlertDialog(
       backgroundColor: context.pal.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(l.newCoupon, style: TextStyle(color: context.pal.textPrimary)),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         _dlgField(code, l.codeExampleHint, cap: true),
@@ -434,7 +484,7 @@ class AdminCouponsScreen extends ConsumerWidget {
                   backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
             }
           },
-          child: Text(l.createWord, style: const TextStyle(color: AppColors.primary))),
+          child: Text(l.createWord, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700))),
       ],
     ));
   }
@@ -460,7 +510,7 @@ class AdminWalletScreen extends ConsumerWidget {
     final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
-      appBar: AppBar(backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.topUpApproval, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
@@ -476,29 +526,30 @@ class AdminWalletScreen extends ConsumerWidget {
                   final id = t['id']?.toString() ?? '';
                   final amount = (t['amount'] as num?)?.toDouble() ?? 0;
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: context.pal.border, width: 0.5)),
+                    margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
+                    decoration: _cardDeco(context),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
                         Expanded(child: Text(t['name']?.toString() ?? t['email']?.toString() ?? l.userWord,
-                            style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600))),
+                            style: TextStyle(color: context.pal.textPrimary, fontSize: 14.5, fontWeight: FontWeight.w700))),
                         Text('+${amount.toStringAsFixed(0)} ${l.som}',
                             style: const TextStyle(color: AppColors.success, fontSize: 16, fontWeight: FontWeight.w800)),
                       ]),
                       const SizedBox(height: 4),
                       Text(t['email']?.toString() ?? '', style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 14),
                       Row(children: [
                         Expanded(child: OutlinedButton(
                           onPressed: () => _act(context, ref, id, false),
-                          style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.error)),
-                          child: Text(l.rejectShort, style: const TextStyle(color: AppColors.error)))),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.error),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            minimumSize: const Size.fromHeight(44)),
+                          child: Text(l.rejectShort, style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)))),
                         const SizedBox(width: 10),
-                        Expanded(child: ElevatedButton(
-                          onPressed: () => _act(context, ref, id, true),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-                          child: Text(l.confirmShort, style: const TextStyle(color: Colors.white)))),
+                        Expanded(child: _GradientButton(
+                          label: l.confirmShort,
+                          onPressed: () => _act(context, ref, id, true))),
                       ]),
                     ]));
                 }),
@@ -537,7 +588,7 @@ class AdminReportsScreen extends ConsumerWidget {
     final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
-      appBar: AppBar(backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.reportsTitle, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
@@ -555,29 +606,28 @@ class AdminReportsScreen extends ConsumerWidget {
                   DateTime? date;
                   if (r['created_at'] != null) date = DateTime.tryParse(r['created_at'].toString());
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: resolved ? context.pal.border : AppColors.error.withValues(alpha: 0.4), width: 0.6)),
+                    margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
+                    decoration: _cardDeco(context, highlight: resolved ? null : AppColors.error.withValues(alpha: 0.4)),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
-                        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: AppColors.info.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(color: AppColors.info.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
                           child: Text(type == 'product' ? l.productsCountLabel : l.userWord,
-                              style: const TextStyle(color: AppColors.info, fontSize: 10, fontWeight: FontWeight.w600))),
+                              style: const TextStyle(color: AppColors.info, fontSize: 10, fontWeight: FontWeight.w700))),
                         const Spacer(),
                         if (resolved)
-                          Text(l.resolvedLabel, style: const TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.w600))
+                          Text(l.resolvedLabel, style: const TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.w700))
                         else
                           TextButton(onPressed: () async {
                             try {
                               await ApiClient.instance.dio.post('/admin/reports/${r['id']}/resolve');
                               ref.invalidate(adminReportsProvider);
                             } catch (_) {}
-                          }, child: Text(l.resolveAction, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600))),
+                          }, child: Text(l.resolveAction, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700))),
                       ]),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(r['reason']?.toString() ?? '',
-                          style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                          style: TextStyle(color: context.pal.textPrimary, fontSize: 14.5, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
                       Text('ID: ${r['target_id']?.toString() ?? ''}',
                           maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -604,7 +654,7 @@ class AdminReturnsScreen extends ConsumerWidget {
     final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
-      appBar: AppBar(backgroundColor: context.pal.scaffold,
+      appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.returnsAndExchange, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
@@ -623,45 +673,46 @@ class AdminReturnsScreen extends ConsumerWidget {
                   DateTime? date;
                   if (r['created_at'] != null) date = DateTime.tryParse(r['created_at'].toString());
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: context.pal.card, borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: status == 'pending' ? AppColors.warning.withValues(alpha: 0.4) : context.pal.border, width: 0.6)),
+                    margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
+                    decoration: _cardDeco(context, highlight: status == 'pending' ? AppColors.warning.withValues(alpha: 0.4) : null),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
-                        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-                          child: Text(type, style: const TextStyle(color: AppColors.warning, fontSize: 10, fontWeight: FontWeight.w600))),
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
+                          child: Text(type, style: const TextStyle(color: AppColors.warning, fontSize: 10, fontWeight: FontWeight.w700))),
                         const SizedBox(width: 8),
                         Text(r['user_name']?.toString() ?? '', style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
                         const Spacer(),
                         Text(status, style: TextStyle(
                             color: status == 'rejected' ? AppColors.error : (status == 'completed' || status == 'approved' ? AppColors.success : AppColors.warning),
-                            fontSize: 11, fontWeight: FontWeight.w600)),
+                            fontSize: 11, fontWeight: FontWeight.w700)),
                       ]),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(r['reason']?.toString() ?? '', style: TextStyle(color: context.pal.textSecondary, fontSize: 13)),
                       Text('${l.orderPrefix}: #${(r['order_id']?.toString() ?? '').padRight(8).substring(0, 8).toUpperCase()}'
                           '${date != null ? ' • ${DateFormat('dd.MM.yyyy').format(date)}' : ''}',
                           style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
                       if (status == 'pending' || status == 'approved') ...[
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 14),
                         Row(children: [
                           if (status == 'pending')
                             Expanded(child: OutlinedButton(
                               onPressed: () => _update(context, ref, id, 'rejected'),
-                              style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.error)),
-                              child: Text(l.rejectShort, style: const TextStyle(color: AppColors.error)))),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: AppColors.error),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                minimumSize: const Size.fromHeight(44)),
+                              child: Text(l.rejectShort, style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)))),
                           if (status == 'pending') const SizedBox(width: 8),
                           if (status == 'pending')
-                            Expanded(child: ElevatedButton(
-                              onPressed: () => _update(context, ref, id, 'approved'),
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.info),
-                              child: Text(l.acceptShort, style: const TextStyle(color: Colors.white)))),
+                            Expanded(child: _GradientButton(
+                              label: l.acceptShort,
+                              gradient: const LinearGradient(colors: [AppColors.info, Color(0xFF00A3FF)]),
+                              onPressed: () => _update(context, ref, id, 'approved'))),
                           if (status == 'approved')
-                            Expanded(child: ElevatedButton(
-                              onPressed: () => _update(context, ref, id, 'completed'),
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.success),
-                              child: Text(l.completeRefundAction, style: const TextStyle(color: Colors.white)))),
+                            Expanded(child: _GradientButton(
+                              label: l.completeRefundAction,
+                              onPressed: () => _update(context, ref, id, 'completed'))),
                         ]),
                       ],
                     ]));
