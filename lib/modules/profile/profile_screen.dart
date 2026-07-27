@@ -288,7 +288,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 _QuickAction(icon: Icons.account_balance_wallet_rounded, color: const Color(0xFFFFB800),
                     label: l.myWallet, onTap: () => context.push(RouteNames.wallet)),
                 _QuickAction(icon: Icons.receipt_long_rounded, color: const Color(0xFF00A3FF),
-                    label: l.orders, onTap: () => context.go(RouteNames.orders)),
+                    label: l.orders, onTap: () => context.push(RouteNames.orders)),
                 _QuickAction(icon: Icons.favorite_rounded, color: const Color(0xFF00D084),
                     label: l.favorites, onTap: () => context.go(RouteNames.favorites)),
                 _QuickAction(icon: Icons.location_on_outlined, color: const Color(0xFFFF6B2C),
@@ -301,7 +301,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 _GroupCard(children: [
                   _Tile(icon: Icons.store_rounded, iconColor: const Color(0xFF00D084),
                       label: l.sellerDashboard,
-                      onTap: () => context.go(RouteNames.sellerDashboard)),
+                      onTap: () => context.push(RouteNames.sellerDashboard)),
                   _Tile(icon: Icons.location_on_rounded, iconColor: const Color(0xFFFF6B2C),
                       label: l.storeLocation,
                       onTap: _setStoreLocation),
@@ -330,7 +330,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   label: '${l.language}: ${LocaleNotifier.langName(ref.watch(localeProvider).languageCode)}',
                   onTap: _showLanguagePicker),
                 _Tile(icon: Icons.notifications_outlined, iconColor: const Color(0xFFE040FB),
-                    label: l.notifications, onTap: () => context.go(RouteNames.notifications)),
+                    label: l.notifications, onTap: () => context.push(RouteNames.notifications)),
               ]),
 
               // ── О приложении ────────────────────────────────────────────
