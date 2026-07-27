@@ -6,18 +6,21 @@ import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/seller_provider.dart';
 import '../../routes/route_names.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/seller_l10n.dart';
 
 class SellerDashboardScreen extends ConsumerWidget {
   const SellerDashboardScreen({super.key});
 
   void _soon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Ин бахш ба зудӣ илова мешавад'),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(AppL10n.of(context).sellerSectionSoon),
       behavior: SnackBarBehavior.floating));
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppL10n.of(context);
     final user = ref.watch(authProvider).user;
     final uid = user?.id ?? '';
     final pcount = ref.watch(sellerProductsProvider(uid))
@@ -27,14 +30,14 @@ class SellerDashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: context.pal.scaffold,
         elevation: 0,
-        title: Text('Дӯкони ман',
+        title: Text(l.sellerMyStore,
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         actions: [
           TextButton.icon(
             onPressed: () => context.push(RouteNames.addProduct),
             icon: const Icon(Icons.add, color: AppColors.primary, size: 18),
-            label: const Text('Илова', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+            label: Text(l.sellerAddShort, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -70,12 +73,12 @@ class SellerDashboardScreen extends ConsumerWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(user?.fullName ?? 'Фурӯшанда',
+                      Text(user?.fullName ?? l.seller,
                           maxLines: 1, overflow: TextOverflow.ellipsis,
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
                       const SizedBox(height: 4),
-                      const Text('Фурӯшандаи фаъол',
-                          style: TextStyle(color: Colors.white70, fontSize: 12.5)),
+                      Text(l.sellerActiveSeller,
+                          style: const TextStyle(color: Colors.white70, fontSize: 12.5)),
                     ]),
                   ),
                   Container(
@@ -84,7 +87,7 @@ class SellerDashboardScreen extends ConsumerWidget {
                       color: Colors.white.withOpacity(0.22),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text('✓ Тасдиқ', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                    child: Text(l.sellerVerifiedBadge, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),
@@ -92,7 +95,7 @@ class SellerDashboardScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // ── Stats ────────────────────────────────────────────────────────
-            Text('Оморҳо',
+            Text(l.sellerStats,
                 style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
             GridView.count(
@@ -100,16 +103,16 @@ class SellerDashboardScreen extends ConsumerWidget {
               crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12,
               childAspectRatio: 1.55,
               children: [
-                const _StatCard(value: '0', label: 'Фармоишҳо', icon: Icons.receipt_long_rounded, color: AppColors.primary),
-                _StatCard(value: '$pcount', label: 'Маҳсулот', icon: Icons.inventory_2_rounded, color: const Color(0xFF6C63FF)),
-                const _StatCard(value: '0 сом.', label: 'Даромад', icon: Icons.account_balance_wallet_rounded, color: AppColors.warning),
-                const _StatCard(value: '0', label: 'Мизоҷон', icon: Icons.people_alt_rounded, color: AppColors.info),
+                _StatCard(value: '0', label: l.orders, icon: Icons.receipt_long_rounded, color: AppColors.primary),
+                _StatCard(value: '$pcount', label: l.productsWord, icon: Icons.inventory_2_rounded, color: const Color(0xFF6C63FF)),
+                _StatCard(value: '0 ${l.som}', label: l.sellerRevenue, icon: Icons.account_balance_wallet_rounded, color: AppColors.warning),
+                _StatCard(value: '0', label: l.sellerCustomers, icon: Icons.people_alt_rounded, color: AppColors.info),
               ],
             ),
             const SizedBox(height: 26),
 
             // ── Quick actions (grouped card, template ListTile style) ────────
-            Text('Амалиётҳо',
+            Text(l.sellerActions,
                 style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
             Container(
@@ -124,29 +127,29 @@ class SellerDashboardScreen extends ConsumerWidget {
                 children: [
                   _ActionItem(
                     icon: Icons.add_box_rounded,
-                    label: 'Маҳсулот илова кунед',
-                    subtitle: 'Маҳсулоти нав эълон кунед',
+                    label: l.sellerAddProduct,
+                    subtitle: l.sellerAddProductSub,
                     onTap: () => context.push(RouteNames.addProduct),
                   ),
                   _ActionDivider(),
                   _ActionItem(
                     icon: Icons.inventory_rounded,
-                    label: 'Маҳсулотҳоям',
-                    subtitle: 'Идораи маҳсулотҳо',
+                    label: l.myProducts,
+                    subtitle: l.sellerManageProductsSub,
                     onTap: () => context.push(RouteNames.myProducts),
                   ),
                   _ActionDivider(),
                   _ActionItem(
                     icon: Icons.pending_actions_rounded,
-                    label: 'Фармоишҳои нав',
-                    subtitle: 'Фармоишҳои интизорро бубинед',
+                    label: l.sellerNewOrders,
+                    subtitle: l.sellerNewOrdersSub,
                     onTap: () => context.push(RouteNames.orders),
                   ),
                   _ActionDivider(),
                   _ActionItem(
                     icon: Icons.bar_chart_rounded,
-                    label: 'Оморҳои фурӯш',
-                    subtitle: 'Гузориши фурӯши ман',
+                    label: l.sellerSalesStats,
+                    subtitle: l.sellerSalesStatsSub,
                     onTap: () => _soon(context),
                   ),
                 ],

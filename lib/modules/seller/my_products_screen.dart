@@ -12,6 +12,8 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/error_screen.dart';
 import '../../shared/widgets/safe_input.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/seller_l10n.dart';
 import 'manage_variants_screen.dart';
 
 class MyProductsScreen extends ConsumerWidget {
@@ -19,6 +21,7 @@ class MyProductsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppL10n.of(context);
     final uid = ref.watch(authProvider).user?.id ?? '';
     final products = ref.watch(sellerProductsProvider(uid));
 
@@ -28,7 +31,7 @@ class MyProductsScreen extends ConsumerWidget {
         backgroundColor: context.pal.scaffold,
         elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Маҳсулотҳоям',
+        title: Text(l.myProducts,
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
@@ -46,10 +49,10 @@ class MyProductsScreen extends ConsumerWidget {
             ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.inventory_2_outlined, size: 80, color: context.pal.textMuted),
                 const SizedBox(height: 16),
-                Text('Шумо ҳоло маҳсулот надоред',
+                Text(l.sellerNoProductsYet,
                     style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
                 const SizedBox(height: 20),
-                AppButton(text: 'Маҳсулот илова кунед', width: 220, height: 46,
+                AppButton(text: l.sellerAddProduct, width: 220, height: 46,
                     onTap: () => context.push(RouteNames.addProduct)),
               ]))
             : RefreshIndicator(
@@ -76,6 +79,7 @@ class _ProductRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final p = product;
     final active = p.inStock;
     final statusColor = active ? AppColors.success : AppColors.error;
@@ -104,7 +108,7 @@ class _ProductRow extends StatelessWidget {
                   style: TextStyle(color: context.pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
               const SizedBox(height: 5),
               Row(children: [
-                Text('${p.price.toStringAsFixed(0)} сом.',
+                Text('${p.price.toStringAsFixed(0)} ${l.som}',
                     style: const TextStyle(color: AppColors.primary, fontSize: 15, fontWeight: FontWeight.w800)),
                 const SizedBox(width: 10),
                 Icon(Icons.inventory_2_outlined, size: 13, color: context.pal.textMuted),
@@ -118,7 +122,7 @@ class _ProductRow extends StatelessWidget {
                 decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(10)),
-                child: Text(active ? 'Фаъол' : 'Ғайрифаъол',
+                child: Text(active ? l.sellerActive : l.sellerInactive,
                     style: TextStyle(color: statusColor,
                         fontSize: 10.5, fontWeight: FontWeight.w700))),
             ])),
@@ -131,20 +135,20 @@ class _ProductRow extends StatelessWidget {
             children: [
               _RowAction(
                 icon: Icons.tune_rounded,
-                label: 'Вариантҳо',
+                label: l.variants,
                 color: AppColors.primary,
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => ManageVariantsScreen(productId: p.id, title: p.title))),
               ),
               _RowAction(
                 icon: Icons.edit_outlined,
-                label: 'Таҳрир',
+                label: l.sellerEditAction,
                 color: AppColors.info,
                 onTap: () => _openEdit(context),
               ),
               _RowAction(
                 icon: Icons.delete_outline_rounded,
-                label: 'Нест',
+                label: l.sellerDeleteAction,
                 color: AppColors.error,
                 onTap: () => _confirmDelete(context),
               ),
@@ -168,14 +172,15 @@ class _ProductRow extends StatelessWidget {
   }
 
   void _confirmDelete(BuildContext context) {
+    final l = AppL10n.of(context);
     showDialog(context: context, builder: (ctx) => AlertDialog(
       backgroundColor: context.pal.card,
-      title: Text('Нест кардан?', style: TextStyle(color: context.pal.textPrimary)),
-      content: Text('"${product.title}" нест карда шавад?',
+      title: Text(l.sellerDeleteTitle, style: TextStyle(color: context.pal.textPrimary)),
+      content: Text('"${product.title}" ${l.sellerDeleteQuestion}',
           style: TextStyle(color: context.pal.textSecondary)),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx),
-            child: Text('Не', style: TextStyle(color: context.pal.textMuted))),
+            child: Text(l.sellerNo, style: TextStyle(color: context.pal.textMuted))),
         TextButton(
           onPressed: () async {
             Navigator.pop(ctx);
@@ -183,16 +188,16 @@ class _ProductRow extends StatelessWidget {
             try {
               await SellerProductService.delete(product.id);
               onChanged();
-              messenger.showSnackBar(const SnackBar(
-                content: Text('Маҳсулот нест карда шуд'),
+              messenger.showSnackBar(SnackBar(
+                content: Text(l.sellerProductDeleted),
                 backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
             } catch (_) {
-              messenger.showSnackBar(const SnackBar(
-                content: Text('Хато ҳангоми нест кардан'),
+              messenger.showSnackBar(SnackBar(
+                content: Text(l.sellerDeleteError),
                 backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
             }
           },
-          child: const Text('Бале, нест кун', style: TextStyle(color: AppColors.error))),
+          child: Text(l.sellerYesDelete, style: const TextStyle(color: AppColors.error))),
       ],
     ));
   }
@@ -266,6 +271,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
 
   Future<void> _save() async {
     setState(() => _loading = true);
+    final l = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
       await SellerProductService.update(widget.product.id,
@@ -279,14 +285,14 @@ class _EditProductSheetState extends State<_EditProductSheet> {
       widget.onDone();
       if (!mounted) return;
       Navigator.pop(context);
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Маҳсулот навсозӣ шуд ✅'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l.sellerProductUpdated),
         backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Хато ҳангоми навсозӣ'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l.sellerUpdateError),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
     }
   }
@@ -308,6 +314,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 24),
       child: SingleChildScrollView(
@@ -315,27 +322,27 @@ class _EditProductSheetState extends State<_EditProductSheet> {
           Center(child: Container(width: 40, height: 4,
               decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 16),
-          Text('Таҳрири маҳсулот', style: TextStyle(
+          Text(l.sellerEditProductTitle, style: TextStyle(
               color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 16),
-          _f('Ном', _title),
+          _f(l.sellerFieldName, _title),
           Row(children: [
-            Expanded(child: _f('Нарх (сом.)', _price, type: TextInputType.number)),
+            Expanded(child: _f('${l.price} (${l.som})', _price, type: TextInputType.number)),
             const SizedBox(width: 10),
-            Expanded(child: _f('Тахфиф (%)', _disc, type: TextInputType.number)),
+            Expanded(child: _f(l.sellerDiscountPercent, _disc, type: TextInputType.number)),
           ]),
-          _f('Захира', _stock, type: TextInputType.number),
-          _f('⚡ Flash sale (соат, холӣ=тағйир нест, -1=бекор)', _sale, type: TextInputType.number),
-          _f('Тавсиф', _desc, maxLines: 3),
+          _f(l.sellerStock, _stock, type: TextInputType.number),
+          _f(l.sellerFlashSaleField, _sale, type: TextInputType.number),
+          _f(l.description, _desc, maxLines: 3),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             activeColor: AppColors.primary,
-            title: Text('Фаъол (намоиш дар бозор)',
+            title: Text(l.sellerActiveInMarket,
                 style: TextStyle(color: context.pal.textPrimary, fontSize: 14)),
             value: _active,
             onChanged: (v) => setState(() => _active = v)),
           const SizedBox(height: 12),
-          AppButton(text: 'Захира кардан', onTap: _save, isLoading: _loading),
+          AppButton(text: l.save, onTap: _save, isLoading: _loading),
         ]),
       ),
     );

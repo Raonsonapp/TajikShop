@@ -16,6 +16,7 @@ import '../../providers/theme_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../routes/route_names.dart';
 import '../../core/app_l10n.dart';
+import '../../core/l10n/seller_l10n.dart';
 import 'package:latlong2/latlong.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/safe_input.dart';
@@ -34,24 +35,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _pickAvatar() async {
     final xf = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (xf == null) return;
+    final l = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
       final form = FormData.fromMap({'avatar': await MultipartFile.fromFile(xf.path)});
       // ✅ Endpoint-и дурусти аватар (POST /users/me/avatar)
       await ApiClient.instance.dio.post(ApiEndpoints.uploadAvatar, data: form);
       await ref.read(authProvider.notifier).checkAuth();
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Расм нав шуд ✅'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l.profileImageUpdated),
         backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
     } catch (_) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Расм бор нашуд'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(l.profileImageFailed),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
     }
   }
 
   // ── Таҳрири профил (PUT /users/me) ─────────────────────────────────────────
   void _editProfile() {
+    final l = AppL10n.of(context);
     final user = ref.read(authProvider).user;
     final nameCtrl = TextEditingController(text: user?.fullName ?? '');
     final bioCtrl = TextEditingController();
@@ -76,12 +79,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Center(child: Container(width: 40, height: 4,
                   decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 16),
-              Text('Таҳрири профил', style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(l.editProfile, style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
               const SizedBox(height: 16),
-              field('Номи корбар', nameCtrl),
-              field('Био (дар бораи худ)', bioCtrl, maxLines: 3),
+              field(l.profileUserNameField, nameCtrl),
+              field(l.profileBioField, bioCtrl, maxLines: 3),
               const SizedBox(height: 8),
-              AppButton(text: 'Захира кардан', isLoading: loading, onTap: () async {
+              AppButton(text: l.save, isLoading: loading, onTap: () async {
                 setSheet(() => loading = true);
                 final messenger = ScaffoldMessenger.of(context);
                 try {
@@ -89,11 +92,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       data: {'name': nameCtrl.text.trim(), 'bio': bioCtrl.text.trim()});
                   await ref.read(authProvider.notifier).checkAuth();
                   if (ctx.mounted) Navigator.pop(ctx);
-                  messenger.showSnackBar(const SnackBar(content: Text('Профил нав шуд ✅'),
+                  messenger.showSnackBar(SnackBar(content: Text(l.profileUpdated),
                       backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
                 } catch (_) {
                   setSheet(() => loading = false);
-                  messenger.showSnackBar(const SnackBar(content: Text('Хато'),
+                  messenger.showSnackBar(SnackBar(content: Text(l.error),
                       backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
                 }
               }),
@@ -116,19 +119,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
     if (picked == null) return;
+    if (!mounted) return;
+    final l = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ApiClient.instance.dio.put(
         '/users/me/location',
         data: {'lat': picked.latitude, 'lng': picked.longitude},
       );
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Ҷойгиршавии мағоза сабт шуд 📍'),
+      messenger.showSnackBar(SnackBar(
+          content: Text(l.profileLocationSaved),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating));
     } catch (_) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Ҷойгиршавӣ сабт нашуд'),
+      messenger.showSnackBar(SnackBar(
+          content: Text(l.profileLocationFailed),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     }
@@ -147,9 +152,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             borderRadius: BorderRadius.circular(12)),
         child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 28),
       ),
-      children: const [
-        SizedBox(height: 8),
-        Text('Бозори онлайни Тоҷикистон — харид ва фурӯши осон.'),
+      children: [
+        const SizedBox(height: 8),
+        Text(l.profileAboutText),
       ],
     );
   }
@@ -203,7 +208,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     final displayName = (user?.fullName != null && user!.fullName.isNotEmpty)
         ? user.fullName
-        : (user?.email.split('@').first ?? 'Корбар');
+        : (user?.email.split('@').first ?? l.userWord);
 
     return Scaffold(
       backgroundColor: context.pal.scaffold,
@@ -268,7 +273,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               OutlinedButton.icon(
                 onPressed: _editProfile,
                 icon: const Icon(Icons.edit_outlined, size: 16),
-                label: Text(l.profile),
+                label: Text(l.editProfile),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   side: const BorderSide(color: AppColors.primary),
