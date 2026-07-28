@@ -91,6 +91,8 @@ func (h *ProductHandler) List(c *gin.Context) {
 		where += fmt.Sprintf(" AND p.seller_id=$%d", argIdx)
 		args = append(args, seller)
 		argIdx++
+		// Маҳсулоти нестшуда (soft-delete: is_active=false ва stock=0) намоиш дода намешавад.
+		where += " AND NOT (p.is_active=false AND p.stock=0)"
 	} else {
 		// Маҳсулоти фурӯхташуда (stock=0) худ ба худ аз бозор пинҳон мешавад
 		where += " AND p.is_active=true AND p.stock > 0"
@@ -255,7 +257,19 @@ func (h *ProductHandler) Update(c *gin.Context) {
 func (h *ProductHandler) Delete(c *gin.Context) {
 	uid := utils.UserID(c)
 	id := c.Param("id")
-	res, err := db.DB.Exec(`DELETE FROM products WHERE id=$1 AND seller_id=$2`, id, uid)
+	// Агар маҳсулот дар фармоишҳо бошад, hard-delete мумкин нест (order_items RESTRICT,
+	// таърихи фармоишҳо бояд эмин монад) — пас soft-delete: аз бозор ва рӯйхати фурӯшанда
+	// пинҳон мешавад (is_active=false, stock=0). Вагарна пурра нест мешавад.
+	var ordered bool
+	db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM order_items WHERE product_id=$1)`, id).Scan(&ordered)
+	var res sql.Result
+	var err error
+	if ordered {
+		res, err = db.DB.Exec(`UPDATE products SET is_active=false, stock=0, updated_at=$1 WHERE id=$2 AND seller_id=$3`,
+			time.Now(), id, uid)
+	} else {
+		res, err = db.DB.Exec(`DELETE FROM products WHERE id=$1 AND seller_id=$2`, id, uid)
+	}
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return

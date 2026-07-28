@@ -295,7 +295,16 @@ func (h *AdminHandler) SellerRequests(c *gin.Context) {
 
 func (h *AdminHandler) DeleteProduct(c *gin.Context) {
 	id := c.Param("id")
-	db.DB.Exec(`DELETE FROM products WHERE id=$1`, id)
+	// Агар дар фармоишҳо бошад — soft-delete (таърих эмин); вагарна hard-delete.
+	var ordered bool
+	db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM order_items WHERE product_id=$1)`, id).Scan(&ordered)
+	if ordered {
+		db.DB.Exec(`UPDATE products SET is_active=false, stock=0, updated_at=$1 WHERE id=$2`, time.Now(), id)
+	} else {
+		if _, err := db.DB.Exec(`DELETE FROM products WHERE id=$1`, id); err != nil {
+			db.DB.Exec(`UPDATE products SET is_active=false, stock=0, updated_at=$1 WHERE id=$2`, time.Now(), id)
+		}
+	}
 	utils.OK(c, gin.H{"message": "product deleted"})
 }
 
