@@ -195,6 +195,7 @@ func (h *UserHandler) SellerVerify(c *gin.Context) {
 		url, time.Now(), uid)
 	var name, email string
 	db.DB.QueryRow(`SELECT name, COALESCE(email,'') FROM users WHERE id=$1`, uid).Scan(&name, &email)
+	notifyAdmins("seller_request", "Дархости нави фурӯшанда 🏪", name+" мехоҳад фурӯшанда шавад", uid)
 	go mailer.NotifySellerRequest(name, email, uid)
 	utils.OK(c, gin.H{
 		"message": "Дархости шумо фиристода шуд. Баъди тасдиқи админ фурӯшанда мешавед.",
@@ -208,11 +209,19 @@ func (h *UserHandler) BecomeSellerHandler(c *gin.Context) {
 	db.DB.Exec(`UPDATE users SET seller_requested=true,updated_at=$1 WHERE id=$2`, time.Now(), uid)
 	var name, email string
 	db.DB.QueryRow(`SELECT name, COALESCE(email,'') FROM users WHERE id=$1`, uid).Scan(&name, &email)
+	notifyAdmins("seller_request", "Дархости нави фурӯшанда 🏪", name+" мехоҳад фурӯшанда шавад", uid)
 	go mailer.NotifySellerRequest(name, email, uid)
 	utils.OK(c, gin.H{
 		"message": "Дархости шумо фиристода шуд. Баъди тасдиқи админ фурӯшанда мешавед.",
 		"pending": true,
 	})
+}
+
+// notifyAdmins — ба ҳамаи админҳо огоҳии дохили барнома мегузорад.
+func notifyAdmins(nType, title, body, refID string) {
+	db.DB.Exec(`INSERT INTO notifications(user_id,type,title,body,ref_id)
+		SELECT id,$1,$2,$3,$4 FROM users WHERE role='admin'`,
+		nType, title, body, refID)
 }
 
 // SellerStats — омори фурӯши фурӯшандаи ҷорӣ: маҳсулот, фармоишҳо, фурӯхта, даромад.
