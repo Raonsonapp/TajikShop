@@ -28,4 +28,5 @@ class RouteNames {
   static const addresses       = '/addresses';
   static const adminReports    = '/admin/reports';
   static const adminReturns    = '/admin/returns';
+  static const sellerRequests  = '/admin/seller-requests';
 }

@@ -79,31 +79,12 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         [..._images, ...picked.map((x) => File(x.path))].take(5).toList());
   }
 
-  // Become seller first — токени нав гирифта захира мешавад
-  Future<bool> _ensureSeller() async {
-    final user = ref.read(authProvider).user;
-    if (user == null) return false;
-    if (user.isSeller || user.role == 'seller' || user.role == 'admin') return true;
-
-    // Бо тасдиқи паспорт (KYC) фурӯшанда мешавад
-    final ok = await showSellerVerify(context);
-    final nowSeller = ok == true && (ref.read(authProvider).user?.isSeller ?? false);
-    if (!nowSeller) {
-      setState(() => _error = AppL10n.of(context).becomeSellerFirst);
-    }
-    return nowSeller;
-  }
-
   Future<void> _submit() async {
     setState(() { _error = null; _loading = true; _progress = 0.05; });
     try {
-      // Step 1: ensure seller role
-      final ok = await _ensureSeller();
-      if (!ok) { setState(() => _loading = false); return; }
-
       setState(() => _progress = 0.15);
 
-      // Step 2: create product
+      // Create product (сервер иҷозаро тафтиш мекунад: танҳо фурӯшандаи тасдиқшуда)
       final res = await ApiClient.instance.dio.post(
         ApiEndpoints.products,
         data: {
@@ -149,7 +130,19 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       _reset();
       context.go(RouteNames.profile);
     } on DioException catch (e) {
-      setState(() => _error = e.message ?? AppL10n.of(context).unknownError);
+      final data = e.response?.data;
+      String msg = e.message ?? AppL10n.of(context).unknownError;
+      if (data is Map) {
+        msg = (data['error'] ?? data['message'] ?? data['detail'] ?? msg).toString();
+      }
+      setState(() => _error = msg);
+      // Сервер бо 403 нашрро манъ мекунад (то тасдиқи админ) — паёми серверро нишон медиҳем.
+      if (e.response?.statusCode == 403 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(msg),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating));
+      }
     } catch (e) {
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -165,8 +158,12 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isAuth = ref.watch(authProvider).isAuthenticated;
+    final auth = ref.watch(authProvider);
+    final isAuth = auth.isAuthenticated;
     if (!isAuth) return _notAuth();
+    final user = auth.user;
+    final isSeller = user?.isSeller == true || user?.role == 'seller' || user?.role == 'admin';
+    if (!isSeller) return _sellerGate(user?.sellerRequested == true);
     final cats = ref.watch(categoriesProvider);
 
     return Scaffold(
@@ -472,6 +469,44 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           style: TextStyle(color: context.pal.textPrimary, fontSize: 13))),
       ),
     ]);
+
+  // Экрани дарвоза — агар корбар фурӯшандаи тасдиқшуда набошад.
+  Widget _sellerGate(bool requested) {
+    final l = AppL10n.of(context);
+    return Scaffold(
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(
+        backgroundColor: context.pal.scaffold, elevation: 0,
+        title: Text(l.postListing,
+            style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 18)),
+      ),
+      body: Center(child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 88, height: 88, alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              shape: BoxShape.circle),
+            child: Icon(requested ? FeatherIcons.clock : FeatherIcons.shoppingBag,
+                color: AppColors.primary, size: 42)),
+          const SizedBox(height: 20),
+          Text(
+            requested ? l.sellerRequestPendingUpload : l.sellerBecomeToPost,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: context.pal.textSecondary, fontSize: 15, height: 1.45,
+                fontWeight: FontWeight.w500)),
+          if (!requested) ...[
+            const SizedBox(height: 24),
+            SizedBox(width: 240,
+              child: AppButton(
+                text: '🏪 ${l.becomeSeller}',
+                onTap: () => showSellerVerify(context))),
+          ],
+        ]),
+      )),
+    );
+  }
 
   Widget _notAuth() => Scaffold(backgroundColor: context.pal.scaffold,
     appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,

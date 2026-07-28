@@ -30,6 +30,12 @@ final adminWalletPendingProvider = FutureProvider.autoDispose<List<Map<String, d
   return _unwrapList(res.data);
 });
 
+// ── Дархостҳои фурӯшанда (GET /admin/seller-requests) ────────────────────────
+final adminSellerRequestsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final res = await ApiClient.instance.dio.get('/admin/seller-requests');
+  return _unwrapList(res.data);
+});
+
 class AdminService {
   static Future<void> banUser(String id) =>
       ApiClient.instance.dio.post('/admin/users/$id/ban');
