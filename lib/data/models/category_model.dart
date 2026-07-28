@@ -18,7 +18,7 @@ class CategoryModel {
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       icon: json['icon'],
-      image: json['image'],
+      image: json['icon_url'] ?? json['image'],
       productCount: (json['product_count'] as num?)?.toInt() ?? 0,
     );
   }
