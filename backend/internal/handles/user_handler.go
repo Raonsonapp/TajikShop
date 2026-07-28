@@ -215,6 +215,24 @@ func (h *UserHandler) BecomeSellerHandler(c *gin.Context) {
 	})
 }
 
+// SellerStats — омори фурӯши фурӯшандаи ҷорӣ: маҳсулот, фармоишҳо, фурӯхта, даромад.
+func (h *UserHandler) SellerStats(c *gin.Context) {
+	uid := utils.UserID(c)
+	var products, active, orders, sold int
+	var revenue float64
+	db.DB.QueryRow(`SELECT
+		(SELECT COUNT(*) FROM products WHERE seller_id=$1),
+		(SELECT COUNT(*) FROM products WHERE seller_id=$1 AND is_active=true AND stock>0),
+		COALESCE((SELECT COUNT(DISTINCT oi.order_id) FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE p.seller_id=$1),0),
+		COALESCE((SELECT SUM(oi.quantity) FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE p.seller_id=$1),0),
+		COALESCE((SELECT SUM(oi.price*oi.quantity) FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE p.seller_id=$1),0)
+	`, uid).Scan(&products, &active, &orders, &sold, &revenue)
+	utils.OK(c, gin.H{
+		"products": products, "active_products": active,
+		"orders": orders, "sold": sold, "revenue": revenue,
+	})
+}
+
 // PublicProfile — саҳифаи оммавии фурӯшанда/корбар (бе auth)
 func (h *UserHandler) PublicProfile(c *gin.Context) {
 	id := c.Param("id")
