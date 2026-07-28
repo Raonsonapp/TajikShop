@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
@@ -131,7 +132,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                       gradient: const LinearGradient(colors: [Color(0xFFFF416C), Color(0xFFFF4B2B)]),
                       borderRadius: BorderRadius.circular(8)),
                     child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.bolt_rounded, color: Colors.white, size: 11),
+                      Icon(FeatherIcons.zap, color: Colors.white, size: 11),
                       Text('FLASH', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
                     ]))),
 
@@ -170,7 +171,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                         boxShadow: isFav ? [BoxShadow(
                             color: const Color(0xFF00D084).withOpacity(0.4), blurRadius: 10)] : null),
                       child: Icon(
-                        isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                        FeatherIcons.heart,
                         color: isFav ? const Color(0xFF00D084) : Colors.white60,
                         size: 15))))),
 
@@ -194,16 +195,16 @@ class _ProductCardState extends ConsumerState<ProductCard>
               // Like + comment chips (bottom overlay)
               Positioned(bottom: 6, left: 8, right: 8,
                 child: Row(children: [
-                  _Chip(icon: Icons.favorite_rounded,
+                  _Chip(icon: FeatherIcons.heart,
                       color: const Color(0xFF00D084),
                       label: p.likeCount > 0 ? '${p.likeCount}' : ''),
                   const SizedBox(width: 5),
-                  _Chip(icon: Icons.chat_bubble_rounded,
+                  _Chip(icon: FeatherIcons.messageCircle,
                       color: const Color(0xFF00A3FF),
                       label: p.reviewCount > 0 ? '${p.reviewCount}' : ''),
                   const Spacer(),
                   if (p.views > 0)
-                    _Chip(icon: Icons.remove_red_eye_rounded,
+                    _Chip(icon: FeatherIcons.eye,
                         color: Colors.white54,
                         label: p.views > 999
                             ? '${(p.views / 1000).toStringAsFixed(1)}к'
@@ -228,7 +229,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
 
                   // Rating
                   Row(children: [
-                    const Icon(Icons.star_rounded, size: 11, color: Color(0xFFFFB800)),
+                    const Icon(FeatherIcons.star, size: 11, color: Color(0xFFFFB800)),
                     const SizedBox(width: 2),
                     Text(p.rating.toStringAsFixed(1),
                         style: const TextStyle(color: Color(0xFFAAADBE), fontSize: 10)),
@@ -266,7 +267,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                             boxShadow: [BoxShadow(
                                 color: const Color(0xFF00D084).withOpacity(0.4),
                                 blurRadius: 8, offset: const Offset(0, 3))]),
-                          child: const Icon(Icons.add_shopping_cart_rounded,
+                          child: const Icon(FeatherIcons.shoppingCart,
                               color: Colors.white, size: 14))),
                     ],
                   ),
@@ -285,7 +286,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
 
   Widget _noImage() => Container(
       color: const Color(0xFF1C1C2E),
-      child: const Center(child: Icon(Icons.image_search_rounded,
+      child: const Center(child: Icon(FeatherIcons.image,
           color: Color(0xFF6B6E82), size: 36)));
 }
 
