@@ -32,6 +32,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   final _priceCtrl = TextEditingController(text: '0');
   final _descCtrl  = TextEditingController();
   final _stockCtrl = TextEditingController(text: '1');
+  final _discountCtrl = TextEditingController(); // Тахфиф (%) — ихтиёрӣ
   final _picker    = ImagePicker();
 
   List<File> _images    = [];
@@ -51,6 +52,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   void dispose() {
     _titleCtrl.dispose(); _priceCtrl.dispose();
     _descCtrl.dispose(); _stockCtrl.dispose();
+    _discountCtrl.dispose();
     super.dispose();
   }
 
@@ -85,6 +87,8 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     try {
       setState(() => _progress = 0.15);
 
+      final discount = int.tryParse(_discountCtrl.text.trim()) ?? 0;
+
       // Create product (сервер иҷозаро тафтиш мекунад: танҳо фурӯшандаи тасдиқшуда)
       final res = await ApiClient.instance.dio.post(
         ApiEndpoints.products,
@@ -94,6 +98,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           'description': _descCtrl.text.trim().isEmpty ? _titleCtrl.text.trim() : _descCtrl.text.trim(),
           'stock':       int.tryParse(_stockCtrl.text.trim()) ?? 1,
           if (_catId != null) 'category_id': _catId,
+          if (discount > 0) 'discount_percent': discount.clamp(0, 100),
         },
       );
       setState(() => _progress = 0.4);
@@ -154,6 +159,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   void _reset() {
     _titleCtrl.clear(); _priceCtrl.text = '0';
     _descCtrl.clear(); _stockCtrl.text = '1';
+    _discountCtrl.clear();
     setState(() { _images = []; _progress = 0; _catId = null; _step = 1; _error = null; });
   }
 
@@ -298,7 +304,19 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         onChanged: (v) => setState(() => _city = v ?? _city))),
     ]),
     const SizedBox(height: 14),
-    _field(AppL10n.of(context).quantity, _stockCtrl, hint: '1', type: TextInputType.number),
+    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Expanded(child: _field(AppL10n.of(context).quantity, _stockCtrl, hint: '1', type: TextInputType.number)),
+      const SizedBox(width: 12),
+      Expanded(child: _field('Тахфиф (%)', _discountCtrl,
+          hint: '0', type: TextInputType.number,
+          formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)])),
+    ]),
+    const SizedBox(height: 6),
+    Padding(
+      padding: const EdgeInsets.only(left: 2),
+      child: Text('Ихтиёрӣ — фоизи тахфиф барои ин маҳсулот',
+          style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
+    ),
     const SizedBox(height: 22),
 
     // Seller info notice
@@ -373,10 +391,15 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           enabled: true,
           onTap: busy ? null : () {
             if (_step == 1) {
-              if (_images.isEmpty) { setState(() => _error = AppL10n.of(context).addPhoto); return; }
               if (_titleCtrl.text.trim().isEmpty) { setState(() => _error = AppL10n.of(context).enterName); return; }
               final p = double.tryParse(_priceCtrl.text.replaceAll(',', '.'));
               if (p == null || p <= 0) { setState(() => _error = AppL10n.of(context).enterPrice); return; }
+              // Расм тавсия мешавад, вале ҳатмӣ нест — танҳо огоҳӣ.
+              if (_images.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(AppL10n.of(context).photosSubHint),
+                  behavior: SnackBarBehavior.floating));
+              }
               setState(() { _step = 2; _error = null; });
             } else { _submit(); }
           },

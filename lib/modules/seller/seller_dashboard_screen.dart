@@ -13,10 +13,77 @@ import '../../core/l10n/seller_l10n.dart';
 class SellerDashboardScreen extends ConsumerWidget {
   const SellerDashboardScreen({super.key});
 
-  void _soon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(AppL10n.of(context).sellerSectionSoon),
-      behavior: SnackBarBehavior.floating));
+  void _showStatsSheet(BuildContext context, WidgetRef ref) {
+    final l = AppL10n.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.pal.card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Consumer(builder: (ctx, ref, _) {
+        final statsAsync = ref.watch(sellerStatsProvider);
+        final stats = statsAsync.asData?.value;
+        int si(String k) => (stats?[k] as num?)?.toInt() ?? 0;
+        String rev = ((stats?['revenue'] as num?)?.toDouble() ?? 0).toStringAsFixed(0);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44, height: 4,
+                    decoration: BoxDecoration(
+                      color: context.pal.divider,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(l.sellerSalesStats,
+                    style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 16),
+                // Revenue hero (green gradient)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x3300D084), blurRadius: 16, offset: Offset(0, 8)),
+                    ],
+                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      const Icon(FeatherIcons.dollarSign, color: Colors.white70, size: 18),
+                      const SizedBox(width: 6),
+                      Text(l.sellerRevenue,
+                          style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
+                    ]),
+                    const SizedBox(height: 10),
+                    statsAsync.isLoading && stats == null
+                        ? const SizedBox(
+                            height: 30, width: 30,
+                            child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
+                        : Text('$rev ${l.som}',
+                            style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w800)),
+                  ]),
+                ),
+                const SizedBox(height: 18),
+                _StatRow(icon: FeatherIcons.shoppingBag, label: l.orders, value: '${si('orders')}', color: AppColors.primary),
+                _StatRow(icon: FeatherIcons.trendingUp, label: 'Фурӯхта', value: '${si('sold')}', color: AppColors.info),
+                _StatRow(icon: FeatherIcons.package, label: 'Маҳсулоти фаъол', value: '${si('active_products')}', color: const Color(0xFF6C63FF)),
+              ],
+            ),
+          ),
+        );
+      }),
+    );
   }
 
   @override
@@ -26,6 +93,16 @@ class SellerDashboardScreen extends ConsumerWidget {
     final uid = user?.id ?? '';
     final pcount = ref.watch(sellerProductsProvider(uid))
         .maybeWhen(data: (l) => l.length, orElse: () => 0);
+    final statsAsync = ref.watch(sellerStatsProvider);
+    final stats = statsAsync.asData?.value;
+    final loadingStats = statsAsync.isLoading && stats == null;
+
+    int _statInt(String k) => (stats?[k] as num?)?.toInt() ?? 0;
+    String _statNum(String k) => ((stats?[k] as num?)?.toDouble() ?? 0).toStringAsFixed(0);
+    String _cell(String v) => loadingStats ? '-' : v;
+
+    final products = stats != null ? _statInt('products') : pcount;
+
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(
@@ -35,6 +112,14 @@ class SellerDashboardScreen extends ConsumerWidget {
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         actions: [
+          IconButton(
+            tooltip: l.sellerStats,
+            onPressed: () {
+              ref.invalidate(sellerStatsProvider);
+              ref.invalidate(sellerProductsProvider(uid));
+            },
+            icon: const Icon(FeatherIcons.refreshCw, color: AppColors.primary, size: 20),
+          ),
           TextButton.icon(
             onPressed: () => context.push(RouteNames.addProduct),
             icon: const Icon(FeatherIcons.plus, color: AppColors.primary, size: 18),
@@ -42,7 +127,15 @@ class SellerDashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async {
+          ref.invalidate(sellerStatsProvider);
+          ref.invalidate(sellerProductsProvider(uid));
+          await ref.read(sellerStatsProvider.future);
+        },
+        child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,10 +197,10 @@ class SellerDashboardScreen extends ConsumerWidget {
               crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12,
               childAspectRatio: 1.55,
               children: [
-                _StatCard(value: '0', label: l.orders, icon: FeatherIcons.fileText, color: AppColors.primary),
-                _StatCard(value: '$pcount', label: l.productsWord, icon: FeatherIcons.package, color: const Color(0xFF6C63FF)),
-                _StatCard(value: '0 ${l.som}', label: l.sellerRevenue, icon: FeatherIcons.creditCard, color: AppColors.warning),
-                _StatCard(value: '0', label: l.sellerCustomers, icon: FeatherIcons.users, color: AppColors.info),
+                _StatCard(value: _cell('$products'), label: l.productsWord, icon: FeatherIcons.package, color: const Color(0xFF6C63FF)),
+                _StatCard(value: _cell('${_statInt('orders')}'), label: l.orders, icon: FeatherIcons.fileText, color: AppColors.primary),
+                _StatCard(value: _cell('${_statInt('sold')}'), label: 'Фурӯхта', icon: FeatherIcons.trendingUp, color: AppColors.info),
+                _StatCard(value: _cell('${_statNum('revenue')} ${l.som}'), label: l.sellerRevenue, icon: FeatherIcons.creditCard, color: AppColors.warning),
               ],
             ),
             const SizedBox(height: 26),
@@ -151,13 +244,14 @@ class SellerDashboardScreen extends ConsumerWidget {
                     icon: FeatherIcons.barChart2,
                     label: l.sellerSalesStats,
                     subtitle: l.sellerSalesStatsSub,
-                    onTap: () => _soon(context),
+                    onTap: () => _showStatsSheet(context, ref),
                   ),
                 ],
               ),
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -191,6 +285,31 @@ class _StatCard extends StatelessWidget {
           Text(value, style: TextStyle(color: context.pal.textPrimary, fontSize: 19, fontWeight: FontWeight.w800)),
           const SizedBox(height: 2),
           Text(label, style: TextStyle(color: context.pal.textMuted, fontSize: 11.5)),
+        ]),
+      );
+}
+
+class _StatRow extends StatelessWidget {
+  final IconData icon;
+  final String label, value;
+  final Color color;
+  const _StatRow({required this.icon, required this.label, required this.value, required this.color});
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: Row(children: [
+          Container(
+            width: 42, height: 42,
+            decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(13)),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(label,
+                style: TextStyle(color: context.pal.textSecondary, fontSize: 14, fontWeight: FontWeight.w500)),
+          ),
+          Text(value,
+              style: TextStyle(color: context.pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
         ]),
       );
 }
