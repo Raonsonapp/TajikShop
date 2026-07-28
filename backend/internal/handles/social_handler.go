@@ -255,10 +255,42 @@ func (h *AdminHandler) UnbanUser(c *gin.Context) {
 	utils.OK(c, gin.H{"message": "user unbanned"})
 }
 
+// VerifySeller — админ дархости фурӯшандаро тасдиқ мекунад: корбар фурӯшандаи
+// тасдиқшуда мешавад ва акнун метавонад эълон гузорад.
 func (h *AdminHandler) VerifySeller(c *gin.Context) {
 	id := c.Param("id")
-	db.DB.Exec(`UPDATE users SET is_verified=true,updated_at=$1 WHERE id=$2`, time.Now(), id)
+	db.DB.Exec(`UPDATE users SET is_verified=true,is_seller=true,role='seller',seller_requested=false,updated_at=$1 WHERE id=$2`,
+		time.Now(), id)
 	utils.OK(c, gin.H{"message": "seller verified"})
+}
+
+// RejectSeller — админ дархости фурӯшандаро рад мекунад.
+func (h *AdminHandler) RejectSeller(c *gin.Context) {
+	id := c.Param("id")
+	db.DB.Exec(`UPDATE users SET seller_requested=false,updated_at=$1 WHERE id=$2`, time.Now(), id)
+	utils.OK(c, gin.H{"message": "seller request rejected"})
+}
+
+// SellerRequests — рӯйхати корбароне, ки интизори тасдиқи фурӯшандашавӣ ҳастанд.
+func (h *AdminHandler) SellerRequests(c *gin.Context) {
+	rows, err := db.DB.Query(`SELECT id, name, COALESCE(email,''), COALESCE(passport_url,''), created_at
+		FROM users WHERE seller_requested=true ORDER BY updated_at DESC`)
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer rows.Close()
+	list := []gin.H{}
+	for rows.Next() {
+		var id, name, email, passport string
+		var created time.Time
+		rows.Scan(&id, &name, &email, &passport, &created)
+		list = append(list, gin.H{
+			"id": id, "name": name, "email": email,
+			"passport_url": passport, "created_at": created,
+		})
+	}
+	utils.OK(c, list)
 }
 
 func (h *AdminHandler) DeleteProduct(c *gin.Context) {

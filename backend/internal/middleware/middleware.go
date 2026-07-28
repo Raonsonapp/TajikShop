@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 	"tajikshop/internal/auth"
+	"tajikshop/internal/db"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,14 +43,23 @@ func AdminOnly() gin.HandlerFunc {
 	}
 }
 
+// SellerOnly — DB-ро зинда тафтиш мекунад, то тасдиқи админ фавран эътибор пайдо
+// кунад (JWT метавонад кӯҳна бошад). Танҳо фурӯшандаи тасдиқшуда/админ иҷозат дорад.
 func SellerOnly() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role, _ := c.Get("role")
-		if role != "seller" && role != "admin" {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "sellers only"})
+		if r, _ := c.Get("role"); r == "admin" {
+			c.Next()
 			return
 		}
-		c.Next()
+		uid, _ := c.Get("user_id")
+		var isSeller bool
+		var role string
+		_ = db.DB.QueryRow(`SELECT is_seller, role FROM users WHERE id=$1`, uid).Scan(&isSeller, &role)
+		if isSeller || role == "seller" || role == "admin" {
+			c.Next()
+			return
+		}
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Танҳо фурӯшандаи тасдиқшуда метавонад эълон гузорад. Дархости шумо баррасӣ мешавад."})
 	}
 }
 
