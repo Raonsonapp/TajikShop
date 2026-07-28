@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/app_l10n.dart';
@@ -91,22 +92,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         border: Border.all(color: AppColors.error),
                       ),
                       child: Row(children: [
-                        const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20),
+                        const Icon(FeatherIcons.alertCircle, color: AppColors.error, size: 20),
                         const SizedBox(width: 10),
                         Expanded(child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13))),
                       ]),
                     ),
 
-                  DarkTextField(controller: _emailCtrl, hint: 'Email', icon: Icons.email_outlined,
+                  DarkTextField(controller: _emailCtrl, hint: 'Email', icon: FeatherIcons.mail,
                       keyboardType: TextInputType.emailAddress),
                   const SizedBox(height: 14),
-                  DarkTextField(controller: _passCtrl, hint: l.password, icon: Icons.lock_outline_rounded,
+                  DarkTextField(controller: _passCtrl, hint: l.password, icon: FeatherIcons.lock,
                       obscure: _obscure,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _loading ? null : _login(),
                       suffix: GestureDetector(
                         onTap: () => setState(() => _obscure = !_obscure),
-                        child: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        child: Icon(_obscure ? FeatherIcons.eyeOff : FeatherIcons.eye,
                             color: context.pal.textMuted, size: 20))),
                   const SizedBox(height: 28),
 
@@ -180,7 +181,7 @@ class _AuthHeader extends StatelessWidget {
               color: Colors.white.withOpacity(0.18),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 34),
+            child: const Icon(FeatherIcons.shoppingBag, color: Colors.white, size: 34),
           ),
           const SizedBox(height: 20),
           const Text('TajikShop',

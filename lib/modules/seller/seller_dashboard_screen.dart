@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
@@ -36,7 +37,7 @@ class SellerDashboardScreen extends ConsumerWidget {
         actions: [
           TextButton.icon(
             onPressed: () => context.push(RouteNames.addProduct),
-            icon: const Icon(Icons.add, color: AppColors.primary, size: 18),
+            icon: const Icon(FeatherIcons.plus, color: AppColors.primary, size: 18),
             label: Text(l.sellerAddShort, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
           ),
         ],
@@ -68,7 +69,7 @@ class SellerDashboardScreen extends ConsumerWidget {
                       color: Colors.white.withOpacity(0.22),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.store_rounded, color: Colors.white, size: 32),
+                    child: const Icon(FeatherIcons.shoppingBag, color: Colors.white, size: 32),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -103,10 +104,10 @@ class SellerDashboardScreen extends ConsumerWidget {
               crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12,
               childAspectRatio: 1.55,
               children: [
-                _StatCard(value: '0', label: l.orders, icon: Icons.receipt_long_rounded, color: AppColors.primary),
-                _StatCard(value: '$pcount', label: l.productsWord, icon: Icons.inventory_2_rounded, color: const Color(0xFF6C63FF)),
-                _StatCard(value: '0 ${l.som}', label: l.sellerRevenue, icon: Icons.account_balance_wallet_rounded, color: AppColors.warning),
-                _StatCard(value: '0', label: l.sellerCustomers, icon: Icons.people_alt_rounded, color: AppColors.info),
+                _StatCard(value: '0', label: l.orders, icon: FeatherIcons.fileText, color: AppColors.primary),
+                _StatCard(value: '$pcount', label: l.productsWord, icon: FeatherIcons.package, color: const Color(0xFF6C63FF)),
+                _StatCard(value: '0 ${l.som}', label: l.sellerRevenue, icon: FeatherIcons.creditCard, color: AppColors.warning),
+                _StatCard(value: '0', label: l.sellerCustomers, icon: FeatherIcons.users, color: AppColors.info),
               ],
             ),
             const SizedBox(height: 26),
@@ -126,28 +127,28 @@ class SellerDashboardScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   _ActionItem(
-                    icon: Icons.add_box_rounded,
+                    icon: FeatherIcons.plusSquare,
                     label: l.sellerAddProduct,
                     subtitle: l.sellerAddProductSub,
                     onTap: () => context.push(RouteNames.addProduct),
                   ),
                   _ActionDivider(),
                   _ActionItem(
-                    icon: Icons.inventory_rounded,
+                    icon: FeatherIcons.package,
                     label: l.myProducts,
                     subtitle: l.sellerManageProductsSub,
                     onTap: () => context.push(RouteNames.myProducts),
                   ),
                   _ActionDivider(),
                   _ActionItem(
-                    icon: Icons.pending_actions_rounded,
+                    icon: FeatherIcons.clock,
                     label: l.sellerNewOrders,
                     subtitle: l.sellerNewOrdersSub,
                     onTap: () => context.push(RouteNames.orders),
                   ),
                   _ActionDivider(),
                   _ActionItem(
-                    icon: Icons.bar_chart_rounded,
+                    icon: FeatherIcons.barChart2,
                     label: l.sellerSalesStats,
                     subtitle: l.sellerSalesStatsSub,
                     onTap: () => _soon(context),
@@ -225,7 +226,7 @@ class _ActionItem extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(subtitle, style: TextStyle(color: context.pal.textMuted, fontSize: 11.5)),
               ])),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.primary),
+              const Icon(FeatherIcons.chevronRight, color: AppColors.primary),
             ]),
           ),
         ),

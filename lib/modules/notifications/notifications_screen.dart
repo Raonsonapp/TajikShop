@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/app_l10n.dart';
@@ -46,7 +47,7 @@ class NotificationsScreen extends ConsumerWidget {
                   ref.invalidate(notificationsProvider);
                 } catch (_) {}
               },
-              icon: const Icon(Icons.done_all_rounded, size: 18, color: AppColors.primary),
+              icon: const Icon(FeatherIcons.checkCircle, size: 18, color: AppColors.primary),
               label: Text(
                 AppL10n.of(context).markAllRead,
                 style: const TextStyle(
@@ -74,7 +75,7 @@ class NotificationsScreen extends ConsumerWidget {
                         color: AppColors.primary.withValues(alpha: 0.10),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.notifications_none_rounded,
+                      child: const Icon(FeatherIcons.bell,
                           size: 48, color: AppColors.primary),
                     ),
                     const SizedBox(height: 20),
@@ -104,10 +105,10 @@ class _NTile extends StatelessWidget {
   const _NTile({required this.n});
 
   IconData get _icon => n.type == 'order'
-      ? Icons.receipt_long_outlined
+      ? FeatherIcons.fileText
       : n.type == 'payment'
-          ? Icons.payment_outlined
-          : Icons.notifications_outlined;
+          ? FeatherIcons.creditCard
+          : FeatherIcons.bell;
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +190,7 @@ class _NTile extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.schedule_rounded, size: 12, color: context.pal.textMuted),
+                    Icon(FeatherIcons.clock, size: 12, color: context.pal.textMuted),
                     const SizedBox(width: 4),
                     Text(
                       DateFormat('dd.MM.yyyy HH:mm').format(n.createdAt),

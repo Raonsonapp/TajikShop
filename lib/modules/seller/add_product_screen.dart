@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
@@ -122,7 +123,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                                 blurRadius: 14, offset: const Offset(0, 6)),
                             ],
                           ),
-                          child: const Icon(Icons.add_photo_alternate_outlined, color: Colors.white, size: 26),
+                          child: const Icon(FeatherIcons.image, color: Colors.white, size: 26),
                         ),
                         const SizedBox(height: 10),
                         Text(l.addPhoto,
@@ -161,7 +162,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                             child: Container(
                               width: 22, height: 22,
                               decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-                              child: const Icon(Icons.close, size: 13, color: Colors.white),
+                              child: const Icon(FeatherIcons.x, size: 13, color: Colors.white),
                             ),
                           ),
                         ),
@@ -177,7 +178,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               const SizedBox(height: 14),
               AppTextField(
                 hint: '${l.productName}*', controller: _titleCtrl,
-                prefixIcon: Icons.inventory_2_outlined,
+                prefixIcon: FeatherIcons.package,
                 validator: (v) => v!.trim().isEmpty ? l.sellerNameRequired : null,
               ),
               const SizedBox(height: 12),
@@ -185,7 +186,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 Expanded(
                   child: AppTextField(
                     hint: '${l.price} (${l.som})*', controller: _priceCtrl,
-                    prefixIcon: Icons.monetization_on_outlined,
+                    prefixIcon: FeatherIcons.dollarSign,
                     keyboardType: TextInputType.number,
                     validator: (v) => v!.isEmpty ? l.sellerPriceRequired : null,
                   ),
@@ -194,7 +195,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 Expanded(
                   child: AppTextField(
                     hint: '${l.sellerStock}*', controller: _stockCtrl,
-                    prefixIcon: Icons.warehouse_outlined,
+                    prefixIcon: FeatherIcons.package,
                     keyboardType: TextInputType.number,
                     validator: (v) => v!.isEmpty ? l.sellerStockRequired : null,
                   ),
@@ -203,7 +204,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               const SizedBox(height: 12),
               AppTextField(
                 hint: '${l.sellerProductDescField}*', controller: _descCtrl,
-                prefixIcon: Icons.description_outlined,
+                prefixIcon: FeatherIcons.fileText,
                 maxLines: 4,
                 validator: (v) => v!.trim().isEmpty ? l.sellerDescRequired : null,
               ),
@@ -219,7 +220,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                     border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                   ),
                   child: Row(children: [
-                    const Icon(Icons.error_outline, color: AppColors.error, size: 18),
+                    const Icon(FeatherIcons.alertCircle, color: AppColors.error, size: 18),
                     const SizedBox(width: 10),
                     Expanded(child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13))),
                   ]),

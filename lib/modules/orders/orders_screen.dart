@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -28,7 +29,7 @@ class OrdersScreen extends ConsumerWidget {
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
-              icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+              icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
               onPressed: () => ref.invalidate(ordersProvider))
         ],
       ),
@@ -38,7 +39,7 @@ class OrdersScreen extends ConsumerWidget {
         data: (list) => list.isEmpty
             ? Center(
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.receipt_long_outlined, size: 80, color: context.pal.textMuted),
+                Icon(FeatherIcons.fileText, size: 80, color: context.pal.textMuted),
                 const SizedBox(height: 16),
                 Text(AppL10n.of(context).noOrders,
                     style: TextStyle(color: context.pal.textSecondary, fontSize: 16))
@@ -120,7 +121,7 @@ class _OCard extends StatelessWidget {
                 gradient: AppColors.primaryGradient,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 24),
+              child: const Icon(FeatherIcons.shoppingBag, color: Colors.white, size: 24),
             ),
             const SizedBox(width: 14),
             Expanded(

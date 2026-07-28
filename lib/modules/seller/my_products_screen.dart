@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -35,7 +36,7 @@ class MyProductsScreen extends ConsumerWidget {
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: AppColors.primary),
+            icon: const Icon(FeatherIcons.plus, color: AppColors.primary),
             onPressed: () => context.push(RouteNames.addProduct)),
         ],
       ),
@@ -47,7 +48,7 @@ class MyProductsScreen extends ConsumerWidget {
             onRetry: () => ref.invalidate(sellerProductsProvider(uid))),
         data: (list) => list.isEmpty
             ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.inventory_2_outlined, size: 80, color: context.pal.textMuted),
+                Icon(FeatherIcons.package, size: 80, color: context.pal.textMuted),
                 const SizedBox(height: 16),
                 Text(l.sellerNoProductsYet,
                     style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
@@ -111,7 +112,7 @@ class _ProductRow extends StatelessWidget {
                 Text('${p.price.toStringAsFixed(0)} ${l.som}',
                     style: const TextStyle(color: AppColors.primary, fontSize: 15, fontWeight: FontWeight.w800)),
                 const SizedBox(width: 10),
-                Icon(Icons.inventory_2_outlined, size: 13, color: context.pal.textMuted),
+                Icon(FeatherIcons.package, size: 13, color: context.pal.textMuted),
                 const SizedBox(width: 3),
                 Text('${p.stock}',
                     style: TextStyle(color: context.pal.textMuted, fontSize: 12.5)),
@@ -134,20 +135,20 @@ class _ProductRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _RowAction(
-                icon: Icons.tune_rounded,
+                icon: FeatherIcons.sliders,
                 label: l.variants,
                 color: AppColors.primary,
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => ManageVariantsScreen(productId: p.id, title: p.title))),
               ),
               _RowAction(
-                icon: Icons.edit_outlined,
+                icon: FeatherIcons.edit2,
                 label: l.sellerEditAction,
                 color: AppColors.info,
                 onTap: () => _openEdit(context),
               ),
               _RowAction(
-                icon: Icons.delete_outline_rounded,
+                icon: FeatherIcons.trash2,
                 label: l.sellerDeleteAction,
                 color: AppColors.error,
                 onTap: () => _confirmDelete(context),
@@ -160,7 +161,7 @@ class _ProductRow extends StatelessWidget {
   }
 
   Widget _ph() => Container(width: 68, height: 68, color: AppColors.bgSurface,
-      child: const Icon(Icons.image_outlined, color: AppColors.textMuted));
+      child: const Icon(FeatherIcons.image, color: AppColors.textMuted));
 
   void _openEdit(BuildContext context) {
     showModalBottomSheet(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -37,10 +38,10 @@ class MainScaffold extends ConsumerWidget {
             height: 52,
             child: Row(
               children: [
-                _tab(context, 0, idx, Icons.home, Icons.home_outlined, RouteNames.home),
-                _tab(context, 1, idx, Icons.favorite, Icons.favorite_border, RouteNames.favorites),
-                _tab(context, 2, idx, Icons.add_box, Icons.add_box_outlined, RouteNames.upload),
-                _tab(context, 3, idx, Icons.shopping_bag, Icons.shopping_bag_outlined, RouteNames.cart),
+                _tab(context, 0, idx, FeatherIcons.home, FeatherIcons.home, RouteNames.home),
+                _tab(context, 1, idx, FeatherIcons.heart, FeatherIcons.heart, RouteNames.favorites),
+                _tab(context, 2, idx, FeatherIcons.plusSquare, FeatherIcons.plusSquare, RouteNames.upload),
+                _tab(context, 3, idx, FeatherIcons.shoppingBag, FeatherIcons.shoppingBag, RouteNames.cart),
                 _profileTab(context, idx == 4, user?.avatar),
               ],
             ),
@@ -83,7 +84,7 @@ class MainScaffold extends ConsumerWidget {
               backgroundImage: (avatar != null && avatar.isNotEmpty)
                   ? CachedNetworkImageProvider(avatar) : null,
               child: (avatar == null || avatar.isEmpty)
-                  ? const Icon(Icons.person, color: AppColors.textMuted, size: 18)
+                  ? const Icon(FeatherIcons.user, color: AppColors.textMuted, size: 18)
                   : null,
             ),
           ),

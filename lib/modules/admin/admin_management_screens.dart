@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -63,7 +64,7 @@ class AdminUsersScreen extends ConsumerWidget {
       appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.usersLabel, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+        actions: [IconButton(icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminUsersProvider))]),
       body: users.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -115,7 +116,7 @@ class _UserCard extends StatelessWidget {
             Flexible(child: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: context.pal.textPrimary, fontSize: 14.5, fontWeight: FontWeight.w700))),
             if (verified) const Padding(padding: EdgeInsets.only(left: 4),
-                child: Icon(Icons.verified_rounded, color: AppColors.info, size: 15)),
+                child: Icon(FeatherIcons.checkCircle, color: AppColors.info, size: 15)),
           ]),
           const SizedBox(height: 2),
           Text(email, maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -135,7 +136,7 @@ class _UserCard extends StatelessWidget {
         PopupMenuButton<String>(
           color: context.pal.elevated,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          icon: Icon(Icons.more_vert, color: context.pal.textSecondary),
+          icon: Icon(FeatherIcons.moreVertical, color: context.pal.textSecondary),
           onSelected: (v) async {
             final messenger = ScaffoldMessenger.of(context);
             try {
@@ -181,7 +182,7 @@ class _UserCard extends StatelessWidget {
             placeholder: (_, __) => const Padding(padding: EdgeInsets.all(40),
                 child: CircularProgressIndicator(color: AppColors.primary)),
             errorWidget: (_, __, ___) => Padding(padding: const EdgeInsets.all(40),
-                child: Icon(Icons.broken_image_outlined, color: context.pal.textMuted, size: 48))))),
+                child: Icon(FeatherIcons.image, color: context.pal.textMuted, size: 48))))),
         const SizedBox(height: 12),
       ]),
     ));
@@ -224,7 +225,7 @@ class AdminOrdersScreen extends ConsumerWidget {
       appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.allOrders, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+        actions: [IconButton(icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminOrdersProvider))]),
       body: orders.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -278,7 +279,7 @@ class _OrderCard extends StatelessWidget {
           const Spacer(),
           TextButton.icon(
             onPressed: () => _changeStatus(context),
-            icon: const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
+            icon: const Icon(FeatherIcons.edit2, size: 16, color: AppColors.primary),
             label: Text(l.statusWord, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700))),
         ]),
       ]),
@@ -299,7 +300,7 @@ class _OrderCard extends StatelessWidget {
           Text(l.newStatus, style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           ..._orderStatuses.map((s) => ListTile(
-            leading: const Icon(Icons.circle, size: 10, color: AppColors.primary),
+            leading: const Icon(FeatherIcons.circle, size: 10, color: AppColors.primary),
             title: Text(_statusLabel(l, s), style: TextStyle(color: context.pal.textPrimary)),
             onTap: () async {
               Navigator.pop(context);
@@ -338,7 +339,7 @@ class AdminCategoriesScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         onPressed: () => _addCategory(context, ref),
-        icon: const Icon(Icons.add, color: Colors.white),
+        icon: const Icon(FeatherIcons.plus, color: Colors.white),
         label: Text(l.addWord, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
       body: cats.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -352,7 +353,7 @@ class AdminCategoriesScreen extends ConsumerWidget {
                   child: Row(children: [
                     Container(width: 40, height: 40,
                         decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
-                        child: const Icon(Icons.category_rounded, color: AppColors.primary, size: 20)),
+                        child: const Icon(FeatherIcons.grid, color: AppColors.primary, size: 20)),
                     const SizedBox(width: 12),
                     Expanded(child: Text(list[i].name,
                         style: TextStyle(color: context.pal.textPrimary, fontSize: 14.5, fontWeight: FontWeight.w600))),
@@ -415,7 +416,7 @@ class AdminCouponsScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         onPressed: () => _create(context, ref),
-        icon: const Icon(Icons.add, color: Colors.white),
+        icon: const Icon(FeatherIcons.plus, color: Colors.white),
         label: Text(l.couponFab, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
       body: coupons.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -513,7 +514,7 @@ class AdminWalletScreen extends ConsumerWidget {
       appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.topUpApproval, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+        actions: [IconButton(icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminWalletPendingProvider))]),
       body: pending.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -591,7 +592,7 @@ class AdminReportsScreen extends ConsumerWidget {
       appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.reportsTitle, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+        actions: [IconButton(icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminReportsProvider))]),
       body: reports.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
@@ -657,7 +658,7 @@ class AdminReturnsScreen extends ConsumerWidget {
       appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         title: Text(l.returnsAndExchange, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+        actions: [IconButton(icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(adminReturnsProvider))]),
       body: returns.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),

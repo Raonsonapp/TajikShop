@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -37,7 +38,7 @@ class CategoriesScreen extends ConsumerWidget {
         backgroundColor: context.pal.scaffold,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new,
+          icon: Icon(FeatherIcons.chevronLeft,
               color: context.pal.textPrimary, size: 20),
           onPressed: () => Navigator.canPop(context)
               ? Navigator.pop(context)
@@ -91,7 +92,7 @@ class CategoriesScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.wifi_off_rounded,
+            Icon(FeatherIcons.wifiOff,
                 size: 60, color: context.pal.textMuted),
             const SizedBox(height: 14),
             Text(AppL10n.of(context).error,
@@ -113,7 +114,7 @@ class CategoriesScreen extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.category_outlined,
+            Icon(FeatherIcons.grid,
                 size: 70, color: context.pal.textMuted),
             const SizedBox(height: 14),
             Text(AppL10n.of(context).selectCategory,
@@ -273,7 +274,7 @@ class _CategoryTile extends StatelessWidget {
   Widget _fallback() => Container(
         decoration: BoxDecoration(gradient: gradient),
         child: const Center(
-          child: Icon(Icons.category_rounded, color: Colors.white, size: 44),
+          child: Icon(FeatherIcons.grid, color: Colors.white, size: 44),
         ),
       );
 }

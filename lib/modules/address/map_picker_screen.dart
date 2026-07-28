@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
@@ -91,7 +92,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           child: Center(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 36),
-              child: Icon(Icons.location_on, size: 46, color: AppColors.primary,
+              child: Icon(FeatherIcons.mapPin, size: 46, color: AppColors.primary,
                   shadows: const [Shadow(color: Colors.black54, blurRadius: 8)]),
             ),
           ),
@@ -119,7 +120,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             child: _locating
                 ? const SizedBox(width: 22, height: 22,
                     child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.primary))
-                : const Icon(Icons.my_location_rounded, color: AppColors.primary))),
+                : const Icon(FeatherIcons.navigation, color: AppColors.primary))),
 
         // Тугмаи тасдиқ
         Positioned(left: 16, right: 16, bottom: 24,
@@ -127,7 +128,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             onPressed: () => Navigator.pop(context, _center),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-            icon: const Icon(Icons.check_rounded, color: Colors.white),
+            icon: const Icon(FeatherIcons.check, color: Colors.white),
             label: Text(AppL10n.of(context).pickThisLocation,
                 style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700))))),
       ]),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -77,7 +78,7 @@ class FavoritesScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(13),
               boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 12, offset: const Offset(0, 4))],
             ),
-            child: const Icon(Icons.favorite_rounded, color: Colors.white, size: 22),
+            child: const Icon(FeatherIcons.heart, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -87,7 +88,7 @@ class FavoritesScreen extends ConsumerWidget {
             ),
           ),
           IconButton(
-            icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+            icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
             onPressed: onRefresh,
           ),
         ]),
@@ -104,7 +105,7 @@ class FavoritesScreen extends ConsumerWidget {
                 colors: [AppColors.primary.withOpacity(0.16), const Color(0xFF00A3FF).withOpacity(0.16)],
               ),
             ),
-            child: const Icon(Icons.favorite_border_rounded, size: 54, color: AppColors.primary),
+            child: const Icon(FeatherIcons.heart, size: 54, color: AppColors.primary),
           ),
           const SizedBox(height: 20),
           Text(
@@ -148,11 +149,11 @@ class _FavCard extends StatelessWidget {
                         placeholder: (_, __) => Container(color: context.pal.surface),
                         errorWidget: (_, __, ___) => Container(
                             color: context.pal.surface,
-                            child: Icon(Icons.image_outlined, color: context.pal.textMuted)),
+                            child: Icon(FeatherIcons.image, color: context.pal.textMuted)),
                       )
                     : Container(
                         color: context.pal.surface,
-                        child: Icon(Icons.image_outlined, color: context.pal.textMuted)),
+                        child: Icon(FeatherIcons.image, color: context.pal.textMuted)),
               ),
               Positioned(
                 top: 8,
@@ -168,7 +169,7 @@ class _FavCard extends StatelessWidget {
                       border: Border.all(color: AppColors.primary, width: 1.2),
                       boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 10)],
                     ),
-                    child: const Icon(Icons.favorite_rounded, color: AppColors.primary, size: 16),
+                    child: const Icon(FeatherIcons.heart, color: AppColors.primary, size: 16),
                   ),
                 ),
               ),
@@ -203,7 +204,7 @@ class _FavCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(9),
                         boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))],
                       ),
-                      child: const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 20),
+                      child: const Icon(FeatherIcons.chevronRight, color: Colors.white, size: 20),
                     ),
                   ]),
                 ],
