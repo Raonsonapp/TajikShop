@@ -6,12 +6,14 @@ class UserModel {
   final String role;
   final bool isSeller;
   final bool isVerified;
+  final bool sellerRequested;
   final DateTime createdAt;
 
   const UserModel({
     required this.id, required this.email, required this.fullName,
     this.avatar, required this.role, required this.isSeller,
-    required this.isVerified, required this.createdAt,
+    required this.isVerified, this.sellerRequested = false,
+    required this.createdAt,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> j) {
@@ -29,6 +31,7 @@ class UserModel {
       role: role,
       isSeller: j['is_seller'] == true || role == 'seller' || role == 'admin',
       isVerified: j['is_verified'] == true,
+      sellerRequested: j['seller_requested'] == true,
       createdAt: j['created_at'] != null
           ? DateTime.tryParse(j['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -38,6 +41,7 @@ class UserModel {
   Map<String, dynamic> toJson() => {
     'id': id, 'email': email, 'full_name': fullName,
     'avatar_url': avatar, 'role': role, 'is_seller': isSeller,
-    'is_verified': isVerified, 'created_at': createdAt.toIso8601String(),
+    'is_verified': isVerified, 'seller_requested': sellerRequested,
+    'created_at': createdAt.toIso8601String(),
   };
 }

@@ -736,3 +736,196 @@ class AdminReturnsScreen extends ConsumerWidget {
     }
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// ДАРХОСТҲОИ ФУРӮШАНДА (Seller requests / pending approvals)
+// ════════════════════════════════════════════════════════════════════════════
+class AdminSellerRequestsScreen extends ConsumerWidget {
+  const AdminSellerRequestsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final requests = ref.watch(adminSellerRequestsProvider);
+    return Scaffold(
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(
+        backgroundColor: context.pal.scaffold,
+        elevation: 0,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Дархостҳои фурӯшанда',
+            style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [
+          IconButton(
+              icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
+              onPressed: () => ref.invalidate(adminSellerRequestsProvider)),
+        ],
+      ),
+      body: requests.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        error: (e, _) => ErrorScreen(
+            message: e.toString(), onRetry: () => ref.invalidate(adminSellerRequestsProvider)),
+        data: (list) => list.isEmpty
+            ? _empty(context)
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: list.length,
+                itemBuilder: (_, i) => _SellerRequestCard(
+                      request: list[i],
+                      onChanged: () => ref.invalidate(adminSellerRequestsProvider),
+                    )),
+      ),
+    );
+  }
+
+  Widget _empty(BuildContext context) => Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 96, height: 96,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(FeatherIcons.clock, color: AppColors.primary, size: 42),
+          ),
+          const SizedBox(height: 18),
+          Text('Дархости нав нест',
+              style: TextStyle(color: context.pal.textSecondary, fontSize: 15, fontWeight: FontWeight.w600)),
+        ]),
+      );
+}
+
+class _SellerRequestCard extends StatelessWidget {
+  final Map<String, dynamic> request;
+  final VoidCallback onChanged;
+  const _SellerRequestCard({required this.request, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final id = request['id']?.toString() ?? '';
+    final name = request['name']?.toString() ?? 'Корбар';
+    final email = request['email']?.toString() ?? '';
+    final passport = request['passport_url']?.toString() ?? '';
+    DateTime? created;
+    if (request['created_at'] != null) created = DateTime.tryParse(request['created_at'].toString());
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: _cardDeco(context),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(
+            width: 48, height: 48,
+            decoration: const BoxDecoration(gradient: AppColors.primaryGradient, shape: BoxShape.circle),
+            child: Center(
+              child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 19)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 3),
+            Row(children: [
+              Icon(FeatherIcons.mail, color: context.pal.textMuted, size: 13),
+              const SizedBox(width: 5),
+              Expanded(child: Text(email, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: context.pal.textMuted, fontSize: 12))),
+            ]),
+          ])),
+        ]),
+        if (created != null) ...[
+          const SizedBox(height: 10),
+          Row(children: [
+            Icon(FeatherIcons.clock, color: context.pal.textMuted, size: 13),
+            const SizedBox(width: 5),
+            Text(DateFormat('dd.MM.yyyy • HH:mm').format(created),
+                style: TextStyle(color: context.pal.textMuted, fontSize: 11.5)),
+          ]),
+        ],
+        const SizedBox(height: 12),
+        if (passport.isNotEmpty)
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _viewPassport(context, passport),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(FeatherIcons.image, color: AppColors.info, size: 16),
+                  const SizedBox(width: 8),
+                  const Text('Дидани шиноснома',
+                      style: TextStyle(color: AppColors.info, fontSize: 13, fontWeight: FontWeight.w700)),
+                ]),
+              ),
+            ),
+          ),
+        const SizedBox(height: 14),
+        Row(children: [
+          Expanded(child: OutlinedButton.icon(
+            onPressed: () => _act(context, id, approve: false),
+            icon: const Icon(FeatherIcons.userX, size: 16, color: AppColors.error),
+            label: const Text('Рад кардан',
+                style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.error),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              minimumSize: const Size.fromHeight(44),
+            ),
+          )),
+          const SizedBox(width: 10),
+          Expanded(child: _GradientButton(
+            label: 'Тасдиқ',
+            onPressed: () => _act(context, id, approve: true),
+          )),
+        ]),
+      ]),
+    );
+  }
+
+  void _act(BuildContext context, String id, {required bool approve}) async {
+    final l = AppL10n.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ApiClient.instance.dio.post(
+          approve ? '/admin/users/$id/verify-seller' : '/admin/users/$id/reject-seller');
+      onChanged();
+      messenger.showSnackBar(SnackBar(
+          content: Text(approve ? 'Фурӯшанда тасдиқ шуд' : 'Дархост рад шуд'),
+          backgroundColor: approve ? AppColors.success : AppColors.error,
+          behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(l.error),
+          backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  void _viewPassport(BuildContext context, String url) {
+    showDialog(context: context, builder: (_) => Dialog(
+      backgroundColor: context.pal.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Padding(padding: const EdgeInsets.all(14),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(FeatherIcons.image, color: AppColors.primary, size: 18),
+            const SizedBox(width: 8),
+            Text('Шиноснома',
+                style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+          ])),
+        ClipRRect(borderRadius: BorderRadius.circular(12),
+          child: InteractiveViewer(child: CachedNetworkImage(imageUrl: url, fit: BoxFit.contain,
+            placeholder: (_, __) => const Padding(padding: EdgeInsets.all(40),
+                child: CircularProgressIndicator(color: AppColors.primary)),
+            errorWidget: (_, __, ___) => Padding(padding: const EdgeInsets.all(40),
+                child: Icon(FeatherIcons.image, color: context.pal.textMuted, size: 48))))),
+        const SizedBox(height: 12),
+      ]),
+    ));
+  }
+}

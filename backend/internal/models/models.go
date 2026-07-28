@@ -3,22 +3,23 @@ package models
 import "time"
 
 type User struct {
-	ID           string    `json:"id"`
-	Name         string    `json:"name"`
-	Email        string    `json:"email"`
-	Phone        string    `json:"phone"`
-	PasswordHash string    `json:"-"`
-	AvatarURL    string    `json:"avatar_url"`
-	Bio          string    `json:"bio"`
-	Role         string    `json:"role"`
-	IsVerified   bool      `json:"is_verified"`
-	IsSeller     bool      `json:"is_seller"`
-	IsBanned     bool      `json:"is_banned"`
-	StoreLat     float64   `json:"store_lat"`
-	StoreLng     float64   `json:"store_lng"`
-	RefreshToken string    `json:"-"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID              string    `json:"id"`
+	Name            string    `json:"name"`
+	Email           string    `json:"email"`
+	Phone           string    `json:"phone"`
+	PasswordHash    string    `json:"-"`
+	AvatarURL       string    `json:"avatar_url"`
+	Bio             string    `json:"bio"`
+	Role            string    `json:"role"`
+	IsVerified      bool      `json:"is_verified"`
+	IsSeller        bool      `json:"is_seller"`
+	SellerRequested bool      `json:"seller_requested"`
+	IsBanned        bool      `json:"is_banned"`
+	StoreLat        float64   `json:"store_lat"`
+	StoreLng        float64   `json:"store_lng"`
+	RefreshToken    string    `json:"-"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 type Product struct {

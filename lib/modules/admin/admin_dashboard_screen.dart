@@ -133,6 +133,12 @@ class AdminDashboardScreen extends ConsumerWidget {
                   ),
                   _ManageDivider(),
                   _ManageItem(
+                    icon: FeatherIcons.userCheck, label: 'Дархостҳои фурӯшанда',
+                    subtitle: 'Тасдиқи фурӯшандагони нав', color: AppColors.primary,
+                    onTap: () => context.push('/admin/seller-requests'),
+                  ),
+                  _ManageDivider(),
+                  _ManageItem(
                     icon: FeatherIcons.fileText, label: l.allOrders,
                     subtitle: l.manageOrdersSub, color: AppColors.warning, onTap: () => context.push(RouteNames.adminOrders),
                   ),

@@ -50,6 +50,10 @@ class _SellerVerifySheetState extends ConsumerState<SellerVerifySheet> {
     final l = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final ok = await ref.read(authProvider.notifier).submitSellerVerification(_passport!.path);
+    if (ok) {
+      // Дархост фиристода шуд — вазъияти корбарро нав мекунем (seller_requested).
+      await ref.read(authProvider.notifier).checkAuth();
+    }
     if (!mounted) return;
     if (ok) {
       Navigator.pop(context, true);

@@ -142,6 +142,8 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/admin/users/:id/ban", middleware.Auth(), middleware.AdminOnly(), adm.BanUser)
 	api.POST("/admin/users/:id/unban", middleware.Auth(), middleware.AdminOnly(), adm.UnbanUser)
 	api.POST("/admin/users/:id/verify-seller", middleware.Auth(), middleware.AdminOnly(), adm.VerifySeller)
+	api.POST("/admin/users/:id/reject-seller", middleware.Auth(), middleware.AdminOnly(), adm.RejectSeller)
+	api.GET("/admin/seller-requests", middleware.Auth(), middleware.AdminOnly(), adm.SellerRequests)
 	api.DELETE("/admin/products/:id", middleware.Auth(), middleware.AdminOnly(), adm.DeleteProduct)
 	api.GET("/admin/orders", middleware.Auth(), middleware.AdminOnly(), adm.ListOrders)
 	api.PATCH("/admin/orders/:id/status", middleware.Auth(), middleware.AdminOnly(), adm.UpdateOrderStatus)

@@ -206,6 +206,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final isDark = ref.watch(themeProvider) == ThemeMode.dark;
     final l      = AppL10n.of(context);
     final isSeller = user?.isSeller == true || user?.role == 'seller';
+    final sellerRequested = user?.sellerRequested == true;
 
     final displayName = (user?.fullName != null && user!.fullName.isNotEmpty)
         ? user.fullName
@@ -307,7 +308,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       label: l.storeLocation,
                       onTap: _setStoreLocation),
                 ]),
-              ] else
+              ] else if (sellerRequested)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(children: [
+                      Container(
+                        width: 40, height: 40, alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(12)),
+                        child: const Icon(FeatherIcons.clock, color: AppColors.primary, size: 20)),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(l.sellerRequestPending,
+                          style: TextStyle(color: context.pal.textPrimary,
+                              fontSize: 14, fontWeight: FontWeight.w600))),
+                    ]),
+                  ))
+              else
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                   child: AppButton(

@@ -8,10 +8,12 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
+import '../../providers/auth_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
+import 'seller_verify_sheet.dart';
 
 class AddProductScreen extends ConsumerStatefulWidget {
   const AddProductScreen({super.key});
@@ -61,6 +63,20 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         );
         Navigator.of(context).pop();
       }
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      String msg = e.message ?? AppL10n.of(context).sellerVerifyError;
+      if (data is Map) {
+        msg = (data['error'] ?? data['message'] ?? data['detail'] ?? msg).toString();
+      }
+      setState(() => _error = msg);
+      // Сервер бо 403 нашрро манъ мекунад (то тасдиқи админ) — паёми серверро нишон медиҳем.
+      if (e.response?.statusCode == 403 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(msg),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating));
+      }
     } catch (e) {
       setState(() => _error = e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -78,6 +94,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppL10n.of(context);
+    final user = ref.watch(authProvider).user;
+    final isSeller = user?.isSeller == true || user?.role == 'seller' || user?.role == 'admin';
+    if (!isSeller) return _sellerGate(l, user?.sellerRequested == true);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(
@@ -235,6 +254,43 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       ),
     );
   }
+
+  // Экрани дарвоза — агар корбар фурӯшандаи тасдиқшуда набошад.
+  Widget _sellerGate(AppL10n l, bool requested) => Scaffold(
+    backgroundColor: context.pal.scaffold,
+    appBar: AppBar(
+      backgroundColor: context.pal.scaffold,
+      elevation: 0,
+      title: Text(l.sellerAddProduct,
+          style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+      iconTheme: IconThemeData(color: context.pal.textPrimary),
+    ),
+    body: Center(child: Padding(
+      padding: const EdgeInsets.all(28),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 88, height: 88, alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.12),
+            shape: BoxShape.circle),
+          child: Icon(requested ? FeatherIcons.clock : FeatherIcons.shoppingBag,
+              color: AppColors.primary, size: 42)),
+        const SizedBox(height: 20),
+        Text(
+          requested ? l.sellerRequestPendingUpload : l.sellerBecomeToPost,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: context.pal.textSecondary, fontSize: 15, height: 1.45,
+              fontWeight: FontWeight.w500)),
+        if (!requested) ...[
+          const SizedBox(height: 24),
+          SizedBox(width: 240,
+            child: AppButton(
+              text: '🏪 ${l.becomeSeller}',
+              onTap: () => showSellerVerify(context))),
+        ],
+      ]),
+    )),
+  );
 
   Widget _sectionHeader(String t) => Row(children: [
         Container(

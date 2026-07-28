@@ -29,11 +29,12 @@ class FavoritesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppL10n.of(context);
     final favs = ref.watch(favoritesProvider);
+    final count = favs.asData?.value.length;
     return Scaffold(
       backgroundColor: context.pal.scaffold,
       body: SafeArea(
         child: Column(children: [
-          _header(context, l, () => ref.invalidate(favoritesProvider)),
+          _header(context, l, count, () => ref.invalidate(favoritesProvider)),
           Expanded(
             child: favs.when(
               loading: () => GridView.builder(
@@ -67,25 +68,34 @@ class FavoritesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _header(BuildContext context, AppL10n l, VoidCallback onRefresh) => Padding(
+  Widget _header(BuildContext context, AppL10n l, int? count, VoidCallback onRefresh) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 14, 12, 12),
         child: Row(children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
-              borderRadius: BorderRadius.circular(13),
+              borderRadius: BorderRadius.circular(14),
               boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 12, offset: const Offset(0, 4))],
             ),
             child: const Icon(FeatherIcons.heart, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              l.favorites,
-              style: TextStyle(color: context.pal.textPrimary, fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.3),
-            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(
+                l.favorites,
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+              ),
+              if (count != null && count > 0) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '$count',
+                  style: TextStyle(color: context.pal.textMuted, fontSize: 12.5, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ]),
           ),
           IconButton(
             icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
@@ -95,25 +105,55 @@ class FavoritesScreen extends ConsumerWidget {
       );
 
   Widget _empty(BuildContext context, AppL10n l) => Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 110,
-            height: 110,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [AppColors.primary.withOpacity(0.16), const Color(0xFF00A3FF).withOpacity(0.16)],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [AppColors.primary.withOpacity(0.16), const Color(0xFF00A3FF).withOpacity(0.16)],
+                ),
+              ),
+              child: const Icon(FeatherIcons.heart, size: 56, color: AppColors.primary),
+            ),
+            const SizedBox(height: 22),
+            Text(
+              l.noFavorites,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: context.pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              height: 50,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(15),
+                  onTap: () => context.go('/home'),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 14, offset: const Offset(0, 6))],
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 26),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(FeatherIcons.search, color: Colors.white, size: 18),
+                        SizedBox(width: 9),
+                        Text('Ба ҷустуҷӯ',
+                            style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+                      ]),
+                    ),
+                  ),
+                ),
               ),
             ),
-            child: const Icon(FeatherIcons.heart, size: 54, color: AppColors.primary),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            l.noFavorites,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: context.pal.textSecondary, fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-        ]),
+          ]),
+        ),
       );
 }
 

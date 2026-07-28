@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"tajikshop/internal/auth"
 	"tajikshop/internal/db"
+	"tajikshop/internal/mailer"
 	"tajikshop/internal/models"
 	"tajikshop/internal/storage"
 	"tajikshop/internal/utils"
@@ -106,8 +107,8 @@ func (h *UserHandler) Login(c *gin.Context) {
 func (h *UserHandler) Me(c *gin.Context) {
 	uid := utils.UserID(c)
 	var u models.User
-	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,COALESCE(store_lat,0),COALESCE(store_lng,0),created_at FROM users WHERE id=$1`, uid).
-		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.StoreLat, &u.StoreLng, &u.CreatedAt)
+	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,COALESCE(seller_requested,false),COALESCE(store_lat,0),COALESCE(store_lng,0),created_at FROM users WHERE id=$1`, uid).
+		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.SellerRequested, &u.StoreLat, &u.StoreLng, &u.CreatedAt)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "user not found")
 		return
@@ -189,29 +190,28 @@ func (h *UserHandler) SellerVerify(c *gin.Context) {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	db.DB.Exec(`UPDATE users SET passport_url=$1,is_seller=true,role='seller',updated_at=$2 WHERE id=$3`,
+	// Дархост сабт мешавад — фурӯшанда ТАНҲО баъди тасдиқи админ мешавад (is_seller дар ин ҷо гузошта намешавад).
+	db.DB.Exec(`UPDATE users SET passport_url=$1,seller_requested=true,updated_at=$2 WHERE id=$3`,
 		url, time.Now(), uid)
-	accessToken, _ := auth.GenerateAccessToken(uid, "seller", h.secret)
-	refreshToken, _ := auth.GenerateRefreshToken(uid, h.secret)
-	db.DB.Exec(`UPDATE users SET refresh_token=$1 WHERE id=$2`, refreshToken, uid)
+	var name, email string
+	db.DB.QueryRow(`SELECT name, COALESCE(email,'') FROM users WHERE id=$1`, uid).Scan(&name, &email)
+	go mailer.NotifySellerRequest(name, email, uid)
 	utils.OK(c, gin.H{
-		"message":       "verification submitted",
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"message": "Дархости шумо фиристода шуд. Баъди тасдиқи админ фурӯшанда мешавед.",
+		"pending": true,
 	})
 }
 
 func (h *UserHandler) BecomeSellerHandler(c *gin.Context) {
 	uid := utils.UserID(c)
-	db.DB.Exec(`UPDATE users SET is_seller=true,role='seller',updated_at=$1 WHERE id=$2`, time.Now(), uid)
-	// Generate new tokens with updated role='seller' so middleware allows product upload immediately
-	accessToken, _ := auth.GenerateAccessToken(uid, "seller", h.secret)
-	refreshToken, _ := auth.GenerateRefreshToken(uid, h.secret)
-	db.DB.Exec(`UPDATE users SET refresh_token=$1 WHERE id=$2`, refreshToken, uid)
+	// Дархости фурӯшандашавӣ — фавран фурӯшанда НАМЕШАВАД; интизори тасдиқи админ.
+	db.DB.Exec(`UPDATE users SET seller_requested=true,updated_at=$1 WHERE id=$2`, time.Now(), uid)
+	var name, email string
+	db.DB.QueryRow(`SELECT name, COALESCE(email,'') FROM users WHERE id=$1`, uid).Scan(&name, &email)
+	go mailer.NotifySellerRequest(name, email, uid)
 	utils.OK(c, gin.H{
-		"message":       "you are now a seller",
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
+		"message": "Дархости шумо фиристода шуд. Баъди тасдиқи админ фурӯшанда мешавед.",
+		"pending": true,
 	})
 }
 

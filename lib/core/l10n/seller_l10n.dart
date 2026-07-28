@@ -149,7 +149,13 @@ extension SellerL10n on AppL10n {
 
   // ── Seller verify (KYC) sheet ───────────────────────────────────────────
   String get sellerVerifyRequestSent =>
-      lang == 'ru' ? 'Запрос отправлен! Теперь вы продавец ✅' : lang == 'en' ? 'Request sent! You are now a seller ✅' : 'Дархост фиристода шуд! Акнун шумо фурӯшандаед ✅';
+      lang == 'ru' ? 'Запрос отправлен. После одобрения администратором вы станете продавцом. ⏳' : lang == 'en' ? 'Request sent. You will become a seller after admin approval. ⏳' : 'Дархости шумо фиристода шуд. Баъди тасдиқи админ фурӯшанда мешавед. ⏳';
+  String get sellerRequestPending =>
+      lang == 'ru' ? 'Ваш запрос на становление продавцом рассматривается ⏳' : lang == 'en' ? 'Your seller request is under review ⏳' : 'Дархости фурӯшандашавии шумо баррасӣ мешавад ⏳';
+  String get sellerRequestPendingUpload =>
+      lang == 'ru' ? 'Ваш запрос на становление продавцом рассматривается. После одобрения администратором вы сможете размещать объявления.' : lang == 'en' ? 'Your seller request is under review. You can post listings after admin approval.' : 'Дархости фурӯшандашавии шумо баррасӣ мешавад. Баъди тасдиқи админ метавонед эълон гузоред.';
+  String get sellerBecomeToPost =>
+      lang == 'ru' ? 'Чтобы разместить объявление, сначала станьте продавцом' : lang == 'en' ? 'To post a listing, become a seller first' : 'Барои эълон гузоштан аввал фурӯшанда шавед';
   String get sellerVerifyError =>
       lang == 'ru' ? 'Ошибка. Попробуйте снова' : lang == 'en' ? 'Error. Try again' : 'Хато. Дубора кӯшиш кунед';
   String get sellerVerifyTitle =>
