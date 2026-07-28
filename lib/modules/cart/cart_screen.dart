@@ -1,6 +1,7 @@
 // ignore_for_file: curly_braces_in_flow_control_structures, camel_case_types
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -44,7 +45,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
 
     if (!isAuth) return Scaffold(backgroundColor: context.pal.scaffold, appBar: _bar(),
       body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(Icons.shopping_bag_outlined, size: 80, color: context.pal.textMuted),
+        Icon(FeatherIcons.shoppingBag, size: 80, color: context.pal.textMuted),
         const SizedBox(height: 16),
         Text(AppL10n.of(context).loginToViewCart, style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
         const SizedBox(height: 20),
@@ -65,7 +66,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                     children: [ShimmerCard(height: 14, radius: 4), const SizedBox(height: 8), ShimmerCard(height: 14, width: 100, radius: 4)]))])))
           : cart.items.isEmpty
               ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.shopping_cart_outlined, size: 80, color: context.pal.textMuted),
+                  Icon(FeatherIcons.shoppingCart, size: 80, color: context.pal.textMuted),
                   const SizedBox(height: 16),
                   Text(AppL10n.of(context).emptyCart, style: TextStyle(color: context.pal.textSecondary, fontSize: 16)),
                   const SizedBox(height: 24),
@@ -250,7 +251,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
                     color: _addressId == a.id ? AppColors.primary : context.pal.border,
                     width: _addressId == a.id ? 1.4 : 0.5)),
               child: Row(children: [
-                Icon(_addressId == a.id ? Icons.radio_button_checked : Icons.radio_button_off,
+                Icon(_addressId == a.id ? FeatherIcons.checkCircle : FeatherIcons.circle,
                     color: _addressId == a.id ? AppColors.primary : context.pal.textMuted, size: 20),
                 const SizedBox(width: 10),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -267,14 +268,14 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
 
   Widget _addAddressBtn() => TextButton.icon(
     onPressed: _addAddress,
-    icon: const Icon(Icons.add_location_alt_outlined, color: AppColors.primary, size: 18),
+    icon: const Icon(FeatherIcons.mapPin, color: AppColors.primary, size: 18),
     label: Text(AppL10n.of(context).addAddress,
         style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)));
 
   @override
   Widget build(BuildContext context) {
     if (_sent) return Padding(padding: const EdgeInsets.all(32), child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 72),
+      const Icon(FeatherIcons.checkCircle, color: AppColors.success, size: 72),
       const SizedBox(height: 16),
       Text(AppL10n.of(context).orderAccepted, style: TextStyle(color: context.pal.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
       const SizedBox(height: 8),
@@ -332,8 +333,8 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
         Align(alignment: Alignment.centerLeft,
           child: Text(AppL10n.of(context).paymentMethod, style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
         const SizedBox(height: 8),
-        _payOption('dc', Icons.account_balance_wallet_outlined, AppL10n.of(context).dcCard, AppL10n.of(context).dcCardDesc),
-        _payOption('cod', Icons.local_shipping_outlined, AppL10n.of(context).codTitle, AppL10n.of(context).codDesc),
+        _payOption('dc', FeatherIcons.creditCard, AppL10n.of(context).dcCard, AppL10n.of(context).dcCardDesc),
+        _payOption('cod', FeatherIcons.truck, AppL10n.of(context).codTitle, AppL10n.of(context).codDesc),
         _walletOption(),
         const SizedBox(height: 16),
 
@@ -343,7 +344,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
             decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.primary.withValues(alpha: 0.3))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [const Icon(Icons.account_balance_wallet_outlined, color: AppColors.primary, size: 20),
+              Row(children: [const Icon(FeatherIcons.creditCard, color: AppColors.primary, size: 20),
                 const SizedBox(width: 8), Text(AppL10n.of(context).sellerDcNumber, style: TextStyle(color: context.pal.textMuted, fontSize: 12))]),
               const SizedBox(height: 8),
               Text('+992 XX XXX XXXX', style: TextStyle(color: context.pal.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
@@ -358,7 +359,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
                   border: Border.all(color: _receipt != null ? AppColors.success : context.pal.border, width: 1.5),
                   image: _receipt != null ? DecorationImage(image: FileImage(_receipt!), fit: BoxFit.cover) : null),
               child: _receipt == null ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.upload_file_rounded, color: AppColors.primary, size: 32),
+                const Icon(FeatherIcons.upload, color: AppColors.primary, size: 32),
                 const SizedBox(height: 6),
                 Text(AppL10n.of(context).uploadReceipt, style: const TextStyle(color: AppColors.primary, fontSize: 13)),
               ])) : null)),
@@ -404,7 +405,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
         decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(12),
             border: Border.all(color: sel ? AppColors.primary : context.pal.border, width: sel ? 1.4 : 0.5)),
         child: Row(children: [
-          Icon(sel ? Icons.radio_button_checked : Icons.radio_button_off,
+          Icon(sel ? FeatherIcons.checkCircle : FeatherIcons.circle,
               color: sel ? AppColors.primary : context.pal.textMuted, size: 20),
           const SizedBox(width: 10),
           Icon(icon, color: context.pal.textSecondary, size: 20),
@@ -431,10 +432,10 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
         decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(12),
             border: Border.all(color: sel ? AppColors.primary : context.pal.border, width: sel ? 1.4 : 0.5)),
         child: Row(children: [
-          Icon(sel ? Icons.radio_button_checked : Icons.radio_button_off,
+          Icon(sel ? FeatherIcons.checkCircle : FeatherIcons.circle,
               color: sel ? AppColors.primary : context.pal.textMuted, size: 20),
           const SizedBox(width: 10),
-          Icon(Icons.savings_outlined, color: context.pal.textSecondary, size: 20),
+          Icon(FeatherIcons.dollarSign, color: context.pal.textSecondary, size: 20),
           const SizedBox(width: 10),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(AppL10n.of(context).wallet, style: TextStyle(color: context.pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
@@ -471,7 +472,7 @@ class _Item extends StatelessWidget {
                 style: TextStyle(color: pal.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w700))),
             GestureDetector(onTap: onRemove,
               child: Padding(padding: const EdgeInsets.only(left: 6),
-                child: Icon(Icons.close_rounded, color: pal.textMuted, size: 20))),
+                child: Icon(FeatherIcons.x, color: pal.textMuted, size: 20))),
           ]),
           const SizedBox(height: 6),
           Text('${item.total.toStringAsFixed(0)} сом.',
@@ -479,13 +480,13 @@ class _Item extends StatelessWidget {
           const SizedBox(height: 10),
           // Stepper-и миқдор (template style, green)
           Row(children: [
-            _qtyBtn(Icons.remove_rounded, () => onQuantity(item.quantity - 1)),
+            _qtyBtn(FeatherIcons.minus, () => onQuantity(item.quantity - 1)),
             Container(
               constraints: const BoxConstraints(minWidth: 38),
               alignment: Alignment.center,
               child: Text('${item.quantity}',
                   style: TextStyle(color: pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w700))),
-            _qtyBtn(Icons.add_rounded, () => onQuantity(item.quantity + 1)),
+            _qtyBtn(FeatherIcons.plus, () => onQuantity(item.quantity + 1)),
           ]),
         ])),
       ]),
@@ -501,7 +502,7 @@ class _Item extends StatelessWidget {
   );
 
   Widget _ph(AppPalette pal) => Container(width: 84, height: 84, color: pal.surface,
-      child: Icon(Icons.image_outlined, color: pal.textMuted));
+      child: Icon(FeatherIcons.image, color: pal.textMuted));
 }
 
 class _row extends StatelessWidget {

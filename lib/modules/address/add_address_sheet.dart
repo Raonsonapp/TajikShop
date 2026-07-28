@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import '../../core/app_l10n.dart';
@@ -148,7 +149,7 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(13),
                   ),
-                  child: const Icon(Icons.add_location_alt_rounded,
+                  child: const Icon(FeatherIcons.mapPin,
                       color: Colors.white, size: 22),
                 ),
                 const SizedBox(width: 12),
@@ -189,8 +190,8 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
                   children: [
                     Icon(
                         picked
-                            ? Icons.check_circle_rounded
-                            : Icons.map_outlined,
+                            ? FeatherIcons.checkCircle
+                            : FeatherIcons.map,
                         color: picked ? AppColors.success : AppColors.primary,
                         size: 22),
                     const SizedBox(width: 12),
@@ -206,7 +207,7 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
                               fontSize: 13.5,
                               fontWeight: FontWeight.w700)),
                     ),
-                    Icon(Icons.chevron_right_rounded,
+                    Icon(FeatherIcons.chevronRight,
                         color: context.pal.textMuted),
                   ],
                 ),

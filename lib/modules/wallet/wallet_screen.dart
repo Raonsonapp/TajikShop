@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/app_l10n.dart';
@@ -27,7 +28,7 @@ class WalletScreen extends ConsumerWidget {
                 color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
-              icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+              icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
               onPressed: () => ref.invalidate(walletProvider))
         ],
       ),
@@ -46,7 +47,7 @@ class WalletScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               AppButton(
                   text: AppL10n.of(context).topUpAction,
-                  icon: Icons.add_rounded,
+                  icon: FeatherIcons.plus,
                   onTap: () => _topUp(context, ref)),
               const SizedBox(height: 28),
               Text(AppL10n.of(context).transactionHistory,
@@ -61,7 +62,7 @@ class WalletScreen extends ConsumerWidget {
                   child: Center(
                     child: Column(
                       children: [
-                        Icon(Icons.receipt_long_rounded,
+                        Icon(FeatherIcons.fileText,
                             color: context.pal.textMuted, size: 44),
                         const SizedBox(height: 10),
                         Text(AppL10n.of(context).noTransactions,
@@ -128,7 +129,7 @@ class WalletScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.account_balance_wallet_rounded,
+                      const Icon(FeatherIcons.creditCard,
                           color: Colors.white70, size: 20),
                       const SizedBox(width: 8),
                       Text(AppL10n.of(context).balance,
@@ -142,7 +143,7 @@ class WalletScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(7)),
-                    child: const Icon(Icons.credit_card_rounded,
+                    child: const Icon(FeatherIcons.creditCard,
                         color: Colors.white, size: 20),
                   ),
                 ],
@@ -198,8 +199,8 @@ class WalletScreen extends ConsumerWidget {
                 shape: BoxShape.circle),
             child: Icon(
                 positive
-                    ? Icons.arrow_downward_rounded
-                    : Icons.arrow_upward_rounded,
+                    ? FeatherIcons.arrowDown
+                    : FeatherIcons.arrowUp,
                 color: positive ? AppColors.success : AppColors.error,
                 size: 20),
           ),

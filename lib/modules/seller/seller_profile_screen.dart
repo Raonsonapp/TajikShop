@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -62,7 +63,7 @@ class SellerProfileScreen extends ConsumerWidget {
             data: (list) => list.isEmpty
                 ? SliverToBoxAdapter(child: Padding(padding: const EdgeInsets.symmetric(vertical: 50),
                     child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.inventory_2_outlined, size: 64, color: context.pal.textMuted),
+                      Icon(FeatherIcons.package, size: 64, color: context.pal.textMuted),
                       const SizedBox(height: 12),
                       Text(l.noProducts, style: TextStyle(color: context.pal.textMuted)),
                     ]))))
@@ -109,7 +110,7 @@ class SellerProfileScreen extends ConsumerWidget {
                 decoration: const BoxDecoration(shape: BoxShape.circle, gradient: _greenGradient),
                 child: CircleAvatar(radius: 38, backgroundColor: context.pal.surface,
                   backgroundImage: avatar.isNotEmpty ? CachedNetworkImageProvider(avatar) : null,
-                  child: avatar.isEmpty ? const Icon(Icons.store_rounded, color: Colors.white, size: 34) : null),
+                  child: avatar.isEmpty ? const Icon(FeatherIcons.shoppingBag, color: Colors.white, size: 34) : null),
               ),
               const SizedBox(width: 16),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -118,7 +119,7 @@ class SellerProfileScreen extends ConsumerWidget {
                       maxLines: 1, overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: context.pal.textPrimary, fontSize: 19, fontWeight: FontWeight.w900))),
                   if (verified) const Padding(padding: EdgeInsets.only(left: 6),
-                      child: Icon(Icons.verified_rounded, color: AppColors.info, size: 20)),
+                      child: Icon(FeatherIcons.checkCircle, color: AppColors.info, size: 20)),
                 ]),
                 if (bio.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -135,7 +136,7 @@ class SellerProfileScreen extends ConsumerWidget {
               _stat(context, '$followers', l.sellerFollowers),
               const SizedBox(width: 10),
               _stat(context, rating > 0 ? rating.toStringAsFixed(1) : '—', l.sellerRating,
-                  icon: Icons.star_rounded),
+                  icon: FeatherIcons.star),
             ]),
             const SizedBox(height: 16),
             // Actions
@@ -157,7 +158,7 @@ class SellerProfileScreen extends ConsumerWidget {
                       BoxShadow(color: Color(0x4D00D084), offset: Offset(0, 4), blurRadius: 12),
                     ]),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(following ? Icons.check_rounded : Icons.person_add_alt_1_rounded,
+                    Icon(following ? FeatherIcons.check : FeatherIcons.userPlus,
                         color: following ? AppColors.primary : Colors.white, size: 18),
                     const SizedBox(width: 6),
                     Text(following ? l.following : l.sellerFollowAction,
@@ -174,7 +175,7 @@ class SellerProfileScreen extends ConsumerWidget {
                   decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: context.pal.border, width: 1)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.chat_bubble_outline_rounded, color: context.pal.textPrimary, size: 18),
+                    Icon(FeatherIcons.messageCircle, color: context.pal.textPrimary, size: 18),
                     const SizedBox(width: 6),
                     Text(l.messageWord, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w800)),
                   ]),

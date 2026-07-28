@@ -1,5 +1,6 @@
 // ignore_for_file: curly_braces_in_flow_control_structures
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -150,7 +151,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         decoration: BoxDecoration(
             gradient: AppColors.primaryGradient,
             borderRadius: BorderRadius.circular(12)),
-        child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 28),
+        child: const Icon(FeatherIcons.shoppingBag, color: Colors.white, size: 28),
       ),
       children: [
         const SizedBox(height: 8),
@@ -188,7 +189,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   style: TextStyle(color: isActive ? AppColors.primary : context.pal.textPrimary,
                       fontWeight: isActive ? FontWeight.w700 : FontWeight.w400)),
               trailing: isActive
-                  ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                  ? const Icon(FeatherIcons.checkCircle, color: AppColors.primary)
                   : null,
               onTap: () {
                 ref.read(localeProvider.notifier).setLocale(locale);
@@ -240,7 +241,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     backgroundImage: user?.avatar != null && user!.avatar!.isNotEmpty
                         ? CachedNetworkImageProvider(user.avatar!) : null,
                     child: user?.avatar == null || user!.avatar!.isEmpty
-                        ? Icon(Icons.person_rounded, color: context.pal.textMuted, size: 48)
+                        ? Icon(FeatherIcons.user, color: context.pal.textMuted, size: 48)
                         : null),
                   Positioned(bottom: 2, right: 2,
                     child: Container(
@@ -249,7 +250,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           gradient: _greenGradient,
                           shape: BoxShape.circle,
                           border: Border.all(color: context.pal.scaffold, width: 2)),
-                      child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 14))),
+                      child: const Icon(FeatherIcons.camera, color: Colors.white, size: 14))),
                 ]),
               ),
               const SizedBox(height: 12),
@@ -261,7 +262,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 if (user?.fullName == 'tajikshop' || user?.isVerified == true) ...[
                   const SizedBox(width: 6),
-                  const Icon(Icons.verified_rounded, color: Color(0xFF1DA1F2), size: 18),
+                  const Icon(FeatherIcons.checkCircle, color: Color(0xFF1DA1F2), size: 18),
                 ],
               ]),
               const SizedBox(height: 4),
@@ -272,7 +273,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const SizedBox(height: 10),
               OutlinedButton.icon(
                 onPressed: _editProfile,
-                icon: const Icon(Icons.edit_outlined, size: 16),
+                icon: const Icon(FeatherIcons.edit2, size: 16),
                 label: Text(l.editProfile),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
@@ -285,13 +286,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // ── Быстрые действия (карточка со «шэдоу», как в шаблоне) ────
               const SizedBox(height: 20),
               _QuickCard(children: [
-                _QuickAction(icon: Icons.account_balance_wallet_rounded, color: const Color(0xFFFFB800),
+                _QuickAction(icon: FeatherIcons.creditCard, color: const Color(0xFFFFB800),
                     label: l.myWallet, onTap: () => context.push(RouteNames.wallet)),
-                _QuickAction(icon: Icons.receipt_long_rounded, color: const Color(0xFF00A3FF),
+                _QuickAction(icon: FeatherIcons.fileText, color: const Color(0xFF00A3FF),
                     label: l.orders, onTap: () => context.push(RouteNames.orders)),
-                _QuickAction(icon: Icons.favorite_rounded, color: const Color(0xFF00D084),
+                _QuickAction(icon: FeatherIcons.heart, color: const Color(0xFF00D084),
                     label: l.favorites, onTap: () => context.go(RouteNames.favorites)),
-                _QuickAction(icon: Icons.location_on_outlined, color: const Color(0xFFFF6B2C),
+                _QuickAction(icon: FeatherIcons.mapPin, color: const Color(0xFFFF6B2C),
                     label: l.myAddresses, onTap: () => context.push(RouteNames.addresses)),
               ]),
 
@@ -299,10 +300,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               if (isSeller) ...[
                 _SectionLabel(l.sellerDashboard),
                 _GroupCard(children: [
-                  _Tile(icon: Icons.store_rounded, iconColor: const Color(0xFF00D084),
+                  _Tile(icon: FeatherIcons.shoppingBag, iconColor: const Color(0xFF00D084),
                       label: l.sellerDashboard,
                       onTap: () => context.push(RouteNames.sellerDashboard)),
-                  _Tile(icon: Icons.location_on_rounded, iconColor: const Color(0xFFFF6B2C),
+                  _Tile(icon: FeatherIcons.mapPin, iconColor: const Color(0xFFFF6B2C),
                       label: l.storeLocation,
                       onTap: _setStoreLocation),
                 ]),
@@ -319,24 +320,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _GroupCard(children: [
                 // Тема
                 _SwitchTile(
-                  icon: isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                  icon: isDark ? FeatherIcons.moon : FeatherIcons.sun,
                   iconColor: const Color(0xFFFFB800),
                   label: isDark ? l.darkMode : l.lightMode,
                   value: isDark,
                   onChanged: (v) => ref.read(themeProvider.notifier).toggle()),
                 // Забон
                 _Tile(
-                  icon: Icons.language_rounded, iconColor: const Color(0xFF00A3FF),
+                  icon: FeatherIcons.globe, iconColor: const Color(0xFF00A3FF),
                   label: '${l.language}: ${LocaleNotifier.langName(ref.watch(localeProvider).languageCode)}',
                   onTap: _showLanguagePicker),
-                _Tile(icon: Icons.notifications_outlined, iconColor: const Color(0xFFE040FB),
+                _Tile(icon: FeatherIcons.bell, iconColor: const Color(0xFFE040FB),
                     label: l.notifications, onTap: () => context.push(RouteNames.notifications)),
               ]),
 
               // ── О приложении ────────────────────────────────────────────
               _SectionLabel(l.about),
               _GroupCard(children: [
-                _Tile(icon: Icons.info_outline_rounded, iconColor: context.pal.textMuted,
+                _Tile(icon: FeatherIcons.info, iconColor: context.pal.textMuted,
                     label: l.about, onTap: () => _showAbout(l)),
               ]),
 
@@ -355,7 +356,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        const Icon(Icons.logout_rounded, color: Color(0xFFFF3B5C), size: 20),
+                        const Icon(FeatherIcons.logOut, color: Color(0xFFFF3B5C), size: 20),
                         const SizedBox(width: 8),
                         Text(l.logout, style: const TextStyle(
                             color: Color(0xFFFF3B5C), fontWeight: FontWeight.w700, fontSize: 15)),
@@ -476,7 +477,7 @@ class _Tile extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(child: Text(label, style: TextStyle(color: context.pal.textPrimary,
               fontSize: 15, fontWeight: FontWeight.w500))),
-          Icon(Icons.chevron_right_rounded, color: context.pal.textMuted, size: 22),
+          Icon(FeatherIcons.chevronRight, color: context.pal.textMuted, size: 22),
         ]),
       ),
     ));

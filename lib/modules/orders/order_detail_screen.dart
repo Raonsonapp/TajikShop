@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -31,11 +32,11 @@ final orderDetailProvider =
 
 // Марҳилаҳои расонидан бо тартиб
 const _steps = [
-  ('pending', Icons.receipt_long_rounded),
-  ('payment_uploaded', Icons.payments_rounded),
-  ('processing', Icons.inventory_2_rounded),
-  ('shipped', Icons.local_shipping_rounded),
-  ('delivered', Icons.check_circle_rounded),
+  ('pending', FeatherIcons.fileText),
+  ('payment_uploaded', FeatherIcons.creditCard),
+  ('processing', FeatherIcons.package),
+  ('shipped', FeatherIcons.truck),
+  ('delivered', FeatherIcons.checkCircle),
 ];
 
 String _stepLabel(AppL10n l, int i) {
@@ -73,10 +74,10 @@ class OrderDetailScreen extends ConsumerWidget {
         elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          icon: const Icon(FeatherIcons.chevronLeft, size: 20),
           onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : context.go(RouteNames.orders)),
         title: Text(AppL10n.of(context).orderTitle, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
-        actions: [IconButton(icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+        actions: [IconButton(icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
             onPressed: () => ref.invalidate(orderDetailProvider(id)))],
       ),
       body: order.when(
@@ -184,7 +185,7 @@ class OrderDetailScreen extends ConsumerWidget {
               decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: color.withValues(alpha: 0.3))),
               child: Row(children: [
-                Icon(Icons.assignment_return_outlined, color: color, size: 20),
+                Icon(FeatherIcons.rotateCcw, color: color, size: 20),
                 const SizedBox(width: 10),
                 Expanded(child: Text('$type: ${labels[status] ?? status}',
                     style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600))),
@@ -193,7 +194,7 @@ class OrderDetailScreen extends ConsumerWidget {
         return Padding(padding: const EdgeInsets.only(top: 16),
           child: SizedBox(width: double.infinity, child: OutlinedButton.icon(
             onPressed: () => _requestReturn(context, ref, o),
-            icon: const Icon(Icons.assignment_return_outlined, size: 18, color: AppColors.primary),
+            icon: const Icon(FeatherIcons.rotateCcw, size: 18, color: AppColors.primary),
             label: Text(l.returnOrExchange, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
             style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.primary),
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -318,7 +319,7 @@ class OrderDetailScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.error.withValues(alpha: 0.3))),
           child: Row(children: [
-            const Icon(Icons.cancel_rounded, color: AppColors.error),
+            const Icon(FeatherIcons.xCircle, color: AppColors.error),
             const SizedBox(width: 10),
             Text(l.orderWasCancelled, style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),
           ]))
@@ -366,7 +367,7 @@ class OrderDetailScreen extends ConsumerWidget {
           child: CachedNetworkImage(imageUrl: o.paymentProof!, height: 180, width: double.infinity, fit: BoxFit.cover,
             placeholder: (_, __) => Container(height: 180, color: pal.surface),
             errorWidget: (_, __, ___) => Container(height: 180, color: pal.surface,
-                child: Icon(Icons.broken_image_outlined, color: pal.textMuted)))),
+                child: Icon(FeatherIcons.image, color: pal.textMuted)))),
         const SizedBox(height: 20),
       ],
 
@@ -394,7 +395,7 @@ class OrderDetailScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.success.withValues(alpha: 0.3))),
           child: Row(children: [
-            const Icon(Icons.verified_rounded, color: AppColors.success),
+            const Icon(FeatherIcons.checkCircle, color: AppColors.success),
             const SizedBox(width: 10),
             Expanded(child: Text(l.orderCompletedNote,
                 style: const TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w600))),
@@ -412,7 +413,7 @@ class OrderDetailScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.info.withValues(alpha: 0.3))),
           child: Row(children: [
-            const Icon(Icons.shield_outlined, color: AppColors.info, size: 20),
+            const Icon(FeatherIcons.shield, color: AppColors.info, size: 20),
             const SizedBox(width: 10),
             Expanded(child: Text(l.escrowProtection,
                 style: const TextStyle(color: AppColors.info, fontSize: 12))),
@@ -421,7 +422,7 @@ class OrderDetailScreen extends ConsumerWidget {
         // Green gradient confirm button
         _GradientButton(
           onTap: () => _confirm(context, ref),
-          icon: Icons.check_circle_outline_rounded,
+          icon: FeatherIcons.checkCircle,
           label: l.confirmReceiptButton,
         ),
       ],
@@ -430,7 +431,7 @@ class OrderDetailScreen extends ConsumerWidget {
         const SizedBox(height: 12),
         SizedBox(width: double.infinity, child: OutlinedButton.icon(
           onPressed: () => _cancel(context, ref),
-          icon: const Icon(Icons.cancel_outlined, color: AppColors.error, size: 18),
+          icon: const Icon(FeatherIcons.xCircle, color: AppColors.error, size: 18),
           label: Text(l.cancelOrderButton, style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),
           style: OutlinedButton.styleFrom(
               side: const BorderSide(color: AppColors.error),

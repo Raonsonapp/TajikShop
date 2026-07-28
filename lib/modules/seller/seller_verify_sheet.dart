@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_colors.dart';
@@ -83,7 +84,7 @@ class _SellerVerifySheetState extends ConsumerState<SellerVerifySheet> {
                 BoxShadow(color: Color(0x4D00D084), offset: Offset(0, 4), blurRadius: 12),
               ],
             ),
-            child: const Icon(Icons.verified_user_rounded, color: Colors.white, size: 26),
+            child: const Icon(FeatherIcons.shield, color: Colors.white, size: 26),
           ),
           const SizedBox(width: 14),
           Expanded(child: Text(l.sellerVerifyTitle,
@@ -108,7 +109,7 @@ class _SellerVerifySheetState extends ConsumerState<SellerVerifySheet> {
                   color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.badge_outlined, color: AppColors.primary, size: 30),
+                child: const Icon(FeatherIcons.creditCard, color: AppColors.primary, size: 30),
               ),
               const SizedBox(height: 10),
               Text(l.sellerUploadPassport, style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w700)),
@@ -119,14 +120,14 @@ class _SellerVerifySheetState extends ConsumerState<SellerVerifySheet> {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
-                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                  child: const Icon(FeatherIcons.check, color: Colors.white, size: 16),
                 ),
               ),
             )),
         ),
         const SizedBox(height: 14),
         Row(children: [
-          Icon(Icons.lock_outline_rounded, color: context.pal.textMuted, size: 14),
+          Icon(FeatherIcons.lock, color: context.pal.textMuted, size: 14),
           const SizedBox(width: 6),
           Expanded(child: Text(l.sellerDataPrivate,
               style: TextStyle(color: context.pal.textMuted, fontSize: 11))),
@@ -134,7 +135,7 @@ class _SellerVerifySheetState extends ConsumerState<SellerVerifySheet> {
         const SizedBox(height: 18),
         AppButton(
           text: _passport == null ? l.sellerUploadPhotoFirst : l.sellerSubmitBecomeSeller,
-          icon: _passport == null ? null : Icons.check_circle_outline_rounded,
+          icon: _passport == null ? null : FeatherIcons.checkCircle,
           isLoading: _loading,
           onTap: _passport != null ? _submit : null),
       ]),

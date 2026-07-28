@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
@@ -71,7 +72,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       blurRadius: 30, spreadRadius: 5,
                     )],
                   ),
-                  child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 52),
+                  child: const Icon(FeatherIcons.shoppingBag, color: Colors.white, size: 52),
                 ),
                 const SizedBox(height: 24),
                 ShaderMask(

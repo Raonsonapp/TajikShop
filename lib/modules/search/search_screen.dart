@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -86,7 +87,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close_rounded,
+                    icon: Icon(FeatherIcons.x,
                         color: context.pal.textPrimary, size: 24),
                     onPressed: () => context.go('/home'),
                   ),
@@ -120,7 +121,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       gradient: _greenGradient,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.search_rounded,
+                    child: const Icon(FeatherIcons.search,
                         color: Colors.white, size: 22),
                   ),
                   const SizedBox(width: 12),
@@ -139,7 +140,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ),
                   if (query.isNotEmpty)
                     IconButton(
-                      icon: Icon(Icons.close_rounded,
+                      icon: Icon(FeatherIcons.x,
                           color: context.pal.textMuted, size: 20),
                       onPressed: () {
                         _ctrl.clear();
@@ -183,7 +184,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.search_off_rounded,
+                                    Icon(FeatherIcons.search,
                                         size: 80, color: context.pal.textMuted),
                                     const SizedBox(height: 16),
                                     Text(
@@ -256,7 +257,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               value: e.key,
               child: Row(children: [
                 if (current == e.key)
-                  const Icon(Icons.check, color: AppColors.primary, size: 16)
+                  const Icon(FeatherIcons.check, color: AppColors.primary, size: 16)
                 else
                   const SizedBox(width: 16),
                 const SizedBox(width: 8),
@@ -271,7 +272,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: context.pal.border, width: 0.5)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.swap_vert_rounded,
+          const Icon(FeatherIcons.sliders,
               color: AppColors.primary, size: 16),
           const SizedBox(width: 4),
           Text(opts[current] ?? l.sortNewest,
@@ -316,7 +317,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                               border: Border.all(
                                   color: context.pal.border, width: 0.5)),
                           child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            Icon(Icons.history_rounded,
+                            Icon(FeatherIcons.clock,
                                 color: context.pal.textMuted, size: 15),
                             const SizedBox(width: 6),
                             Text(q,
@@ -328,7 +329,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 onTap: () => SearchHistoryService.remove(q).then(
                                     (_) =>
                                         ref.invalidate(searchHistoryProvider)),
-                                child: Icon(Icons.close_rounded,
+                                child: Icon(FeatherIcons.x,
                                     color: context.pal.textMuted, size: 15)),
                           ]),
                         ),
@@ -384,14 +385,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                                 height: 100,
                                                 color: context.pal.surface,
                                                 child: Icon(
-                                                    Icons.image_outlined,
+                                                    FeatherIcons.image,
                                                     color:
                                                         context.pal.textMuted)))
                                         : Container(
                                             width: 100,
                                             height: 100,
                                             color: context.pal.surface,
-                                            child: Icon(Icons.image_outlined,
+                                            child: Icon(FeatherIcons.image,
                                                 color: context.pal.textMuted))),
                                 const SizedBox(height: 4),
                                 Text(m['title']?.toString() ?? '',
@@ -503,7 +504,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             gradient: _greenGradient,
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(Icons.category_outlined,
+                          child: const Icon(FeatherIcons.grid,
                               color: Colors.white, size: 24),
                         ),
                         const SizedBox(height: 8),

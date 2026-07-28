@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -121,7 +122,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                               colors: [Color(0xFFFF416C), Color(0xFFFF4B2B)]),
                           borderRadius: BorderRadius.circular(12)),
                       child: Row(children: [
-                        const Icon(Icons.bolt_rounded, color: Colors.white, size: 20),
+                        const Icon(FeatherIcons.zap, color: Colors.white, size: 20),
                         const SizedBox(width: 6),
                         const Text('FLASH SALE',
                             style: TextStyle(
@@ -172,12 +173,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 const SizedBox(height: 16),
                 Row(children: [
                   _Chip(
-                      icon: Icons.star_rounded,
+                      icon: FeatherIcons.star,
                       value: p.rating.toStringAsFixed(1),
                       color: AppColors.warning),
                   const SizedBox(width: 10),
                   _Chip(
-                      icon: Icons.chat_bubble_outline,
+                      icon: FeatherIcons.messageCircle,
                       value: '${p.reviewCount} ${AppL10n.of(context).reviewsWord}',
                       color: AppColors.info),
                   const SizedBox(width: 10),
@@ -212,7 +213,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 if (p.minOrderQty > 1) ...[
                   const SizedBox(height: 12),
                   Row(children: [
-                    Icon(Icons.inventory_2_outlined,
+                    Icon(FeatherIcons.package,
                         color: context.pal.textMuted, size: 16),
                     const SizedBox(width: 6),
                     Text(
@@ -234,7 +235,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                             const CircleAvatar(
                                 radius: 20,
                                 backgroundColor: Color(0x1A00E5FF),
-                                child: Icon(Icons.store_outlined,
+                                child: Icon(FeatherIcons.shoppingBag,
                                     color: AppColors.primary, size: 20)),
                             const SizedBox(width: 12),
                             Column(
@@ -260,7 +261,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                                         color: AppColors.primary.withValues(alpha: 0.12),
                                         borderRadius: BorderRadius.circular(10)),
                                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                      const Icon(Icons.chat_bubble_outline_rounded,
+                                      const Icon(FeatherIcons.messageCircle,
                                           color: AppColors.primary, size: 16),
                                       const SizedBox(width: 6),
                                       Text(AppL10n.of(context).messageWord,
@@ -323,19 +324,19 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child: Row(children: [
                 IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: const Icon(FeatherIcons.chevronLeft, color: Colors.white),
                     onPressed: () => Navigator.of(context).maybePop()),
                 const Spacer(),
                 IconButton(
-                    icon: Icon(isFav ? Icons.favorite : Icons.favorite_border,
+                    icon: Icon(isFav ? FeatherIcons.heart : FeatherIcons.heart,
                         color: isFav ? AppColors.error : Colors.white),
                     onPressed: () => _toggleFavorite(p.id)),
                 IconButton(
-                    icon: const Icon(Icons.share_outlined, color: Colors.white),
+                    icon: const Icon(FeatherIcons.share2, color: Colors.white),
                     onPressed: () => _share(p)),
                 PopupMenuButton<String>(
                   color: context.pal.elevated,
-                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                  icon: const Icon(FeatherIcons.moreVertical, color: Colors.white),
                   onSelected: (v) {
                     if (v == 'report') _report(p);
                   },
@@ -343,7 +344,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     PopupMenuItem(
                         value: 'report',
                         child: Row(children: [
-                          const Icon(Icons.flag_outlined,
+                          const Icon(FeatherIcons.flag,
                               color: AppColors.error, size: 18),
                           const SizedBox(width: 8),
                           Text(AppL10n.of(context).report,
@@ -375,14 +376,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2, color: Colors.white70))),
                           errorWidget: (_, __, ___) => const Icon(
-                              Icons.image_outlined,
+                              FeatherIcons.image,
                               color: Colors.white70,
                               size: 60),
                         ),
                       ),
                     )
                   : const Center(
-                      child: Icon(Icons.image_outlined,
+                      child: Icon(FeatherIcons.image,
                           color: Colors.white70, size: 60)),
             ),
             // Тахтаи нарх (мисли product_display, ранги торик собит)
@@ -512,7 +513,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: context.pal.border, width: 0.6)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          _qtyBtn(Icons.remove_rounded,
+          _qtyBtn(FeatherIcons.minus,
               onTap: _qty > minQty ? () => setState(() => _qty--) : null),
           SizedBox(
             width: 40,
@@ -524,7 +525,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       fontWeight: FontWeight.w700)),
             ),
           ),
-          _qtyBtn(Icons.add_rounded, onTap: () => setState(() => _qty++)),
+          _qtyBtn(FeatherIcons.plus, onTap: () => setState(() => _qty++)),
         ]),
       ),
     ]);
@@ -560,7 +561,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           child: AppButton(
             text: AppL10n.of(context).addToCart,
             isOutlined: true,
-            icon: Icons.shopping_bag_outlined,
+            icon: FeatherIcons.shoppingBag,
             height: 56,
             onTap: () => _addToCart(p),
           ),
@@ -689,7 +690,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
               ...reasons.map((r) => ListTile(
-                    leading: const Icon(Icons.flag_outlined,
+                    leading: const Icon(FeatherIcons.flag,
                         color: AppColors.error, size: 20),
                     title: Text(r, style: TextStyle(color: context.pal.textPrimary)),
                     onTap: () async {
@@ -765,7 +766,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         const Spacer(),
         TextButton.icon(
             onPressed: () => _openAddReview(p),
-            icon: const Icon(Icons.rate_review_outlined,
+            icon: const Icon(FeatherIcons.messageSquare,
                 size: 18, color: AppColors.primary),
             label: Text(AppL10n.of(context).writeReview,
                 style: const TextStyle(
@@ -825,8 +826,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 5,
                 (i) => Icon(
                     i < value.round()
-                        ? Icons.star_rounded
-                        : Icons.star_border_rounded,
+                        ? FeatherIcons.star
+                        : FeatherIcons.star,
                     color: AppColors.warning,
                     size: 16))),
         const SizedBox(height: 2),
@@ -849,7 +850,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         const Spacer(),
         TextButton.icon(
             onPressed: () => _askQuestion(p),
-            icon: const Icon(Icons.help_outline_rounded,
+            icon: const Icon(FeatherIcons.helpCircle,
                 size: 18, color: AppColors.primary),
             label: Text(AppL10n.of(context).askQuestion,
                 style: const TextStyle(
@@ -1196,8 +1197,8 @@ class _AddReviewSheetState extends ConsumerState<_AddReviewSheet> {
                                 padding: const EdgeInsets.symmetric(horizontal: 4),
                                 child: Icon(
                                     i < _rating
-                                        ? Icons.star_rounded
-                                        : Icons.star_border_rounded,
+                                        ? FeatherIcons.star
+                                        : FeatherIcons.star,
                                     color: AppColors.warning,
                                     size: 40)))))),
             const SizedBox(height: 20),
@@ -1292,7 +1293,7 @@ class _ReviewTileState extends ConsumerState<_ReviewTile> {
                   ? CachedNetworkImageProvider(r.userAvatar!)
                   : null,
               child: (r.userAvatar == null || r.userAvatar!.isEmpty)
-                  ? Icon(Icons.person, size: 16, color: context.pal.textMuted)
+                  ? Icon(FeatherIcons.user, size: 16, color: context.pal.textMuted)
                   : null),
           const SizedBox(width: 8),
           Expanded(
@@ -1313,8 +1314,8 @@ class _ReviewTileState extends ConsumerState<_ReviewTile> {
                 5,
                 (i) => Icon(
                     i < r.rating
-                        ? Icons.star_rounded
-                        : Icons.star_border_rounded,
+                        ? FeatherIcons.star
+                        : FeatherIcons.star,
                     color: AppColors.warning,
                     size: 13))),
         if (r.comment.isNotEmpty) ...[
@@ -1329,8 +1330,8 @@ class _ReviewTileState extends ConsumerState<_ReviewTile> {
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Icon(
                 _liked
-                    ? Icons.thumb_up_alt_rounded
-                    : Icons.thumb_up_off_alt_rounded,
+                    ? FeatherIcons.thumbsUp
+                    : FeatherIcons.thumbsUp,
                 size: 15,
                 color: _liked ? AppColors.primary : context.pal.textMuted),
             const SizedBox(width: 5),

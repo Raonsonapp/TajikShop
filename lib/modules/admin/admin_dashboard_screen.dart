@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
@@ -56,7 +57,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                       color: Colors.white.withOpacity(0.22),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 32),
+                    child: const Icon(FeatherIcons.shield, color: Colors.white, size: 32),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -98,10 +99,10 @@ class AdminDashboardScreen extends ConsumerWidget {
                   crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12,
                   childAspectRatio: 1.55,
                   children: [
-                    _StatCard(value: '${data['total_users'] ?? 0}', label: l.usersLabel, icon: Icons.people_alt_rounded, color: AppColors.primary),
-                    _StatCard(value: '${data['total_products'] ?? 0}', label: l.productsCountLabel, icon: Icons.inventory_2_rounded, color: const Color(0xFF6C63FF)),
-                    _StatCard(value: '${data['total_orders'] ?? 0}', label: l.orders, icon: Icons.receipt_long_rounded, color: AppColors.warning),
-                    _StatCard(value: '${data['total_sellers'] ?? 0}', label: l.sellersLabel, icon: Icons.store_rounded, color: AppColors.info),
+                    _StatCard(value: '${data['total_users'] ?? 0}', label: l.usersLabel, icon: FeatherIcons.users, color: AppColors.primary),
+                    _StatCard(value: '${data['total_products'] ?? 0}', label: l.productsCountLabel, icon: FeatherIcons.package, color: const Color(0xFF6C63FF)),
+                    _StatCard(value: '${data['total_orders'] ?? 0}', label: l.orders, icon: FeatherIcons.fileText, color: AppColors.warning),
+                    _StatCard(value: '${data['total_sellers'] ?? 0}', label: l.sellersLabel, icon: FeatherIcons.shoppingBag, color: AppColors.info),
                   ],
                 ),
               ),
@@ -122,42 +123,42 @@ class AdminDashboardScreen extends ConsumerWidget {
                 ),
                 child: Column(children: [
                   _ManageItem(
-                    icon: Icons.people_alt_rounded, label: l.usersLabel, subtitle: l.manageUsersSub,
+                    icon: FeatherIcons.users, label: l.usersLabel, subtitle: l.manageUsersSub,
                     color: AppColors.primary, onTap: () => context.push(RouteNames.adminUsers),
                   ),
                   _ManageDivider(),
                   _ManageItem(
-                    icon: Icons.store_mall_directory_rounded, label: l.sellersLabel,
+                    icon: FeatherIcons.shoppingBag, label: l.sellersLabel,
                     subtitle: l.manageSellersSub, color: const Color(0xFF6C63FF), onTap: () => context.push(RouteNames.adminUsers),
                   ),
                   _ManageDivider(),
                   _ManageItem(
-                    icon: Icons.receipt_rounded, label: l.allOrders,
+                    icon: FeatherIcons.fileText, label: l.allOrders,
                     subtitle: l.manageOrdersSub, color: AppColors.warning, onTap: () => context.push(RouteNames.adminOrders),
                   ),
                   _ManageDivider(),
                   _ManageItem(
-                    icon: Icons.category_rounded, label: l.categories,
+                    icon: FeatherIcons.grid, label: l.categories,
                     subtitle: l.manageCategoriesSub, color: AppColors.success, onTap: () => context.push(RouteNames.adminCategories),
                   ),
                   _ManageDivider(),
                   _ManageItem(
-                    icon: Icons.confirmation_number_rounded, label: l.couponsTitle,
+                    icon: FeatherIcons.tag, label: l.couponsTitle,
                     subtitle: l.manageCouponsSub, color: const Color(0xFFE040FB), onTap: () => context.push(RouteNames.adminCoupons),
                   ),
                   _ManageDivider(),
                   _ManageItem(
-                    icon: Icons.account_balance_wallet_rounded, label: l.walletApproval,
+                    icon: FeatherIcons.creditCard, label: l.walletApproval,
                     subtitle: l.walletRequestsSub, color: AppColors.warning, onTap: () => context.push(RouteNames.adminWallet),
                   ),
                   _ManageDivider(),
                   _ManageItem(
-                    icon: Icons.flag_rounded, label: l.reportsTitle,
+                    icon: FeatherIcons.flag, label: l.reportsTitle,
                     subtitle: l.reportsSub, color: AppColors.error, onTap: () => context.push(RouteNames.adminReports),
                   ),
                   _ManageDivider(),
                   _ManageItem(
-                    icon: Icons.assignment_return_rounded, label: l.returnsExchange,
+                    icon: FeatherIcons.refreshCcw, label: l.returnsExchange,
                     subtitle: l.returnsSub, color: const Color(0xFF00A3FF), onTap: () => context.push(RouteNames.adminReturns),
                   ),
                 ]),
@@ -231,7 +232,7 @@ class _ManageItem extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(subtitle, style: TextStyle(color: context.pal.textMuted, fontSize: 11.5)),
               ])),
-              Icon(Icons.chevron_right_rounded, color: context.pal.textMuted),
+              Icon(FeatherIcons.chevronRight, color: context.pal.textMuted),
             ]),
           ),
         ),

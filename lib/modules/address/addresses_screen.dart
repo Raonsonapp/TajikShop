@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/orders_l10n.dart';
@@ -15,10 +16,10 @@ class AddressesScreen extends ConsumerWidget {
   IconData _iconFor(AddressModel a) {
     final t = a.title.toLowerCase();
     if (t.contains('кор') || t.contains('work') || t.contains('офис')) {
-      return Icons.work_rounded;
+      return FeatherIcons.briefcase;
     }
-    if (t.contains('хона') || t.contains('home')) return Icons.home_rounded;
-    return a.hasLocation ? Icons.location_on_rounded : Icons.location_on_outlined;
+    if (t.contains('хона') || t.contains('home')) return FeatherIcons.home;
+    return a.hasLocation ? FeatherIcons.mapPin : FeatherIcons.mapPin;
   }
 
   @override
@@ -55,7 +56,7 @@ class AddressesScreen extends ConsumerWidget {
                               shape: BoxShape.circle,
                               color: AppColors.primary.withValues(alpha: 0.10),
                             ),
-                            child: const Icon(Icons.location_off_outlined,
+                            child: const Icon(FeatherIcons.mapPin,
                                 size: 44, color: AppColors.primary),
                           ),
                           const SizedBox(height: 18),
@@ -107,7 +108,7 @@ class AddressesScreen extends ConsumerWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.add_location_alt_rounded,
+                        const Icon(FeatherIcons.mapPin,
                             color: Colors.white, size: 22),
                         const SizedBox(width: 10),
                         Text(AppL10n.of(context).addAddress,
@@ -213,7 +214,7 @@ class _AddressCard extends StatelessWidget {
             color: context.pal.elevated,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14)),
-            icon: Icon(Icons.more_vert, color: context.pal.textSecondary),
+            icon: Icon(FeatherIcons.moreVertical, color: context.pal.textSecondary),
             onSelected: (v) async {
               final messenger = ScaffoldMessenger.of(context);
               try {
@@ -232,7 +233,7 @@ class _AddressCard extends StatelessWidget {
                 PopupMenuItem(
                   value: 'default',
                   child: Row(children: [
-                    const Icon(Icons.check_circle_outline_rounded,
+                    const Icon(FeatherIcons.checkCircle,
                         color: AppColors.primary, size: 18),
                     const SizedBox(width: 10),
                     Text(AppL10n.of(context).setDefaultAction,
@@ -242,7 +243,7 @@ class _AddressCard extends StatelessWidget {
               PopupMenuItem(
                 value: 'delete',
                 child: Row(children: [
-                  const Icon(Icons.delete_outline_rounded,
+                  const Icon(FeatherIcons.trash2,
                       color: AppColors.error, size: 18),
                   const SizedBox(width: 10),
                   Text(AppL10n.of(context).deleteAction,

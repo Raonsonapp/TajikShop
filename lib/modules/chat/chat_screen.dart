@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -74,7 +75,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         scrolledUnderElevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          icon: const Icon(FeatherIcons.chevronLeft, size: 20),
           onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : context.go(RouteNames.home)),
         titleSpacing: 0,
         title: Row(children: [
@@ -102,7 +103,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ])),
         ]),
         actions: [IconButton(
-          icon: Icon(Icons.refresh_rounded, color: context.pal.textSecondary),
+          icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
           onPressed: () => ref.invalidate(conversationProvider(widget.userId)))],
       ),
       body: Column(children: [
@@ -140,7 +141,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             const Color(0xFF00A3FF).withOpacity(0.16),
           ]),
         ),
-        child: const Icon(Icons.forum_rounded, size: 44, color: AppColors.primary),
+        child: const Icon(FeatherIcons.messageCircle, size: 44, color: AppColors.primary),
       ),
       const SizedBox(height: 16),
       Text(text, textAlign: TextAlign.center,
@@ -210,7 +211,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           child: _sending
               ? const Padding(padding: EdgeInsets.all(13),
                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Icon(Icons.send_rounded, color: Colors.white, size: 21),
+              : const Icon(FeatherIcons.send, color: Colors.white, size: 21),
         ),
       ),
     ]),

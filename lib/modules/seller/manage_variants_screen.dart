@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
@@ -47,7 +48,7 @@ class ManageVariantsScreen extends ConsumerWidget {
             ],
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.add_rounded, color: Colors.white, size: 22),
+            const Icon(FeatherIcons.plus, color: Colors.white, size: 22),
             const SizedBox(width: 8),
             Text(l.sellerVariant, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
           ]),
@@ -64,7 +65,7 @@ class ManageVariantsScreen extends ConsumerWidget {
                     color: AppColors.primary.withValues(alpha: 0.10),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.tune_rounded, size: 44, color: AppColors.primary),
+                  child: const Icon(FeatherIcons.sliders, size: 44, color: AppColors.primary),
                 ),
                 const SizedBox(height: 16),
                 Text(l.sellerNoVariants,
@@ -92,7 +93,7 @@ class ManageVariantsScreen extends ConsumerWidget {
                           gradient: _greenGradient,
                           borderRadius: BorderRadius.circular(13),
                         ),
-                        child: const Icon(Icons.tune_rounded, color: Colors.white, size: 22),
+                        child: const Icon(FeatherIcons.sliders, color: Colors.white, size: 22),
                       ),
                       const SizedBox(width: 14),
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -115,7 +116,7 @@ class ManageVariantsScreen extends ConsumerWidget {
                             color: AppColors.error.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
+                          child: const Icon(FeatherIcons.trash2, color: AppColors.error, size: 20),
                         ),
                       ),
                     ]),
@@ -158,7 +159,7 @@ class ManageVariantsScreen extends ConsumerWidget {
             Row(children: [Expanded(child: f(l.sellerPriceOptional, price, num: true)), const SizedBox(width: 12), Expanded(child: f(l.sellerStock, stock, num: true))]),
             f(l.sellerSkuOptional, sku),
             const SizedBox(height: 8),
-            AppButton(text: l.sellerAddAction, icon: Icons.add_rounded, onTap: () async {
+            AppButton(text: l.sellerAddAction, icon: FeatherIcons.plus, onTap: () async {
               if (size.text.trim().isEmpty && color.text.trim().isEmpty) {
                 ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
                   content: Text(l.sellerEnterSizeOrColor),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/app_l10n.dart';
@@ -20,7 +21,7 @@ class ErrorScreen extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.wifi_off_rounded, size: 72, color: context.pal.textMuted),
+            Icon(FeatherIcons.wifiOff, size: 72, color: context.pal.textMuted),
             const SizedBox(height: 20),
             Text(l.noConnection,
                 style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
@@ -33,7 +34,7 @@ class ErrorScreen extends StatelessWidget {
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const Icon(FeatherIcons.refreshCw),
                 label: Text(l.tryAgain),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,

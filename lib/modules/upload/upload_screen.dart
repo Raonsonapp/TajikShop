@@ -1,6 +1,7 @@
 // ignore_for_file: curly_braces_in_flow_control_structures
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -138,7 +139,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Row(children: [
-          const Icon(Icons.check_circle_rounded, color: Colors.white),
+          const Icon(FeatherIcons.checkCircle, color: Colors.white),
           const SizedBox(width: 10),
           Text(AppL10n.of(context).productPublished, style: const TextStyle(fontWeight: FontWeight.w600)),
         ]),
@@ -173,7 +174,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       appBar: AppBar(
         backgroundColor: context.pal.scaffold, elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: context.pal.textPrimary),
+          icon: Icon(FeatherIcons.chevronLeft, size: 20, color: context.pal.textPrimary),
           onPressed: () => Navigator.canPop(context) ? Navigator.pop(context) : context.go(RouteNames.home)),
         title: Text(AppL10n.of(context).postListing,
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 18)),
@@ -223,7 +224,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           Container(width: 54, height: 54,
             decoration: BoxDecoration(gradient: AppColors.primaryGradient, shape: BoxShape.circle,
               boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 6))]),
-            child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 26)),
+            child: const Icon(FeatherIcons.camera, color: Colors.white, size: 26)),
           const SizedBox(height: 10),
           Text(AppL10n.of(context).addPhoto, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 14)),
           const SizedBox(height: 3),
@@ -239,7 +240,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             painter: _DashedBorderPainter(color: AppColors.primary, radius: 14),
             child: Container(width: 80, height: 80, margin: const EdgeInsets.only(right: 8),
               alignment: Alignment.center,
-              child: const Icon(Icons.add_rounded, color: AppColors.primary, size: 30))));
+              child: const Icon(FeatherIcons.plus, color: AppColors.primary, size: 30))));
         return Stack(children: [
           Container(width: 80, height: 80, margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(14),
@@ -253,7 +254,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
             onTap: () => setState(() => _images.removeAt(i)),
             child: Container(width: 22, height: 22,
               decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-              child: const Icon(Icons.close, size: 13, color: Colors.white)))),
+              child: const Icon(FeatherIcons.x, size: 13, color: Colors.white)))),
         ]);
       })),
     const SizedBox(height: 22),
@@ -308,7 +309,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.primary.withValues(alpha: 0.3))),
       child: Row(children: [
-        const Icon(Icons.info_outline_rounded, color: AppColors.primary, size: 20),
+        const Icon(FeatherIcons.info, color: AppColors.primary, size: 20),
         const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(AppL10n.of(context).mustBeSeller,
@@ -333,7 +334,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.error.withValues(alpha: 0.3))),
       child: Row(children: [
-        const Icon(Icons.error_outline, color: AppColors.error, size: 18),
+        const Icon(FeatherIcons.alertCircle, color: AppColors.error, size: 18),
         const SizedBox(width: 10),
         Expanded(child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13))),
       ])),
@@ -362,7 +363,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       child: Row(children: [
         Expanded(child: OutlinedButton.icon(
           onPressed: _loading ? null : (_step == 2 ? () => setState(() { _step = 1; _error = null; }) : () {}),
-          icon: Icon(_step == 2 ? Icons.arrow_back_rounded : Icons.visibility_outlined, size: 18, color: AppColors.primary),
+          icon: Icon(_step == 2 ? FeatherIcons.arrowLeft : FeatherIcons.eye, size: 18, color: AppColors.primary),
           label: Text(_step == 2 ? AppL10n.of(context).back : AppL10n.of(context).preview,
               style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
           style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.primary, width: 1.5),
@@ -384,7 +385,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           child: busy
               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(_step == 1 ? Icons.arrow_forward_rounded : Icons.send_rounded, size: 18, color: Colors.white),
+                  Icon(_step == 1 ? FeatherIcons.arrowRight : FeatherIcons.send, size: 18, color: Colors.white),
                   const SizedBox(width: 8),
                   Text(_step == 1 ? AppL10n.of(context).continueWord : AppL10n.of(context).publish,
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Colors.white)),
@@ -466,7 +467,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
         child: DropdownButtonHideUnderline(child: DropdownButton<T>(
           value: value, isExpanded: true, dropdownColor: context.pal.card,
           hint: Text(hint, style: TextStyle(color: context.pal.textMuted, fontSize: 12)),
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: context.pal.textMuted),
+          icon: Icon(FeatherIcons.chevronDown, color: context.pal.textMuted),
           items: items, onChanged: onChanged,
           style: TextStyle(color: context.pal.textPrimary, fontSize: 13))),
       ),
@@ -476,7 +477,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     appBar: AppBar(backgroundColor: context.pal.scaffold, elevation: 0,
         title: Text(AppL10n.of(context).postListing, style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700))),
     body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Icon(Icons.lock_outline_rounded, size: 80, color: context.pal.textMuted),
+      Icon(FeatherIcons.lock, size: 80, color: context.pal.textMuted),
       const SizedBox(height: 16),
       Text(AppL10n.of(context).loginToPost, style: TextStyle(color: context.pal.textSecondary, fontSize: 15)),
       const SizedBox(height: 20),

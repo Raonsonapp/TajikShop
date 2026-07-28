@@ -1,5 +1,6 @@
 // ignore_for_file: curly_braces_in_flow_control_structures
 import 'package:flutter/material.dart';
+import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
@@ -20,7 +21,7 @@ class PhoneAuthScreen extends ConsumerWidget {
       backgroundColor: context.pal.scaffold,
       appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_rounded, color: context.pal.textPrimary),
+            icon: Icon(FeatherIcons.chevronLeft, color: context.pal.textPrimary),
             onPressed: () => context.go(RouteNames.login))),
       body: Center(child: Padding(
         padding: const EdgeInsets.all(32),
