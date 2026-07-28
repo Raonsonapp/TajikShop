@@ -211,6 +211,15 @@ ALTER TABLE users  ADD COLUMN IF NOT EXISTS passport_url TEXT DEFAULT '';
 ALTER TABLE users  ADD COLUMN IF NOT EXISTS store_lat DOUBLE PRECISION DEFAULT 0;
 ALTER TABLE users  ADD COLUMN IF NOT EXISTS store_lng DOUBLE PRECISION DEFAULT 0;
 ALTER TABLE users  ADD COLUMN IF NOT EXISTS seller_requested BOOLEAN DEFAULT false;
+
+-- Категорияҳоро бо расм таъмин мекунем (агар холӣ бошанд).
+UPDATE categories SET icon_url = 'https://picsum.photos/seed/' || slug || '/400'
+  WHERE icon_url IS NULL OR icon_url = '';
+
+-- Маҳсулоти фурӯхташуда (stock<=0), ки дар ягон фармоиш нест, пурра нест мешавад,
+-- то серверро бор накунад (order_items бо RESTRICT — таърихи фармоишҳо эмин мемонад).
+DELETE FROM products p WHERE p.stock <= 0
+  AND NOT EXISTS (SELECT 1 FROM order_items oi WHERE oi.product_id = p.id);
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20) DEFAULT 'dc';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount NUMERIC(12,2) DEFAULT 0;
 ALTER TABLE addresses ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION DEFAULT 0;
