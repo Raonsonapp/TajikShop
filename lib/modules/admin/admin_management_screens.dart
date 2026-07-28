@@ -8,6 +8,7 @@ import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/admin_l10n.dart';
+import '../../core/l10n/extra_l10n.dart';
 import '../../providers/admin_provider.dart';
 import '../../providers/report_provider.dart';
 import '../../providers/return_provider.dart';
@@ -752,7 +753,7 @@ class AdminSellerRequestsScreen extends ConsumerWidget {
         backgroundColor: context.pal.scaffold,
         elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
-        title: Text('Дархостҳои фурӯшанда',
+        title: Text(AppL10n.of(context).sellerRequestsTitle,
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
@@ -788,7 +789,7 @@ class AdminSellerRequestsScreen extends ConsumerWidget {
             child: const Icon(FeatherIcons.clock, color: AppColors.primary, size: 42),
           ),
           const SizedBox(height: 18),
-          Text('Дархости нав нест',
+          Text(AppL10n.of(context).noNewRequests,
               style: TextStyle(color: context.pal.textSecondary, fontSize: 15, fontWeight: FontWeight.w600)),
         ]),
       );
@@ -801,8 +802,9 @@ class _SellerRequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppL10n.of(context);
     final id = request['id']?.toString() ?? '';
-    final name = request['name']?.toString() ?? 'Корбар';
+    final name = request['name']?.toString() ?? l.userWord;
     final email = request['email']?.toString() ?? '';
     final passport = request['passport_url']?.toString() ?? '';
     DateTime? created;
@@ -860,8 +862,8 @@ class _SellerRequestCard extends StatelessWidget {
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(FeatherIcons.image, color: AppColors.info, size: 16),
                   const SizedBox(width: 8),
-                  const Text('Дидани шиноснома',
-                      style: TextStyle(color: AppColors.info, fontSize: 13, fontWeight: FontWeight.w700)),
+                  Text(l.viewPassport,
+                      style: const TextStyle(color: AppColors.info, fontSize: 13, fontWeight: FontWeight.w700)),
                 ]),
               ),
             ),
@@ -871,8 +873,8 @@ class _SellerRequestCard extends StatelessWidget {
           Expanded(child: OutlinedButton.icon(
             onPressed: () => _act(context, id, approve: false),
             icon: const Icon(FeatherIcons.userX, size: 16, color: AppColors.error),
-            label: const Text('Рад кардан',
-                style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
+            label: Text(l.rejectAction,
+                style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: AppColors.error),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -881,7 +883,7 @@ class _SellerRequestCard extends StatelessWidget {
           )),
           const SizedBox(width: 10),
           Expanded(child: _GradientButton(
-            label: 'Тасдиқ',
+            label: l.approveAction,
             onPressed: () => _act(context, id, approve: true),
           )),
         ]),
@@ -897,7 +899,7 @@ class _SellerRequestCard extends StatelessWidget {
           approve ? '/admin/users/$id/verify-seller' : '/admin/users/$id/reject-seller');
       onChanged();
       messenger.showSnackBar(SnackBar(
-          content: Text(approve ? 'Фурӯшанда тасдиқ шуд' : 'Дархост рад шуд'),
+          content: Text(approve ? l.sellerApproved : l.requestRejected),
           backgroundColor: approve ? AppColors.success : AppColors.error,
           behavior: SnackBarBehavior.floating));
     } catch (_) {
@@ -915,7 +917,7 @@ class _SellerRequestCard extends StatelessWidget {
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             const Icon(FeatherIcons.image, color: AppColors.primary, size: 18),
             const SizedBox(width: 8),
-            Text('Шиноснома',
+            Text(AppL10n.of(context).passportTitle,
                 style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
           ])),
         ClipRRect(borderRadius: BorderRadius.circular(12),

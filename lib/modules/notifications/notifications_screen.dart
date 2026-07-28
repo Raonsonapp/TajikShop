@@ -29,6 +29,12 @@ class NotificationsScreen extends ConsumerWidget {
         backgroundColor: context.pal.scaffold,
         elevation: 0,
         iconTheme: IconThemeData(color: context.pal.textPrimary),
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: Icon(FeatherIcons.chevronLeft, color: context.pal.textPrimary),
+                onPressed: () => Navigator.of(context).maybePop(),
+              )
+            : null,
         title: Text(
           AppL10n.of(context).notifications,
           style: TextStyle(

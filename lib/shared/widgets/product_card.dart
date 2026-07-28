@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../data/models/product_model.dart';
@@ -50,14 +51,14 @@ class _ProductCardState extends ConsumerState<ProductCard>
     HapticFeedback.selectionClick();
     final messenger = ScaffoldMessenger.of(context);
     if (!ref.read(authProvider).isAuthenticated) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Барои харид ворид шавед'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(AppL10n.of(context).loginToBuy),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
       return;
     }
     if (!widget.product.inStock) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Маҳсулот тамом шуд'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(AppL10n.of(context).outOfStock),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
       return;
     }
@@ -65,13 +66,13 @@ class _ProductCardState extends ConsumerState<ProductCard>
       await ref.read(cartProvider.notifier).addToCart(widget.product.id);
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(
-        content: const Text('✅ Ба сабад илова шуд'),
+        content: Text(AppL10n.of(context).addedToCart),
         backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))));
     } catch (_) {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Хато ҳангоми илова'),
+      messenger.showSnackBar(SnackBar(
+        content: Text(AppL10n.of(context).errorAddingToCart),
         backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
     }
   }
@@ -188,8 +189,8 @@ class _ProductCardState extends ConsumerState<ProductCard>
                           color: Colors.black87,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: Colors.white24)),
-                        child: const Text('Тамом шуд',
-                            style: TextStyle(color: Colors.white70, fontSize: 11,
+                        child: Text(AppL10n.of(context).outOfStock,
+                            style: const TextStyle(color: Colors.white70, fontSize: 11,
                                 fontWeight: FontWeight.w700)))))),
 
               // Like + comment chips (bottom overlay)

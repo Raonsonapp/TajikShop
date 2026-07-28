@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/app_l10n.dart';
+import '../../core/l10n/extra_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
@@ -139,13 +140,13 @@ class FavoritesScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(15),
                       boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 14, offset: const Offset(0, 6))],
                     ),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 26),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 26),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(FeatherIcons.search, color: Colors.white, size: 18),
-                        SizedBox(width: 9),
-                        Text('Ба ҷустуҷӯ',
-                            style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+                        const Icon(FeatherIcons.search, color: Colors.white, size: 18),
+                        const SizedBox(width: 9),
+                        Text(l.goSearch,
+                            style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
                       ]),
                     ),
                   ),

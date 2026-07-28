@@ -3,6 +3,8 @@ import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/extra_l10n.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
 
@@ -82,7 +84,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                       fontWeight: FontWeight.w800, letterSpacing: -1)),
                 ),
                 const SizedBox(height: 8),
-                const Text('Бозори Тоҷикистон', style: TextStyle(
+                Text(AppL10n.of(context).marketplaceTagline, style: const TextStyle(
                     color: AppColors.textSecondary, fontSize: 16)),
                 const SizedBox(height: 24),
                 const SizedBox(width: 24, height: 24,

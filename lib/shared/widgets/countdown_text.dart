@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/extra_l10n.dart';
 
 /// Таймери ҳисоби бозгашт (зинда, ҳар сония нав мешавад).
 class CountdownText extends StatefulWidget {
@@ -43,7 +45,7 @@ class _CountdownTextState extends State<CountdownText> {
   @override
   Widget build(BuildContext context) {
     if (_left == Duration.zero) {
-      return Text('Тамом шуд', style: widget.style);
+      return Text(AppL10n.of(context).ended, style: widget.style);
     }
     final d = _left.inDays;
     final h = _left.inHours % 24;

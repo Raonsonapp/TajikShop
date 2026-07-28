@@ -10,6 +10,7 @@ import 'package:dio/dio.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
 import '../../core/l10n/misc_l10n.dart';
+import '../../core/l10n/extra_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
@@ -307,14 +308,14 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Expanded(child: _field(AppL10n.of(context).quantity, _stockCtrl, hint: '1', type: TextInputType.number)),
       const SizedBox(width: 12),
-      Expanded(child: _field('Тахфиф (%)', _discountCtrl,
+      Expanded(child: _field(AppL10n.of(context).discountPercentLabel, _discountCtrl,
           hint: '0', type: TextInputType.number,
           formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)])),
     ]),
     const SizedBox(height: 6),
     Padding(
       padding: const EdgeInsets.only(left: 2),
-      child: Text('Ихтиёрӣ — фоизи тахфиф барои ин маҳсулот',
+      child: Text(AppL10n.of(context).discountOptionalHint,
           style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
     ),
     const SizedBox(height: 22),

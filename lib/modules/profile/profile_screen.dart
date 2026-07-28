@@ -289,7 +289,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _QuickCard(children: [
                 _QuickAction(icon: FeatherIcons.creditCard, color: const Color(0xFFFFB800),
                     label: l.myWallet, onTap: () => context.push(RouteNames.wallet)),
-                _QuickAction(icon: FeatherIcons.fileText, color: const Color(0xFF00A3FF),
+                _QuickAction(icon: FeatherIcons.truck, color: const Color(0xFF00A3FF),
                     label: l.orders, onTap: () => context.push(RouteNames.orders)),
                 _QuickAction(icon: FeatherIcons.heart, color: const Color(0xFF00D084),
                     label: l.favorites, onTap: () => context.go(RouteNames.favorites)),
@@ -301,7 +301,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               if (isSeller) ...[
                 _SectionLabel(l.sellerDashboard),
                 _GroupCard(children: [
-                  _Tile(icon: FeatherIcons.shoppingBag, iconColor: const Color(0xFF00D084),
+                  _Tile(icon: FeatherIcons.grid, iconColor: const Color(0xFF00D084),
                       label: l.sellerDashboard,
                       onTap: () => context.push(RouteNames.sellerDashboard)),
                   _Tile(icon: FeatherIcons.mapPin, iconColor: const Color(0xFFFF6B2C),

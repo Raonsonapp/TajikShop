@@ -208,7 +208,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(width: 10),
           _circleButton(
-            icon: FeatherIcons.shoppingBag,
+            icon: FeatherIcons.shoppingCart,
             onTap: () => context.go(RouteNames.cart),
           ),
         ],

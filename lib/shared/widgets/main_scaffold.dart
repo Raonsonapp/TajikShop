@@ -41,7 +41,7 @@ class MainScaffold extends ConsumerWidget {
                 _tab(context, 0, idx, FeatherIcons.home, FeatherIcons.home, RouteNames.home),
                 _tab(context, 1, idx, FeatherIcons.heart, FeatherIcons.heart, RouteNames.favorites),
                 _tab(context, 2, idx, FeatherIcons.plusSquare, FeatherIcons.plusSquare, RouteNames.upload),
-                _tab(context, 3, idx, FeatherIcons.shoppingBag, FeatherIcons.shoppingBag, RouteNames.cart),
+                _tab(context, 3, idx, FeatherIcons.shoppingCart, FeatherIcons.shoppingCart, RouteNames.cart),
                 _profileTab(context, idx == 4, user?.avatar),
               ],
             ),
