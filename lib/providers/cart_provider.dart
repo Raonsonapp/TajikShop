@@ -71,14 +71,6 @@ class CartNotifier extends StateNotifier<CartState> {
     }
   }
 
-  Future<void> checkout(String addressId) async {
-    try {
-      await _repo.checkout(addressId);
-      state = const CartState();
-    } catch (e) {
-      state = state.copyWith(error: e.toString());
-    }
-  }
 }
 
 final cartProvider = StateNotifierProvider<CartNotifier, CartState>((ref) {

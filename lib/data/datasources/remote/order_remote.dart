@@ -9,9 +9,15 @@ class OrderRemote {
 
   Future<List<CartItemModel>> getCart() async {
     final res = await _dio.get(ApiEndpoints.cart);
-    final data = res.data;
-    List items = data is List ? data : (data['items'] ?? data['cart'] ?? []);
-    return items.map((e) => CartItemModel.fromJson(e as Map<String, dynamic>)).toList();
+    final raw = res.data;
+    // Backend wraps payload in {success, data:[...]}; fall back to legacy keys.
+    final body = raw is List
+        ? raw
+        : (raw is Map ? (raw['data'] ?? raw['items'] ?? raw['cart'] ?? []) : []);
+    final items = body is List ? body : const [];
+    return items
+        .map((e) => CartItemModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
   }
 
   Future<void> addToCart(String productId, int quantity) async {
@@ -27,14 +33,14 @@ class OrderRemote {
 
   Future<List<OrderModel>> getOrders() async {
     final res = await _dio.get(ApiEndpoints.orders);
-    final data = res.data;
-    List items = data is List ? data : (data['orders'] ?? []);
-    return items.map((e) => OrderModel.fromJson(e as Map<String, dynamic>)).toList();
-  }
-
-  Future<void> checkout(String addressId) async {
-    await _dio.post(ApiEndpoints.checkout, data: {
-      if (addressId.isNotEmpty) 'address_id': addressId,
-    });
+    final raw = res.data;
+    // Backend wraps payload in {success, data:[...]}; fall back to legacy keys.
+    final body = raw is List
+        ? raw
+        : (raw is Map ? (raw['data'] ?? raw['orders'] ?? []) : []);
+    final items = body is List ? body : const [];
+    return items
+        .map((e) => OrderModel.fromJson(Map<String, dynamic>.from(e as Map)))
+        .toList();
   }
 }
