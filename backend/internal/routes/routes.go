@@ -49,6 +49,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/users/me/avatar", middleware.Auth(), uh.UploadAvatar)
 	api.POST("/users/me/become-seller", middleware.Auth(), uh.BecomeSellerHandler)
 	api.POST("/users/me/seller-verify", middleware.Auth(), uh.SellerVerify)
+	api.GET("/seller/stats", middleware.Auth(), uh.SellerStats)
 	api.POST("/users/me/fcm-token", middleware.Auth(), uh.SaveFCMToken)
 	api.PUT("/users/me/location", middleware.Auth(), uh.UpdateLocation)
 	api.POST("/users/:id/follow", middleware.Auth(), flh.Follow)

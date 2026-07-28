@@ -41,6 +41,27 @@ final sellerProductsProvider =
   return ProductRepository().getProducts(sellerId: sellerId);
 });
 
+// ── Оморҳои фурӯшанда (GET /seller/stats) ───────────────────────────────────
+final sellerStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  const fallback = <String, dynamic>{
+    'products': 0,
+    'active_products': 0,
+    'orders': 0,
+    'sold': 0,
+    'revenue': 0,
+  };
+  try {
+    final res = await ApiClient.instance.dio.get('/seller/stats');
+    final raw = res.data;
+    final data = raw is Map
+        ? (raw['data'] is Map ? raw['data'] as Map : raw)
+        : <String, dynamic>{};
+    return {...fallback, ...Map<String, dynamic>.from(data)};
+  } catch (_) {
+    return fallback;
+  }
+});
+
 // ── Профили оммавии фурӯшанда (GET /users/:id/public) ───────────────────────
 final sellerPublicProvider =
     FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, id) async {
