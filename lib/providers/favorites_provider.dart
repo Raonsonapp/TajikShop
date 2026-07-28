@@ -10,16 +10,17 @@ class FavoritesNotifier extends StateNotifier<Set<String>> {
 
   Dio get _dio => ApiClient.instance.dio;
 
-  Map<String, dynamic> _unwrap(dynamic raw) {
-    if (raw is Map<String, dynamic>) return raw['data'] as Map<String, dynamic>? ?? raw;
-    return {};
-  }
-
   Future<void> _load() async {
     try {
       final res = await _dio.get(ApiEndpoints.favorites);
-      final data = _unwrap(res.data);
-      final list = data['favorites'] as List? ?? data['items'] as List? ?? (res.data is List ? res.data as List : []);
+      final raw = res.data;
+      // Backend wraps payloads as {success, data: [...]}; favorites `data` is a list.
+      final inner = raw is Map ? raw['data'] : raw;
+      final list = inner is List
+          ? inner
+          : (inner is Map
+              ? (inner['favorites'] as List? ?? inner['items'] as List? ?? [])
+              : []);
       final ids = list.map((e) {
         final m = e as Map<String, dynamic>;
         return (m['product_id'] ?? m['id'])?.toString() ?? '';
