@@ -27,6 +27,9 @@ class SellerDashboardScreen extends ConsumerWidget {
         final stats = statsAsync.asData?.value;
         int si(String k) => (stats?[k] as num?)?.toInt() ?? 0;
         String rev = ((stats?['revenue'] as num?)?.toDouble() ?? 0).toStringAsFixed(0);
+        final comm = ref.watch(platformCommissionProvider).maybeWhen(
+          data: (v) => v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1),
+          orElse: () => '-');
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -78,6 +81,7 @@ class SellerDashboardScreen extends ConsumerWidget {
                 _StatRow(icon: FeatherIcons.shoppingBag, label: l.orders, value: '${si('orders')}', color: AppColors.primary),
                 _StatRow(icon: FeatherIcons.trendingUp, label: 'Фурӯхта', value: '${si('sold')}', color: AppColors.info),
                 _StatRow(icon: FeatherIcons.package, label: 'Маҳсулоти фаъол', value: '${si('active_products')}', color: const Color(0xFF6C63FF)),
+                _StatRow(icon: FeatherIcons.percent, label: 'Комиссия', value: '$comm%', color: AppColors.warning),
               ],
             ),
           ),

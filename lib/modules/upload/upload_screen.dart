@@ -17,6 +17,7 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/search_provider.dart';
+import '../../providers/seller_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/safe_input.dart';
@@ -318,6 +319,24 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
       child: Text(AppL10n.of(context).discountOptionalHint,
           style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
     ),
+    const SizedBox(height: 14),
+
+    // Комиссияи платформа — то фурӯшанда бо нарх розӣ шавад
+    Consumer(builder: (context, ref, _) {
+      final pct = ref.watch(platformCommissionProvider).maybeWhen(
+        data: (v) => v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1),
+        orElse: () => '—');
+      return Container(padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.3))),
+        child: Row(children: [
+          const Icon(FeatherIcons.info, color: AppColors.primary, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Text('Комиссияи платформа: $pct% аз ҳар фурӯш',
+              style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600))),
+        ]));
+    }),
     const SizedBox(height: 22),
 
     // Seller info notice

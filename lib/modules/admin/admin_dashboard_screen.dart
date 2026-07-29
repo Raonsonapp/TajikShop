@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,19 +9,120 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/admin_l10n.dart';
+import '../../providers/seller_provider.dart';
 import '../../routes/route_names.dart';
+import '../../shared/widgets/safe_input.dart';
 
 final adminStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final res = await ApiClient.instance.dio.get(ApiEndpoints.adminStats);
-  return res.data as Map<String, dynamic>;
+  final raw = res.data;
+  final data = raw is Map
+      ? (raw['data'] is Map ? raw['data'] as Map : raw)
+      : <String, dynamic>{};
+  return Map<String, dynamic>.from(data);
 });
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
 
+  String _fmtPct(double v) =>
+      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
+
+  void _editCommission(BuildContext context, WidgetRef ref, double current) {
+    final ctrl = TextEditingController(text: _fmtPct(current));
+    showDialog(
+      context: context,
+      builder: (dctx) {
+        bool saving = false;
+        return StatefulBuilder(
+          builder: (dctx, setLocal) => AlertDialog(
+            backgroundColor: context.pal.card,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(children: [
+              const Icon(FeatherIcons.percent, color: AppColors.primary, size: 20),
+              const SizedBox(width: 10),
+              Expanded(child: Text('Комиссияи платформа',
+                  style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700))),
+            ]),
+            content: Container(
+              height: 54,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: context.pal.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: context.pal.border),
+              ),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SafeInput(
+                  controller: ctrl,
+                  hint: 'Фоиз (%)',
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  formatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                  textColor: context.pal.textPrimary,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Navigator.pop(dctx),
+                child: Text('Бекор', style: TextStyle(color: context.pal.textMuted)),
+              ),
+              TextButton(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        final pct = double.tryParse(ctrl.text.trim().replaceAll(',', '.'));
+                        if (pct == null) return;
+                        setLocal(() => saving = true);
+                        try {
+                          await ApiClient.instance.dio.post(
+                            '/admin/settings/commission',
+                            data: {'percent': pct},
+                          );
+                          ref.invalidate(adminStatsProvider);
+                          ref.invalidate(platformCommissionProvider);
+                          if (dctx.mounted) Navigator.pop(dctx);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text('Комиссия навсозӣ шуд: ${_fmtPct(pct)}%'),
+                              backgroundColor: AppColors.success,
+                              behavior: SnackBarBehavior.floating,
+                            ));
+                          }
+                        } catch (_) {
+                          setLocal(() => saving = false);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              content: Text('Хатогӣ ҳангоми навсозӣ'),
+                              backgroundColor: AppColors.error,
+                              behavior: SnackBarBehavior.floating,
+                            ));
+                          }
+                        }
+                      },
+                child: saving
+                    ? const SizedBox(
+                        width: 18, height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                    : const Text('Нигоҳ доштан',
+                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(adminStatsProvider);
+    final commAsync = ref.watch(platformCommissionProvider);
+    final commLabel = commAsync.maybeWhen(
+      data: (v) => v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1),
+      orElse: () => '—');
     final l = AppL10n.of(context);
     return Scaffold(
       backgroundColor: context.pal.scaffold,
@@ -103,6 +205,12 @@ class AdminDashboardScreen extends ConsumerWidget {
                     _StatCard(value: '${data['total_products'] ?? 0}', label: l.productsCountLabel, icon: FeatherIcons.package, color: const Color(0xFF6C63FF)),
                     _StatCard(value: '${data['total_orders'] ?? 0}', label: l.orders, icon: FeatherIcons.fileText, color: AppColors.warning),
                     _StatCard(value: '${data['total_sellers'] ?? 0}', label: l.sellersLabel, icon: FeatherIcons.shoppingBag, color: AppColors.info),
+                    _StatCard(
+                      value: '${((data['total_sales'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)} сом.',
+                      label: 'Фурӯши умумӣ', icon: FeatherIcons.trendingUp, color: const Color(0xFF00A3FF)),
+                    _StatCard(
+                      value: '${((data['platform_commission'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)} сом.',
+                      label: 'Даромади платформа (комиссия)', icon: FeatherIcons.percent, color: AppColors.success),
                   ],
                 ),
               ),
@@ -166,6 +274,12 @@ class AdminDashboardScreen extends ConsumerWidget {
                   _ManageItem(
                     icon: FeatherIcons.refreshCcw, label: l.returnsExchange,
                     subtitle: l.returnsSub, color: const Color(0xFF00A3FF), onTap: () => context.push(RouteNames.adminReturns),
+                  ),
+                  _ManageDivider(),
+                  _ManageItem(
+                    icon: FeatherIcons.percent, label: 'Комиссия: $commLabel%',
+                    subtitle: 'Фоизи комиссияи платформа', color: AppColors.success,
+                    onTap: () => _editCommission(context, ref, commAsync.asData?.value ?? 10),
                   ),
                 ]),
               ),

@@ -62,6 +62,22 @@ final sellerStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((re
   }
 });
 
+// ── Комиссияи платформа (GET /settings) ─────────────────────────────────────
+final platformCommissionProvider = FutureProvider.autoDispose<double>((ref) async {
+  try {
+    final res = await ApiClient.instance.dio.get('/settings');
+    final raw = res.data;
+    final data = raw is Map
+        ? (raw['data'] is Map ? raw['data'] as Map : raw)
+        : <String, dynamic>{};
+    final v = data['commission_percent'];
+    if (v is num) return v.toDouble();
+    return double.tryParse('$v') ?? 10;
+  } catch (_) {
+    return 10;
+  }
+});
+
 // ── Профили оммавии фурӯшанда (GET /users/:id/public) ───────────────────────
 final sellerPublicProvider =
     FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, id) async {
