@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"tajikshop/internal/db"
 	"tajikshop/internal/models"
 	"tajikshop/internal/storage"
@@ -11,6 +12,42 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+// commissionPercent — фоизи комиссияи платформа (аз settings, пешфарз 10%).
+func commissionPercent() float64 {
+	var v string
+	if err := db.DB.QueryRow(`SELECT value FROM settings WHERE key='commission_percent'`).Scan(&v); err == nil {
+		if f, e := strconv.ParseFloat(v, 64); e == nil {
+			return f
+		}
+	}
+	return 10
+}
+
+// PublicSettings — танзимоти оммавӣ (фоизи комиссия) — фурӯшандагон онро мебинанд.
+func (h *AdminHandler) PublicSettings(c *gin.Context) {
+	utils.OK(c, gin.H{"commission_percent": commissionPercent()})
+}
+
+// SetCommission — админ фоизи комиссияи платформаро таъин мекунад (0–100).
+func (h *AdminHandler) SetCommission(c *gin.Context) {
+	var in struct {
+		Percent float64 `json:"percent"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		utils.Err(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if in.Percent < 0 {
+		in.Percent = 0
+	}
+	if in.Percent > 100 {
+		in.Percent = 100
+	}
+	db.DB.Exec(`INSERT INTO settings(key,value) VALUES('commission_percent',$1)
+		ON CONFLICT(key) DO UPDATE SET value=$1`, strconv.FormatFloat(in.Percent, 'f', -1, 64))
+	utils.OK(c, gin.H{"commission_percent": in.Percent})
+}
 
 // ========== STORIES ==========
 
@@ -233,13 +270,19 @@ func NewAdminHandler() *AdminHandler { return &AdminHandler{} }
 
 func (h *AdminHandler) Stats(c *gin.Context) {
 	var users, products, orders int
+	var sales float64
 	db.DB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&users)
 	db.DB.QueryRow(`SELECT COUNT(*) FROM products`).Scan(&products)
 	db.DB.QueryRow(`SELECT COUNT(*) FROM orders`).Scan(&orders)
+	db.DB.QueryRow(`SELECT COALESCE(SUM(total),0) FROM orders WHERE status <> 'cancelled'`).Scan(&sales)
+	pct := commissionPercent()
 	utils.OK(c, gin.H{
-		"total_users":    users,
-		"total_products": products,
-		"total_orders":   orders,
+		"total_users":         users,
+		"total_products":      products,
+		"total_orders":        orders,
+		"total_sales":         sales,
+		"commission_percent":  pct,
+		"platform_commission": sales * pct / 100, // даромади платформа
 	})
 }
 
