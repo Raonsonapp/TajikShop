@@ -212,6 +212,10 @@ ALTER TABLE users  ADD COLUMN IF NOT EXISTS store_lat DOUBLE PRECISION DEFAULT 0
 ALTER TABLE users  ADD COLUMN IF NOT EXISTS store_lng DOUBLE PRECISION DEFAULT 0;
 ALTER TABLE users  ADD COLUMN IF NOT EXISTS seller_requested BOOLEAN DEFAULT false;
 
+-- Танзимоти платформа (комиссия ва ғ.). Комиссияи пешфарз: 10%.
+CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+INSERT INTO settings(key,value) VALUES('commission_percent','10') ON CONFLICT(key) DO NOTHING;
+
 -- Категорияҳоро бо расм таъмин мекунем (агар холӣ бошанд).
 UPDATE categories SET icon_url = 'https://picsum.photos/seed/' || slug || '/400'
   WHERE icon_url IS NULL OR icon_url = '';
