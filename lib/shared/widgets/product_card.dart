@@ -152,6 +152,23 @@ class _ProductCardState extends ConsumerState<ProductCard>
                         style: const TextStyle(color: Colors.white,
                             fontSize: 10, fontWeight: FontWeight.w900)))),
 
+              // TOP badge (boosted / featured)
+              if (p.isFeatured)
+                Positioned(
+                  top: (p.isFlashSale || (disc > 0)) ? 34 : 8, left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [BoxShadow(
+                          color: const Color(0xFF00D084).withOpacity(0.5), blurRadius: 8)]),
+                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(FeatherIcons.zap, color: Colors.white, size: 11),
+                      SizedBox(width: 2),
+                      Text('TOP', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+                    ]))),
+
               // 💚 Fav button
               Positioned(top: 8, right: 8,
                 child: GestureDetector(

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
+import '../../core/api/api_client.dart';
 import '../../data/models/product_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/seller_provider.dart';
@@ -135,6 +136,12 @@ class _ProductRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _RowAction(
+                icon: FeatherIcons.trendingUp,
+                label: p.isFeatured ? 'Дар TOP' : '🚀 Boost',
+                color: p.isFeatured ? context.pal.textMuted : const Color(0xFF00A3FF),
+                onTap: p.isFeatured ? () {} : () => _boost(context),
+              ),
+              _RowAction(
                 icon: FeatherIcons.sliders,
                 label: l.variants,
                 color: AppColors.primary,
@@ -162,6 +169,21 @@ class _ProductRow extends StatelessWidget {
 
   Widget _ph() => Container(width: 68, height: 68, color: AppColors.bgSurface,
       child: const Icon(FeatherIcons.image, color: AppColors.textMuted));
+
+  Future<void> _boost(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ApiClient.instance.dio.post('/products/${product.id}/boost');
+      onChanged();
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Маҳсулот 7 рӯз дар сари рӯйхат 🚀'),
+        backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Хатогӣ ҳангоми boost'),
+        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+    }
+  }
 
   void _openEdit(BuildContext context) {
     showModalBottomSheet(

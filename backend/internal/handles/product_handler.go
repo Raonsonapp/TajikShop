@@ -149,9 +149,10 @@ func (h *ProductHandler) List(c *gin.Context) {
 
 	query := `SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-		u.name as seller_name, p.sale_ends_at
+		u.name as seller_name, p.sale_ends_at,
+		(COALESCE(p.is_featured,false) AND COALESCE(p.featured_until, NOW()) > NOW()) AS is_featured
 		FROM products p JOIN users u ON u.id=p.seller_id` + where +
-		" ORDER BY " + orderBy +
+		" ORDER BY (COALESCE(p.is_featured,false) AND COALESCE(p.featured_until, NOW()) > NOW()) DESC, " + orderBy +
 		fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
 	mainArgs = append(mainArgs, limit, offset)
 
@@ -167,7 +168,7 @@ func (h *ProductHandler) List(c *gin.Context) {
 		var p models.Product
 		var saleEnds sql.NullTime
 		rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds)
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds, &p.IsFeatured)
 		if saleEnds.Valid {
 			p.SaleEndsAt = &saleEnds.Time
 		}
@@ -252,6 +253,23 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		db.DB.Exec(`UPDATE products SET sale_ends_at = NULL WHERE id=$1 AND seller_id=$2`, id, uid)
 	}
 	utils.OK(c, gin.H{"updated": true})
+}
+
+// Boost — маҳсулотро ба сари рӯйхат мебарорад (реклама, 7 рӯз). Хусусияти Pro.
+func (h *ProductHandler) Boost(c *gin.Context) {
+	uid := utils.UserID(c)
+	id := c.Param("id")
+	res, err := db.DB.Exec(`UPDATE products SET is_featured=true, featured_until=NOW()+INTERVAL '7 days', updated_at=NOW()
+		WHERE id=$1 AND seller_id=$2`, id, uid)
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		utils.Err(c, http.StatusForbidden, "not your product")
+		return
+	}
+	utils.OK(c, gin.H{"boosted": true, "days": 7})
 }
 
 func (h *ProductHandler) Delete(c *gin.Context) {

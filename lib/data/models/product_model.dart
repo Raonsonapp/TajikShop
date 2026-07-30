@@ -23,6 +23,7 @@ class ProductModel {
   final double wholesalePrice;
   final List<VariantModel> variants;
   final DateTime? saleEndsAt;
+  final bool isFeatured;
   final DateTime createdAt;
 
   const ProductModel({
@@ -36,6 +37,7 @@ class ProductModel {
     this.brandName, this.minOrderQty = 1, this.wholesalePrice = 0,
     this.variants = const [],
     this.saleEndsAt,
+    this.isFeatured = false,
     required this.createdAt,
   });
 
@@ -106,6 +108,7 @@ class ProductModel {
       saleEndsAt: json['sale_ends_at'] != null
           ? DateTime.tryParse(json['sale_ends_at'].toString())?.toLocal()
           : null,
+      isFeatured: json['is_featured'] as bool? ?? false,
       createdAt:       json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),

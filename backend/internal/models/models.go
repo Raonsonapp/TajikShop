@@ -36,6 +36,7 @@ type Product struct {
 	DiscountPercent int         `json:"discount_percent"`
 	Stock           int         `json:"stock"`
 	IsActive        bool        `json:"is_active"`
+	IsFeatured      bool        `json:"is_featured"`
 	Views           int         `json:"views"`
 	VideoURL        string      `json:"video_url"`
 	Images          []string    `json:"images"`

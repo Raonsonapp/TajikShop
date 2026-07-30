@@ -16,6 +16,7 @@ import '../../providers/cart_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/address_provider.dart';
 import '../../providers/wallet_provider.dart';
+import '../../providers/seller_provider.dart';
 import '../../data/models/cart_model.dart';
 import '../../routes/route_names.dart';
 import '../address/add_address_sheet.dart';
@@ -42,6 +43,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
   Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
     final isAuth = ref.watch(authProvider).isAuthenticated;
+    final cashbackPct = ref.watch(cashbackProvider).maybeWhen(data: (v) => v, orElse: () => 2.0);
 
     if (!isAuth) return Scaffold(backgroundColor: context.pal.scaffold, appBar: _bar(),
       body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -107,6 +109,14 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                       Divider(color: context.pal.divider),
                       const SizedBox(height: 10),
                       _row(AppL10n.of(context).total, '${(cart.total + 20).toStringAsFixed(0)} сом.', bold: true),
+                      const SizedBox(height: 8),
+                      Row(children: [
+                        const Icon(FeatherIcons.gift, color: AppColors.primary, size: 14),
+                        const SizedBox(width: 6),
+                        Expanded(child: Text(
+                          '💸 Cashback: ${cashbackPct == cashbackPct.roundToDouble() ? cashbackPct.toStringAsFixed(0) : cashbackPct.toStringAsFixed(1)}% (${(cart.total * cashbackPct / 100).toStringAsFixed(0)} сом ба ҳамён)',
+                          style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600))),
+                      ]),
                       const SizedBox(height: 20),
                       // Big rounded gradient checkout button (template style)
                       Center(child: GestureDetector(

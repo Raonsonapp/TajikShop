@@ -24,9 +24,43 @@ func commissionPercent() float64 {
 	return 10
 }
 
-// PublicSettings — танзимоти оммавӣ (фоизи комиссия) — фурӯшандагон онро мебинанд.
+// cashbackPercent — фоизи cashback ба харидор (аз settings, пешфарз 2%).
+func cashbackPercent() float64 {
+	var v string
+	if err := db.DB.QueryRow(`SELECT value FROM settings WHERE key='cashback_percent'`).Scan(&v); err == nil {
+		if f, e := strconv.ParseFloat(v, 64); e == nil {
+			return f
+		}
+	}
+	return 2
+}
+
+// PublicSettings — танзимоти оммавӣ (комиссия + cashback) — корбарон онро мебинанд.
 func (h *AdminHandler) PublicSettings(c *gin.Context) {
-	utils.OK(c, gin.H{"commission_percent": commissionPercent()})
+	utils.OK(c, gin.H{
+		"commission_percent": commissionPercent(),
+		"cashback_percent":   cashbackPercent(),
+	})
+}
+
+// SetCashback — админ фоизи cashback-ро таъин мекунад (0–100).
+func (h *AdminHandler) SetCashback(c *gin.Context) {
+	var in struct {
+		Percent float64 `json:"percent"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		utils.Err(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if in.Percent < 0 {
+		in.Percent = 0
+	}
+	if in.Percent > 100 {
+		in.Percent = 100
+	}
+	db.DB.Exec(`INSERT INTO settings(key,value) VALUES('cashback_percent',$1)
+		ON CONFLICT(key) DO UPDATE SET value=$1`, strconv.FormatFloat(in.Percent, 'f', -1, 64))
+	utils.OK(c, gin.H{"cashback_percent": in.Percent})
 }
 
 // SetCommission — админ фоизи комиссияи платформаро таъин мекунад (0–100).

@@ -78,6 +78,22 @@ final platformCommissionProvider = FutureProvider.autoDispose<double>((ref) asyn
   }
 });
 
+// ── Cashback платформа (GET /settings) ──────────────────────────────────────
+final cashbackProvider = FutureProvider.autoDispose<double>((ref) async {
+  try {
+    final res = await ApiClient.instance.dio.get('/settings');
+    final raw = res.data;
+    final data = raw is Map
+        ? (raw['data'] is Map ? raw['data'] as Map : raw)
+        : <String, dynamic>{};
+    final v = data['cashback_percent'];
+    if (v is num) return v.toDouble();
+    return double.tryParse('$v') ?? 2;
+  } catch (_) {
+    return 2;
+  }
+});
+
 // ── Профили оммавии фурӯшанда (GET /users/:id/public) ───────────────────────
 final sellerPublicProvider =
     FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, id) async {
