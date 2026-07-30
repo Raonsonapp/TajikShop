@@ -37,7 +37,7 @@ void main() {
   // ✅ Push notifications (Firebase) — дар мобайл; web-ро рад мекунад
   PushService.instance.init();
 
-  // ✅ Реклама (AppLovin MAX) — агар SDK Key дода шуда бошад
+  // ✅ Реклама (Google AdMob) — ҳозир бо ID-и тестӣ фаъол
   AdService.instance.init();
 
   SystemChrome.setPreferredOrientations(
