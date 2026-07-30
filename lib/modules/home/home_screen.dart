@@ -1,4 +1,5 @@
 // ignore_for_file: depend_on_referenced_packages
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +9,9 @@ import '../../core/app_l10n.dart';
 import '../../core/l10n/shop_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
+import '../../data/models/product_model.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/flash_deals_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/product_card.dart';
@@ -95,6 +98,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               SliverToBoxAdapter(child: _searchPill()),
               const SliverToBoxAdapter(child: _HeroBanner()),
               const SliverToBoxAdapter(child: _NearbyShopsCard()),
+              const SliverToBoxAdapter(child: _FlashDealsRail()),
 
               // Categories
               SliverToBoxAdapter(
@@ -496,6 +500,216 @@ class _HeroBanner extends StatelessWidget {
           color: Colors.white.withValues(alpha: opacity),
         ),
       );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// FLASH DEALS — horizontal rail of time-limited discounts with live countdown
+// ════════════════════════════════════════════════════════════════════════════
+class _FlashDealsRail extends ConsumerStatefulWidget {
+  const _FlashDealsRail();
+  @override
+  ConsumerState<_FlashDealsRail> createState() => _FlashDealsRailState();
+}
+
+class _FlashDealsRailState extends ConsumerState<_FlashDealsRail> {
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    // Ҳар сония барои навсозии таймерҳо
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final async = ref.watch(flashDealsProvider);
+    final deals = async.maybeWhen(
+      data: (list) =>
+          list.where((p) => p.isFlashSale && p.inStock).toList(),
+      orElse: () => const <ProductModel>[],
+    );
+    if (deals.isEmpty) return const SizedBox.shrink();
+
+    final pal = context.pal;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                gradient: _greenGradient,
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: const Icon(FeatherIcons.zap, color: Colors.white, size: 15),
+            ),
+            const SizedBox(width: 9),
+            Text('Тахфифҳои барқӣ',
+                style: TextStyle(
+                    color: pal.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3)),
+          ]),
+        ),
+        SizedBox(
+          height: 244,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: deals.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (_, i) => _FlashDealCard(product: deals[i]),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _FlashDealCard extends StatelessWidget {
+  final ProductModel product;
+  const _FlashDealCard({required this.product});
+
+  String _fmt(int n) => n.toString().padLeft(2, '0');
+
+  @override
+  Widget build(BuildContext context) {
+    final pal = context.pal;
+    final p = product;
+    final left = p.saleEndsAt!.difference(DateTime.now());
+    final h = left.inHours;
+    final m = left.inMinutes % 60;
+    final s = left.inSeconds % 60;
+    final countdown = '${_fmt(h)}:${_fmt(m)}:${_fmt(s)}';
+
+    return GestureDetector(
+      onTap: () => context.push('/product/${p.id}'),
+      child: Container(
+        width: 160,
+        decoration: BoxDecoration(
+          color: pal.card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: pal.border, width: 0.6),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Расм + бейҷи тахфиф
+            Stack(children: [
+              SizedBox(
+                width: double.infinity,
+                height: 128,
+                child: p.mainImage.isEmpty
+                    ? Container(
+                        color: pal.surface,
+                        child: Icon(FeatherIcons.image,
+                            color: pal.textMuted, size: 28))
+                    : CachedNetworkImage(
+                        imageUrl: _mediaUrl(p.mainImage),
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(color: pal.surface),
+                        errorWidget: (_, __, ___) => Container(
+                            color: pal.surface,
+                            child: Icon(FeatherIcons.image,
+                                color: pal.textMuted, size: 28)),
+                      ),
+              ),
+              if (p.computedDiscount > 0)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('-${p.computedDiscount}%',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800)),
+                  ),
+                ),
+            ]),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(p.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: pal.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    Text('${p.price.toStringAsFixed(0)} с',
+                        style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800)),
+                    if (p.oldPrice != null) ...[
+                      const SizedBox(width: 6),
+                      Text('${p.oldPrice!.toStringAsFixed(0)}',
+                          style: TextStyle(
+                              color: pal.textMuted,
+                              fontSize: 12,
+                              decoration: TextDecoration.lineThrough)),
+                    ],
+                  ]),
+                  const SizedBox(height: 8),
+                  // Таймери шумориши баръакс
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(FeatherIcons.clock,
+                          color: AppColors.error, size: 12),
+                      const SizedBox(width: 5),
+                      Text(countdown,
+                          style: const TextStyle(
+                              color: AppColors.error,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              fontFeatures: [FontFeature.tabularFigures()])),
+                    ]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════

@@ -29,5 +29,7 @@ class ProductRepository {
 
   Future<List<ProductModel>> getTrending() => _remote.getTrending();
 
+  Future<List<ProductModel>> getFlashDeals() => _remote.getFlashDeals();
+
   Future<ProductModel> getProductById(String id) => _remote.getProductById(id);
 }

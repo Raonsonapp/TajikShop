@@ -18,6 +18,7 @@ class ApiEndpoints {
   // Products
   static const products = '/products';
   static const trending = '/products/trending';
+  static const flashDeals = '/products/flash';
   static String product(String id) => '/products/$id';
   static String productImages(String id) => '/products/$id/images';
 
