@@ -42,6 +42,7 @@ type Product struct {
 	VideoURL        string      `json:"video_url"`
 	Images          []string    `json:"images"`
 	SellerName      string      `json:"seller_name,omitempty"`
+	SellerVerified  bool        `json:"seller_verified,omitempty"`
 	BrandID         string      `json:"brand_id,omitempty"`
 	BrandName       string      `json:"brand_name,omitempty"`
 	MinOrderQty     int         `json:"min_order_qty,omitempty"`
