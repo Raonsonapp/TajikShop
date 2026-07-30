@@ -1,0 +1,355 @@
+// ignore_for_file: depend_on_referenced_packages
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:feather_icons/feather_icons.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
+import '../../providers/shops_provider.dart';
+
+const String _kMediaHost = 'https://mahmadmurodov-tajikshop.hf.space';
+const LatLng _kDushanbe = LatLng(38.5598, 68.7870);
+
+String _mediaUrl(String path) =>
+    path.startsWith('http') ? path : '$_kMediaHost$path';
+
+double _asDouble(dynamic v) =>
+    v is num ? v.toDouble() : (double.tryParse('$v') ?? 0);
+
+/// Харитаи «Дӯконҳои наздик» — харидор бизнесҳои маҳаллиро дар харитаи
+/// OpenStreetMap меёбад. Ҳар дӯкони дорои координата маркери сабз мегирад;
+/// зеркунӣ корти поёнӣ бо маълумоти дӯкон ва тугмаи «Ба мағоза»-ро мекушояд.
+class NearbyShopsScreen extends ConsumerStatefulWidget {
+  const NearbyShopsScreen({super.key});
+
+  @override
+  ConsumerState<NearbyShopsScreen> createState() => _NearbyShopsScreenState();
+}
+
+class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
+  final _controller = MapController();
+  Map<String, dynamic>? _selected;
+  bool _locating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _goToMyLocation(initial: true));
+  }
+
+  Future<void> _goToMyLocation({bool initial = false}) async {
+    if (mounted) setState(() => _locating = true);
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw 'GPS хомӯш аст';
+      }
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
+        throw 'Иҷозати ҷойгиршавӣ дода нашуд';
+      }
+      final pos = await Geolocator.getCurrentPosition();
+      if (!mounted) return;
+      _controller.move(LatLng(pos.latitude, pos.longitude), 14);
+    } catch (e) {
+      if (!initial && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('$e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating));
+      }
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
+  List<Marker> _markers(List<Map<String, dynamic>> shops) {
+    final out = <Marker>[];
+    for (final s in shops) {
+      final lat = _asDouble(s['store_lat']);
+      final lng = _asDouble(s['store_lng']);
+      if (lat == 0 && lng == 0) continue;
+      out.add(Marker(
+        point: LatLng(lat, lng),
+        width: 46,
+        height: 46,
+        child: GestureDetector(
+          onTap: () => setState(() => _selected = s),
+          child: _PinMarker(selected: identical(_selected, s)),
+        ),
+      ));
+    }
+    return out;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pal = context.pal;
+    final shopsAsync = ref.watch(shopsProvider);
+
+    return Scaffold(
+      backgroundColor: pal.scaffold,
+      appBar: AppBar(
+        backgroundColor: pal.scaffold,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(FeatherIcons.chevronLeft, color: pal.textPrimary),
+          onPressed: () => context.pop(),
+        ),
+        title: Text('Дӯконҳои наздик',
+            style: TextStyle(
+                color: pal.textPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: 17)),
+      ),
+      body: shopsAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(
+              color: AppColors.primary, strokeWidth: 2.6),
+        ),
+        error: (_, __) => _mapWith(pal, const []),
+        data: (shops) => _mapWith(pal, shops),
+      ),
+    );
+  }
+
+  Widget _mapWith(AppPalette pal, List<Map<String, dynamic>> shops) {
+    final markers = _markers(shops);
+    return Stack(children: [
+      FlutterMap(
+        mapController: _controller,
+        options: MapOptions(
+          initialCenter: _kDushanbe,
+          initialZoom: 12,
+          onTap: (_, __) => setState(() => _selected = null),
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.example.tajikshop',
+          ),
+          MarkerLayer(markers: markers),
+        ],
+      ),
+
+      // Ёддошт: ягон дӯкон координата надорад
+      if (markers.isEmpty)
+        Positioned(
+          top: 12,
+          left: 16,
+          right: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: pal.card,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: pal.border, width: 0.8),
+            ),
+            child: Row(children: [
+              const Icon(FeatherIcons.mapPin,
+                  color: AppColors.primary, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Ҳанӯз ягон дӯкон ҷойгиршавиро нишон надодааст',
+                  style: TextStyle(color: pal.textSecondary, fontSize: 12.5),
+                ),
+              ),
+            ]),
+          ),
+        ),
+
+      // Тугмаи «ҷойгиршавии ман»
+      Positioned(
+        right: 16,
+        bottom: _selected != null ? 188 : 24,
+        child: FloatingActionButton(
+          heroTag: 'shops_myloc',
+          backgroundColor: pal.card,
+          onPressed: _locating ? null : () => _goToMyLocation(),
+          child: _locating
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2.4, color: AppColors.primary))
+              : const Icon(FeatherIcons.navigation, color: AppColors.primary),
+        ),
+      ),
+
+      // Корти поёнии дӯкони интихобшуда
+      if (_selected != null)
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 20,
+          child: _ShopCard(
+            shop: _selected!,
+            onClose: () => setState(() => _selected = null),
+          ),
+        ),
+    ]);
+  }
+}
+
+// ── Маркери сабзи дӯкон ──
+class _PinMarker extends StatelessWidget {
+  final bool selected;
+  const _PinMarker({required this.selected});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        shape: BoxShape.circle,
+        border: Border.all(
+            color: Colors.white, width: selected ? 3 : 2),
+        boxShadow: const [
+          BoxShadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 3)),
+        ],
+      ),
+      child: const Icon(FeatherIcons.mapPin, color: Colors.white, size: 22),
+    );
+  }
+}
+
+// ── Корти маълумоти дӯкон ──
+class _ShopCard extends StatelessWidget {
+  final Map<String, dynamic> shop;
+  final VoidCallback onClose;
+  const _ShopCard({required this.shop, required this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    final pal = context.pal;
+    final avatar = '${shop['avatar_url'] ?? ''}';
+    final name = '${shop['name'] ?? 'Дӯкон'}';
+    final verified = shop['is_verified'] == true;
+    final products = shop['products'] is num
+        ? (shop['products'] as num).toInt()
+        : int.tryParse('${shop['products']}') ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: pal.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: pal.border, width: 0.8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Аватар
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: pal.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: pal.border, width: 0.8),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: avatar.isEmpty
+                    ? const Icon(FeatherIcons.shoppingBag,
+                        color: AppColors.primary, size: 24)
+                    : CachedNetworkImage(
+                        imageUrl: _mediaUrl(avatar),
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => const SizedBox.shrink(),
+                        errorWidget: (_, __, ___) => const Icon(
+                            FeatherIcons.shoppingBag,
+                            color: AppColors.primary,
+                            size: 24),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: pal.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ),
+                        if (verified) ...[
+                          const SizedBox(width: 6),
+                          const Icon(FeatherIcons.checkCircle,
+                              color: AppColors.primary, size: 16),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$products маҳсулот',
+                      style: TextStyle(
+                          color: pal.textMuted,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: onClose,
+                child: Icon(FeatherIcons.x, color: pal.textMuted, size: 20),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton.icon(
+              onPressed: () => context.push('/seller/${shop['id']}'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(FeatherIcons.shoppingBag,
+                  color: Colors.white, size: 18),
+              label: const Text('Ба мағоза',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

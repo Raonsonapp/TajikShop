@@ -94,6 +94,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               SliverToBoxAdapter(child: _header()),
               SliverToBoxAdapter(child: _searchPill()),
               const SliverToBoxAdapter(child: _HeroBanner()),
+              const SliverToBoxAdapter(child: _NearbyShopsCard()),
 
               // Categories
               SliverToBoxAdapter(
@@ -495,6 +496,85 @@ class _HeroBanner extends StatelessWidget {
           color: Colors.white.withValues(alpha: opacity),
         ),
       );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// NEARBY SHOPS — tappable card → map of local offline businesses
+// ════════════════════════════════════════════════════════════════════════════
+class _NearbyShopsCard extends StatelessWidget {
+  const _NearbyShopsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: GestureDetector(
+        onTap: () => context.push(RouteNames.nearbyShops),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: _greenGradient,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.28),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(FeatherIcons.mapPin,
+                    color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      '🗺 Дӯконҳои наздик',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Бизнесҳои маҳаллиро дар харита ёбед',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(FeatherIcons.chevronRight,
+                  color: Colors.white, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
