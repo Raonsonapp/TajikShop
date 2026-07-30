@@ -15,6 +15,10 @@ type User struct {
 	IsSeller        bool      `json:"is_seller"`
 	SellerRequested bool      `json:"seller_requested"`
 	IsBanned        bool      `json:"is_banned"`
+	ShopName        string    `json:"shop_name"`
+	ShopDesc        string    `json:"shop_desc"`
+	ShopPhone       string    `json:"shop_phone"`
+	ShopHours       string    `json:"shop_hours"`
 	StoreLat        float64   `json:"store_lat"`
 	StoreLng        float64   `json:"store_lng"`
 	RefreshToken    string    `json:"-"`
