@@ -21,6 +21,7 @@ import '../../providers/search_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
+import '../../shared/widgets/inline_ad.dart';
 import '../stories/story_viewer_screen.dart';
 
 const String _kMediaHost = 'https://mahmadmurodov-tajikshop.hf.space';
@@ -116,6 +117,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               const SliverToBoxAdapter(child: _CategoriesStrip()),
+
+              // Реклама (MREC) дар мобайни feed — мисли маркетплейси воқеӣ
+              const SliverToBoxAdapter(child: AdMrec()),
 
               // Products
               SliverToBoxAdapter(

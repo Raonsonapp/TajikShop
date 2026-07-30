@@ -13,6 +13,7 @@ import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/services/recent_service.dart';
+import '../../core/ads/ad_service.dart';
 import '../../data/models/product_model.dart';
 import '../../data/models/review_model.dart';
 import '../../data/models/variant_model.dart';
@@ -81,7 +82,10 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   Widget _build(ProductModel p) {
     if (!_recorded) {
       _recorded = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) => RecentService.add(p));
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        RecentService.add(p);
+        AdService.instance.maybeShowInterstitial(); // реклама (frequency-capped)
+      });
     }
     final isFav = ref.watch(favoritesProvider).contains(p.id);
     final minQty = p.minOrderQty > 1 ? p.minOrderQty : 1;
