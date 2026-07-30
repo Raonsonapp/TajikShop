@@ -1,17 +1,17 @@
-import 'package:applovin_max/applovin_max.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'ad_config.dart';
 
-/// Хидмати марказии реклама (AppLovin MAX).
+/// Хидмати марказии реклама (Google AdMob).
 /// - SDK-ро як маротиба инициализатсия мекунад.
 /// - Interstitial-ро пешакӣ бор карда, бо frequency-cap нишон медиҳад.
-/// Ҳангоми набудани SDK Key ҳамаи амалҳо no-op мешаванд (барнома вайрон намешавад).
+/// Ҳангоми ғайрифаъол буданаш ҳамаи амалҳо no-op мешаванд.
 class AdService {
   AdService._();
   static final AdService instance = AdService._();
 
   bool _initialized = false;
-  bool _interstitialLoaded = false;
+  InterstitialAd? _interstitial;
   int _actionCounter = 0;
 
   bool get ready => _initialized && AdConfig.enabled;
@@ -19,14 +19,8 @@ class AdService {
   Future<void> init() async {
     if (_initialized || !AdConfig.enabled) return;
     try {
-      if (AdConfig.testDeviceAdvertisingIds.isNotEmpty) {
-        AppLovinMAX.setTestDeviceAdvertisingIds(
-            AdConfig.testDeviceAdvertisingIds);
-      }
-      final conf = await AppLovinMAX.initialize(AdConfig.sdkKey);
-      if (conf == null) return;
+      await MobileAds.instance.initialize();
       _initialized = true;
-      _setupInterstitial();
       _loadInterstitial();
     } catch (e) {
       debugPrint('AdService init failed: $e');
@@ -34,35 +28,44 @@ class AdService {
   }
 
   // ── Interstitial ──
-  void _setupInterstitial() {
-    if (AdConfig.interstitialAdUnitId.isEmpty) return;
-    AppLovinMAX.setInterstitialListener(InterstitialListener(
-      onAdLoadedCallback: (ad) => _interstitialLoaded = true,
-      onAdLoadFailedCallback: (adUnitId, error) {
-        _interstitialLoaded = false;
-      },
-      onAdDisplayedCallback: (ad) {},
-      onAdDisplayFailedCallback: (ad, error) => _loadInterstitial(),
-      onAdClickedCallback: (ad) {},
-      onAdHiddenCallback: (ad) {
-        _interstitialLoaded = false;
-        _loadInterstitial(); // барои дафъаи оянда бор кунед
-      },
-    ));
-  }
-
   void _loadInterstitial() {
     if (!ready || AdConfig.interstitialAdUnitId.isEmpty) return;
-    AppLovinMAX.loadInterstitial(AdConfig.interstitialAdUnitId);
+    InterstitialAd.load(
+      adUnitId: AdConfig.interstitialAdUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitial = ad;
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _interstitial = null;
+              _loadInterstitial(); // барои дафъаи оянда
+            },
+            onAdFailedToShowFullScreenContent: (ad, err) {
+              ad.dispose();
+              _interstitial = null;
+              _loadInterstitial();
+            },
+          );
+        },
+        onAdFailedToLoad: (err) {
+          _interstitial = null;
+          debugPrint('Interstitial load failed: ${err.message}');
+        },
+      ),
+    );
   }
 
   /// Ҳар N амал як interstitial нишон медиҳад (агар омода бошад).
   void maybeShowInterstitial() {
-    if (!ready || AdConfig.interstitialAdUnitId.isEmpty) return;
+    if (!ready) return;
     _actionCounter++;
     if (_actionCounter % AdConfig.interstitialEveryNActions != 0) return;
-    if (_interstitialLoaded) {
-      AppLovinMAX.showInterstitial(AdConfig.interstitialAdUnitId);
+    final ad = _interstitial;
+    if (ad != null) {
+      ad.show();
+      _interstitial = null; // callback дубора бор мекунад
     } else {
       _loadInterstitial();
     }

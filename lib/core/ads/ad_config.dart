@@ -1,41 +1,55 @@
+import 'dart:io' show Platform;
+
 /// ═══════════════════════════════════════════════════════════════════════════
-///  AppLovin MAX — конфигуратсияи реклама (даромад)
+///  Google AdMob — конфигуратсияи реклама (даромад)
 ///
-///  ⚠️  БАРОИ ФАЪОЛ КАРДАНИ РЕКЛАМА:
-///  1. Дар https://dashboard.applovin.com ҳисоб созед (ройгон).
-///  2. SDK Key-ро аз «Account → Keys» гиред → ба [_sdkKeyDefault] гузоред.
-///  3. Дар «MAX → Ad Units» барои Android 4 воҳиди реклама созед:
-///       Banner, MREC, Interstitial, Rewarded — ва ID-ҳояшонро дар поён гузоред.
-///  4. Барномаро аз нав build кунед.
+///  🟢 ҲОЗИР бо ID-ҳои ТЕСТӢ кор мекунад — реклама фавран пайдо мешавад
+///     (вале test-реклама пул НАМЕдиҳад).
 ///
-///  То он даме ки SDK Key холӣ бошад, реклама ХОМӮШ аст — барнома бехато кор мекунад.
-///  ID-ҳоро метавон бо --dart-define низ дод (барои CI/секрет нигоҳ доштан).
+///  💰 БАРОИ ДАРОМАДИ ВОҚЕӢ:
+///  1. Ба https://admob.google.com равед (бо ҳамон Gmail — аз Тоҷикистон кушода мешавад).
+///  2. App илова кунед (Android) → App ID-ро гиред (ca-app-pub-XXXX~YYYY).
+///  3. 3 воҳиди реклама созед: Banner, Interstitial, ва боз як Banner барои MREC.
+///  4. ID-ҳои воқеиро дар поён ба ҷои ID-ҳои тестӣ гузоред.
+///  5. ⚠️ App ID-ро ИНЧУНИН дар android/app/src/main/AndroidManifest.xml
+///        (meta-data com.google.android.gms.ads.APPLICATION_ID) иваз кунед.
+///  6. Барномаро аз нав build кунед.
 /// ═══════════════════════════════════════════════════════════════════════════
 class AdConfig {
-  // ── SDK Key (аз AppLovin dashboard → Account → Keys) ──
-  static const String _sdkKeyDefault = '';
-  static const String sdkKey =
-      String.fromEnvironment('APPLOVIN_SDK_KEY', defaultValue: _sdkKeyDefault);
+  /// Режими тест — то ID-ҳои воқеӣ нагузоред, ҳамин мемонад.
+  /// Баъди гузоштани ID-ҳои воқеӣ — ба `false` гузоред.
+  static const bool useTestAds = true;
 
-  // ── Воҳидҳои реклама (Ad Unit IDs) ──
-  static const String bannerAdUnitId = String.fromEnvironment(
-      'APPLOVIN_BANNER_ID',
-      defaultValue: '');
-  static const String mrecAdUnitId = String.fromEnvironment(
-      'APPLOVIN_MREC_ID',
-      defaultValue: '');
-  static const String interstitialAdUnitId = String.fromEnvironment(
-      'APPLOVIN_INTERSTITIAL_ID',
-      defaultValue: '');
-  static const String rewardedAdUnitId = String.fromEnvironment(
-      'APPLOVIN_REWARDED_ID',
-      defaultValue: '');
+  // ── ID-ҳои ТЕСТИИ расмии Google (ҳамеша кор мекунанд) ──
+  static const String _testBanner = 'ca-app-pub-3940256099942544/6300978111';
+  static const String _testMrec = 'ca-app-pub-3940256099942544/6300978111';
+  static const String _testInterstitial =
+      'ca-app-pub-3940256099942544/1033173712';
 
-  /// Реклама умуман фаъол аст? (SDK Key лозим)
-  static bool get enabled => sdkKey.trim().isNotEmpty;
+  // ── ID-ҳои ВОҚЕИИ шумо (аз AdMob dashboard) — useTestAds=false кунед ──
+  static const String _realBannerAndroid = ''; // ca-app-pub-.../...
+  static const String _realMrecAndroid = '';
+  static const String _realInterstitialAndroid = '';
 
-  /// Дар режими санҷиш дастгоҳро тест-дастгоҳ эълон кунед (advertising ID-ро гузоред).
-  static const List<String> testDeviceAdvertisingIds = [];
+  static bool get _isAndroid {
+    try {
+      return Platform.isAndroid;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  static String get bannerAdUnitId =>
+      useTestAds ? _testBanner : (_isAndroid ? _realBannerAndroid : '');
+  static String get mrecAdUnitId =>
+      useTestAds ? _testMrec : (_isAndroid ? _realMrecAndroid : '');
+  static String get interstitialAdUnitId => useTestAds
+      ? _testInterstitial
+      : (_isAndroid ? _realInterstitialAndroid : '');
+
+  /// Реклама умуман фаъол аст?
+  static bool get enabled =>
+      useTestAds || bannerAdUnitId.isNotEmpty || interstitialAdUnitId.isNotEmpty;
 
   /// Байни намоиши interstitial-ҳо чанд амал гузарад (frequency cap).
   static const int interstitialEveryNActions = 4;
