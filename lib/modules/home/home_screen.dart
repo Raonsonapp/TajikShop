@@ -1,21 +1,27 @@
 // ignore_for_file: depend_on_referenced_packages
 import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/shop_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../data/models/product_model.dart';
+import '../../data/models/story_model.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/flash_deals_provider.dart';
+import '../../providers/stories_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
+import '../stories/story_viewer_screen.dart';
 
 const String _kMediaHost = 'https://mahmadmurodov-tajikshop.hf.space';
 
@@ -96,6 +102,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             slivers: [
               SliverToBoxAdapter(child: _header()),
               SliverToBoxAdapter(child: _searchPill()),
+              const SliverToBoxAdapter(child: _StoriesRail()),
               const SliverToBoxAdapter(child: _HeroBanner()),
               const SliverToBoxAdapter(child: _NearbyShopsCard()),
               const SliverToBoxAdapter(child: _FlashDealsRail()),
@@ -500,6 +507,191 @@ class _HeroBanner extends StatelessWidget {
           color: Colors.white.withValues(alpha: opacity),
         ),
       );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// STORIES — Instagram-like ring rail of active shop stories (24h)
+// ════════════════════════════════════════════════════════════════════════════
+class _StoriesRail extends ConsumerStatefulWidget {
+  const _StoriesRail();
+  @override
+  ConsumerState<_StoriesRail> createState() => _StoriesRailState();
+}
+
+class _StoriesRailState extends ConsumerState<_StoriesRail> {
+  bool _posting = false;
+
+  Future<void> _postStory() async {
+    if (_posting) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final picked =
+          await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 75);
+      if (picked == null) return;
+      setState(() => _posting = true);
+      final media = await MultipartFile.fromFile(picked.path, filename: picked.name);
+      await StoryService.upload(media);
+      if (!mounted) return;
+      ref.invalidate(storiesProvider);
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Ҳикоя нашр шуд ✅'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Хатогӣ ҳангоми нашри ҳикоя'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating));
+    } finally {
+      if (mounted) setState(() => _posting = false);
+    }
+  }
+
+  void _openViewer(List<StoryUser> users, int index) async {
+    final shopId = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) =>
+            StoryViewerScreen(users: users, initialUserIndex: index),
+      ),
+    );
+    if (shopId != null && mounted) context.push('/seller/$shopId');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final async = ref.watch(storiesProvider);
+    final users = async.maybeWhen(
+        data: (list) => list, orElse: () => const <StoryUser>[]);
+    final isSeller = ref.watch(authProvider).user?.isSeller ?? false;
+
+    // Агар ягон ҳикоя нест ва корбар фурӯшанда нест → чизе нишон намедиҳем
+    if (users.isEmpty && !isSeller) return const SizedBox.shrink();
+
+    final pal = context.pal;
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: SizedBox(
+        height: 96,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          children: [
+            if (isSeller)
+              _StoryRingItem(
+                label: 'Ҳикояи ман',
+                avatarUrl: ref.watch(authProvider).user?.avatar ?? '',
+                isAdd: true,
+                busy: _posting,
+                onTap: _postStory,
+              ),
+            for (int i = 0; i < users.length; i++)
+              _StoryRingItem(
+                label: users[i].userName,
+                avatarUrl: users[i].avatarUrl,
+                onTap: () => _openViewer(users, i),
+              ),
+            if (users.isEmpty && isSeller)
+              Padding(
+                padding: const EdgeInsets.only(left: 8, top: 26),
+                child: Text('Аввалин ҳикояи худро нашр кунед',
+                    style: TextStyle(color: pal.textMuted, fontSize: 12.5)),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StoryRingItem extends StatelessWidget {
+  final String label;
+  final String avatarUrl;
+  final bool isAdd;
+  final bool busy;
+  final VoidCallback onTap;
+  const _StoryRingItem({
+    required this.label,
+    required this.avatarUrl,
+    this.isAdd = false,
+    this.busy = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pal = context.pal;
+    return GestureDetector(
+      onTap: busy ? null : onTap,
+      child: Container(
+        width: 72,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(children: [
+          Container(
+            width: 64,
+            height: 64,
+            padding: const EdgeInsets.all(2.5),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: isAdd ? null : _greenGradient,
+              color: isAdd ? pal.surface : null,
+              border: isAdd
+                  ? Border.all(color: pal.border, width: 1.2)
+                  : null,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: pal.scaffold,
+                shape: BoxShape.circle,
+              ),
+              child: ClipOval(
+                child: busy
+                    ? const Center(
+                        child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2.4, color: AppColors.primary)))
+                    : (avatarUrl.isEmpty
+                        ? Container(
+                            color: pal.surface,
+                            child: Icon(
+                                isAdd
+                                    ? FeatherIcons.plus
+                                    : FeatherIcons.shoppingBag,
+                                color: isAdd
+                                    ? AppColors.primary
+                                    : pal.textMuted,
+                                size: 22),
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: _mediaUrl(avatarUrl),
+                            fit: BoxFit.cover,
+                            width: 56,
+                            height: 56,
+                            placeholder: (_, __) =>
+                                Container(color: pal.surface),
+                            errorWidget: (_, __, ___) => Container(
+                                color: pal.surface,
+                                child: Icon(FeatherIcons.shoppingBag,
+                                    color: pal.textMuted, size: 22)),
+                          )),
+              ),
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: pal.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500)),
+        ]),
+      ),
+    );
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════

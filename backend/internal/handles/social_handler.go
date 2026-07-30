@@ -142,6 +142,32 @@ func (h *StoryHandler) Feed(c *gin.Context) {
 	utils.OK(c, stories)
 }
 
+// Discover — ҳикояҳои фаъоли ҳамаи фурӯшандагон (барои саҳифаи асосӣ, ошкоро).
+// Барои кашф — ба фарқ аз Feed follow лозим нест. GET /stories/discover
+func (h *StoryHandler) Discover(c *gin.Context) {
+	rows, _ := db.DB.Query(`SELECT s.id,s.user_id,s.media_url,s.media_type,s.expires_at,s.created_at,
+			u.name,COALESCE(u.avatar_url,'')
+		FROM stories s JOIN users u ON u.id=s.user_id
+		WHERE s.expires_at > NOW() AND u.is_seller = true
+		ORDER BY s.created_at DESC LIMIT 100`)
+	defer rows.Close()
+	type StoryFeed struct {
+		models.Story
+		UserName  string `json:"user_name"`
+		AvatarURL string `json:"avatar_url"`
+	}
+	var stories []StoryFeed
+	for rows.Next() {
+		var s StoryFeed
+		rows.Scan(&s.ID, &s.UserID, &s.MediaURL, &s.MediaType, &s.ExpiresAt, &s.CreatedAt, &s.UserName, &s.AvatarURL)
+		stories = append(stories, s)
+	}
+	if stories == nil {
+		stories = []StoryFeed{}
+	}
+	utils.OK(c, stories)
+}
+
 // ========== FOLLOW ==========
 
 type FollowHandler struct{}
