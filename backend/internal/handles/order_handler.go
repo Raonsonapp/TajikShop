@@ -335,6 +335,14 @@ func (h *OrderHandler) Confirm(c *gin.Context) {
 	}
 	tx.Exec(`UPDATE orders SET status='completed',updated_at=$1 WHERE id=$2`, time.Now(), oid)
 
+	// 💸 Cashback ба харидор (аз settings, ба ҳамён) — ангезаи такрор-харид.
+	if cb := total * cashbackPercent() / 100; cb > 0 {
+		tx.Exec(`UPDATE users SET wallet_balance=COALESCE(wallet_balance,0)+$1 WHERE id=$2`, cb, uid)
+		tx.Exec(`INSERT INTO wallet_transactions(id,user_id,amount,type,status,note)
+			VALUES($1,$2,$3,'cashback','completed','💸 Cashback аз харид')`,
+			uuid.NewString(), uid, cb)
+	}
+
 	released := false
 	if method == "wallet" {
 		// Маблағро ба фурӯшанда(он) мутаносибан тақсим мекунем

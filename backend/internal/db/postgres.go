@@ -215,6 +215,8 @@ ALTER TABLE users  ADD COLUMN IF NOT EXISTS seller_requested BOOLEAN DEFAULT fal
 -- Системаи даъват (referral) — рушди вирусӣ: даъваткунанда ва даъватшуда бонус мегиранд.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by UUID;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS featured_until TIMESTAMPTZ;
 UPDATE users SET referral_code = UPPER(SUBSTRING(REPLACE(id::text,'-','') FROM 1 FOR 6))
   WHERE referral_code IS NULL OR referral_code = '';
 
@@ -227,6 +229,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_hours TEXT DEFAULT '';
 -- Танзимоти платформа (комиссия ва ғ.). Комиссияи пешфарз: 10%.
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 INSERT INTO settings(key,value) VALUES('commission_percent','10') ON CONFLICT(key) DO NOTHING;
+INSERT INTO settings(key,value) VALUES('cashback_percent','2') ON CONFLICT(key) DO NOTHING;
 
 -- Категорияҳоро бо расм таъмин мекунем (агар холӣ бошанд).
 UPDATE categories SET icon_url = 'https://picsum.photos/seed/' || slug || '/400'
