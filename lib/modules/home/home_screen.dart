@@ -106,6 +106,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SliverToBoxAdapter(child: _HeroBanner()),
               const SliverToBoxAdapter(child: _NearbyShopsCard()),
               const SliverToBoxAdapter(child: _FlashDealsRail()),
+              const SliverToBoxAdapter(child: _RecentlyViewedRail()),
 
               // Categories
               SliverToBoxAdapter(
@@ -512,6 +513,102 @@ class _HeroBanner extends StatelessWidget {
           color: Colors.white.withValues(alpha: opacity),
         ),
       );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// RECENTLY VIEWED — personal rail of products the user opened (local, no backend)
+// ════════════════════════════════════════════════════════════════════════════
+class _RecentlyViewedRail extends ConsumerWidget {
+  const _RecentlyViewedRail();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(recentlyViewedProvider);
+    final items = async.maybeWhen(data: (l) => l, orElse: () => const []);
+    if (items.length < 2) return const SizedBox.shrink();
+
+    final pal = context.pal;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+          child: Row(children: [
+            Icon(FeatherIcons.clock, color: pal.textPrimary, size: 17),
+            const SizedBox(width: 8),
+            Text('Ба наздикӣ дидед',
+                style: TextStyle(
+                    color: pal.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3)),
+          ]),
+        ),
+        SizedBox(
+          height: 150,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (_, i) {
+              final m = items[i] as Map<String, dynamic>;
+              final id = m['id']?.toString() ?? '';
+              final title = m['title']?.toString() ?? '';
+              final image = m['image']?.toString() ?? '';
+              final price = (m['price'] as num?)?.toDouble() ?? 0;
+              return GestureDetector(
+                onTap: () => context.push('/product/$id'),
+                child: SizedBox(
+                  width: 110,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: SizedBox(
+                          width: 110,
+                          height: 100,
+                          child: image.isEmpty
+                              ? Container(
+                                  color: pal.surface,
+                                  child: Icon(FeatherIcons.image,
+                                      color: pal.textMuted, size: 24))
+                              : CachedNetworkImage(
+                                  imageUrl: _mediaUrl(image),
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) =>
+                                      Container(color: pal.surface),
+                                  errorWidget: (_, __, ___) => Container(
+                                      color: pal.surface,
+                                      child: Icon(FeatherIcons.image,
+                                          color: pal.textMuted, size: 24)),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: pal.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500)),
+                      Text('${price.toStringAsFixed(0)} с',
+                          style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800)),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
