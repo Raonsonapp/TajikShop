@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/business_types.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/shops_provider.dart';
 
@@ -34,6 +35,7 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
   final _controller = MapController();
   Map<String, dynamic>? _selected;
   bool _locating = false;
+  String? _filterType; // null = ҳама навъҳо
 
   @override
   void initState() {
@@ -69,6 +71,13 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
     } finally {
       if (mounted) setState(() => _locating = false);
     }
+  }
+
+  List<Map<String, dynamic>> _filtered(List<Map<String, dynamic>> shops) {
+    if (_filterType == null) return shops;
+    return shops
+        .where((s) => (s['business_type']?.toString() ?? 'shop') == _filterType)
+        .toList();
   }
 
   List<Marker> _markers(List<Map<String, dynamic>> shops) {
@@ -121,7 +130,8 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
     );
   }
 
-  Widget _mapWith(AppPalette pal, List<Map<String, dynamic>> shops) {
+  Widget _mapWith(AppPalette pal, List<Map<String, dynamic>> allShops) {
+    final shops = _filtered(allShops);
     final markers = _markers(shops);
     return Stack(children: [
       FlutterMap(
@@ -140,10 +150,45 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
         ],
       ),
 
+      // Филтри навъи бизнес (чипҳои уфуқӣ)
+      Positioned(
+        top: 12,
+        left: 0,
+        right: 0,
+        child: SizedBox(
+          height: 38,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            children: [
+              _TypeChip(
+                label: 'Ҳама',
+                icon: FeatherIcons.grid,
+                selected: _filterType == null,
+                onTap: () => setState(() {
+                  _filterType = null;
+                  _selected = null;
+                }),
+              ),
+              for (final t in kBusinessTypes)
+                _TypeChip(
+                  label: t.label,
+                  icon: t.icon,
+                  selected: _filterType == t.key,
+                  onTap: () => setState(() {
+                    _filterType = _filterType == t.key ? null : t.key;
+                    _selected = null;
+                  }),
+                ),
+            ],
+          ),
+        ),
+      ),
+
       // Ёддошт: ягон дӯкон координата надорад
       if (markers.isEmpty)
         Positioned(
-          top: 12,
+          top: 62,
           left: 16,
           right: 16,
           child: Container(
@@ -159,7 +204,9 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Ҳанӯз ягон дӯкон ҷойгиршавиро нишон надодааст',
+                  _filterType == null
+                      ? 'Ҳанӯз ягон дӯкон ҷойгиршавиро нишон надодааст'
+                      : 'Дар ин навъ ягон дӯкон ёфт нашуд',
                   style: TextStyle(color: pal.textSecondary, fontSize: 12.5),
                 ),
               ),
@@ -200,6 +247,58 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
   }
 }
 
+// ── Чипи филтри навъи бизнес ──
+class _TypeChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _TypeChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pal = context.pal;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : pal.card,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+                color: selected ? AppColors.primary : pal.border, width: 0.8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon,
+                size: 14,
+                color: selected ? Colors.white : pal.textSecondary),
+            const SizedBox(width: 6),
+            Text(label,
+                style: TextStyle(
+                    color: selected ? Colors.white : pal.textSecondary,
+                    fontSize: 12.5,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
 // ── Маркери сабзи дӯкон ──
 class _PinMarker extends StatelessWidget {
   final bool selected;
@@ -234,6 +333,7 @@ class _ShopCard extends StatelessWidget {
     final avatar = '${shop['avatar_url'] ?? ''}';
     final name = '${shop['name'] ?? 'Дӯкон'}';
     final verified = shop['is_verified'] == true;
+    final bizType = businessTypeFor(shop['business_type']?.toString());
     final products = shop['products'] is num
         ? (shop['products'] as num).toInt()
         : int.tryParse('${shop['products']}') ?? 0;
@@ -311,13 +411,25 @@ class _ShopCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '$products маҳсулот',
-                      style: TextStyle(
-                          color: pal.textMuted,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w500),
-                    ),
+                    Row(children: [
+                      Icon(bizType.icon, size: 13, color: AppColors.primary),
+                      const SizedBox(width: 5),
+                      Text(bizType.label,
+                          style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 8),
+                      Text('•', style: TextStyle(color: pal.textMuted)),
+                      const SizedBox(width: 8),
+                      Text(
+                        '$products маҳсулот',
+                        style: TextStyle(
+                            color: pal.textMuted,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ]),
                   ],
                 ),
               ),
