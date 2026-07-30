@@ -212,6 +212,12 @@ ALTER TABLE users  ADD COLUMN IF NOT EXISTS store_lat DOUBLE PRECISION DEFAULT 0
 ALTER TABLE users  ADD COLUMN IF NOT EXISTS store_lng DOUBLE PRECISION DEFAULT 0;
 ALTER TABLE users  ADD COLUMN IF NOT EXISTS seller_requested BOOLEAN DEFAULT false;
 
+-- Профили бизнес/мағоза (TajikShop Pro — соҳибкори офлайн онлайн меравад).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_name  TEXT DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_desc  TEXT DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_phone TEXT DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_hours TEXT DEFAULT '';
+
 -- Танзимоти платформа (комиссия ва ғ.). Комиссияи пешфарз: 10%.
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 INSERT INTO settings(key,value) VALUES('commission_percent','10') ON CONFLICT(key) DO NOTHING;

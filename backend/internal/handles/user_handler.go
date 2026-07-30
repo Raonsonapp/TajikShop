@@ -107,8 +107,8 @@ func (h *UserHandler) Login(c *gin.Context) {
 func (h *UserHandler) Me(c *gin.Context) {
 	uid := utils.UserID(c)
 	var u models.User
-	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,COALESCE(seller_requested,false),COALESCE(store_lat,0),COALESCE(store_lng,0),created_at FROM users WHERE id=$1`, uid).
-		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.SellerRequested, &u.StoreLat, &u.StoreLng, &u.CreatedAt)
+	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,COALESCE(seller_requested,false),COALESCE(store_lat,0),COALESCE(store_lng,0),COALESCE(shop_name,''),COALESCE(shop_desc,''),COALESCE(shop_phone,''),COALESCE(shop_hours,''),created_at FROM users WHERE id=$1`, uid).
+		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.SellerRequested, &u.StoreLat, &u.StoreLng, &u.ShopName, &u.ShopDesc, &u.ShopPhone, &u.ShopHours, &u.CreatedAt)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "user not found")
 		return
@@ -119,11 +119,23 @@ func (h *UserHandler) Me(c *gin.Context) {
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	uid := utils.UserID(c)
 	var in struct {
-		Name string `json:"name"`
-		Bio  string `json:"bio"`
+		Name      string `json:"name"`
+		Bio       string `json:"bio"`
+		ShopName  string `json:"shop_name"`
+		ShopDesc  string `json:"shop_desc"`
+		ShopPhone string `json:"shop_phone"`
+		ShopHours string `json:"shop_hours"`
 	}
 	c.ShouldBindJSON(&in)
-	db.DB.Exec(`UPDATE users SET name=$1,bio=$2,updated_at=$3 WHERE id=$4`, in.Name, in.Bio, time.Now(), uid)
+	// Майдонҳои бизнес танҳо ҳангоми фиристодан навсозӣ мешаванд (холӣ = нигоҳ дошта мешавад).
+	db.DB.Exec(`UPDATE users SET
+		name=$1, bio=$2,
+		shop_name  = COALESCE(NULLIF($3,''), shop_name),
+		shop_desc  = COALESCE(NULLIF($4,''), shop_desc),
+		shop_phone = COALESCE(NULLIF($5,''), shop_phone),
+		shop_hours = COALESCE(NULLIF($6,''), shop_hours),
+		updated_at=$7 WHERE id=$8`,
+		in.Name, in.Bio, in.ShopName, in.ShopDesc, in.ShopPhone, in.ShopHours, time.Now(), uid)
 	utils.OK(c, gin.H{"message": "updated"})
 }
 
@@ -246,11 +258,16 @@ func (h *UserHandler) SellerStats(c *gin.Context) {
 func (h *UserHandler) PublicProfile(c *gin.Context) {
 	id := c.Param("id")
 	var (
-		uid, name, avatar, bio, role string
-		isVerified                   bool
+		uid, name, avatar, bio, role             string
+		shopName, shopDesc, shopPhone, shopHours string
+		storeLat, storeLng                       float64
+		isVerified                               bool
 	)
-	err := db.DB.QueryRow(`SELECT id,name,COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified
-		FROM users WHERE id=$1`, id).Scan(&uid, &name, &avatar, &bio, &role, &isVerified)
+	err := db.DB.QueryRow(`SELECT id,name,COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,
+		COALESCE(shop_name,''),COALESCE(shop_desc,''),COALESCE(shop_phone,''),COALESCE(shop_hours,''),
+		COALESCE(store_lat,0),COALESCE(store_lng,0)
+		FROM users WHERE id=$1`, id).Scan(&uid, &name, &avatar, &bio, &role, &isVerified,
+		&shopName, &shopDesc, &shopPhone, &shopHours, &storeLat, &storeLng)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "user not found")
 		return
@@ -271,6 +288,12 @@ func (h *UserHandler) PublicProfile(c *gin.Context) {
 		"followers":   followers,
 		"products":    products,
 		"rating":      rating,
+		"shop_name":   shopName,
+		"shop_desc":   shopDesc,
+		"shop_phone":  shopPhone,
+		"shop_hours":  shopHours,
+		"store_lat":   storeLat,
+		"store_lng":   storeLng,
 	})
 }
 

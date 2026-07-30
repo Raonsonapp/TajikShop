@@ -77,11 +77,28 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   child: const Icon(FeatherIcons.shoppingBag, color: Colors.white, size: 52),
                 ),
                 const SizedBox(height: 24),
-                ShaderMask(
-                  shaderCallback: (b) => AppColors.primaryGradient.createShader(b),
-                  child: const Text('TajikShop', style: TextStyle(
-                      color: Colors.white, fontSize: 38,
-                      fontWeight: FontWeight.w800, letterSpacing: -1)),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    ShaderMask(
+                      shaderCallback: (b) => AppColors.primaryGradient.createShader(b),
+                      child: const Text('TajikShop', style: TextStyle(
+                          color: Colors.white, fontSize: 38,
+                          fontWeight: FontWeight.w800, letterSpacing: -1)),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text('PRO', style: TextStyle(
+                          color: Colors.white, fontSize: 13,
+                          fontWeight: FontWeight.w900, letterSpacing: 1)),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Text(AppL10n.of(context).marketplaceTagline, style: const TextStyle(

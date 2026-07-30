@@ -7,12 +7,17 @@ class UserModel {
   final bool isSeller;
   final bool isVerified;
   final bool sellerRequested;
+  final String shopName;
+  final String shopDesc;
+  final String shopPhone;
+  final String shopHours;
   final DateTime createdAt;
 
   const UserModel({
     required this.id, required this.email, required this.fullName,
     this.avatar, required this.role, required this.isSeller,
     required this.isVerified, this.sellerRequested = false,
+    this.shopName = '', this.shopDesc = '', this.shopPhone = '', this.shopHours = '',
     required this.createdAt,
   });
 
@@ -32,6 +37,10 @@ class UserModel {
       isSeller: j['is_seller'] == true || role == 'seller' || role == 'admin',
       isVerified: j['is_verified'] == true,
       sellerRequested: j['seller_requested'] == true,
+      shopName: j['shop_name']?.toString() ?? '',
+      shopDesc: j['shop_desc']?.toString() ?? '',
+      shopPhone: j['shop_phone']?.toString() ?? '',
+      shopHours: j['shop_hours']?.toString() ?? '',
       createdAt: j['created_at'] != null
           ? DateTime.tryParse(j['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -42,6 +51,8 @@ class UserModel {
     'id': id, 'email': email, 'full_name': fullName,
     'avatar_url': avatar, 'role': role, 'is_seller': isSeller,
     'is_verified': isVerified, 'seller_requested': sellerRequested,
+    'shop_name': shopName, 'shop_desc': shopDesc,
+    'shop_phone': shopPhone, 'shop_hours': shopHours,
     'created_at': createdAt.toIso8601String(),
   };
 }

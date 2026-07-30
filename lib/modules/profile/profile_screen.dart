@@ -107,6 +107,74 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       });
   }
 
+  // ── Бизнеси ман (store setup, PUT /users/me) ──────────────────────────────
+  void _businessSetup() {
+    final l = AppL10n.of(context);
+    final user = ref.read(authProvider).user;
+    final nameCtrl  = TextEditingController(text: user?.shopName ?? '');
+    final descCtrl  = TextEditingController(text: user?.shopDesc ?? '');
+    final phoneCtrl = TextEditingController(text: user?.shopPhone ?? '');
+    final hoursCtrl = TextEditingController(text: user?.shopHours ?? '');
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.pal.card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) {
+        bool loading = false;
+        return StatefulBuilder(builder: (ctx, setSheet) {
+          Widget field(String label, TextEditingController c, {int maxLines = 1}) =>
+            Padding(padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: context.pal.border, width: 0.5)),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: SafeInput(controller: c, hint: label, maxLines: maxLines, fontSize: 14)));
+          return Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Center(child: Container(width: 40, height: 4,
+                  decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 16),
+              Row(children: [
+                const Icon(FeatherIcons.shoppingBag, color: AppColors.primary, size: 20),
+                const SizedBox(width: 8),
+                Text('Бизнеси ман', style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+              ]),
+              const SizedBox(height: 16),
+              field('Номи мағоза', nameCtrl),
+              field('Тавсифи бизнес', descCtrl, maxLines: 3),
+              field('Телефон', phoneCtrl),
+              field('Соатҳои корӣ (9:00–20:00)', hoursCtrl),
+              const SizedBox(height: 8),
+              AppButton(text: l.save, isLoading: loading, onTap: () async {
+                setSheet(() => loading = true);
+                final messenger = ScaffoldMessenger.of(context);
+                final currentName = ref.read(authProvider).user?.fullName ?? '';
+                try {
+                  await ApiClient.instance.dio.put(ApiEndpoints.updateProfile, data: {
+                    'name': currentName,
+                    'shop_name': nameCtrl.text.trim(),
+                    'shop_desc': descCtrl.text.trim(),
+                    'shop_phone': phoneCtrl.text.trim(),
+                    'shop_hours': hoursCtrl.text.trim(),
+                  });
+                  await ref.read(authProvider.notifier).checkAuth();
+                  if (ctx.mounted) Navigator.pop(ctx);
+                  messenger.showSnackBar(SnackBar(content: Text(l.profileUpdated),
+                      backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+                } catch (_) {
+                  setSheet(() => loading = false);
+                  messenger.showSnackBar(SnackBar(content: Text(l.error),
+                      backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+                }
+              }),
+            ]),
+          );
+        });
+      });
+  }
+
   // ── Become Seller (бо тасдиқи паспорт) ────────────────────────────────────────
   Future<void> _becomeSeller() async {
     await showSellerVerify(context);
@@ -144,7 +212,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _showAbout(AppL10n l) {
     showAboutDialog(
       context: context,
-      applicationName: 'TajikShop',
+      applicationName: 'TajikShop Pro',
       applicationVersion: '1.0.0',
       applicationIcon: Container(
         width: 48, height: 48,
@@ -304,6 +372,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   _Tile(icon: FeatherIcons.grid, iconColor: const Color(0xFF00D084),
                       label: l.sellerDashboard,
                       onTap: () => context.push(RouteNames.sellerDashboard)),
+                  _Tile(icon: FeatherIcons.shoppingBag, iconColor: AppColors.primary,
+                      label: 'Бизнеси ман',
+                      onTap: _businessSetup),
                   _Tile(icon: FeatherIcons.mapPin, iconColor: const Color(0xFFFF6B2C),
                       label: l.storeLocation,
                       onTap: _setStoreLocation),
