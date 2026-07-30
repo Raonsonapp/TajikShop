@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -98,62 +99,68 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             // ── Prominent rounded search bar ──
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-              child: Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  color: context.pal.surface,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x1A00D084),
-                      offset: Offset(0, 4),
-                      blurRadius: 16,
-                    ),
-                  ],
-                ),
-                child: Row(children: [
-                  const SizedBox(width: 8),
-                  // Градиенти сабз дар иконаи ҷустуҷӯ
-                  Container(
-                    width: 40,
-                    height: 40,
+              child: Row(children: [
+                Expanded(
+                  child: Container(
+                    height: 56,
                     decoration: BoxDecoration(
-                      gradient: _greenGradient,
-                      borderRadius: BorderRadius.circular(12),
+                      color: context.pal.surface,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x1A00D084),
+                          offset: Offset(0, 4),
+                          blurRadius: 16,
+                        ),
+                      ],
                     ),
-                    child: const Icon(FeatherIcons.search,
-                        color: Colors.white, size: 22),
+                    child: Row(children: [
+                      const SizedBox(width: 8),
+                      // Градиенти сабз дар иконаи ҷустуҷӯ
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          gradient: _greenGradient,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(FeatherIcons.search,
+                            color: Colors.white, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SafeInput(
+                          controller: _ctrl,
+                          focusNode: _focus,
+                          hint: AppL10n.of(context).searchProductsHint,
+                          textInputAction: TextInputAction.search,
+                          fontSize: 15,
+                          textColor: context.pal.textPrimary,
+                          onChanged: (v) =>
+                              ref.read(searchQueryProvider.notifier).state = v,
+                          onSubmitted: _search,
+                        ),
+                      ),
+                      if (query.isNotEmpty)
+                        IconButton(
+                          icon: Icon(FeatherIcons.x,
+                              color: context.pal.textMuted, size: 20),
+                          onPressed: () {
+                            _ctrl.clear();
+                            ref.read(searchQueryProvider.notifier).state = '';
+                          },
+                        ),
+                      const SizedBox(width: 4),
+                    ]),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SafeInput(
-                      controller: _ctrl,
-                      focusNode: _focus,
-                      hint: AppL10n.of(context).searchProductsHint,
-                      textInputAction: TextInputAction.search,
-                      fontSize: 15,
-                      textColor: context.pal.textPrimary,
-                      onChanged: (v) =>
-                          ref.read(searchQueryProvider.notifier).state = v,
-                      onSubmitted: _search,
-                    ),
-                  ),
-                  if (query.isNotEmpty)
-                    IconButton(
-                      icon: Icon(FeatherIcons.x,
-                          color: context.pal.textMuted, size: 20),
-                      onPressed: () {
-                        _ctrl.clear();
-                        ref.read(searchQueryProvider.notifier).state = '';
-                      },
-                    ),
-                  const SizedBox(width: 4),
-                ]),
-              ),
+                ),
+                const SizedBox(width: 12),
+                _filterButton(),
+              ]),
             ),
 
             Expanded(
-              child: query.isEmpty
+              child: (query.isEmpty && !_hasActiveFilter())
                   ? _buildEmptyState(categories)
                   : results.when(
                       loading: () => GridView.builder(
@@ -188,7 +195,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                         size: 80, color: context.pal.textMuted),
                                     const SizedBox(height: 16),
                                     Text(
-                                        '"$query" — ${AppL10n.of(context).searchNotFound}',
+                                        query.isEmpty
+                                            ? AppL10n.of(context).searchNotFound
+                                            : '"$query" — ${AppL10n.of(context).searchNotFound}',
                                         style: TextStyle(
                                             color: context.pal.textSecondary,
                                             fontSize: 15)),
@@ -208,7 +217,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                   child: Row(children: [
                                     Expanded(
                                         child: Text(
-                                            '${list.length} ${AppL10n.of(context).resultsForWord} "$query"',
+                                            query.isEmpty
+                                                ? '${list.length} ${AppL10n.of(context).resultsForWord}'
+                                                : '${list.length} ${AppL10n.of(context).resultsForWord} "$query"',
                                             style: TextStyle(
                                                 color: context.pal.textMuted,
                                                 fontSize: 13))),
@@ -279,6 +290,69 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               style: TextStyle(color: context.pal.textPrimary, fontSize: 12)),
         ]),
       ),
+    );
+  }
+
+  bool _hasActiveFilter() {
+    return ref.watch(searchMinPriceProvider) != null ||
+        ref.watch(searchMaxPriceProvider) != null ||
+        ref.watch(searchMinRatingProvider) != null ||
+        ref.watch(searchCategoryFilterProvider) != null ||
+        ref.watch(searchSortProvider) != null;
+  }
+
+  Widget _filterButton() {
+    final active = _hasActiveFilter();
+    return GestureDetector(
+      onTap: _openFilterSheet,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: context.pal.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: active
+              ? Border.all(color: AppColors.primary, width: 1.5)
+              : Border.all(color: context.pal.border, width: 0.5),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A00D084),
+              offset: Offset(0, 4),
+              blurRadius: 16,
+            ),
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            const Icon(FeatherIcons.sliders,
+                color: AppColors.primary, size: 22),
+            if (active)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  width: 9,
+                  height: 9,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openFilterSheet() {
+    _focus.unfocus();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _FilterSheet(),
     );
   }
 
@@ -533,6 +607,315 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             error: (_, __) => const SizedBox(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Варақаи поёнии филтрҳо (нарх, баҳо, категория, тартиб).
+class _FilterSheet extends ConsumerStatefulWidget {
+  const _FilterSheet();
+
+  @override
+  ConsumerState<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends ConsumerState<_FilterSheet> {
+  final _minCtrl = TextEditingController();
+  final _maxCtrl = TextEditingController();
+  double? _minRating;
+  String? _categoryId;
+  String? _sort;
+
+  static const _sortOpts = <String?, String>{
+    null: 'Нав',
+    'price_asc': 'Арзон',
+    'price_desc': 'Гарон',
+    'popular': 'Оммавӣ',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    final min = ref.read(searchMinPriceProvider);
+    final max = ref.read(searchMaxPriceProvider);
+    if (min != null) _minCtrl.text = min.toStringAsFixed(0);
+    if (max != null) _maxCtrl.text = max.toStringAsFixed(0);
+    _minRating = ref.read(searchMinRatingProvider);
+    _categoryId = ref.read(searchCategoryFilterProvider);
+    _sort = ref.read(searchSortProvider);
+  }
+
+  @override
+  void dispose() {
+    _minCtrl.dispose();
+    _maxCtrl.dispose();
+    super.dispose();
+  }
+
+  void _apply() {
+    final min = double.tryParse(_minCtrl.text.trim());
+    final max = double.tryParse(_maxCtrl.text.trim());
+    ref.read(searchMinPriceProvider.notifier).state = min;
+    ref.read(searchMaxPriceProvider.notifier).state = max;
+    ref.read(searchMinRatingProvider.notifier).state = _minRating;
+    ref.read(searchCategoryFilterProvider.notifier).state = _categoryId;
+    ref.read(searchSortProvider.notifier).state = _sort;
+    Navigator.of(context).pop();
+  }
+
+  void _clear() {
+    ref.read(searchMinPriceProvider.notifier).state = null;
+    ref.read(searchMaxPriceProvider.notifier).state = null;
+    ref.read(searchMinRatingProvider.notifier).state = null;
+    ref.read(searchCategoryFilterProvider.notifier).state = null;
+    ref.read(searchSortProvider.notifier).state = null;
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = ref.watch(categoriesProvider);
+    return Container(
+      decoration: BoxDecoration(
+        color: context.pal.scaffold,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 12,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Дастак
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: context.pal.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Row(children: [
+              Text('Филтрҳо',
+                  style: TextStyle(
+                      color: context.pal.textPrimary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold)),
+              const Spacer(),
+              GestureDetector(
+                onTap: _clear,
+                child: const Text('Тоза',
+                    style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600)),
+              ),
+            ]),
+            const SizedBox(height: 20),
+
+            // ── Нарх ──
+            _sectionTitle('Нарх (сомонӣ)'),
+            const SizedBox(height: 10),
+            Row(children: [
+              Expanded(child: _priceField(_minCtrl, 'Аз')),
+              const SizedBox(width: 12),
+              Expanded(child: _priceField(_maxCtrl, 'То')),
+            ]),
+            const SizedBox(height: 20),
+
+            // ── Баҳо ──
+            _sectionTitle('Баҳои камтарин'),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [1, 2, 3, 4, 5].map((r) {
+                final active = _minRating == r.toDouble();
+                return GestureDetector(
+                  onTap: () => setState(() =>
+                      _minRating = active ? null : r.toDouble()),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: active ? null : context.pal.card,
+                      gradient: active ? _greenGradient : null,
+                      borderRadius: BorderRadius.circular(45),
+                      border:
+                          Border.all(color: context.pal.border, width: 0.5),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(FeatherIcons.star,
+                          size: 14,
+                          color: active
+                              ? Colors.white
+                              : context.pal.textSecondary),
+                      const SizedBox(width: 4),
+                      Text('$r+',
+                          style: TextStyle(
+                              color: active
+                                  ? Colors.white
+                                  : context.pal.textSecondary,
+                              fontSize: 13,
+                              fontWeight: active
+                                  ? FontWeight.w600
+                                  : FontWeight.normal)),
+                    ]),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+
+            // ── Категория ──
+            _sectionTitle('Категория'),
+            const SizedBox(height: 10),
+            categories.when(
+              data: (cats) => Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _categoryChip('Ҳама', null),
+                  ...cats.map((c) => _categoryChip(c.name, c.id)),
+                ],
+              ),
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: AppColors.primary)),
+              ),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 20),
+
+            // ── Тартиб ──
+            _sectionTitle('Тартиб'),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _sortOpts.entries.map((e) {
+                final active = _sort == e.key;
+                return GestureDetector(
+                  onTap: () => setState(() => _sort = e.key),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: active ? null : context.pal.card,
+                      gradient: active ? _greenGradient : null,
+                      borderRadius: BorderRadius.circular(45),
+                      border:
+                          Border.all(color: context.pal.border, width: 0.5),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      if (active) ...[
+                        const Icon(FeatherIcons.check,
+                            size: 14, color: Colors.white),
+                        const SizedBox(width: 4),
+                      ],
+                      Text(e.value,
+                          style: TextStyle(
+                              color: active
+                                  ? Colors.white
+                                  : context.pal.textSecondary,
+                              fontSize: 13,
+                              fontWeight: active
+                                  ? FontWeight.w600
+                                  : FontWeight.normal)),
+                    ]),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Татбиқ ──
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: _greenGradient,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: TextButton(
+                  onPressed: _apply,
+                  style: TextButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Татбиқ',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String t) => Text(t,
+      style: TextStyle(
+          color: context.pal.textPrimary,
+          fontSize: 15,
+          fontWeight: FontWeight.w600));
+
+  Widget _priceField(TextEditingController ctrl, String hint) {
+    return Container(
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      alignment: Alignment.centerLeft,
+      decoration: BoxDecoration(
+        color: context.pal.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: context.pal.border, width: 0.5),
+      ),
+      child: SafeInput(
+        controller: ctrl,
+        hint: hint,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        formatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+        textInputAction: TextInputAction.done,
+        fontSize: 15,
+        textColor: context.pal.textPrimary,
+      ),
+    );
+  }
+
+  Widget _categoryChip(String label, String? id) {
+    final active = _categoryId == id;
+    return GestureDetector(
+      onTap: () => setState(() => _categoryId = id),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          color: active ? null : context.pal.card,
+          gradient: active ? _greenGradient : null,
+          borderRadius: BorderRadius.circular(45),
+          border: Border.all(color: context.pal.border, width: 0.5),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                color: active ? Colors.white : context.pal.textSecondary,
+                fontSize: 13,
+                fontWeight: active ? FontWeight.w600 : FontWeight.normal)),
       ),
     );
   }

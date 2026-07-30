@@ -25,11 +25,23 @@ class SearchRemote {
     return const [];
   }
 
-  Future<List<ProductModel>> search(String query, {String? sort}) async {
+  Future<List<ProductModel>> search(
+    String query, {
+    String? sort,
+    double? minPrice,
+    double? maxPrice,
+    double? minRating,
+    String? categoryId,
+  }) async {
     final res = await _dio.get(ApiEndpoints.products, queryParameters: {
       'q': query,
       'limit': 30,
       if (sort != null && sort.isNotEmpty) 'sort': sort,
+      if (minPrice != null) 'min_price': minPrice,
+      if (maxPrice != null) 'max_price': maxPrice,
+      if (minRating != null) 'min_rating': minRating,
+      if (categoryId != null && categoryId.isNotEmpty)
+        'category_id': categoryId,
     });
     return _unwrapList(res.data)
         .whereType<Map<String, dynamic>>()
