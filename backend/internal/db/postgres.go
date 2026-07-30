@@ -212,6 +212,12 @@ ALTER TABLE users  ADD COLUMN IF NOT EXISTS store_lat DOUBLE PRECISION DEFAULT 0
 ALTER TABLE users  ADD COLUMN IF NOT EXISTS store_lng DOUBLE PRECISION DEFAULT 0;
 ALTER TABLE users  ADD COLUMN IF NOT EXISTS seller_requested BOOLEAN DEFAULT false;
 
+-- Системаи даъват (referral) — рушди вирусӣ: даъваткунанда ва даъватшуда бонус мегиранд.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by UUID;
+UPDATE users SET referral_code = UPPER(SUBSTRING(REPLACE(id::text,'-','') FROM 1 FOR 6))
+  WHERE referral_code IS NULL OR referral_code = '';
+
 -- Профили бизнес/мағоза (TajikShop Pro — соҳибкори офлайн онлайн меравад).
 ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_name  TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_desc  TEXT DEFAULT '';

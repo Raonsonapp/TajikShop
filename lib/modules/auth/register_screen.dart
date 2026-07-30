@@ -21,6 +21,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _refCtrl = TextEditingController();
   bool _loading = false;
   bool _obscure = true;
   String? _error;
@@ -30,6 +31,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _refCtrl.dispose();
     super.dispose();
   }
 
@@ -48,7 +50,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
     setState(() { _loading = true; _error = null; });
     try {
-      final ok = await ref.read(authProvider.notifier).register(email, pass, name);
+      final refCode = _refCtrl.text.trim();
+      final ok = await ref.read(authProvider.notifier).register(
+            email,
+            pass,
+            name,
+            referralCode: refCode.isNotEmpty ? refCode : null,
+          );
       if (!mounted) return;
       if (ok) {
         context.go(RouteNames.home);
@@ -127,6 +135,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         onTap: () => setState(() => _obscure = !_obscure),
                         child: Icon(_obscure ? FeatherIcons.eyeOff : FeatherIcons.eye,
                             color: context.pal.textMuted, size: 20))),
+                  const SizedBox(height: 14),
+                  DarkTextField(controller: _refCtrl, hint: 'Коди даъват (ихтиёрӣ)',
+                      icon: FeatherIcons.gift,
+                      textInputAction: TextInputAction.done,
+                      formatters: [
+                        LengthLimitingTextInputFormatter(20),
+                      ]),
                   const SizedBox(height: 26),
 
                   _GradientButton(

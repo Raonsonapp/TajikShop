@@ -87,6 +87,26 @@ final sellerPublicProvider =
   return Map<String, dynamic>.from(data);
 });
 
+// ── Даъвати дӯстон / Referral (GET /users/me/referral) ──────────────────────
+final referralProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  const fallback = <String, dynamic>{
+    'code': '',
+    'referrals': 0,
+    'earned': 0,
+    'bonus': 10,
+  };
+  try {
+    final res = await ApiClient.instance.dio.get('/users/me/referral');
+    final raw = res.data;
+    final data = raw is Map
+        ? (raw['data'] is Map ? raw['data'] as Map : raw)
+        : <String, dynamic>{};
+    return {...fallback, ...Map<String, dynamic>.from(data)};
+  } catch (_) {
+    return fallback;
+  }
+});
+
 class SellerProductService {
   static Future<void> update(String id, {
     required String title,

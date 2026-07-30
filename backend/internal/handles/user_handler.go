@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"net/http"
+	"strings"
 	"tajikshop/internal/auth"
 	"tajikshop/internal/db"
 	"tajikshop/internal/mailer"
@@ -25,11 +26,15 @@ func NewUserHandler(secret string, r2 *storage.R2Client) *UserHandler {
 }
 
 type registerInput struct {
-	Name     string `json:"name" binding:"required"`
-	Email    string `json:"email"`
-	Phone    string `json:"phone"`
-	Password string `json:"password" binding:"required,min=6"`
+	Name         string `json:"name" binding:"required"`
+	Email        string `json:"email"`
+	Phone        string `json:"phone"`
+	Password     string `json:"password" binding:"required,min=6"`
+	ReferralCode string `json:"referral_code"`
 }
+
+// referralBonus — бонуси даъват (сом) ба ҳарду тараф.
+const referralBonus = 10.0
 
 func (h *UserHandler) Register(c *gin.Context) {
 	var in registerInput
@@ -56,6 +61,25 @@ func (h *UserHandler) Register(c *gin.Context) {
 	if err != nil {
 		utils.Err(c, http.StatusConflict, "Ин корбар аллакай вуҷуд дорад")
 		return
+	}
+	// Коди даъвати худи корбар (6 ҳарфи аввали id).
+	myCode := strings.ToUpper(strings.ReplaceAll(id, "-", ""))
+	if len(myCode) > 6 {
+		myCode = myCode[:6]
+	}
+	db.DB.Exec(`UPDATE users SET referral_code=$1 WHERE id=$2`, myCode, id)
+	// Агар бо коди даъват сабтном шуда бошад — ба ҳарду бонус.
+	if code := strings.ToUpper(strings.TrimSpace(in.ReferralCode)); code != "" {
+		var refID string
+		if e := db.DB.QueryRow(`SELECT id FROM users WHERE referral_code=$1`, code).Scan(&refID); e == nil && refID != id {
+			db.DB.Exec(`UPDATE users SET referred_by=$1 WHERE id=$2`, refID, id)
+			for _, u := range []string{refID, id} {
+				db.DB.Exec(`UPDATE users SET wallet_balance=COALESCE(wallet_balance,0)+$1 WHERE id=$2`, referralBonus, u)
+				db.DB.Exec(`INSERT INTO wallet_transactions(id,user_id,amount,type,status,note)
+					VALUES($1,$2,$3,'referral','completed','🎁 Бонуси даъват')`,
+					uuid.NewString(), u, referralBonus)
+			}
+		}
 	}
 	accessToken, _ := auth.GenerateAccessToken(id, "buyer", h.secret)
 	refreshToken, _ := auth.GenerateRefreshToken(id, h.secret)
@@ -252,6 +276,25 @@ func (h *UserHandler) SellerStats(c *gin.Context) {
 		"products": products, "active_products": active,
 		"orders": orders, "sold": sold, "revenue": revenue,
 	})
+}
+
+// ReferralInfo — коди даъвати корбар + шумораи даъватшудагон + бонуси кофташуда.
+func (h *UserHandler) ReferralInfo(c *gin.Context) {
+	uid := utils.UserID(c)
+	var code string
+	db.DB.QueryRow(`SELECT COALESCE(referral_code,'') FROM users WHERE id=$1`, uid).Scan(&code)
+	if code == "" {
+		code = strings.ToUpper(strings.ReplaceAll(uid, "-", ""))
+		if len(code) > 6 {
+			code = code[:6]
+		}
+		db.DB.Exec(`UPDATE users SET referral_code=$1 WHERE id=$2`, code, uid)
+	}
+	var count int
+	var earned float64
+	db.DB.QueryRow(`SELECT COUNT(*) FROM users WHERE referred_by=$1`, uid).Scan(&count)
+	db.DB.QueryRow(`SELECT COALESCE(SUM(amount),0) FROM wallet_transactions WHERE user_id=$1 AND type='referral'`, uid).Scan(&earned)
+	utils.OK(c, gin.H{"code": code, "referrals": count, "earned": earned, "bonus": referralBonus})
 }
 
 // ShopsList — рӯйхати мағозаҳо/бизнесҳое, ки ҷойгиршавӣ (GPS) доранд —
