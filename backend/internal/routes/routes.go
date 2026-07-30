@@ -51,6 +51,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/users/me/seller-verify", middleware.Auth(), uh.SellerVerify)
 	api.GET("/seller/stats", middleware.Auth(), uh.SellerStats)
 	api.GET("/settings", adm.PublicSettings)
+	api.GET("/shops", uh.ShopsList)
 	api.POST("/admin/settings/commission", middleware.Auth(), middleware.AdminOnly(), adm.SetCommission)
 	api.POST("/users/me/fcm-token", middleware.Auth(), uh.SaveFCMToken)
 	api.PUT("/users/me/location", middleware.Auth(), uh.UpdateLocation)

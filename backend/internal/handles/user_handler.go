@@ -254,6 +254,36 @@ func (h *UserHandler) SellerStats(c *gin.Context) {
 	})
 }
 
+// ShopsList — рӯйхати мағозаҳо/бизнесҳое, ки ҷойгиршавӣ (GPS) доранд —
+// барои харитаи «Дӯконҳои наздик» (бе auth). Хусусияти фарқкунандаи TajikShop Pro.
+func (h *UserHandler) ShopsList(c *gin.Context) {
+	rows, err := db.DB.Query(`SELECT u.id,
+		COALESCE(NULLIF(u.shop_name,''), u.name),
+		COALESCE(u.avatar_url,''), COALESCE(u.shop_desc,''),
+		COALESCE(u.store_lat,0), COALESCE(u.store_lng,0), u.is_verified,
+		(SELECT COUNT(*) FROM products p WHERE p.seller_id=u.id AND p.is_active=true AND p.stock>0)
+		FROM users u
+		WHERE u.is_seller=true AND (COALESCE(u.store_lat,0)<>0 OR COALESCE(u.store_lng,0)<>0)`)
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer rows.Close()
+	list := []gin.H{}
+	for rows.Next() {
+		var id, name, avatar, desc string
+		var lat, lng float64
+		var verified bool
+		var products int
+		rows.Scan(&id, &name, &avatar, &desc, &lat, &lng, &verified, &products)
+		list = append(list, gin.H{
+			"id": id, "name": name, "avatar_url": avatar, "shop_desc": desc,
+			"store_lat": lat, "store_lng": lng, "is_verified": verified, "products": products,
+		})
+	}
+	utils.OK(c, list)
+}
+
 // PublicProfile — саҳифаи оммавии фурӯшанда/корбар (бе auth)
 func (h *UserHandler) PublicProfile(c *gin.Context) {
 	id := c.Param("id")
