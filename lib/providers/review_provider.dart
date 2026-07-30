@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/api/api_client.dart';
 import '../core/api/api_endpoints.dart';
@@ -42,12 +43,31 @@ class ReviewService {
     required String productId,
     required int rating,
     required String comment,
+    List<String> images = const [],
   }) async {
     await ApiClient.instance.dio.post(ApiEndpoints.reviews, data: {
       'product_id': productId,
       'rating': rating,
       'comment': comment,
+      'images': images,
     });
+  }
+
+  // Расмҳои шарҳро бор мекунад → рӯйхати URL-ро бармегардонад
+  static Future<List<String>> uploadImages(List<MultipartFile> files) async {
+    if (files.isEmpty) return const [];
+    final form = FormData();
+    for (final f in files) {
+      form.files.add(MapEntry('images', f));
+    }
+    final res = await ApiClient.instance.dio.post('/reviews/upload', data: form);
+    final raw = res.data;
+    final data = raw is Map ? (raw['data'] is Map ? raw['data'] as Map : raw) : {};
+    final urls = data['urls'];
+    if (urls is List) {
+      return urls.map((e) => e.toString()).where((e) => e.isNotEmpty).toList();
+    }
+    return const [];
   }
 
   // Овози «фоиданок» → шумораи навро бармегардонад

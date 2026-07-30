@@ -109,6 +109,7 @@ type Review struct {
 	ProductID    string    `json:"product_id"`
 	Rating       int       `json:"rating"`
 	Comment      string    `json:"comment"`
+	Images       []string  `json:"images"`
 	UserName     string    `json:"user_name,omitempty"`
 	HelpfulCount int       `json:"helpful_count"`
 	CreatedAt    time.Time `json:"created_at"`

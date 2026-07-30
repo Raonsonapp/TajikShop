@@ -1,10 +1,13 @@
 // ignore_for_file: deprecated_member_use
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
@@ -1129,6 +1132,7 @@ class _AddReviewSheetState extends ConsumerState<_AddReviewSheet> {
   int _rating = 5;
   final _ctrl = TextEditingController();
   bool _loading = false;
+  final List<XFile> _photos = [];
 
   @override
   void dispose() {
@@ -1136,13 +1140,37 @@ class _AddReviewSheetState extends ConsumerState<_AddReviewSheet> {
     super.dispose();
   }
 
+  Future<void> _pickPhotos() async {
+    if (_photos.length >= 5) return;
+    try {
+      final picked = await ImagePicker().pickMultiImage(imageQuality: 70);
+      if (picked.isEmpty) return;
+      setState(() {
+        for (final x in picked) {
+          if (_photos.length < 5) _photos.add(x);
+        }
+      });
+    } catch (_) {}
+  }
+
   Future<void> _submit() async {
     setState(() => _loading = true);
     final l = AppL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
+      List<String> urls = const [];
+      if (_photos.isNotEmpty) {
+        final files = <MultipartFile>[];
+        for (final x in _photos) {
+          files.add(await MultipartFile.fromFile(x.path, filename: x.name));
+        }
+        urls = await ReviewService.uploadImages(files);
+      }
       await ReviewService.submit(
-          productId: widget.productId, rating: _rating, comment: _ctrl.text.trim());
+          productId: widget.productId,
+          rating: _rating,
+          comment: _ctrl.text.trim(),
+          images: urls);
       widget.onDone();
       if (!mounted) return;
       Navigator.pop(context);
@@ -1215,6 +1243,53 @@ class _AddReviewSheetState extends ConsumerState<_AddReviewSheet> {
                   textColor: context.pal.textPrimary,
                   fontSize: 14),
             ),
+            const SizedBox(height: 16),
+            // ── Расмҳо (photo review) ──
+            SizedBox(
+              height: 68,
+              child: ListView(scrollDirection: Axis.horizontal, children: [
+                for (int i = 0; i < _photos.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Stack(children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.file(File(_photos[i].path),
+                            width: 64, height: 64, fit: BoxFit.cover),
+                      ),
+                      Positioned(
+                        top: 2,
+                        right: 2,
+                        child: GestureDetector(
+                          onTap: () => setState(() => _photos.removeAt(i)),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                                color: Colors.black54, shape: BoxShape.circle),
+                            padding: const EdgeInsets.all(3),
+                            child: const Icon(FeatherIcons.x,
+                                color: Colors.white, size: 12),
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                if (_photos.length < 5)
+                  GestureDetector(
+                    onTap: _pickPhotos,
+                    child: Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: context.pal.surface,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: context.pal.border, width: 0.8),
+                      ),
+                      child: Icon(FeatherIcons.camera,
+                          color: context.pal.textMuted, size: 22),
+                    ),
+                  ),
+              ]),
+            ),
             const SizedBox(height: 20),
             AppButton(
                 text: AppL10n.of(context).send, onTap: _submit, isLoading: _loading),
@@ -1279,6 +1354,40 @@ class _ReviewTileState extends ConsumerState<_ReviewTile> {
     }
   }
 
+  void _openPhoto(BuildContext context, List<String> images, int index) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.92),
+      builder: (ctx) => GestureDetector(
+        onTap: () => Navigator.pop(ctx),
+        child: Stack(children: [
+          PageView.builder(
+            controller: PageController(initialPage: index),
+            itemCount: images.length,
+            itemBuilder: (_, i) => InteractiveViewer(
+              child: Center(
+                child: CachedNetworkImage(
+                  imageUrl: images[i],
+                  fit: BoxFit.contain,
+                  errorWidget: (_, __, ___) =>
+                      const Icon(FeatherIcons.image, color: Colors.white54, size: 48),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 44,
+            right: 20,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(ctx),
+              child: const Icon(FeatherIcons.x, color: Colors.white, size: 26),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final r = widget.review;
@@ -1323,6 +1432,34 @@ class _ReviewTileState extends ConsumerState<_ReviewTile> {
           Text(r.comment,
               style: TextStyle(
                   color: context.pal.textSecondary, fontSize: 13, height: 1.4)),
+        ],
+        if (r.images.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 72,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: r.images.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, i) => GestureDetector(
+                onTap: () => _openPhoto(context, r.images, i),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: CachedNetworkImage(
+                    imageUrl: r.images[i],
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(color: context.pal.surface),
+                    errorWidget: (_, __, ___) => Container(
+                        color: context.pal.surface,
+                        child: Icon(FeatherIcons.image,
+                            size: 20, color: context.pal.textMuted)),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
         const SizedBox(height: 6),
         GestureDetector(

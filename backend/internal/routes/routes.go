@@ -15,7 +15,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	uh := handlers.NewUserHandler(secret, r2)
 	ph := handlers.NewProductHandler(r2)
 	oh := handlers.NewOrderHandler(r2)
-	rh := handlers.NewReviewHandler()
+	rh := handlers.NewReviewHandler(r2)
 	fh := handlers.NewFavoriteHandler()
 	ah := handlers.NewAddressHandler()
 	sh := handlers.NewStoryHandler(r2)
@@ -82,6 +82,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	// Reviews — separate path to avoid conflict
 	api.GET("/reviews/product/:product_id", rh.ByProduct)
 	api.POST("/reviews", middleware.Auth(), rh.Create)
+	api.POST("/reviews/upload", middleware.Auth(), rh.UploadImages)
 	api.POST("/reviews/:id/helpful", middleware.Auth(), rh.Helpful)
 
 	// Q&A (савол-ҷавоб дар маҳсулот)
