@@ -236,6 +236,42 @@ func (h *MessageHandler) Send(c *gin.Context) {
 	utils.Created(c, gin.H{"id": id})
 }
 
+// Inbox — рӯйхати сӯҳбатҳо: ҳар шарик бо паёми охирин ва шумораи хонданашуда.
+// GET /messages
+func (h *MessageHandler) Inbox(c *gin.Context) {
+	uid := utils.UserID(c)
+	rows, _ := db.DB.Query(`
+		SELECT p.partner, u.name, COALESCE(u.avatar_url,''), p.content, p.created_at,
+			COALESCE((SELECT COUNT(*) FROM messages m
+				WHERE m.receiver_id=$1 AND m.sender_id=p.partner AND m.is_read=false),0)
+		FROM (
+			SELECT DISTINCT ON (partner) partner, content, created_at FROM (
+				SELECT CASE WHEN sender_id=$1 THEN receiver_id ELSE sender_id END AS partner,
+					content, created_at
+				FROM messages WHERE sender_id=$1 OR receiver_id=$1
+			) t ORDER BY partner, created_at DESC
+		) p
+		JOIN users u ON u.id = p.partner
+		ORDER BY p.created_at DESC`, uid)
+	defer rows.Close()
+	convos := []gin.H{}
+	for rows.Next() {
+		var partner, name, avatar, content string
+		var createdAt time.Time
+		var unread int
+		rows.Scan(&partner, &name, &avatar, &content, &createdAt, &unread)
+		convos = append(convos, gin.H{
+			"partner_id":   partner,
+			"name":         name,
+			"avatar_url":   avatar,
+			"last_message": content,
+			"created_at":   createdAt,
+			"unread":       unread,
+		})
+	}
+	utils.OK(c, convos)
+}
+
 func (h *MessageHandler) Conversation(c *gin.Context) {
 	uid := utils.UserID(c)
 	otherID := c.Param("user_id")

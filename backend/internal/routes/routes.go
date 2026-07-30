@@ -127,6 +127,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/stories", middleware.Auth(), sh.Create)
 
 	// Messages
+	api.GET("/messages", middleware.Auth(), mh.Inbox)
 	api.POST("/messages", middleware.Auth(), mh.Send)
 	api.GET("/messages/:user_id", middleware.Auth(), mh.Conversation)
 

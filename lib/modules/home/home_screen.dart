@@ -231,6 +231,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           _circleButton(
+            icon: FeatherIcons.messageCircle,
+            onTap: () => context.push('/messages'),
+          ),
+          const SizedBox(width: 10),
+          _circleButton(
             icon: FeatherIcons.bell,
             onTap: () => context.push(RouteNames.notifications),
             showDot: true,

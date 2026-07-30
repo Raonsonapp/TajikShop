@@ -15,6 +15,19 @@ final conversationProvider =
       .toList();
 });
 
+// ── Рӯйхати сӯҳбатҳо / Inbox (GET /messages) ────────────────────────────────
+final inboxProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  try {
+    final res = await ApiClient.instance.dio.get(ApiEndpoints.messages);
+    final raw = res.data;
+    final list = raw is List ? raw : (raw is Map ? (raw['data'] ?? []) : []);
+    return (list as List).whereType<Map<String, dynamic>>().toList();
+  } catch (_) {
+    return const [];
+  }
+});
+
 // ── Фиристодани паём (POST /messages) ────────────────────────────────────────
 class ChatService {
   static Future<void> send(String receiverId, String content) async {
