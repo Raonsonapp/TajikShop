@@ -6,6 +6,7 @@ class ReviewModel {
   final String productId;
   final int rating;
   final String comment;
+  final List<String> images;
   final int helpfulCount;
   final DateTime createdAt;
 
@@ -17,6 +18,7 @@ class ReviewModel {
     required this.productId,
     required this.rating,
     required this.comment,
+    this.images = const [],
     this.helpfulCount = 0,
     required this.createdAt,
   });
@@ -30,6 +32,12 @@ class ReviewModel {
       productId: json['product_id']?.toString() ?? '',
       rating: (json['rating'] as num?)?.toInt() ?? 5,
       comment: json['comment'] ?? '',
+      images: (json['images'] is List)
+          ? (json['images'] as List)
+              .map((e) => e.toString())
+              .where((e) => e.isNotEmpty)
+              .toList()
+          : const [],
       helpfulCount: (json['helpful_count'] as num?)?.toInt() ?? 0,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at']) ?? DateTime.now()

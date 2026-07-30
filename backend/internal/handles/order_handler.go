@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 	"tajikshop/internal/db"
@@ -407,25 +408,30 @@ func (h *OrderHandler) UploadPaymentProof(c *gin.Context) {
 
 // ========== REVIEWS ==========
 
-type ReviewHandler struct{}
+type ReviewHandler struct{ r2 *storage.R2Client }
 
-func NewReviewHandler() *ReviewHandler { return &ReviewHandler{} }
+func NewReviewHandler(r2 *storage.R2Client) *ReviewHandler { return &ReviewHandler{r2: r2} }
 
 func (h *ReviewHandler) Create(c *gin.Context) {
 	uid := utils.UserID(c)
 	var in struct {
-		ProductID string `json:"product_id" binding:"required"`
-		Rating    int    `json:"rating" binding:"required,min=1,max=5"`
-		Comment   string `json:"comment"`
+		ProductID string   `json:"product_id" binding:"required"`
+		Rating    int      `json:"rating" binding:"required,min=1,max=5"`
+		Comment   string   `json:"comment"`
+		Images    []string `json:"images"`
 	}
 	if err := c.ShouldBindJSON(&in); err != nil {
 		utils.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	if in.Images == nil {
+		in.Images = []string{}
+	}
+	imgJSON, _ := json.Marshal(in.Images)
 	id := uuid.NewString()
-	_, err := db.DB.Exec(`INSERT INTO reviews(id,user_id,product_id,rating,comment) VALUES($1,$2,$3,$4,$5)
-		ON CONFLICT(user_id,product_id) DO UPDATE SET rating=$4,comment=$5`,
-		id, uid, in.ProductID, in.Rating, in.Comment)
+	_, err := db.DB.Exec(`INSERT INTO reviews(id,user_id,product_id,rating,comment,images) VALUES($1,$2,$3,$4,$5,$6)
+		ON CONFLICT(user_id,product_id) DO UPDATE SET rating=$4,comment=$5,images=$6`,
+		id, uid, in.ProductID, in.Rating, in.Comment, imgJSON)
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return
@@ -433,9 +439,36 @@ func (h *ReviewHandler) Create(c *gin.Context) {
 	utils.Created(c, gin.H{"id": id})
 }
 
+// UploadImages — расмҳои шарҳро ба R2 бор мекунад ва рӯйхати URL-ро бармегардонад.
+func (h *ReviewHandler) UploadImages(c *gin.Context) {
+	form, err := c.MultipartForm()
+	if err != nil {
+		utils.Err(c, http.StatusBadRequest, "multipart error")
+		return
+	}
+	files := form.File["images"]
+	var urls []string
+	for _, fh := range files {
+		f, _ := fh.Open()
+		var url string
+		if h.r2 != nil {
+			url, err = h.r2.Upload(f, fh, "reviews")
+		}
+		f.Close()
+		if err != nil || url == "" {
+			continue
+		}
+		urls = append(urls, url)
+	}
+	if urls == nil {
+		urls = []string{}
+	}
+	utils.OK(c, gin.H{"urls": urls})
+}
+
 func (h *ReviewHandler) ByProduct(c *gin.Context) {
 	pid := c.Param("product_id")
-	rows, _ := db.DB.Query(`SELECT r.id,r.rating,r.comment,r.created_at,u.name,
+	rows, _ := db.DB.Query(`SELECT r.id,r.rating,r.comment,COALESCE(r.images,'[]'::jsonb),r.created_at,u.name,
 		COALESCE((SELECT COUNT(*) FROM review_likes rl WHERE rl.review_id=r.id),0)
 		FROM reviews r JOIN users u ON u.id=r.user_id
 		WHERE r.product_id=$1 ORDER BY COALESCE((SELECT COUNT(*) FROM review_likes rl WHERE rl.review_id=r.id),0) DESC, r.created_at DESC`, pid)
@@ -443,7 +476,14 @@ func (h *ReviewHandler) ByProduct(c *gin.Context) {
 	var reviews []models.Review
 	for rows.Next() {
 		var r models.Review
-		rows.Scan(&r.ID, &r.Rating, &r.Comment, &r.CreatedAt, &r.UserName, &r.HelpfulCount)
+		var imgRaw []byte
+		rows.Scan(&r.ID, &r.Rating, &r.Comment, &imgRaw, &r.CreatedAt, &r.UserName, &r.HelpfulCount)
+		if len(imgRaw) > 0 {
+			json.Unmarshal(imgRaw, &r.Images)
+		}
+		if r.Images == nil {
+			r.Images = []string{}
+		}
 		reviews = append(reviews, r)
 	}
 	if reviews == nil {
