@@ -24,6 +24,7 @@ import '../modules/search/search_screen.dart';
 import '../modules/chat/chat_screen.dart';
 import '../modules/wallet/wallet_screen.dart';
 import '../modules/address/addresses_screen.dart';
+import '../modules/shops/nearby_shops_screen.dart';
 import '../modules/seller/seller_profile_screen.dart';
 import '../shared/widgets/main_scaffold.dart';
 import '../providers/auth_provider.dart';
@@ -55,6 +56,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.myProducts,      builder: (_, __) => const MyProductsScreen()),
       GoRoute(path: RouteNames.wallet,          builder: (_, __) => const WalletScreen()),
       GoRoute(path: RouteNames.addresses,       builder: (_, __) => const AddressesScreen()),
+      GoRoute(path: RouteNames.nearbyShops,     builder: (_, __) => const NearbyShopsScreen()),
       GoRoute(path: '/seller/:id',
           builder: (_, s) => SellerProfileScreen(
                 id: s.pathParameters['id']!,
