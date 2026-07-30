@@ -41,6 +41,9 @@ dependencies:
   card_swiper: ^3.0.1
   flutter_rating_bar: ^4.0.1
 
+  # Реклама — AppLovin MAX (даромад)
+  applovin_max: ^4.6.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

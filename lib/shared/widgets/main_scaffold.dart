@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
 import '../../routes/route_names.dart';
+import 'inline_ad.dart';
 
 class MainScaffold extends ConsumerWidget {
   final Widget child;
@@ -28,7 +29,11 @@ class MainScaffold extends ConsumerWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: Container(
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const AdBanner(), // реклама (агар фаъол бошад)
+          Container(
         decoration: BoxDecoration(
           color: context.pal.scaffold,
           border: Border(top: BorderSide(color: context.pal.border, width: 0.5)),
@@ -47,6 +52,8 @@ class MainScaffold extends ConsumerWidget {
             ),
           ),
         ),
+          ),
+        ],
       ),
     );
   }

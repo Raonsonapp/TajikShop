@@ -8,6 +8,7 @@ import 'core/theme/app_theme.dart';
 import 'core/app_l10n.dart';
 import 'core/services/network_service.dart'; // ← ИЛОВА КУНЕД
 import 'core/services/push_service.dart';
+import 'core/ads/ad_service.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'routes/app_router.dart';
@@ -35,6 +36,9 @@ void main() {
 
   // ✅ Push notifications (Firebase) — дар мобайл; web-ро рад мекунад
   PushService.instance.init();
+
+  // ✅ Реклама (AppLovin MAX) — агар SDK Key дода шуда бошад
+  AdService.instance.init();
 
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
