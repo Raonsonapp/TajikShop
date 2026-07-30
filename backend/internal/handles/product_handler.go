@@ -196,11 +196,13 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 	var saleEnds sql.NullTime
 	err := db.DB.QueryRow(`SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.video_url, p.created_at, u.name,
+		COALESCE(u.is_verified,false),
 		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name, p.sale_ends_at
 		FROM products p JOIN users u ON u.id=p.seller_id
 		LEFT JOIN brands b ON b.id=p.brand_id WHERE p.id=$1`, id).
 		Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description, &p.Price,
 			&p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.VideoURL, &p.CreatedAt, &p.SellerName,
+			&p.SellerVerified,
 			&brandID, &moq, &wholesale, &brandName, &saleEnds)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "product not found")

@@ -244,10 +244,21 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                             Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(p.sellerName!,
-                                      style: TextStyle(
-                                          color: context.pal.textPrimary,
-                                          fontWeight: FontWeight.w600)),
+                                  Row(mainAxisSize: MainAxisSize.min, children: [
+                                    Flexible(
+                                      child: Text(p.sellerName!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                              color: context.pal.textPrimary,
+                                              fontWeight: FontWeight.w600)),
+                                    ),
+                                    if (p.sellerVerified) ...[
+                                      const SizedBox(width: 5),
+                                      const Icon(FeatherIcons.checkCircle,
+                                          color: AppColors.info, size: 15),
+                                    ],
+                                  ]),
                                   Text(AppL10n.of(context).seller,
                                       style: TextStyle(
                                           color: context.pal.textMuted, fontSize: 12)),

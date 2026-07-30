@@ -11,6 +11,7 @@ class ProductModel {
   final String? categoryName;
   final String sellerId;
   final String? sellerName;
+  final bool sellerVerified;
   final List<String> images;
   final double rating;
   final int reviewCount;
@@ -30,7 +31,7 @@ class ProductModel {
     required this.id, required this.title, required this.description,
     required this.price, this.oldPrice, this.discountPercent = 0,
     this.categoryId, this.categoryName,
-    required this.sellerId, this.sellerName,
+    required this.sellerId, this.sellerName, this.sellerVerified = false,
     required this.images, required this.rating, required this.reviewCount,
     required this.stock, required this.inStock,
     this.views = 0, this.likeCount = 0,
@@ -89,6 +90,7 @@ class ProductModel {
       categoryName:    json['category_name']?.toString(),
       sellerId:        json['seller_id']?.toString() ?? '',
       sellerName:      json['seller_name']?.toString(),
+      sellerVerified:  json['seller_verified'] == true,
       images:          imgs,
       rating:          (json['rating'] as num?)?.toDouble() ?? 0.0,
       reviewCount:     (json['review_count'] as num?)?.toInt() ?? 0,
