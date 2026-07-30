@@ -7,7 +7,7 @@ class AppL10n {
   static AppL10n of(BuildContext context) =>
       Localizations.of<AppL10n>(context, AppL10n) ?? AppL10n('tg');
 
-  String get appName    => 'TajikShop';
+  String get appName    => 'TajikShop Pro';
   String get home       => lang == 'ru' ? 'Главная'   : lang == 'en' ? 'Home'      : 'Хона';
   String get discover   => lang == 'ru' ? 'Каталог'   : lang == 'en' ? 'Discover'  : 'Ёбед';
   String get favorites  => lang == 'ru' ? 'Избранное' : lang == 'en' ? 'Favorites' : 'Лайкҳо';
