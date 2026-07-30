@@ -44,6 +44,7 @@ class ApiEndpoints {
 
   // Stories
   static const stories = '/stories/feed';
+  static const storiesDiscover = '/stories/discover';
   static const createStory = '/stories';
 
   // Messages

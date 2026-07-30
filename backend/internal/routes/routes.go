@@ -123,6 +123,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 
 	// Stories
 	api.GET("/stories/feed", middleware.Auth(), sh.Feed)
+	api.GET("/stories/discover", sh.Discover)
 	api.POST("/stories", middleware.Auth(), sh.Create)
 
 	// Messages
