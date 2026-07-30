@@ -225,6 +225,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_name  TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_desc  TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_phone TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_hours TEXT DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS business_type TEXT DEFAULT 'shop';
 
 -- Танзимоти платформа (комиссия ва ғ.). Комиссияи пешфарз: 10%.
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);

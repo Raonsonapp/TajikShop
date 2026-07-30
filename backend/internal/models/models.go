@@ -19,6 +19,7 @@ type User struct {
 	ShopDesc        string    `json:"shop_desc"`
 	ShopPhone       string    `json:"shop_phone"`
 	ShopHours       string    `json:"shop_hours"`
+	BusinessType    string    `json:"business_type"`
 	StoreLat        float64   `json:"store_lat"`
 	StoreLng        float64   `json:"store_lng"`
 	RefreshToken    string    `json:"-"`
