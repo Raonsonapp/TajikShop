@@ -10,6 +10,7 @@ import 'package:dio/dio.dart';
 import 'dart:io';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/business_types.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
@@ -117,6 +118,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final descCtrl  = TextEditingController(text: user?.shopDesc ?? '');
     final phoneCtrl = TextEditingController(text: user?.shopPhone ?? '');
     final hoursCtrl = TextEditingController(text: user?.shopHours ?? '');
+    String bizType = user?.businessType ?? 'shop';
     showModalBottomSheet(
       context: context,
       backgroundColor: context.pal.card,
@@ -148,7 +150,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               field('Тавсифи бизнес', descCtrl, maxLines: 3),
               field('Телефон', phoneCtrl),
               field('Соатҳои корӣ (9:00–20:00)', hoursCtrl),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
+              Text('Навъи бизнес', style: TextStyle(
+                  color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 10),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final t in kBusinessTypes)
+                  GestureDetector(
+                    onTap: () => setSheet(() => bizType = t.key),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: bizType == t.key
+                            ? AppColors.primary.withValues(alpha: 0.12)
+                            : context.pal.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: bizType == t.key ? AppColors.primary : context.pal.border,
+                            width: bizType == t.key ? 1.3 : 0.5),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(t.icon,
+                            size: 15,
+                            color: bizType == t.key ? AppColors.primary : context.pal.textMuted),
+                        const SizedBox(width: 6),
+                        Text(t.label, style: TextStyle(
+                            color: bizType == t.key ? AppColors.primary : context.pal.textSecondary,
+                            fontSize: 13,
+                            fontWeight: bizType == t.key ? FontWeight.w700 : FontWeight.w500)),
+                      ]),
+                    ),
+                  ),
+              ]),
+              const SizedBox(height: 16),
               AppButton(text: l.save, isLoading: loading, onTap: () async {
                 setSheet(() => loading = true);
                 final messenger = ScaffoldMessenger.of(context);
@@ -160,6 +194,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     'shop_desc': descCtrl.text.trim(),
                     'shop_phone': phoneCtrl.text.trim(),
                     'shop_hours': hoursCtrl.text.trim(),
+                    'business_type': bizType,
                   });
                   await ref.read(authProvider.notifier).checkAuth();
                   if (ctx.mounted) Navigator.pop(ctx);
