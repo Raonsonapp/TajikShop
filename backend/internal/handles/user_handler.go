@@ -131,8 +131,8 @@ func (h *UserHandler) Login(c *gin.Context) {
 func (h *UserHandler) Me(c *gin.Context) {
 	uid := utils.UserID(c)
 	var u models.User
-	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,COALESCE(seller_requested,false),COALESCE(store_lat,0),COALESCE(store_lng,0),COALESCE(shop_name,''),COALESCE(shop_desc,''),COALESCE(shop_phone,''),COALESCE(shop_hours,''),created_at FROM users WHERE id=$1`, uid).
-		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.SellerRequested, &u.StoreLat, &u.StoreLng, &u.ShopName, &u.ShopDesc, &u.ShopPhone, &u.ShopHours, &u.CreatedAt)
+	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,COALESCE(seller_requested,false),COALESCE(store_lat,0),COALESCE(store_lng,0),COALESCE(shop_name,''),COALESCE(shop_desc,''),COALESCE(shop_phone,''),COALESCE(shop_hours,''),COALESCE(business_type,'shop'),created_at FROM users WHERE id=$1`, uid).
+		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.SellerRequested, &u.StoreLat, &u.StoreLng, &u.ShopName, &u.ShopDesc, &u.ShopPhone, &u.ShopHours, &u.BusinessType, &u.CreatedAt)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "user not found")
 		return
@@ -143,23 +143,25 @@ func (h *UserHandler) Me(c *gin.Context) {
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	uid := utils.UserID(c)
 	var in struct {
-		Name      string `json:"name"`
-		Bio       string `json:"bio"`
-		ShopName  string `json:"shop_name"`
-		ShopDesc  string `json:"shop_desc"`
-		ShopPhone string `json:"shop_phone"`
-		ShopHours string `json:"shop_hours"`
+		Name         string `json:"name"`
+		Bio          string `json:"bio"`
+		ShopName     string `json:"shop_name"`
+		ShopDesc     string `json:"shop_desc"`
+		ShopPhone    string `json:"shop_phone"`
+		ShopHours    string `json:"shop_hours"`
+		BusinessType string `json:"business_type"`
 	}
 	c.ShouldBindJSON(&in)
 	// Майдонҳои бизнес танҳо ҳангоми фиристодан навсозӣ мешаванд (холӣ = нигоҳ дошта мешавад).
 	db.DB.Exec(`UPDATE users SET
 		name=$1, bio=$2,
-		shop_name  = COALESCE(NULLIF($3,''), shop_name),
-		shop_desc  = COALESCE(NULLIF($4,''), shop_desc),
-		shop_phone = COALESCE(NULLIF($5,''), shop_phone),
-		shop_hours = COALESCE(NULLIF($6,''), shop_hours),
-		updated_at=$7 WHERE id=$8`,
-		in.Name, in.Bio, in.ShopName, in.ShopDesc, in.ShopPhone, in.ShopHours, time.Now(), uid)
+		shop_name     = COALESCE(NULLIF($3,''), shop_name),
+		shop_desc     = COALESCE(NULLIF($4,''), shop_desc),
+		shop_phone    = COALESCE(NULLIF($5,''), shop_phone),
+		shop_hours    = COALESCE(NULLIF($6,''), shop_hours),
+		business_type = COALESCE(NULLIF($7,''), business_type),
+		updated_at=$8 WHERE id=$9`,
+		in.Name, in.Bio, in.ShopName, in.ShopDesc, in.ShopPhone, in.ShopHours, in.BusinessType, time.Now(), uid)
 	utils.OK(c, gin.H{"message": "updated"})
 }
 
@@ -302,7 +304,7 @@ func (h *UserHandler) ReferralInfo(c *gin.Context) {
 func (h *UserHandler) ShopsList(c *gin.Context) {
 	rows, err := db.DB.Query(`SELECT u.id,
 		COALESCE(NULLIF(u.shop_name,''), u.name),
-		COALESCE(u.avatar_url,''), COALESCE(u.shop_desc,''),
+		COALESCE(u.avatar_url,''), COALESCE(u.shop_desc,''), COALESCE(u.business_type,'shop'),
 		COALESCE(u.store_lat,0), COALESCE(u.store_lng,0), u.is_verified,
 		(SELECT COUNT(*) FROM products p WHERE p.seller_id=u.id AND p.is_active=true AND p.stock>0)
 		FROM users u
@@ -314,13 +316,13 @@ func (h *UserHandler) ShopsList(c *gin.Context) {
 	defer rows.Close()
 	list := []gin.H{}
 	for rows.Next() {
-		var id, name, avatar, desc string
+		var id, name, avatar, desc, btype string
 		var lat, lng float64
 		var verified bool
 		var products int
-		rows.Scan(&id, &name, &avatar, &desc, &lat, &lng, &verified, &products)
+		rows.Scan(&id, &name, &avatar, &desc, &btype, &lat, &lng, &verified, &products)
 		list = append(list, gin.H{
-			"id": id, "name": name, "avatar_url": avatar, "shop_desc": desc,
+			"id": id, "name": name, "avatar_url": avatar, "shop_desc": desc, "business_type": btype,
 			"store_lat": lat, "store_lng": lng, "is_verified": verified, "products": products,
 		})
 	}
@@ -331,16 +333,16 @@ func (h *UserHandler) ShopsList(c *gin.Context) {
 func (h *UserHandler) PublicProfile(c *gin.Context) {
 	id := c.Param("id")
 	var (
-		uid, name, avatar, bio, role             string
-		shopName, shopDesc, shopPhone, shopHours string
-		storeLat, storeLng                       float64
-		isVerified                               bool
+		uid, name, avatar, bio, role                    string
+		shopName, shopDesc, shopPhone, shopHours, bType string
+		storeLat, storeLng                              float64
+		isVerified                                      bool
 	)
 	err := db.DB.QueryRow(`SELECT id,name,COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,
 		COALESCE(shop_name,''),COALESCE(shop_desc,''),COALESCE(shop_phone,''),COALESCE(shop_hours,''),
-		COALESCE(store_lat,0),COALESCE(store_lng,0)
+		COALESCE(business_type,'shop'),COALESCE(store_lat,0),COALESCE(store_lng,0)
 		FROM users WHERE id=$1`, id).Scan(&uid, &name, &avatar, &bio, &role, &isVerified,
-		&shopName, &shopDesc, &shopPhone, &shopHours, &storeLat, &storeLng)
+		&shopName, &shopDesc, &shopPhone, &shopHours, &bType, &storeLat, &storeLng)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "user not found")
 		return
@@ -352,21 +354,22 @@ func (h *UserHandler) PublicProfile(c *gin.Context) {
 	db.DB.QueryRow(`SELECT COALESCE(AVG(r.rating),0) FROM reviews r
 		JOIN products p ON p.id=r.product_id WHERE p.seller_id=$1`, id).Scan(&rating)
 	utils.OK(c, gin.H{
-		"id":          uid,
-		"name":        name,
-		"avatar_url":  avatar,
-		"bio":         bio,
-		"role":        role,
-		"is_verified": isVerified,
-		"followers":   followers,
-		"products":    products,
-		"rating":      rating,
-		"shop_name":   shopName,
-		"shop_desc":   shopDesc,
-		"shop_phone":  shopPhone,
-		"shop_hours":  shopHours,
-		"store_lat":   storeLat,
-		"store_lng":   storeLng,
+		"id":            uid,
+		"name":          name,
+		"avatar_url":    avatar,
+		"bio":           bio,
+		"role":          role,
+		"is_verified":   isVerified,
+		"followers":     followers,
+		"products":      products,
+		"rating":        rating,
+		"shop_name":     shopName,
+		"shop_desc":     shopDesc,
+		"shop_phone":    shopPhone,
+		"shop_hours":    shopHours,
+		"business_type": bType,
+		"store_lat":     storeLat,
+		"store_lng":     storeLng,
 	})
 }
 

@@ -21,13 +21,38 @@ final searchQueryProvider = StateProvider<String>((ref) => '');
 // null = пешфарз (нав); price_asc | price_desc | popular
 final searchSortProvider = StateProvider<String?>((ref) => null);
 
+// ── Филтрҳои иловагӣ (нарх, баҳо, категория) ──
+final searchMinPriceProvider = StateProvider<double?>((ref) => null);
+final searchMaxPriceProvider = StateProvider<double?>((ref) => null);
+final searchMinRatingProvider = StateProvider<double?>((ref) => null);
+final searchCategoryFilterProvider = StateProvider<String?>((ref) => null);
+
 final searchResultsProvider =
     FutureProvider.autoDispose<List<ProductModel>>((ref) async {
   final query = ref.watch(searchQueryProvider);
   final sort = ref.watch(searchSortProvider);
-  if (query.trim().isEmpty) return [];
+  final minPrice = ref.watch(searchMinPriceProvider);
+  final maxPrice = ref.watch(searchMaxPriceProvider);
+  final minRating = ref.watch(searchMinRatingProvider);
+  final categoryId = ref.watch(searchCategoryFilterProvider);
+
+  final hasQuery = query.trim().isNotEmpty;
+  final hasFilter = minPrice != null ||
+      maxPrice != null ||
+      minRating != null ||
+      (categoryId != null && categoryId.isNotEmpty);
+  // Ҳатто бе матн, агар ягон филтр фаъол бошад — натиҷаҳо бор мешаванд.
+  if (!hasQuery && !hasFilter) return [];
+
   await Future.delayed(const Duration(milliseconds: 400)); // debounce
-  return SearchRemote().search(query.trim(), sort: sort);
+  return SearchRemote().search(
+    query.trim(),
+    sort: sort,
+    minPrice: minPrice,
+    maxPrice: maxPrice,
+    minRating: minRating,
+    categoryId: categoryId,
+  );
 });
 
 final categoriesProvider =
