@@ -129,11 +129,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // ── Register ─────────────────────────────────────────────────────────────
-  Future<bool> register(String email, String password, String fullName) async {
+  Future<bool> register(String email, String password, String fullName,
+      {String? referralCode}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final res = await _dio.post(ApiEndpoints.register,
-          data: {'name': fullName, 'email': email, 'password': password});
+      final body = <String, dynamic>{
+        'name': fullName,
+        'email': email,
+        'password': password,
+      };
+      if (referralCode != null && referralCode.isNotEmpty) {
+        body['referral_code'] = referralCode;
+      }
+      final res = await _dio.post(ApiEndpoints.register, data: body);
       final data = _unwrap(res.data);
       final token = data['access_token']?.toString() ?? '';
       final refresh = data['refresh_token']?.toString();

@@ -1,5 +1,6 @@
 // ignore_for_file: curly_braces_in_flow_control_structures
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +14,7 @@ import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/seller_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../routes/route_names.dart';
@@ -173,6 +175,101 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           );
         });
       });
+  }
+
+  // ── Даъвати дӯстон / Referral ─────────────────────────────────────────────
+  void _inviteFriends() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.pal.card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 28),
+        child: Consumer(builder: (ctx, ref2, _) {
+          final async = ref2.watch(referralProvider);
+          return async.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 48),
+              child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+            ),
+            error: (_, __) => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 48),
+              child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+            ),
+            data: (d) {
+              final code = (d['code'] ?? '').toString();
+              final bonus = (d['bonus'] as num?)?.toString() ?? '10';
+              final referrals = (d['referrals'] as num?)?.toInt() ?? 0;
+              final earned = (d['earned'] as num?)?.toString() ?? '0';
+              return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Center(child: Container(width: 40, height: 4,
+                    decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
+                const SizedBox(height: 18),
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Icon(FeatherIcons.gift, color: AppColors.primary, size: 22),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text('Даъват кунед — ҳарду $bonus сом мегиред',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: context.pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800))),
+                ]),
+                const SizedBox(height: 20),
+                // ── Коди даъват (highlighted box) ─────────────────────────
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                  decoration: BoxDecoration(
+                    color: context.pal.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                  ),
+                  child: Center(
+                    child: Text(code.isEmpty ? '—' : code,
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 3,
+                          fontFamily: 'monospace',
+                        )),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // ── Copy button ───────────────────────────────────────────
+                AppButton(
+                  text: 'Нусхабардорӣ',
+                  onTap: () {
+                    final messenger = ScaffoldMessenger.of(context);
+                    Clipboard.setData(ClipboardData(
+                        text: 'Коди даъвати ман дар TajikShop Pro: $code'));
+                    Navigator.pop(ctx);
+                    messenger.showSnackBar(const SnackBar(
+                        content: Text('Нусхабардорӣ шуд ✅'),
+                        backgroundColor: AppColors.success,
+                        behavior: SnackBarBehavior.floating));
+                  },
+                ),
+                const SizedBox(height: 18),
+                // ── Stats row ─────────────────────────────────────────────
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Icon(FeatherIcons.users, color: AppColors.primary, size: 16),
+                  const SizedBox(width: 6),
+                  Text('$referrals дӯст',
+                      style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 14),
+                  Text('•', style: TextStyle(color: context.pal.textMuted)),
+                  const SizedBox(width: 14),
+                  const Icon(FeatherIcons.dollarSign, color: AppColors.primary, size: 16),
+                  const SizedBox(width: 6),
+                  Text('$earned сом кофтед',
+                      style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                ]),
+              ]);
+            },
+          );
+        }),
+      ),
+    );
   }
 
   // ── Become Seller (бо тасдиқи паспорт) ────────────────────────────────────────
@@ -409,6 +506,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     text: '🏪 ${l.becomeSeller}',
                     onTap: _becomeSeller,
                   )),
+
+              // ── Даъвати дӯстон (visible to everyone) ────────────────────
+              _GroupCard(children: [
+                _Tile(icon: FeatherIcons.gift, iconColor: AppColors.primary,
+                    label: '🎁 Дӯстонро даъват кунед',
+                    onTap: _inviteFriends),
+              ]),
 
               // ── Настройки ───────────────────────────────────────────────
               _SectionLabel(l.settings),
