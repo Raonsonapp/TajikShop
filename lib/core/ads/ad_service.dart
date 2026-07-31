@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:yandex_mobileads/mobile_ads.dart';
 import 'ad_config.dart';
 
-/// Хидмати марказии реклама (Google AdMob).
+/// Хидмати марказии реклама (Yandex Mobile Ads).
 /// - SDK-ро як маротиба инициализатсия мекунад.
-/// - Виджетҳо тавассути [initialized] интизори омодагӣ мешаванд (то реклама
-///   пеш аз init бор нашавад — ин сабаби «холӣ мондан» буд).
+/// - Interstitial-ро пешакӣ бор карда, бо frequency-cap нишон медиҳад.
+/// Виджетҳо тавассути [initialized] интизори омодагӣ мешаванд.
 class AdService {
   AdService._();
   static final AdService instance = AdService._();
@@ -16,7 +16,7 @@ class AdService {
   InterstitialAd? _interstitial;
   int _actionCounter = 0;
 
-  /// То инициализатсия анҷом ёбад (муваффақ ё нокас) пур мешавад.
+  /// То инициализатсия анҷом ёбад пур мешавад.
   Future<void> get initialized => _initDone.future;
 
   bool get ready => _initialized && AdConfig.enabled;
@@ -28,7 +28,7 @@ class AdService {
       return;
     }
     try {
-      await MobileAds.instance.initialize();
+      await YandexAds.initialize();
       _initialized = true;
       _loadInterstitial();
     } catch (e) {
@@ -39,33 +39,32 @@ class AdService {
   }
 
   // ── Interstitial ──
-  void _loadInterstitial() {
+  Future<void> _loadInterstitial() async {
     if (!ready || AdConfig.interstitialAdUnitId.isEmpty) return;
-    InterstitialAd.load(
-      adUnitId: AdConfig.interstitialAdUnitId,
-      request: const AdRequest(),
-      adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) {
-          _interstitial = ad;
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (ad) {
-              ad.dispose();
-              _interstitial = null;
-              _loadInterstitial();
-            },
-            onAdFailedToShowFullScreenContent: (ad, err) {
-              ad.dispose();
-              _interstitial = null;
-              _loadInterstitial();
-            },
-          );
-        },
-        onAdFailedToLoad: (err) {
-          _interstitial = null;
-          debugPrint('Interstitial load failed: ${err.message}');
-        },
-      ),
-    );
+    try {
+      final loader = InterstitialAdLoader();
+      final ad = await loader.loadAd(
+        adRequest: AdRequest(adUnitId: AdConfig.interstitialAdUnitId),
+      );
+      await ad.setAdEventListener(
+        eventListener: InterstitialAdEventListener(
+          onAdDismissed: () {
+            ad.destroy();
+            _interstitial = null;
+            _loadInterstitial();
+          },
+          onAdFailedToShow: (error) {
+            ad.destroy();
+            _interstitial = null;
+            _loadInterstitial();
+          },
+        ),
+      );
+      _interstitial = ad;
+    } catch (e) {
+      _interstitial = null;
+      debugPrint('Interstitial load failed: $e');
+    }
   }
 
   /// Ҳар N амал як interstitial нишон медиҳад (агар омода бошад).
@@ -76,7 +75,7 @@ class AdService {
     final ad = _interstitial;
     if (ad != null) {
       ad.show();
-      _interstitial = null;
+      _interstitial = null; // callback дубора бор мекунад
     } else {
       _loadInterstitial();
     }

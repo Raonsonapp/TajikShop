@@ -37,7 +37,7 @@ void main() {
   // ✅ Push notifications (Firebase) — дар мобайл; web-ро рад мекунад
   PushService.instance.init();
 
-  // ✅ Реклама (Google AdMob) — ҳозир бо ID-и тестӣ фаъол
+  // ✅ Реклама (Yandex Mobile Ads) — ҳозир бо ID-и демо фаъол
   AdService.instance.init();
 
   SystemChrome.setPreferredOrientations(
