@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:yandex_mobileads/mobile_ads.dart';
 import '../../core/ads/ad_config.dart';
 import '../../core/ads/ad_service.dart';
 
-/// Баннери реклама (AdMob 320×50) — дар поёни экран.
-/// Агар реклама фаъол набошад → ҳеҷ чиз намоиш намедиҳад.
+/// Баннери реклама (Yandex, sticky) — дар поёни экран.
+/// Интизори омодагии SDK мешавад, баъд бор мекунад (то «холӣ» намонад).
 class AdBanner extends StatefulWidget {
   const AdBanner({super.key});
   @override
@@ -12,56 +13,52 @@ class AdBanner extends StatefulWidget {
 }
 
 class _AdBannerState extends State<AdBanner> {
-  BannerAd? _ad;
+  BannerAd? _banner;
+  StreamSubscription<BannerAdLoadState>? _sub;
   bool _loaded = false;
+  bool _started = false;
 
   @override
-  void initState() {
-    super.initState();
-    _load();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    final width = MediaQuery.of(context).size.width.toInt();
+    AdService.instance.initialized.then((_) {
+      if (mounted) _load(width);
+    });
   }
 
-  void _load() {
+  void _load(int width) {
     if (!AdService.instance.ready || AdConfig.bannerAdUnitId.isEmpty) return;
-    final ad = BannerAd(
-      adUnitId: AdConfig.bannerAdUnitId,
-      size: AdSize.banner,
-      request: const AdRequest(),
-      listener: BannerAdListener(
-        onAdLoaded: (_) {
-          if (mounted) setState(() => _loaded = true);
-        },
-        onAdFailedToLoad: (ad, err) => ad.dispose(),
-      ),
-    );
-    ad.load();
-    _ad = ad;
+    final banner = BannerAd(adSize: BannerAdSize.sticky(width: width));
+    _sub = banner.loadStateStream.listen((state) {
+      if (state is BannerAdLoadStateLoaded) {
+        if (mounted) setState(() => _loaded = true);
+      }
+    });
+    _banner = banner;
+    banner.load(AdRequest(adUnitId: AdConfig.bannerAdUnitId));
   }
 
   @override
   void dispose() {
-    _ad?.dispose();
+    _sub?.cancel();
+    _banner?.destroy();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_loaded || _ad == null) return const SizedBox.shrink();
-    return SizedBox(
-      height: AdSize.banner.height.toDouble(),
-      width: double.infinity,
-      child: Center(
-        child: SizedBox(
-          width: AdSize.banner.width.toDouble(),
-          height: AdSize.banner.height.toDouble(),
-          child: AdWidget(ad: _ad!),
-        ),
-      ),
+    if (!_loaded || _banner == null) return const SizedBox.shrink();
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: AdWidget(bannerAd: _banner!),
     );
   }
 }
 
-/// MREC (300×250) — блоки калони реклама дар дохили feed (мисли маркетплейси воқеӣ).
+/// Блоки калони реклама (Yandex inline) дар дохили feed — мисли маркетплейси воқеӣ.
 class AdMrec extends StatefulWidget {
   const AdMrec({super.key});
   @override
@@ -69,50 +66,49 @@ class AdMrec extends StatefulWidget {
 }
 
 class _AdMrecState extends State<AdMrec> {
-  BannerAd? _ad;
+  BannerAd? _banner;
+  StreamSubscription<BannerAdLoadState>? _sub;
   bool _loaded = false;
+  bool _started = false;
 
   @override
-  void initState() {
-    super.initState();
-    _load();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    final width = MediaQuery.of(context).size.width.toInt();
+    AdService.instance.initialized.then((_) {
+      if (mounted) _load(width);
+    });
   }
 
-  void _load() {
+  void _load(int width) {
     if (!AdService.instance.ready || AdConfig.mrecAdUnitId.isEmpty) return;
-    final ad = BannerAd(
-      adUnitId: AdConfig.mrecAdUnitId,
-      size: AdSize.mediumRectangle, // 300×250
-      request: const AdRequest(),
-      listener: BannerAdListener(
-        onAdLoaded: (_) {
-          if (mounted) setState(() => _loaded = true);
-        },
-        onAdFailedToLoad: (ad, err) => ad.dispose(),
-      ),
+    final banner = BannerAd(
+      adSize: BannerAdSize.inline(width: width - 32, maxHeight: 300),
     );
-    ad.load();
-    _ad = ad;
+    _sub = banner.loadStateStream.listen((state) {
+      if (state is BannerAdLoadStateLoaded) {
+        if (mounted) setState(() => _loaded = true);
+      }
+    });
+    _banner = banner;
+    banner.load(AdRequest(adUnitId: AdConfig.mrecAdUnitId));
   }
 
   @override
   void dispose() {
-    _ad?.dispose();
+    _sub?.cancel();
+    _banner?.destroy();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_loaded || _ad == null) return const SizedBox.shrink();
+    if (!_loaded || _banner == null) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(
-        child: SizedBox(
-          width: AdSize.mediumRectangle.width.toDouble(),
-          height: AdSize.mediumRectangle.height.toDouble(),
-          child: AdWidget(ad: _ad!),
-        ),
-      ),
+      child: Center(child: AdWidget(bannerAd: _banner!)),
     );
   }
 }

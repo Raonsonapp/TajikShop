@@ -1,55 +1,38 @@
-import 'dart:io' show Platform;
-
 /// ═══════════════════════════════════════════════════════════════════════════
-///  Google AdMob — конфигуратсияи реклама (даромад)
+///  Yandex Mobile Ads — конфигуратсияи реклама (даромад)
 ///
-///  🟢 ҲОЗИР бо ID-ҳои ТЕСТӢ кор мекунад — реклама фавран пайдо мешавад
-///     (вале test-реклама пул НАМЕдиҳад).
+///  🟢 ҲОЗИР бо ID-ҳои ДЕМОи расмии Yandex кор мекунад — реклама фавран
+///     пайдо мешавад (вале демо пул НАМЕдиҳад).
 ///
 ///  💰 БАРОИ ДАРОМАДИ ВОҚЕӢ:
-///  1. Ба https://admob.google.com равед (бо ҳамон Gmail — аз Тоҷикистон кушода мешавад).
-///  2. App илова кунед (Android) → App ID-ро гиред (ca-app-pub-XXXX~YYYY).
-///  3. 3 воҳиди реклама созед: Banner, Interstitial, ва боз як Banner барои MREC.
-///  4. ID-ҳои воқеиро дар поён ба ҷои ID-ҳои тестӣ гузоред.
-///  5. ⚠️ App ID-ро ИНЧУНИН дар android/app/src/main/AndroidManifest.xml
-///        (meta-data com.google.android.gms.ads.APPLICATION_ID) иваз кунед.
-///  6. Барномаро аз нав build кунед.
+///  1. Ба https://partner.yandex.ru равед (аз Тоҷикистон кушода мешавад ✅).
+///  2. «Мобильные приложения» → барномаи худро илова кунед (Android).
+///  3. Блокҳои реклама созед: Banner, Interstitial. Ҳар кадом `R-M-XXXXXX-Y` медиҳад.
+///  4. ID-ҳои воқеиро дар поён гузоред ва `useDemoAds=false` кунед.
+///  5. Барномаро аз нав build кунед.
 /// ═══════════════════════════════════════════════════════════════════════════
 class AdConfig {
-  /// Режими тест — то ID-ҳои воқеӣ нагузоред, ҳамин мемонад.
-  /// Баъди гузоштани ID-ҳои воқеӣ — ба `false` гузоред.
-  static const bool useTestAds = true;
+  /// Режими демо — то ID-ҳои воқеӣ нагузоред, ҳамин мемонад.
+  /// Баъди гузоштани ID-ҳои воқеӣ → ба `false` гузоред.
+  static const bool useDemoAds = true;
 
-  // ── ID-ҳои ТЕСТИИ расмии Google (ҳамеша кор мекунанд) ──
-  static const String _testBanner = 'ca-app-pub-3940256099942544/6300978111';
-  static const String _testMrec = 'ca-app-pub-3940256099942544/6300978111';
-  static const String _testInterstitial =
-      'ca-app-pub-3940256099942544/1033173712';
+  // ── ID-ҳои ДЕМОи расмии Yandex (ҳамеша кор мекунанд) ──
+  static const String _demoBanner = 'demo-banner-yandex';
+  static const String _demoInterstitial = 'demo-interstitial-yandex';
 
-  // ── ID-ҳои ВОҚЕИИ шумо (аз AdMob dashboard) — useTestAds=false кунед ──
-  static const String _realBannerAndroid = ''; // ca-app-pub-.../...
-  static const String _realMrecAndroid = '';
-  static const String _realInterstitialAndroid = '';
+  // ── ID-ҳои ВОҚЕИИ шумо (аз partner.yandex.ru) — useDemoAds=false кунед ──
+  static const String _realBanner = ''; // R-M-XXXXXX-1
+  static const String _realMrec = ''; // R-M-XXXXXX-2
+  static const String _realInterstitial = ''; // R-M-XXXXXX-3
 
-  static bool get _isAndroid {
-    try {
-      return Platform.isAndroid;
-    } catch (_) {
-      return true;
-    }
-  }
-
-  static String get bannerAdUnitId =>
-      useTestAds ? _testBanner : (_isAndroid ? _realBannerAndroid : '');
-  static String get mrecAdUnitId =>
-      useTestAds ? _testMrec : (_isAndroid ? _realMrecAndroid : '');
-  static String get interstitialAdUnitId => useTestAds
-      ? _testInterstitial
-      : (_isAndroid ? _realInterstitialAndroid : '');
+  static String get bannerAdUnitId => useDemoAds ? _demoBanner : _realBanner;
+  static String get mrecAdUnitId => useDemoAds ? _demoBanner : _realMrec;
+  static String get interstitialAdUnitId =>
+      useDemoAds ? _demoInterstitial : _realInterstitial;
 
   /// Реклама умуман фаъол аст?
   static bool get enabled =>
-      useTestAds || bannerAdUnitId.isNotEmpty || interstitialAdUnitId.isNotEmpty;
+      useDemoAds || bannerAdUnitId.isNotEmpty || interstitialAdUnitId.isNotEmpty;
 
   /// Байни намоиши interstitial-ҳо чанд амал гузарад (frequency cap).
   static const int interstitialEveryNActions = 4;
