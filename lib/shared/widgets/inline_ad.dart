@@ -4,7 +4,7 @@ import '../../core/ads/ad_config.dart';
 import '../../core/ads/ad_service.dart';
 
 /// Баннери реклама (AdMob 320×50) — дар поёни экран.
-/// Агар реклама фаъол набошад → ҳеҷ чиз намоиш намедиҳад.
+/// Интизори омодагии SDK мешавад, баъд бор мекунад (то «холӣ» намонад).
 class AdBanner extends StatefulWidget {
   const AdBanner({super.key});
   @override
@@ -18,7 +18,9 @@ class _AdBannerState extends State<AdBanner> {
   @override
   void initState() {
     super.initState();
-    _load();
+    AdService.instance.initialized.then((_) {
+      if (mounted) _load();
+    });
   }
 
   void _load() {
@@ -31,7 +33,10 @@ class _AdBannerState extends State<AdBanner> {
         onAdLoaded: (_) {
           if (mounted) setState(() => _loaded = true);
         },
-        onAdFailedToLoad: (ad, err) => ad.dispose(),
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+          debugPrint('Banner failed: ${err.message}');
+        },
       ),
     );
     ad.load();
@@ -75,7 +80,9 @@ class _AdMrecState extends State<AdMrec> {
   @override
   void initState() {
     super.initState();
-    _load();
+    AdService.instance.initialized.then((_) {
+      if (mounted) _load();
+    });
   }
 
   void _load() {
@@ -88,7 +95,10 @@ class _AdMrecState extends State<AdMrec> {
         onAdLoaded: (_) {
           if (mounted) setState(() => _loaded = true);
         },
-        onAdFailedToLoad: (ad, err) => ad.dispose(),
+        onAdFailedToLoad: (ad, err) {
+          ad.dispose();
+          debugPrint('MREC failed: ${err.message}');
+        },
       ),
     );
     ad.load();
