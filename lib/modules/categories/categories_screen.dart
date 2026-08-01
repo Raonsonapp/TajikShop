@@ -7,6 +7,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/shop_l10n.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/category_icons.dart';
 import '../../core/theme/app_palette.dart';
 import '../../routes/route_names.dart';
 import '../../providers/search_provider.dart';
@@ -273,8 +274,8 @@ class _CategoryTile extends StatelessWidget {
 
   Widget _fallback() => Container(
         decoration: BoxDecoration(gradient: gradient),
-        child: const Center(
-          child: Icon(FeatherIcons.grid, color: Colors.white, size: 44),
+        child: Center(
+          child: Icon(categoryIcon(category.name), color: Colors.white, size: 44),
         ),
       );
 }
