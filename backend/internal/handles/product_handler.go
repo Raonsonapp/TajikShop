@@ -369,6 +369,41 @@ func (h *ProductHandler) FlashDeals(c *gin.Context) {
 	utils.OK(c, gin.H{"products": products})
 }
 
+// Deals — ҳамаи маҳсулоти тахфифдор (discount_percent > 0), новобаста ба мӯҳлат.
+// Аввал онҳое ки тахфифи бештар доранд. GET /products/deals
+func (h *ProductHandler) Deals(c *gin.Context) {
+	rows, err := db.DB.Query(`
+		SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
+			p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
+			u.name as seller_name, p.sale_ends_at
+		FROM products p
+		JOIN users u ON u.id = p.seller_id
+		WHERE p.is_active = true AND p.stock > 0 AND p.discount_percent > 0
+		ORDER BY p.discount_percent DESC, p.views DESC
+		LIMIT 60`)
+	if err != nil {
+		utils.OK(c, gin.H{"products": []models.Product{}})
+		return
+	}
+	defer rows.Close()
+	var products []models.Product
+	for rows.Next() {
+		var p models.Product
+		var saleEnds sql.NullTime
+		rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds)
+		if saleEnds.Valid {
+			p.SaleEndsAt = &saleEnds.Time
+		}
+		products = append(products, p)
+	}
+	if products == nil {
+		products = []models.Product{}
+	}
+	fillImages(products)
+	utils.OK(c, gin.H{"products": products})
+}
+
 func (h *ProductHandler) Trending(c *gin.Context) {
 	rows, err := db.DB.Query(`
 		SELECT p.id, p.seller_id, p.category_id, p.title, p.description,

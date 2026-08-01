@@ -66,6 +66,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.GET("/products", ph.List)
 	api.GET("/products/trending", ph.Trending)
 	api.GET("/products/flash", ph.FlashDeals)
+	api.GET("/products/deals", ph.Deals)
 	api.GET("/products/:id", ph.GetByID)
 	api.POST("/products", middleware.Auth(), middleware.SellerOnly(), ph.Create)
 	api.PUT("/products/:id", middleware.Auth(), middleware.SellerOnly(), ph.Update)
