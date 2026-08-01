@@ -107,6 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SliverToBoxAdapter(child: _HeroBanner()),
               const SliverToBoxAdapter(child: _NearbyShopsCard()),
               const SliverToBoxAdapter(child: _FlashDealsRail()),
+              SliverToBoxAdapter(child: _PopularRail(products: ps.trending)),
               const SliverToBoxAdapter(child: _RecentlyViewedRail()),
 
               // Categories
@@ -517,6 +518,52 @@ class _HeroBanner extends StatelessWidget {
           color: Colors.white.withValues(alpha: opacity),
         ),
       );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// POPULAR — horizontal rail of trending products (GET /products/trending)
+// ════════════════════════════════════════════════════════════════════════════
+class _PopularRail extends StatelessWidget {
+  final List<ProductModel> products;
+  const _PopularRail({required this.products});
+
+  @override
+  Widget build(BuildContext context) {
+    if (products.length < 2) return const SizedBox.shrink();
+    final pal = context.pal;
+    final items = products.take(10).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+          child: Row(children: [
+            Icon(FeatherIcons.trendingUp, color: pal.textPrimary, size: 18),
+            const SizedBox(width: 8),
+            Text('Машҳуртарин',
+                style: TextStyle(
+                    color: pal.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3)),
+          ]),
+        ),
+        SizedBox(
+          height: 236,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (_, i) => SizedBox(
+              width: 150,
+              child: ProductCard(product: items[i]),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
