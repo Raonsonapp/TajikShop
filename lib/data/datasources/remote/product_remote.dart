@@ -122,6 +122,12 @@ class ProductRemote {
     return await compute(_parseProductList, rawList);
   }
 
+  Future<List<ProductModel>> getDeals() async {
+    final res = await _dio.get(ApiEndpoints.deals);
+    final rawList = _unwrapList(res.data);
+    return await compute(_parseProductList, rawList);
+  }
+
   Future<ProductModel> getProductById(String id) async {
     final res = await _dio.get(ApiEndpoints.product(id));
     final map = _unwrapMap(res.data);

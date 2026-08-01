@@ -425,7 +425,9 @@ class _HeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return GestureDetector(
+      onTap: () => context.push('/deals'),
+      child: Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       child: Container(
         height: 158,
@@ -508,6 +510,7 @@ class _HeroBanner extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -907,6 +910,19 @@ class _FlashDealsRailState extends ConsumerState<_FlashDealsRail> {
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.3)),
+            const Spacer(),
+            GestureDetector(
+              onTap: () => context.push('/deals'),
+              child: Row(children: [
+                Text('Ҳама',
+                    style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)),
+                const Icon(FeatherIcons.chevronRight,
+                    color: AppColors.primary, size: 16),
+              ]),
+            ),
           ]),
         ),
         SizedBox(

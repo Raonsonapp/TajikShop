@@ -12,3 +12,13 @@ final flashDealsProvider =
     return const [];
   }
 });
+
+/// Ҳамаи маҳсулоти тахфифдор (GET /products/deals) — барои саҳифаи «Тахфифҳо».
+final dealsProvider =
+    FutureProvider.autoDispose<List<ProductModel>>((ref) async {
+  try {
+    return await ProductRepository().getDeals();
+  } catch (_) {
+    return const [];
+  }
+});
