@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/shop_l10n.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/category_icons.dart';
 import '../../core/theme/app_palette.dart';
 import '../../data/models/product_model.dart';
 import '../../data/models/story_model.dart';
@@ -1196,7 +1197,7 @@ class _CategoriesStrip extends ConsumerWidget {
                           border: Border.all(color: pal.border, width: 0.8),
                         ),
                         clipBehavior: Clip.antiAlias,
-                        child: _CategoryImage(image: c.image),
+                        child: _CategoryImage(image: c.image, name: c.name),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -1224,26 +1225,28 @@ class _CategoriesStrip extends ConsumerWidget {
 
 class _CategoryImage extends StatelessWidget {
   final String? image;
-  const _CategoryImage({required this.image});
+  final String? name;
+  const _CategoryImage({required this.image, this.name});
 
   @override
   Widget build(BuildContext context) {
-    if (image == null || image!.isEmpty) return const _CategoryFallback();
+    if (image == null || image!.isEmpty) return _CategoryFallback(name: name);
     return CachedNetworkImage(
       imageUrl: _mediaUrl(image!),
       fit: BoxFit.cover,
       placeholder: (_, __) => const SizedBox.shrink(),
-      errorWidget: (_, __, ___) => const _CategoryFallback(),
+      errorWidget: (_, __, ___) => _CategoryFallback(name: name),
     );
   }
 }
 
 class _CategoryFallback extends StatelessWidget {
-  const _CategoryFallback();
+  final String? name;
+  const _CategoryFallback({this.name});
 
   @override
-  Widget build(BuildContext context) => const Center(
-        child: Icon(FeatherIcons.grid, color: AppColors.primary, size: 26),
+  Widget build(BuildContext context) => Center(
+        child: Icon(categoryIcon(name), color: AppColors.primary, size: 26),
       );
 }
 
