@@ -316,6 +316,34 @@ func (h *UserHandler) SellerOrders(c *gin.Context) {
 	utils.OK(c, out)
 }
 
+// SellerSalesChart — фурӯши 7 рӯзи охир (барои графики панели фурӯшанда).
+// GET /seller/sales-chart → [{date, total}] (рӯзҳои холӣ дар frontend пур мешаванд).
+func (h *UserHandler) SellerSalesChart(c *gin.Context) {
+	uid := utils.UserID(c)
+	rows, err := db.DB.Query(`
+		SELECT to_char(DATE(o.created_at),'YYYY-MM-DD') d,
+			COALESCE(SUM(oi.price*oi.quantity),0)
+		FROM order_items oi
+		JOIN products p ON p.id=oi.product_id
+		JOIN orders o ON o.id=oi.order_id
+		WHERE p.seller_id=$1 AND o.created_at >= (CURRENT_DATE - INTERVAL '6 days')
+		GROUP BY DATE(o.created_at)
+		ORDER BY d`, uid)
+	if err != nil {
+		utils.OK(c, []gin.H{})
+		return
+	}
+	defer rows.Close()
+	out := []gin.H{}
+	for rows.Next() {
+		var d string
+		var total float64
+		rows.Scan(&d, &total)
+		out = append(out, gin.H{"date": d, "total": total})
+	}
+	utils.OK(c, out)
+}
+
 // ReferralInfo — коди даъвати корбар + шумораи даъватшудагон + бонуси кофташуда.
 func (h *UserHandler) ReferralInfo(c *gin.Context) {
 	uid := utils.UserID(c)

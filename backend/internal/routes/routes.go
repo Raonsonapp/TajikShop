@@ -51,6 +51,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/users/me/seller-verify", middleware.Auth(), uh.SellerVerify)
 	api.GET("/seller/stats", middleware.Auth(), uh.SellerStats)
 	api.GET("/seller/orders", middleware.Auth(), middleware.SellerOnly(), uh.SellerOrders)
+	api.GET("/seller/sales-chart", middleware.Auth(), middleware.SellerOnly(), uh.SellerSalesChart)
 	api.GET("/users/me/referral", middleware.Auth(), uh.ReferralInfo)
 	api.GET("/settings", adm.PublicSettings)
 	api.GET("/shops", uh.ShopsList)

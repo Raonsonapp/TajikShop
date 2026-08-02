@@ -815,6 +815,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 avg,
                 Text('${list.length} ${AppL10n.of(context).reviewsWord}',
                     style: TextStyle(color: context.pal.textMuted, fontSize: 12))),
+            const SizedBox(height: 12),
+            _ratingBreakdown(list),
             const SizedBox(height: 8),
             ...list.take(5).map((r) => _ReviewTile(review: r)),
             if (list.length > 5)
@@ -852,6 +854,54 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         trailing,
       ]),
     ]);
+  }
+
+  // ── Тақсимоти баҳо (5⭐ → 1⭐) ────────────────────────────────────────────────
+  Widget _ratingBreakdown(List<ReviewModel> list) {
+    final counts = <int, int>{5: 0, 4: 0, 3: 0, 2: 0, 1: 0};
+    for (final r in list) {
+      final k = r.rating.clamp(1, 5);
+      counts[k] = (counts[k] ?? 0) + 1;
+    }
+    final total = list.length;
+    final pal = context.pal;
+    return Column(
+      children: [
+        for (int star = 5; star >= 1; star--)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2.5),
+            child: Row(children: [
+              Text('$star',
+                  style: TextStyle(
+                      color: pal.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+              const SizedBox(width: 4),
+              const Icon(FeatherIcons.star, color: AppColors.warning, size: 12),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: total == 0 ? 0 : (counts[star]! / total),
+                    minHeight: 7,
+                    backgroundColor: pal.surface,
+                    valueColor:
+                        const AlwaysStoppedAnimation(AppColors.warning),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 22,
+                child: Text('${counts[star]}',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(color: pal.textMuted, fontSize: 11)),
+              ),
+            ]),
+          ),
+      ],
+    );
   }
 
   // ── Q&A (савол-ҷавоб) ───────────────────────────────────────────────────────

@@ -54,6 +54,19 @@ final sellerOrdersProvider =
   }
 });
 
+// ── Графики фурӯши 7 рӯз (GET /seller/sales-chart) ──────────────────────────
+final sellerSalesChartProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  try {
+    final res = await ApiClient.instance.dio.get('/seller/sales-chart');
+    final raw = res.data;
+    final list = raw is List ? raw : (raw is Map ? (raw['data'] ?? []) : []);
+    return (list as List).whereType<Map<String, dynamic>>().toList();
+  } catch (_) {
+    return const [];
+  }
+});
+
 // ── Оморҳои фурӯшанда (GET /seller/stats) ───────────────────────────────────
 final sellerStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   const fallback = <String, dynamic>{
