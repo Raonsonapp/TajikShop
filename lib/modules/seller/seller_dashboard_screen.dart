@@ -209,6 +209,10 @@ class SellerDashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 26),
 
+            // ── Графики фурӯши 7 рӯз ──────────────────────────────────────────
+            const _SalesChartCard(),
+            const SizedBox(height: 26),
+
             // ── Quick actions (grouped card, template ListTile style) ────────
             Text(l.sellerActions,
                 style: TextStyle(color: context.pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
@@ -354,4 +358,97 @@ class _ActionItem extends StatelessWidget {
           ),
         ),
       );
+}
+
+// ── Графики фурӯши 7 рӯз ──────────────────────────────────────────────────────
+class _SalesChartCard extends ConsumerWidget {
+  const _SalesChartCard();
+
+  static String _key(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  static const _wd = {1: 'Дш', 2: 'Сш', 3: 'Чш', 4: 'Пш', 5: 'Ҷм', 6: 'Шн', 7: 'Яш'};
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pal = context.pal;
+    final async = ref.watch(sellerSalesChartProvider);
+
+    final byDate = <String, double>{};
+    async.whenData((list) {
+      for (final e in list) {
+        final d = e['date']?.toString() ?? '';
+        final t = (e['total'] as num?)?.toDouble() ?? 0;
+        if (d.isNotEmpty) byDate[d] = t;
+      }
+    });
+
+    final now = DateTime.now();
+    final days = List.generate(7, (i) {
+      final d = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: 6 - i));
+      return (d, byDate[_key(d)] ?? 0.0);
+    });
+    final maxVal = days.fold<double>(0, (m, e) => e.$2 > m ? e.$2 : m);
+    final total = days.fold<double>(0, (s, e) => s + e.$2);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      decoration: BoxDecoration(
+        color: pal.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: pal.border, width: 0.6),
+        boxShadow: const [
+          BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(FeatherIcons.barChart2, color: AppColors.primary, size: 18),
+          const SizedBox(width: 8),
+          Text('Фурӯши 7 рӯз',
+              style: TextStyle(
+                  color: pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+          const Spacer(),
+          Text('${total.toStringAsFixed(0)} сом',
+              style: const TextStyle(
+                  color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w800)),
+        ]),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 110,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              for (final e in days)
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        e.$2 > 0 ? e.$2.toStringAsFixed(0) : '',
+                        style: TextStyle(color: pal.textMuted, fontSize: 9),
+                      ),
+                      const SizedBox(height: 3),
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
+                        height: maxVal <= 0 ? 3 : (6 + 70 * (e.$2 / maxVal)),
+                        decoration: BoxDecoration(
+                          gradient: e.$2 > 0 ? AppColors.primaryGradient : null,
+                          color: e.$2 > 0 ? null : pal.surface,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(_wd[e.$1.weekday] ?? '',
+                          style: TextStyle(color: pal.textSecondary, fontSize: 10)),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ]),
+    );
+  }
 }
