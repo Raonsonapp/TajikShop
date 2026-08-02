@@ -53,6 +53,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.GET("/seller/orders", middleware.Auth(), middleware.SellerOnly(), uh.SellerOrders)
 	api.GET("/seller/sales-chart", middleware.Auth(), middleware.SellerOnly(), uh.SellerSalesChart)
 	api.GET("/users/me/referral", middleware.Auth(), uh.ReferralInfo)
+	api.GET("/users/me/loyalty", middleware.Auth(), uh.LoyaltyInfo)
 	api.GET("/settings", adm.PublicSettings)
 	api.GET("/shops", uh.ShopsList)
 	api.POST("/admin/settings/commission", middleware.Auth(), middleware.AdminOnly(), adm.SetCommission)

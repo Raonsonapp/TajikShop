@@ -497,6 +497,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     label: l.myAddresses, onTap: () => context.push(RouteNames.addresses)),
               ]),
 
+              // ── Барномаи вафодорӣ (Bronze/Silver/Gold) ──────────────────
+              const SizedBox(height: 16),
+              const _LoyaltyCard(),
+
               // ── Seller / Become Seller ──────────────────────────────────
               if (isSeller) ...[
                 _SectionLabel(l.sellerDashboard),
@@ -789,4 +793,101 @@ class _QuickAction extends StatelessWidget {
                 fontSize: 11, fontWeight: FontWeight.w600)),
       ]),
     ));
+}
+
+// ── Корти вафодорӣ (Bronze / Silver / Gold) ───────────────────────────────────
+class _LoyaltyCard extends ConsumerWidget {
+  const _LoyaltyCard();
+
+  ({String label, Color color, IconData icon}) _tierInfo(String tier) {
+    switch (tier) {
+      case 'gold':
+        return (label: 'Gold', color: const Color(0xFFFFB800), icon: FeatherIcons.award);
+      case 'silver':
+        return (label: 'Silver', color: const Color(0xFF9AA5B1), icon: FeatherIcons.award);
+      default:
+        return (label: 'Bronze', color: const Color(0xFFCD7F32), icon: FeatherIcons.award);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pal = context.pal;
+    final async = ref.watch(loyaltyProvider);
+    final d = async.asData?.value ?? const {};
+    final tier = (d['tier'] ?? 'bronze').toString();
+    final spent = (d['total_spent'] as num?)?.toDouble() ?? 0;
+    final cashback = (d['cashback_percent'] as num?)?.toDouble() ?? 2;
+    final nextAt = (d['next_tier_at'] as num?)?.toDouble() ?? 0;
+    final info = _tierInfo(tier);
+    final progress = nextAt > 0 ? (spent / nextAt).clamp(0.0, 1.0) : 1.0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: pal.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: info.color.withValues(alpha: 0.4), width: 1),
+          boxShadow: const [
+            BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4)),
+          ],
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: info.color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(info.icon, color: info.color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Text('Сатҳи ${info.label}',
+                      style: TextStyle(
+                          color: pal.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800)),
+                ]),
+                const SizedBox(height: 2),
+                Text('Cashback: ${cashback.toStringAsFixed(cashback == cashback.roundToDouble() ? 0 : 1)}% аз ҳар харид',
+                    style: TextStyle(color: pal.textMuted, fontSize: 12)),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 14),
+          if (nextAt > 0) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                backgroundColor: pal.surface,
+                valueColor: AlwaysStoppedAnimation(info.color),
+              ),
+            ),
+            const SizedBox(height: 7),
+            Text(
+                'То сатҳи баъдӣ: ${(nextAt - spent).clamp(0, nextAt).toStringAsFixed(0)} сом харид кунед',
+                style: TextStyle(color: pal.textSecondary, fontSize: 12)),
+          ] else
+            Row(children: [
+              const Icon(FeatherIcons.checkCircle, color: AppColors.success, size: 15),
+              const SizedBox(width: 6),
+              Text('Сатҳи болоӣ — cashback-и максималӣ!',
+                  style: TextStyle(
+                      color: pal.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+            ]),
+        ]),
+      ),
+    );
+  }
 }
