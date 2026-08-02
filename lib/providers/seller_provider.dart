@@ -149,6 +149,28 @@ final referralProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) 
   }
 });
 
+// ── Барномаи вафодорӣ (GET /users/me/loyalty) ───────────────────────────────
+final loyaltyProvider =
+    FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  const fallback = <String, dynamic>{
+    'tier': 'bronze',
+    'total_spent': 0,
+    'bonus_percent': 0,
+    'cashback_percent': 2,
+    'next_tier_at': 500,
+  };
+  try {
+    final res = await ApiClient.instance.dio.get('/users/me/loyalty');
+    final raw = res.data;
+    final data = raw is Map
+        ? (raw['data'] is Map ? raw['data'] as Map : raw)
+        : <String, dynamic>{};
+    return {...fallback, ...Map<String, dynamic>.from(data)};
+  } catch (_) {
+    return fallback;
+  }
+});
+
 class SellerProductService {
   static Future<void> update(String id, {
     required String title,
