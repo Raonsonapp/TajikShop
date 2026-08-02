@@ -14,40 +14,132 @@ final ordersProvider = FutureProvider.autoDispose<List<OrderModel>>((ref) async 
   return CartRepository().getOrders();
 });
 
-class OrdersScreen extends ConsumerWidget {
+// Гурӯҳҳои ҳолат барои табҳо
+enum _OrderTab { all, active, done, cancelled }
+
+bool _matchesTab(_OrderTab tab, String status) {
+  final s = status.toLowerCase();
+  switch (tab) {
+    case _OrderTab.all:
+      return true;
+    case _OrderTab.active:
+      return ['pending', 'paid', 'processing', 'payment_uploaded', 'shipped']
+          .contains(s);
+    case _OrderTab.done:
+      return s == 'delivered' || s == 'completed';
+    case _OrderTab.cancelled:
+      return s == 'cancelled';
+  }
+}
+
+class OrdersScreen extends ConsumerStatefulWidget {
   const OrdersScreen({super.key});
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OrdersScreen> createState() => _OrdersScreenState();
+}
+
+class _OrdersScreenState extends ConsumerState<OrdersScreen> {
+  _OrderTab _tab = _OrderTab.all;
+
+  @override
+  Widget build(BuildContext context) {
     final orders = ref.watch(ordersProvider);
+    final pal = context.pal;
     return Scaffold(
-      backgroundColor: context.pal.scaffold,
+      backgroundColor: pal.scaffold,
       appBar: AppBar(
-        backgroundColor: context.pal.scaffold,
+        backgroundColor: pal.scaffold,
         elevation: 0,
-        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        iconTheme: IconThemeData(color: pal.textPrimary),
         title: Text(AppL10n.of(context).myOrders,
-            style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
-              icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
+              icon: Icon(FeatherIcons.refreshCw, color: pal.textSecondary),
               onPressed: () => ref.invalidate(ordersProvider))
         ],
       ),
-      body: orders.when(
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-        error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(ordersProvider)),
-        data: (list) => list.isEmpty
-            ? Center(
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(FeatherIcons.fileText, size: 80, color: context.pal.textMuted),
-                const SizedBox(height: 16),
-                Text(AppL10n.of(context).noOrders,
-                    style: TextStyle(color: context.pal.textSecondary, fontSize: 16))
-              ]))
-            : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                itemCount: list.length,
-                itemBuilder: (_, i) => _OCard(order: list[i])),
+      body: Column(
+        children: [
+          _tabs(pal),
+          Expanded(
+            child: orders.when(
+              loading: () => const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary)),
+              error: (e, _) => ErrorScreen(
+                  message: e.toString(),
+                  onRetry: () => ref.invalidate(ordersProvider)),
+              data: (all) {
+                final list =
+                    all.where((o) => _matchesTab(_tab, o.status)).toList();
+                if (list.isEmpty) {
+                  return Center(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(FeatherIcons.fileText,
+                        size: 80, color: pal.textMuted),
+                    const SizedBox(height: 16),
+                    Text(AppL10n.of(context).noOrders,
+                        style: TextStyle(
+                            color: pal.textSecondary, fontSize: 16))
+                  ]));
+                }
+                return RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: () async => ref.invalidate(ordersProvider),
+                  child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      itemCount: list.length,
+                      itemBuilder: (_, i) => _OCard(order: list[i])),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tabs(AppPalette pal) {
+    const labels = {
+      _OrderTab.all: 'Ҳама',
+      _OrderTab.active: 'Фаъол',
+      _OrderTab.done: 'Иҷрошуда',
+      _OrderTab.cancelled: 'Бекор',
+    };
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        children: [
+          for (final t in _OrderTab.values)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: GestureDetector(
+                onTap: () => setState(() => _tab = t),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _tab == t ? AppColors.primary : pal.card,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: _tab == t ? AppColors.primary : pal.border,
+                        width: 0.8),
+                  ),
+                  child: Center(
+                    child: Text(labels[t]!,
+                        style: TextStyle(
+                            color: _tab == t ? Colors.white : pal.textSecondary,
+                            fontSize: 13,
+                            fontWeight:
+                                _tab == t ? FontWeight.w700 : FontWeight.w500)),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
