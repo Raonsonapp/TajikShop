@@ -241,7 +241,7 @@ class SellerDashboardScreen extends ConsumerWidget {
                     icon: FeatherIcons.clock,
                     label: l.sellerNewOrders,
                     subtitle: l.sellerNewOrdersSub,
-                    onTap: () => context.push(RouteNames.orders),
+                    onTap: () => context.push('/seller/orders'),
                   ),
                   _ActionDivider(),
                   _ActionItem(

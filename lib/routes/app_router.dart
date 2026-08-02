@@ -24,6 +24,7 @@ import '../modules/search/search_screen.dart';
 import '../modules/chat/chat_screen.dart';
 import '../modules/chat/inbox_screen.dart';
 import '../modules/deals/deals_screen.dart';
+import '../modules/seller/seller_orders_screen.dart';
 import '../modules/wallet/wallet_screen.dart';
 import '../modules/address/addresses_screen.dart';
 import '../modules/shops/nearby_shops_screen.dart';
@@ -44,6 +45,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           builder: (_, s) => ProductDetailScreen(id: s.pathParameters['id']!)),
       GoRoute(path: '/messages', builder: (_, __) => const InboxScreen()),
       GoRoute(path: '/deals', builder: (_, __) => const DealsScreen()),
+      GoRoute(path: '/seller/orders', builder: (_, __) => const SellerOrdersScreen()),
       GoRoute(path: '/chat/:id',
           builder: (_, s) => ChatScreen(
                 userId: s.pathParameters['id']!,
