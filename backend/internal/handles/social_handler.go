@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"tajikshop/internal/db"
 	"tajikshop/internal/models"
 	"tajikshop/internal/storage"
@@ -484,19 +485,43 @@ func (h *AdminHandler) UpdateOrderStatus(c *gin.Context) {
 		return
 	}
 	db.DB.Exec(`UPDATE orders SET status=$1,updated_at=$2 WHERE id=$3`, in.Status, time.Now(), oid)
-	// Огоҳӣ ба соҳиби фармоиш
+	// Огоҳӣ ба соҳиби фармоиш (бо унвони тоҷикии ҳолат)
 	var ownerID string
 	if err := db.DB.QueryRow(`SELECT user_id FROM orders WHERE id=$1`, oid).Scan(&ownerID); err == nil && ownerID != "" {
 		short := oid
 		if len(short) > 8 {
 			short = short[:8]
 		}
+		label := statusLabelTg(in.Status)
+		body := "Фармоиши #" + short + ": " + label
 		db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
-			VALUES($1,$2,'order','Ҳолати фармоиш нав шуд','Фармоиши #`+short+`: `+in.Status+`',$3)`,
-			uuid.NewString(), ownerID, oid)
-		pushToUser(ownerID, "Ҳолати фармоиш нав шуд", "Фармоиши #"+short+": "+in.Status)
+			VALUES($1,$2,'order','Ҳолати фармоиш нав шуд',$3,$4)`,
+			uuid.NewString(), ownerID, body, oid)
+		pushToUser(ownerID, "Ҳолати фармоиш нав шуд", body)
 	}
 	utils.OK(c, gin.H{"message": "status updated"})
+}
+
+// statusLabelTg — ҳолати фармоишро ба тоҷикӣ табдил медиҳад (барои огоҳиномаҳо).
+func statusLabelTg(status string) string {
+	switch strings.ToLower(status) {
+	case "pending":
+		return "Дар интизор"
+	case "paid":
+		return "Пардохт шуд"
+	case "processing":
+		return "Омодасозӣ"
+	case "shipped":
+		return "Фиристода шуд"
+	case "delivered":
+		return "Расонида шуд"
+	case "completed":
+		return "Иҷро шуд"
+	case "cancelled":
+		return "Бекор шуд"
+	default:
+		return status
+	}
 }
 
 func (h *AdminHandler) ListOrders(c *gin.Context) {
