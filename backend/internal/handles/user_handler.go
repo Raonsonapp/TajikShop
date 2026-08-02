@@ -280,6 +280,42 @@ func (h *UserHandler) SellerStats(c *gin.Context) {
 	})
 }
 
+// SellerOrders — рӯйхати фармоишҳое ки маҳсулоти фурӯшандаи ҷориро доранд.
+// Барои иҷрои фармоиш: харидор, телефон, шумораи ашё ва маблағи фурӯшанда. GET /seller/orders
+func (h *UserHandler) SellerOrders(c *gin.Context) {
+	uid := utils.UserID(c)
+	rows, err := db.DB.Query(`
+		SELECT o.id, o.status, o.created_at, u.name, COALESCE(u.phone,''),
+			(SELECT COUNT(*) FROM order_items oi JOIN products p ON p.id=oi.product_id
+				WHERE oi.order_id=o.id AND p.seller_id=$1),
+			COALESCE((SELECT SUM(oi.price*oi.quantity) FROM order_items oi JOIN products p ON p.id=oi.product_id
+				WHERE oi.order_id=o.id AND p.seller_id=$1),0)
+		FROM orders o
+		JOIN users u ON u.id=o.user_id
+		WHERE EXISTS (SELECT 1 FROM order_items oi JOIN products p ON p.id=oi.product_id
+			WHERE oi.order_id=o.id AND p.seller_id=$1)
+		ORDER BY o.created_at DESC LIMIT 100`, uid)
+	if err != nil {
+		utils.OK(c, []gin.H{})
+		return
+	}
+	defer rows.Close()
+	out := []gin.H{}
+	for rows.Next() {
+		var id, status, buyer, phone string
+		var createdAt time.Time
+		var items int
+		var subtotal float64
+		rows.Scan(&id, &status, &createdAt, &buyer, &phone, &items, &subtotal)
+		out = append(out, gin.H{
+			"id": id, "status": status, "created_at": createdAt,
+			"buyer_name": buyer, "buyer_phone": phone,
+			"items": items, "subtotal": subtotal,
+		})
+	}
+	utils.OK(c, out)
+}
+
 // ReferralInfo — коди даъвати корбар + шумораи даъватшудагон + бонуси кофташуда.
 func (h *UserHandler) ReferralInfo(c *gin.Context) {
 	uid := utils.UserID(c)

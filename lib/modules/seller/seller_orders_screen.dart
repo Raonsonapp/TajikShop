@@ -1,0 +1,208 @@
+import 'package:feather_icons/feather_icons.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_palette.dart';
+import '../../providers/seller_provider.dart';
+
+/// «Фармоишҳои фурӯш» — фармоишҳое ки маҳсулоти фурӯшандаро доранд.
+/// Барои иҷро: харидор, телефон, шумораи ашё ва маблағи фурӯшанда.
+class SellerOrdersScreen extends ConsumerWidget {
+  const SellerOrdersScreen({super.key});
+
+  Color _statusColor(String s) {
+    switch (s.toLowerCase()) {
+      case 'pending':
+        return AppColors.warning;
+      case 'delivered':
+      case 'completed':
+        return AppColors.success;
+      case 'cancelled':
+        return AppColors.error;
+      default:
+        return AppColors.info;
+    }
+  }
+
+  String _statusLabel(String s) {
+    switch (s.toLowerCase()) {
+      case 'pending':
+        return 'Дар интизор';
+      case 'paid':
+        return 'Пардохт шуд';
+      case 'processing':
+        return 'Омодасозӣ';
+      case 'shipped':
+        return 'Фиристода шуд';
+      case 'delivered':
+        return 'Расонида шуд';
+      case 'completed':
+        return 'Иҷро шуд';
+      case 'cancelled':
+        return 'Бекор шуд';
+      default:
+        return s;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pal = context.pal;
+    final async = ref.watch(sellerOrdersProvider);
+
+    return Scaffold(
+      backgroundColor: pal.scaffold,
+      appBar: AppBar(
+        backgroundColor: pal.scaffold,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: Icon(FeatherIcons.chevronLeft, color: pal.textPrimary),
+          onPressed: () => context.pop(),
+        ),
+        title: Text('Фармоишҳои фурӯш',
+            style: TextStyle(
+                color: pal.textPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: 17)),
+      ),
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async => ref.invalidate(sellerOrdersProvider),
+        child: async.when(
+          loading: () => const Center(
+              child: CircularProgressIndicator(
+                  color: AppColors.primary, strokeWidth: 2.6)),
+          error: (_, __) => _empty(pal),
+          data: (list) {
+            if (list.isEmpty) return _empty(pal);
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              itemCount: list.length,
+              itemBuilder: (_, i) => _card(context, pal, list[i]),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _empty(AppPalette pal) => ListView(
+        children: [
+          const SizedBox(height: 120),
+          Icon(FeatherIcons.inbox, size: 56, color: pal.textMuted),
+          const SizedBox(height: 16),
+          Center(
+            child: Text('Ҳоло фармоиш нест',
+                style: TextStyle(color: pal.textSecondary, fontSize: 15)),
+          ),
+        ],
+      );
+
+  Widget _card(BuildContext context, AppPalette pal, Map<String, dynamic> o) {
+    final id = o['id']?.toString() ?? '';
+    final shortId =
+        (id.length > 8 ? id.substring(0, 8) : id).toUpperCase();
+    final status = o['status']?.toString() ?? 'pending';
+    final buyer = o['buyer_name']?.toString() ?? 'Харидор';
+    final phone = o['buyer_phone']?.toString() ?? '';
+    final items = (o['items'] as num?)?.toInt() ?? 0;
+    final subtotal = (o['subtotal'] as num?)?.toDouble() ?? 0;
+    DateTime? date;
+    if (o['created_at'] != null) {
+      date = DateTime.tryParse(o['created_at'].toString())?.toLocal();
+    }
+    final c = _statusColor(status);
+
+    return GestureDetector(
+      onTap: () => context.push('/orders/$id'),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: pal.card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: pal.border, width: 0.6),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(FeatherIcons.shoppingBag,
+                  color: Colors.white, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('#$shortId',
+                        style: TextStyle(
+                            color: pal.textPrimary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15)),
+                    const SizedBox(height: 3),
+                    Text(
+                        date != null
+                            ? DateFormat('dd.MM.yyyy • HH:mm').format(date)
+                            : '',
+                        style: TextStyle(color: pal.textMuted, fontSize: 12)),
+                  ]),
+            ),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+              decoration: BoxDecoration(
+                  color: c.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20)),
+              child: Text(_statusLabel(status),
+                  style: TextStyle(
+                      color: c, fontSize: 12, fontWeight: FontWeight.w600)),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          Divider(color: pal.divider, height: 1),
+          const SizedBox(height: 10),
+          Row(children: [
+            Icon(FeatherIcons.user, size: 14, color: pal.textMuted),
+            const SizedBox(width: 6),
+            Text(buyer,
+                style: TextStyle(color: pal.textSecondary, fontSize: 13)),
+            if (phone.isNotEmpty) ...[
+              const SizedBox(width: 10),
+              Icon(FeatherIcons.phone, size: 13, color: pal.textMuted),
+              const SizedBox(width: 5),
+              Text(phone,
+                  style: TextStyle(color: pal.textSecondary, fontSize: 13)),
+            ],
+          ]),
+          const SizedBox(height: 10),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text('$items ашё',
+                style: TextStyle(color: pal.textSecondary, fontSize: 13)),
+            Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text('${subtotal.toStringAsFixed(0)} ',
+                      style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16)),
+                  const Text('сом',
+                      style: TextStyle(
+                          color: AppColors.primary, fontSize: 12)),
+                ]),
+          ]),
+        ]),
+      ),
+    );
+  }
+}
