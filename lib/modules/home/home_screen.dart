@@ -17,6 +17,7 @@ import '../../data/models/story_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/flash_deals_provider.dart';
+import '../../providers/notifications_provider.dart';
 import '../../providers/stories_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../routes/route_names.dart';
@@ -76,6 +77,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     await ref.read(productsProvider.notifier).loadProducts(refresh: true);
     ref.read(productsProvider.notifier).loadTrending();
     ref.invalidate(categoriesProvider);
+    ref.invalidate(unreadCountProvider);
   }
 
   static const _gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
@@ -245,8 +247,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(width: 10),
           _circleButton(
             icon: FeatherIcons.bell,
-            onTap: () => context.push(RouteNames.notifications),
-            showDot: true,
+            onTap: () => context.push(RouteNames.notifications).then(
+                (_) => ref.invalidate(unreadCountProvider)),
+            badgeCount: ref.watch(unreadCountProvider).maybeWhen(
+                data: (c) => c, orElse: () => 0),
           ),
           const SizedBox(width: 10),
           _circleButton(
@@ -262,6 +266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required IconData icon,
     required VoidCallback onTap,
     bool showDot = false,
+    int badgeCount = 0,
   }) {
     final pal = context.pal;
     return GestureDetector(
@@ -283,9 +288,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         child: Stack(
           alignment: Alignment.center,
+          clipBehavior: Clip.none,
           children: [
             Icon(icon, size: 20, color: pal.textPrimary),
-            if (showDot)
+            // Нишони шумора (агар огоҳиномаи хонданашуда бошад)
+            if (badgeCount > 0)
+              Positioned(
+                top: 6,
+                right: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  constraints: const BoxConstraints(minWidth: 17, minHeight: 17),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: pal.card, width: 1.6),
+                  ),
+                  child: Text(badgeCount > 9 ? '9+' : '$badgeCount',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800)),
+                ),
+              )
+            else if (showDot)
               Positioned(
                 top: 12,
                 right: 13,
