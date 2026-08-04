@@ -307,6 +307,115 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  // ── Купонҳо ва промокодҳо ─────────────────────────────────────────────────
+  void _showCoupons() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.pal.card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 28),
+        child: Consumer(builder: (ctx, ref2, _) {
+          final async = ref2.watch(activeCouponsProvider);
+          return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Center(child: Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 18),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(FeatherIcons.tag, color: AppColors.primary, size: 20),
+              const SizedBox(width: 8),
+              Text('Купонҳои фаъол',
+                  style: TextStyle(color: context.pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
+            ]),
+            const SizedBox(height: 8),
+            Text('Кодро дар сабад ҳангоми пардохт ворид кунед',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: context.pal.textMuted, fontSize: 12.5)),
+            const SizedBox(height: 18),
+            async.when(
+              loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(child: CircularProgressIndicator(color: AppColors.primary))),
+              error: (_, __) => _couponsEmpty(),
+              data: (list) {
+                if (list.isEmpty) return _couponsEmpty();
+                return Column(children: [
+                  for (final cpn in list) _couponRow(cpn),
+                ]);
+              },
+            ),
+          ]);
+        }),
+      ),
+    );
+  }
+
+  Widget _couponsEmpty() => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 30),
+        child: Column(children: [
+          Icon(FeatherIcons.tag, size: 44, color: context.pal.textMuted),
+          const SizedBox(height: 12),
+          Text('Ҳоло купони фаъол нест',
+              style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
+        ]),
+      );
+
+  Widget _couponRow(Map<String, dynamic> cpn) {
+    final code = (cpn['code'] ?? '').toString();
+    final disc = (cpn['discount_percent'] as num?)?.toInt() ?? 0;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: context.pal.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+        ),
+        child: Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10)),
+            child: Text('-$disc%',
+                style: const TextStyle(
+                    color: AppColors.primary, fontSize: 15, fontWeight: FontWeight.w900)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(code,
+                style: TextStyle(
+                    color: context.pal.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.5,
+                    fontFamily: 'monospace')),
+          ),
+          GestureDetector(
+            onTap: () {
+              final messenger = ScaffoldMessenger.of(context);
+              Clipboard.setData(ClipboardData(text: code));
+              messenger.showSnackBar(const SnackBar(
+                  content: Text('Код нусхабардорӣ шуд ✅'),
+                  backgroundColor: AppColors.success,
+                  behavior: SnackBarBehavior.floating));
+            },
+            child: Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(10)),
+              child: const Icon(FeatherIcons.copy, color: Colors.white, size: 16),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
   // ── Become Seller (бо тасдиқи паспорт) ────────────────────────────────────────
   Future<void> _becomeSeller() async {
     await showSellerVerify(context);
@@ -546,11 +655,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     onTap: _becomeSeller,
                   )),
 
-              // ── Даъвати дӯстон (visible to everyone) ────────────────────
+              // ── Даъвати дӯстон + Купонҳо (visible to everyone) ──────────
               _GroupCard(children: [
                 _Tile(icon: FeatherIcons.gift, iconColor: AppColors.primary,
                     label: '🎁 Дӯстонро даъват кунед',
                     onTap: _inviteFriends),
+                _Tile(icon: FeatherIcons.tag, iconColor: const Color(0xFFFF6B2C),
+                    label: '🎟 Купонҳо ва промокодҳо',
+                    onTap: _showCoupons),
               ]),
 
               // ── Настройки ───────────────────────────────────────────────

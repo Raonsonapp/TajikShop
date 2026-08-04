@@ -146,6 +146,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 
 	// Coupons
 	api.GET("/coupons/validate", middleware.Auth(), cph.Validate)
+	api.GET("/coupons/active", middleware.Auth(), cph.ActiveList)
 
 	// Reports (зидди сӯиистифода)
 	api.POST("/reports", middleware.Auth(), rph.Create)

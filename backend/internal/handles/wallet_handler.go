@@ -167,6 +167,26 @@ func lookupCoupon(code string) (int, bool, string) {
 	return disc, true, ""
 }
 
+// ActiveList — купонҳои фаъол барои харидорон (кашф кардани промокодҳо).
+// GET /coupons/active
+func (h *CouponHandler) ActiveList(c *gin.Context) {
+	rows, _ := db.DB.Query(`SELECT code,discount_percent
+		FROM coupons
+		WHERE is_active=true
+			AND (expires_at IS NULL OR expires_at > NOW())
+			AND (max_uses <= 0 OR used_count < max_uses)
+		ORDER BY discount_percent DESC LIMIT 20`)
+	defer rows.Close()
+	out := []gin.H{}
+	for rows.Next() {
+		var code string
+		var disc int
+		rows.Scan(&code, &disc)
+		out = append(out, gin.H{"code": code, "discount_percent": disc})
+	}
+	utils.OK(c, out)
+}
+
 // Create — admin
 func (h *CouponHandler) Create(c *gin.Context) {
 	var in struct {
