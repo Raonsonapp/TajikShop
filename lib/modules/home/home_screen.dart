@@ -550,6 +550,19 @@ class _PopularRail extends StatelessWidget {
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.3)),
+            const Spacer(),
+            GestureDetector(
+              onTap: () => context.push('/bestsellers'),
+              child: Row(children: [
+                Text('Серхаридор',
+                    style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)),
+                const Icon(FeatherIcons.chevronRight,
+                    color: AppColors.primary, size: 16),
+              ]),
+            ),
           ]),
         ),
         SizedBox(

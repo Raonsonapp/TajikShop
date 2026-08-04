@@ -22,3 +22,13 @@ final dealsProvider =
     return const [];
   }
 });
+
+/// Серхаридортарин (GET /products/bestsellers) — аз рӯи фурӯши воқеӣ.
+final bestsellersProvider =
+    FutureProvider.autoDispose<List<ProductModel>>((ref) async {
+  try {
+    return await ProductRepository().getBestsellers();
+  } catch (_) {
+    return const [];
+  }
+});
