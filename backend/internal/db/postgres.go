@@ -233,6 +233,29 @@ CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 INSERT INTO settings(key,value) VALUES('commission_percent','10') ON CONFLICT(key) DO NOTHING;
 INSERT INTO settings(key,value) VALUES('cashback_percent','2') ON CONFLICT(key) DO NOTHING;
 
+-- Карго (доставка аз Хитой → Тоҷикистон/Русия). Суроға ва тарифҳо (сом/кг).
+INSERT INTO settings(key,value) VALUES('cargo_warehouse','Китай, Гуанчжоу (суроғаро админ дар танзимот мегузорад)') ON CONFLICT(key) DO NOTHING;
+INSERT INTO settings(key,value) VALUES('cargo_rate_tj','45') ON CONFLICT(key) DO NOTHING;
+INSERT INTO settings(key,value) VALUES('cargo_rate_ru','60') ON CONFLICT(key) DO NOTHING;
+INSERT INTO settings(key,value) VALUES('cargo_phone','') ON CONFLICT(key) DO NOTHING;
+
+-- Фармоишҳои карго (доставка аз Хитой). status: new→received→shipped→arrived→delivered.
+CREATE TABLE IF NOT EXISTS cargo_orders (
+  id           UUID PRIMARY KEY,
+  user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  track_code   TEXT DEFAULT '',
+  product_link TEXT DEFAULT '',
+  description  TEXT DEFAULT '',
+  destination  VARCHAR(4) DEFAULT 'tj',
+  weight       NUMERIC(10,2) DEFAULT 0,
+  cost         NUMERIC(12,2) DEFAULT 0,
+  status       VARCHAR(16) DEFAULT 'new',
+  note         TEXT DEFAULT '',
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_cargo_user ON cargo_orders(user_id);
+
 -- Категорияҳоро бо расм таъмин мекунем (агар холӣ бошанд).
 UPDATE categories SET icon_url = 'https://picsum.photos/seed/' || slug || '/400'
   WHERE icon_url IS NULL OR icon_url = '';
