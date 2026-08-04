@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/business_types.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/seller_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -96,6 +97,7 @@ class SellerProfileScreen extends ConsumerWidget {
     final shopDesc  = d['shop_desc']?.toString() ?? '';
     final shopPhone = d['shop_phone']?.toString() ?? '';
     final shopHours = d['shop_hours']?.toString() ?? '';
+    final bizType   = d['business_type']?.toString() ?? 'shop';
     final storeLat  = (d['store_lat'] as num?)?.toDouble() ?? 0;
     final storeLng  = (d['store_lng'] as num?)?.toDouble() ?? 0;
     final displayName = shopName.isNotEmpty
@@ -242,8 +244,8 @@ class SellerProfileScreen extends ConsumerWidget {
           ),
         ],
 
-        // ── Info rows (соатҳо, телефон, ҷойгиршавӣ) ──
-        if (shopHours.isNotEmpty || shopPhone.isNotEmpty || (storeLat != 0 && storeLng != 0)) ...[
+        // ── Info rows (навъи бизнес, соатҳо, телефон, ҷойгиршавӣ) ──
+        ...[
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
@@ -253,6 +255,8 @@ class SellerProfileScreen extends ConsumerWidget {
               border: Border.all(color: context.pal.border, width: 0.6),
             ),
             child: Column(children: [
+              _infoRow(context, businessTypeFor(bizType).icon, 'Навъи бизнес',
+                  businessTypeFor(bizType).label),
               if (shopHours.isNotEmpty)
                 _infoRow(context, FeatherIcons.clock, 'Соатҳои корӣ', shopHours),
               if (shopPhone.isNotEmpty)
