@@ -149,6 +149,19 @@ final referralProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) 
   }
 });
 
+// ── Купонҳои фаъол (GET /coupons/active) ────────────────────────────────────
+final activeCouponsProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  try {
+    final res = await ApiClient.instance.dio.get('/coupons/active');
+    final raw = res.data;
+    final list = raw is List ? raw : (raw is Map ? (raw['data'] ?? []) : []);
+    return (list as List).whereType<Map<String, dynamic>>().toList();
+  } catch (_) {
+    return const [];
+  }
+});
+
 // ── Барномаи вафодорӣ (GET /users/me/loyalty) ───────────────────────────────
 final loyaltyProvider =
     FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
