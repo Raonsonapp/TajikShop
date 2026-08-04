@@ -82,6 +82,9 @@ class _ProductCardState extends ConsumerState<ProductCard>
     final p = widget.product;
     final disc = p.computedDiscount;
     final isFav = ref.watch(favoritesProvider).contains(p.id);
+    final isNew = DateTime.now().difference(p.createdAt).inDays <= 7;
+    final lowStock = p.inStock && p.stock <= 3;
+    final noLeftBadge = !p.isFlashSale && disc <= 0 && !p.isFeatured;
 
     return GestureDetector(
       onTap: () => context.push('/product/${p.id}'),
@@ -168,6 +171,17 @@ class _ProductCardState extends ConsumerState<ProductCard>
                       SizedBox(width: 2),
                       Text('TOP', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
                     ]))),
+
+              // «Нав» badge (only when no other left badge, to avoid clutter)
+              if (isNew && noLeftBadge)
+                Positioned(top: 8, left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                      borderRadius: BorderRadius.circular(8)),
+                    child: const Text('Нав',
+                        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)))),
 
               // 💚 Fav button
               Positioned(top: 8, right: 8,
@@ -257,6 +271,19 @@ class _ProductCardState extends ConsumerState<ProductCard>
                           style: const TextStyle(color: Color(0xFF6B6E82), fontSize: 10)),
                     ],
                   ]),
+
+                  // Low-stock urgency
+                  if (lowStock)
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(FeatherIcons.alertCircle,
+                          size: 10, color: Color(0xFFFF4B2B)),
+                      const SizedBox(width: 3),
+                      Text('Танҳо ${p.stock} мондааст',
+                          style: const TextStyle(
+                              color: Color(0xFFFF4B2B),
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700)),
+                    ]),
 
                   // Price + cart
                   Row(
