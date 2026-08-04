@@ -107,6 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SliverToBoxAdapter(child: _StoriesRail()),
               const SliverToBoxAdapter(child: _HeroBanner()),
               const SliverToBoxAdapter(child: _NearbyShopsCard()),
+              const SliverToBoxAdapter(child: _CargoCard()),
               const SliverToBoxAdapter(child: _FlashDealsRail()),
               SliverToBoxAdapter(child: _PopularRail(products: ps.trending)),
               const SliverToBoxAdapter(child: _RecentlyViewedRail()),
@@ -1090,6 +1091,89 @@ class _FlashDealCard extends StatelessWidget {
 // ════════════════════════════════════════════════════════════════════════════
 // NEARBY SHOPS — tappable card → map of local offline businesses
 // ════════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════════
+// CARGO — China → TJ/RU delivery service card
+// ════════════════════════════════════════════════════════════════════════════
+class _CargoCard extends StatelessWidget {
+  const _CargoCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: GestureDetector(
+        onTap: () => context.push('/cargo'),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFF6B2C), Color(0xFFFF416C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFF6B2C).withValues(alpha: 0.28),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(FeatherIcons.package,
+                    color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '📦 Карго аз Хитой',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Доставка ба Тоҷикистон ва Русия',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(FeatherIcons.chevronRight,
+                  color: Colors.white, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _NearbyShopsCard extends StatelessWidget {
   const _NearbyShopsCard();
 

@@ -26,6 +26,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	adm := handlers.NewAdminHandler()
 	wh := handlers.NewWalletHandler()
 	cph := handlers.NewCouponHandler()
+	cargo := handlers.NewCargoHandler()
 	rph := handlers.NewReportHandler()
 	bh := handlers.NewBrandHandler()
 	vh := handlers.NewVariantHandler()
@@ -147,6 +148,13 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	// Coupons
 	api.GET("/coupons/validate", middleware.Auth(), cph.Validate)
 	api.GET("/coupons/active", middleware.Auth(), cph.ActiveList)
+
+	// Карго (доставка аз Хитой → ТҶ/РУ)
+	api.GET("/cargo/info", cargo.Info)
+	api.GET("/cargo", middleware.Auth(), cargo.MyList)
+	api.POST("/cargo", middleware.Auth(), cargo.Create)
+	api.GET("/admin/cargo", middleware.Auth(), middleware.AdminOnly(), cargo.AdminList)
+	api.PATCH("/admin/cargo/:id", middleware.Auth(), middleware.AdminOnly(), cargo.AdminUpdate)
 
 	// Reports (зидди сӯиистифода)
 	api.POST("/reports", middleware.Auth(), rph.Create)
