@@ -51,6 +51,17 @@ class AdminService {
         if (status != null) 'status': status,
         if (note != null) 'note': note,
       });
+  static Future<void> updateCargoSettings(
+          {required String warehouse,
+          required double rateTj,
+          required double rateRu,
+          required String phone}) =>
+      ApiClient.instance.dio.post('/admin/cargo/settings', data: {
+        'warehouse': warehouse,
+        'rate_tj': rateTj,
+        'rate_ru': rateRu,
+        'phone': phone,
+      });
 
   static Future<void> banUser(String id) =>
       ApiClient.instance.dio.post('/admin/users/$id/ban');

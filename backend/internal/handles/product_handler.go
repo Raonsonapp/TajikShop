@@ -33,6 +33,9 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		Stock           int     `json:"stock"`
 		MinOrderQty     int     `json:"min_order_qty"`
 		WholesalePrice  float64 `json:"wholesale_price"`
+		DeliveryDays    int     `json:"delivery_days"`
+		DeliveryPrice   float64 `json:"delivery_price"`
+		SizeInfo        string  `json:"size_info"`
 	}
 	if err := c.ShouldBindJSON(&in); err != nil {
 		utils.Err(c, http.StatusBadRequest, err.Error())
@@ -53,9 +56,9 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	if in.BrandID != "" {
 		brandID = in.BrandID
 	}
-	_, err := db.DB.Exec(`INSERT INTO products(id,seller_id,category_id,brand_id,title,description,price,discount_percent,stock,min_order_qty,wholesale_price,is_active)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,true)`,
-		id, uid, catID, brandID, in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.MinOrderQty, in.WholesalePrice)
+	_, err := db.DB.Exec(`INSERT INTO products(id,seller_id,category_id,brand_id,title,description,price,discount_percent,stock,min_order_qty,wholesale_price,delivery_days,delivery_price,size_info,is_active)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,true)`,
+		id, uid, catID, brandID, in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.MinOrderQty, in.WholesalePrice, in.DeliveryDays, in.DeliveryPrice, in.SizeInfo)
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return
@@ -197,13 +200,15 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 	err := db.DB.QueryRow(`SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.video_url, p.created_at, u.name,
 		COALESCE(u.is_verified,false),
-		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name, p.sale_ends_at
+		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name, p.sale_ends_at,
+		COALESCE(p.delivery_days,0), COALESCE(p.delivery_price,0), COALESCE(p.size_info,'')
 		FROM products p JOIN users u ON u.id=p.seller_id
 		LEFT JOIN brands b ON b.id=p.brand_id WHERE p.id=$1`, id).
 		Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description, &p.Price,
 			&p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.VideoURL, &p.CreatedAt, &p.SellerName,
 			&p.SellerVerified,
-			&brandID, &moq, &wholesale, &brandName, &saleEnds)
+			&brandID, &moq, &wholesale, &brandName, &saleEnds,
+			&p.DeliveryDays, &p.DeliveryPrice, &p.SizeInfo)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "product not found")
 		return
@@ -232,12 +237,17 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		Stock           int     `json:"stock"`
 		IsActive        bool    `json:"is_active"`
 		SaleHours       int     `json:"sale_hours"` // >0 = flash sale то N соат; <0 = бекор
+		DeliveryDays    int     `json:"delivery_days"`
+		DeliveryPrice   float64 `json:"delivery_price"`
+		SizeInfo        string  `json:"size_info"`
 	}
 	c.ShouldBindJSON(&in)
 	res, err := db.DB.Exec(`UPDATE products SET title=$1, description=$2, price=$3,
-		discount_percent=$4, stock=$5, is_active=$6, updated_at=$7
-		WHERE id=$8 AND seller_id=$9`,
-		in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.IsActive, time.Now(), id, uid)
+		discount_percent=$4, stock=$5, is_active=$6,
+		delivery_days=$7, delivery_price=$8, size_info=$9, updated_at=$10
+		WHERE id=$11 AND seller_id=$12`,
+		in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.IsActive,
+		in.DeliveryDays, in.DeliveryPrice, in.SizeInfo, time.Now(), id, uid)
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return

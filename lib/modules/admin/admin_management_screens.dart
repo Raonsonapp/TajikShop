@@ -10,6 +10,7 @@ import '../../core/app_l10n.dart';
 import '../../core/l10n/admin_l10n.dart';
 import '../../core/l10n/extra_l10n.dart';
 import '../../providers/admin_provider.dart';
+import '../../providers/cargo_provider.dart';
 import '../../providers/report_provider.dart';
 import '../../providers/return_provider.dart';
 import '../../providers/search_provider.dart';
@@ -960,6 +961,10 @@ class AdminCargoScreen extends ConsumerWidget {
             style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
+              tooltip: 'Танзимот (суроға, тарифҳо)',
+              icon: const Icon(FeatherIcons.settings, color: AppColors.primary),
+              onPressed: () => _cargoSettings(context, ref)),
+          IconButton(
               icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
               onPressed: () => ref.invalidate(adminCargoProvider))
         ],
@@ -1140,4 +1145,87 @@ class _CargoAdminCard extends StatelessWidget {
       }),
     );
   }
+}
+
+// Танзими карго — суроғаи анбор ва тарифҳо (шарик/админ)
+void _cargoSettings(BuildContext context, WidgetRef ref) {
+  final info = ref.read(cargoInfoProvider).asData?.value ?? const {};
+  final whCtrl = TextEditingController(text: (info['warehouse'] ?? '').toString());
+  final tjCtrl = TextEditingController(
+      text: ((info['rate_tj'] as num?)?.toDouble() ?? 0) > 0
+          ? ((info['rate_tj'] as num).toDouble()).toStringAsFixed(0)
+          : '');
+  final ruCtrl = TextEditingController(
+      text: ((info['rate_ru'] as num?)?.toDouble() ?? 0) > 0
+          ? ((info['rate_ru'] as num).toDouble()).toStringAsFixed(0)
+          : '');
+  final phoneCtrl = TextEditingController(text: (info['phone'] ?? '').toString());
+
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: context.pal.card,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    builder: (ctx) {
+      Widget field(String label, TextEditingController c, {int maxLines = 1, TextInputType? type}) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                  color: context.pal.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: context.pal.border, width: 0.5)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: SafeInput(controller: c, hint: label, maxLines: maxLines, keyboardType: type, fontSize: 14),
+            ),
+          );
+      return Padding(
+        padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 40, height: 4,
+              decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 16),
+          Text('Танзими карго', style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 16),
+          field('Суроғаи анбор (Хитой)', whCtrl, maxLines: 3),
+          Row(children: [
+            Expanded(child: field('Тариф ТҶ (сом/кг)', tjCtrl, type: TextInputType.number)),
+            const SizedBox(width: 10),
+            Expanded(child: field('Тариф РУ (сом/кг)', ruCtrl, type: TextInputType.number)),
+          ]),
+          field('Телефони шарик', phoneCtrl, type: TextInputType.phone),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final messenger = ScaffoldMessenger.of(context);
+                try {
+                  await AdminService.updateCargoSettings(
+                    warehouse: whCtrl.text.trim(),
+                    rateTj: double.tryParse(tjCtrl.text.trim().replaceAll(',', '.')) ?? 0,
+                    rateRu: double.tryParse(ruCtrl.text.trim().replaceAll(',', '.')) ?? 0,
+                    phone: phoneCtrl.text.trim(),
+                  );
+                  ref.invalidate(cargoInfoProvider);
+                  messenger.showSnackBar(const SnackBar(
+                      content: Text('Захира шуд ✅'),
+                      backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+                } catch (_) {
+                  messenger.showSnackBar(const SnackBar(
+                      content: Text('Хатогӣ'),
+                      backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+                }
+              },
+              child: const Text('Захира', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+            ),
+          ),
+        ]),
+      );
+    },
+  );
 }

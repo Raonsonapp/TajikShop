@@ -35,6 +35,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
   final _descCtrl  = TextEditingController();
   final _stockCtrl = TextEditingController(text: '1');
   final _discountCtrl = TextEditingController(); // Тахфиф (%) — ихтиёрӣ
+  final _deliveryDaysCtrl = TextEditingController();  // Мӯҳлати доставка (рӯз)
+  final _deliveryPriceCtrl = TextEditingController(); // Нархи доставка (сом)
+  final _sizeCtrl = TextEditingController();          // Размер/вазн/ранг ва ғ.
   final _picker    = ImagePicker();
 
   List<File> _images    = [];
@@ -55,6 +58,7 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
     _titleCtrl.dispose(); _priceCtrl.dispose();
     _descCtrl.dispose(); _stockCtrl.dispose();
     _discountCtrl.dispose();
+    _deliveryDaysCtrl.dispose(); _deliveryPriceCtrl.dispose(); _sizeCtrl.dispose();
     super.dispose();
   }
 
@@ -101,6 +105,9 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           'stock':       int.tryParse(_stockCtrl.text.trim()) ?? 1,
           if (_catId != null) 'category_id': _catId,
           if (discount > 0) 'discount_percent': discount.clamp(0, 100),
+          'delivery_days':  int.tryParse(_deliveryDaysCtrl.text.trim()) ?? 0,
+          'delivery_price': double.tryParse(_deliveryPriceCtrl.text.replaceAll(',', '.')) ?? 0,
+          'size_info':      _sizeCtrl.text.trim(),
         },
       );
       setState(() => _progress = 0.4);
@@ -313,6 +320,19 @@ class _UploadScreenState extends ConsumerState<UploadScreen> {
           hint: '0', type: TextInputType.number,
           formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)])),
     ]),
+    const SizedBox(height: 14),
+    // ── Маълумоти доставка (то харидор напурсад) ──
+    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Expanded(child: _field('Расиш (рӯз)', _deliveryDaysCtrl,
+          hint: '3', type: TextInputType.number,
+          formatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)])),
+      const SizedBox(width: 12),
+      Expanded(child: _field('Нархи доставка (сом)', _deliveryPriceCtrl,
+          hint: '0 = ройгон', type: TextInputType.number)),
+    ]),
+    const SizedBox(height: 14),
+    _field('Размер / вазн / ранг ва ғ.', _sizeCtrl,
+        hint: 'мас. 40-42, 500г, кабуд'),
     const SizedBox(height: 6),
     Padding(
       padding: const EdgeInsets.only(left: 2),

@@ -228,6 +228,11 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_hours TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS business_type TEXT DEFAULT 'shop';
 ALTER TABLE reviews ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb;
 
+-- Маълумоти доставка ва размери маҳсулот (то харидор напурсад).
+ALTER TABLE products ADD COLUMN IF NOT EXISTS delivery_days  INT DEFAULT 0;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS delivery_price NUMERIC(12,2) DEFAULT 0;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS size_info      TEXT DEFAULT '';
+
 -- Танзимоти платформа (комиссия ва ғ.). Комиссияи пешфарз: 10%.
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 INSERT INTO settings(key,value) VALUES('commission_percent','10') ON CONFLICT(key) DO NOTHING;

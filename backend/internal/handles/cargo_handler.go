@@ -49,6 +49,30 @@ func (h *CargoHandler) Info(c *gin.Context) {
 	})
 }
 
+// AdminSettings — шарик/админ суроғаи анбор ва тарифҳоро мегузорад.
+// POST /admin/cargo/settings
+func (h *CargoHandler) AdminSettings(c *gin.Context) {
+	var in struct {
+		Warehouse string  `json:"warehouse"`
+		RateTj    float64 `json:"rate_tj"`
+		RateRu    float64 `json:"rate_ru"`
+		Phone     string  `json:"phone"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		utils.Err(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	set := func(key, val string) {
+		db.DB.Exec(`INSERT INTO settings(key,value) VALUES($1,$2)
+			ON CONFLICT(key) DO UPDATE SET value=$2`, key, val)
+	}
+	set("cargo_warehouse", in.Warehouse)
+	set("cargo_rate_tj", strconv.FormatFloat(in.RateTj, 'f', -1, 64))
+	set("cargo_rate_ru", strconv.FormatFloat(in.RateRu, 'f', -1, 64))
+	set("cargo_phone", in.Phone)
+	utils.OK(c, gin.H{"updated": true})
+}
+
 // Create — дархости интиқол. POST /cargo
 func (h *CargoHandler) Create(c *gin.Context) {
 	uid := utils.UserID(c)

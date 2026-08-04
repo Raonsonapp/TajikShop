@@ -155,6 +155,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/cargo", middleware.Auth(), cargo.Create)
 	api.GET("/admin/cargo", middleware.Auth(), middleware.AdminOnly(), cargo.AdminList)
 	api.PATCH("/admin/cargo/:id", middleware.Auth(), middleware.AdminOnly(), cargo.AdminUpdate)
+	api.POST("/admin/cargo/settings", middleware.Auth(), middleware.AdminOnly(), cargo.AdminSettings)
 
 	// Reports (зидди сӯиистифода)
 	api.POST("/reports", middleware.Auth(), rph.Create)
