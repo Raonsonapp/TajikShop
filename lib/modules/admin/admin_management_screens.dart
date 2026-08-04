@@ -931,3 +931,213 @@ class _SellerRequestCard extends StatelessWidget {
     ));
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// КАРГО (доставка аз Хитой) — идораи шарик/админ
+// ════════════════════════════════════════════════════════════════════════════
+const _cargoStatuses = ['new', 'received', 'shipped', 'arrived', 'delivered'];
+const _cargoStatusLabels = {
+  'new': 'Қабул шуд',
+  'received': 'Ба анбори Хитой расид',
+  'shipped': 'Фиристода шуд',
+  'arrived': 'Ба кишвар расид',
+  'delivered': 'Супорида шуд',
+};
+
+class AdminCargoScreen extends ConsumerWidget {
+  const AdminCargoScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cargo = ref.watch(adminCargoProvider);
+    return Scaffold(
+      backgroundColor: context.pal.scaffold,
+      appBar: AppBar(
+        backgroundColor: context.pal.scaffold,
+        elevation: 0,
+        iconTheme: IconThemeData(color: context.pal.textPrimary),
+        title: Text('Карго — дархостҳо',
+            style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700)),
+        actions: [
+          IconButton(
+              icon: Icon(FeatherIcons.refreshCw, color: context.pal.textSecondary),
+              onPressed: () => ref.invalidate(adminCargoProvider))
+        ],
+      ),
+      body: cargo.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        error: (e, _) => ErrorScreen(message: e.toString(), onRetry: () => ref.invalidate(adminCargoProvider)),
+        data: (list) => list.isEmpty
+            ? Center(child: Text('Ҳоло дархост нест', style: TextStyle(color: context.pal.textSecondary)))
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: list.length,
+                itemBuilder: (_, i) => _CargoAdminCard(
+                    order: list[i], onChanged: () => ref.invalidate(adminCargoProvider))),
+      ),
+    );
+  }
+}
+
+class _CargoAdminCard extends StatelessWidget {
+  final Map<String, dynamic> order;
+  final VoidCallback onChanged;
+  const _CargoAdminCard({required this.order, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final id = order['id']?.toString() ?? '';
+    final desc = order['description']?.toString() ?? '';
+    final link = order['product_link']?.toString() ?? '';
+    final track = order['track_code']?.toString() ?? '';
+    final dest = order['destination']?.toString() ?? 'tj';
+    final status = order['status']?.toString() ?? 'new';
+    final weight = (order['weight'] as num?)?.toDouble() ?? 0;
+    final cost = (order['cost'] as num?)?.toDouble() ?? 0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: _cardDeco(context),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(
+            child: Text(desc,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w700, fontSize: 14)),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(8)),
+            child: Text(dest == 'ru' ? '🇷🇺 РУ' : '🇹🇯 ТҶ',
+                style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700)),
+          ),
+        ]),
+        if (link.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(link, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: AppColors.info, fontSize: 12)),
+        ],
+        if (track.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text('Track: $track', style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
+        ],
+        const SizedBox(height: 10),
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(color: AppColors.info.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+            child: Text(_cargoStatusLabels[status] ?? status,
+                style: const TextStyle(color: AppColors.info, fontSize: 12, fontWeight: FontWeight.w700))),
+          const Spacer(),
+          if (weight > 0)
+            Text('${weight.toStringAsFixed(1)} кг · ${cost.toStringAsFixed(0)} сом',
+                style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
+        ]),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () => _edit(context),
+            icon: const Icon(FeatherIcons.edit2, size: 16, color: AppColors.primary),
+            label: const Text('Идора', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  void _edit(BuildContext context) {
+    final id = order['id']?.toString() ?? '';
+    final trackCtrl = TextEditingController(text: order['track_code']?.toString() ?? '');
+    final weightCtrl = TextEditingController(
+        text: ((order['weight'] as num?)?.toDouble() ?? 0) > 0
+            ? ((order['weight'] as num).toDouble()).toString()
+            : '');
+    String status = order['status']?.toString() ?? 'new';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.pal.card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setSheet) {
+        Widget field(String label, TextEditingController c, {TextInputType? type}) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                    color: context.pal.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: context.pal.border, width: 0.5)),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: SafeInput(controller: c, hint: label, keyboardType: type, fontSize: 14),
+              ),
+            );
+        return Padding(
+          padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Center(child: Container(width: 40, height: 4,
+                decoration: BoxDecoration(color: context.pal.border, borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 16),
+            Text('Идораи карго', style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 16),
+            field('Track-код', trackCtrl),
+            field('Вазн (кг) — арзиш худкор ҳисоб мешавад', weightCtrl, type: TextInputType.number),
+            Text('Ҳолат', style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final s in _cargoStatuses)
+                GestureDetector(
+                  onTap: () => setSheet(() => status = s),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: status == s ? AppColors.primary.withValues(alpha: 0.14) : context.pal.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: status == s ? AppColors.primary : context.pal.border, width: status == s ? 1.3 : 0.5),
+                    ),
+                    child: Text(_cargoStatusLabels[s] ?? s,
+                        style: TextStyle(
+                            color: status == s ? AppColors.primary : context.pal.textSecondary,
+                            fontSize: 12.5,
+                            fontWeight: status == s ? FontWeight.w700 : FontWeight.w500)),
+                  ),
+                ),
+            ]),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final messenger = ScaffoldMessenger.of(context);
+                  try {
+                    await AdminService.updateCargo(id,
+                        trackCode: trackCtrl.text.trim(),
+                        weight: double.tryParse(weightCtrl.text.trim().replaceAll(',', '.')) ?? 0,
+                        status: status);
+                    onChanged();
+                    messenger.showSnackBar(const SnackBar(
+                        content: Text('Нав шуд ✅'),
+                        backgroundColor: AppColors.success, behavior: SnackBarBehavior.floating));
+                  } catch (_) {
+                    messenger.showSnackBar(const SnackBar(
+                        content: Text('Хатогӣ'),
+                        backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating));
+                  }
+                },
+                child: const Text('Захира', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+              ),
+            ),
+          ]),
+        );
+      }),
+    );
+  }
+}

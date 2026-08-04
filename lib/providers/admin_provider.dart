@@ -36,7 +36,22 @@ final adminSellerRequestsProvider = FutureProvider.autoDispose<List<Map<String, 
   return _unwrapList(res.data);
 });
 
+// ── Карго (GET /admin/cargo) ────────────────────────────────────────────────
+final adminCargoProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final res = await ApiClient.instance.dio.get('/admin/cargo');
+  return _unwrapList(res.data);
+});
+
 class AdminService {
+  static Future<void> updateCargo(String id,
+          {String? trackCode, double? weight, String? status, String? note}) =>
+      ApiClient.instance.dio.patch('/admin/cargo/$id', data: {
+        if (trackCode != null) 'track_code': trackCode,
+        if (weight != null) 'weight': weight,
+        if (status != null) 'status': status,
+        if (note != null) 'note': note,
+      });
+
   static Future<void> banUser(String id) =>
       ApiClient.instance.dio.post('/admin/users/$id/ban');
   static Future<void> unbanUser(String id) =>
