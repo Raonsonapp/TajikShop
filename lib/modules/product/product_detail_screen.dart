@@ -302,6 +302,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         : p.description,
                     style: TextStyle(
                         color: context.pal.textSecondary, fontSize: 14, height: 1.6)),
+                _deliveryInfo(p),
                 const SizedBox(height: 28),
                 _reviewsSection(p),
                 const SizedBox(height: 28),
@@ -854,6 +855,62 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         trailing,
       ]),
     ]);
+  }
+
+  // ── Маълумоти доставка ва размер (то харидор напурсад) ──────────────────────
+  Widget _deliveryInfo(ProductModel p) {
+    final hasDays = p.deliveryDays > 0;
+    final hasSize = p.sizeInfo.isNotEmpty;
+    final pal = context.pal;
+    // Ҳамеша нишон медиҳем — агар холӣ бошад, «Пурсед» намегӯем, балки маълумоти пешфарз
+    final rows = <Widget>[
+      _deliveryRow(FeatherIcons.clock, 'Мӯҳлати расиш',
+          hasDays ? '${p.deliveryDays} рӯз' : 'Бо фурӯшанда мувофиқа'),
+      _deliveryRow(FeatherIcons.truck, 'Нархи доставка',
+          p.deliveryPrice > 0 ? '${p.deliveryPrice.toStringAsFixed(0)} сом' : 'Ройгон'),
+      if (hasSize) _deliveryRow(FeatherIcons.maximize2, 'Размер / тавсиф', p.sizeInfo),
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(top: 18),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: pal.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: pal.border, width: 0.6),
+        ),
+        child: Column(children: rows),
+      ),
+    );
+  }
+
+  Widget _deliveryRow(IconData icon, String label, String value) {
+    final pal = context.pal;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(children: [
+        Container(
+          width: 34,
+          height: 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: AppColors.primary, size: 16),
+        ),
+        const SizedBox(width: 12),
+        Text(label, style: TextStyle(color: pal.textSecondary, fontSize: 13)),
+        const Spacer(),
+        Flexible(
+          child: Text(value,
+              textAlign: TextAlign.right,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: pal.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
+        ),
+      ]),
+    );
   }
 
   // ── Тақсимоти баҳо (5⭐ → 1⭐) ────────────────────────────────────────────────

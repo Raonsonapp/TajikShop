@@ -25,6 +25,9 @@ class ProductModel {
   final List<VariantModel> variants;
   final DateTime? saleEndsAt;
   final bool isFeatured;
+  final int deliveryDays;
+  final double deliveryPrice;
+  final String sizeInfo;
   final DateTime createdAt;
 
   const ProductModel({
@@ -39,6 +42,9 @@ class ProductModel {
     this.variants = const [],
     this.saleEndsAt,
     this.isFeatured = false,
+    this.deliveryDays = 0,
+    this.deliveryPrice = 0,
+    this.sizeInfo = '',
     required this.createdAt,
   });
 
@@ -91,6 +97,9 @@ class ProductModel {
       sellerId:        json['seller_id']?.toString() ?? '',
       sellerName:      json['seller_name']?.toString(),
       sellerVerified:  json['seller_verified'] == true,
+      deliveryDays:    (json['delivery_days'] as num?)?.toInt() ?? 0,
+      deliveryPrice:   (json['delivery_price'] as num?)?.toDouble() ?? 0,
+      sizeInfo:        json['size_info']?.toString() ?? '',
       images:          imgs,
       rating:          (json['rating'] as num?)?.toDouble() ?? 0.0,
       reviewCount:     (json['review_count'] as num?)?.toInt() ?? 0,

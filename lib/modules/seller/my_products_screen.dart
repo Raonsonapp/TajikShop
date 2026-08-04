@@ -271,6 +271,9 @@ class _EditProductSheetState extends State<_EditProductSheet> {
   late final TextEditingController _disc;
   late final TextEditingController _desc;
   final _sale = TextEditingController();
+  late final TextEditingController _delivDays;
+  late final TextEditingController _delivPrice;
+  late final TextEditingController _size;
   late bool _active;
   bool _loading = false;
 
@@ -283,12 +286,16 @@ class _EditProductSheetState extends State<_EditProductSheet> {
     _stock = TextEditingController(text: p.stock.toString());
     _disc = TextEditingController(text: p.discountPercent.toString());
     _desc = TextEditingController(text: p.description);
+    _delivDays = TextEditingController(text: p.deliveryDays > 0 ? p.deliveryDays.toString() : '');
+    _delivPrice = TextEditingController(text: p.deliveryPrice > 0 ? p.deliveryPrice.toStringAsFixed(0) : '');
+    _size = TextEditingController(text: p.sizeInfo);
     _active = p.inStock;
   }
 
   @override
   void dispose() {
     _title.dispose(); _price.dispose(); _stock.dispose(); _disc.dispose(); _desc.dispose(); _sale.dispose();
+    _delivDays.dispose(); _delivPrice.dispose(); _size.dispose();
     super.dispose();
   }
 
@@ -304,7 +311,10 @@ class _EditProductSheetState extends State<_EditProductSheet> {
         discountPercent: int.tryParse(_disc.text.trim()) ?? 0,
         stock: int.tryParse(_stock.text.trim()) ?? 0,
         isActive: _active,
-        saleHours: int.tryParse(_sale.text.trim()) ?? 0);
+        saleHours: int.tryParse(_sale.text.trim()) ?? 0,
+        deliveryDays: int.tryParse(_delivDays.text.trim()) ?? 0,
+        deliveryPrice: double.tryParse(_delivPrice.text.replaceAll(',', '.')) ?? 0,
+        sizeInfo: _size.text.trim());
       widget.onDone();
       if (!mounted) return;
       Navigator.pop(context);
@@ -356,6 +366,12 @@ class _EditProductSheetState extends State<_EditProductSheet> {
           ]),
           _f(l.sellerStock, _stock, type: TextInputType.number),
           _f(l.sellerFlashSaleField, _sale, type: TextInputType.number),
+          Row(children: [
+            Expanded(child: _f('Расиш (рӯз)', _delivDays, type: TextInputType.number)),
+            const SizedBox(width: 10),
+            Expanded(child: _f('Нархи доставка', _delivPrice, type: TextInputType.number)),
+          ]),
+          _f('Размер / вазн / ранг', _size),
           _f(l.description, _desc, maxLines: 3),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
