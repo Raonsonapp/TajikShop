@@ -79,6 +79,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.adminWallet,     builder: (_, __) => const AdminWalletScreen()),
       GoRoute(path: RouteNames.adminReports,    builder: (_, __) => const AdminReportsScreen()),
       GoRoute(path: RouteNames.adminReturns,    builder: (_, __) => const AdminReturnsScreen()),
+      GoRoute(path: RouteNames.adminCargo,      builder: (_, __) => const AdminCargoScreen()),
       GoRoute(path: RouteNames.sellerRequests,  builder: (_, __) => const AdminSellerRequestsScreen()),
       ShellRoute(
         builder: (context, state, child) => MainScaffold(child: child),

@@ -369,6 +369,12 @@ class AdminDashboardScreen extends ConsumerWidget {
                   ),
                   _ManageDivider(),
                   _ManageItem(
+                    icon: FeatherIcons.package, label: 'Карго (доставка)',
+                    subtitle: 'Дархостҳои доставка аз Хитой', color: const Color(0xFFFF6B2C),
+                    onTap: () => context.push(RouteNames.adminCargo),
+                  ),
+                  _ManageDivider(),
+                  _ManageItem(
                     icon: FeatherIcons.percent, label: 'Комиссия: $commLabel%',
                     subtitle: 'Фоизи комиссияи платформа', color: AppColors.success,
                     onTap: () => _editCommission(context, ref, commAsync.asData?.value ?? 10),
