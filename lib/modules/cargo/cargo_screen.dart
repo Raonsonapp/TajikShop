@@ -78,6 +78,14 @@ class CargoScreen extends ConsumerWidget {
               error: (_, __) => const SizedBox.shrink(),
               data: (d) => _infoCard(context, d),
             ),
+            const SizedBox(height: 14),
+            info.maybeWhen(
+              data: (d) => _CargoCalculator(
+                rateTj: (d['rate_tj'] as num?)?.toDouble() ?? 0,
+                rateRu: (d['rate_ru'] as num?)?.toDouble() ?? 0,
+              ),
+              orElse: () => const SizedBox.shrink(),
+            ),
             const SizedBox(height: 22),
             Row(children: [
               Icon(FeatherIcons.truck, color: pal.textPrimary, size: 18),
@@ -406,6 +414,115 @@ class CargoScreen extends ConsumerWidget {
           );
         });
       },
+    );
+  }
+}
+
+// ── Ҳисобкунаки нархи карго (вазн × тариф) ────────────────────────────────────
+class _CargoCalculator extends StatefulWidget {
+  final double rateTj;
+  final double rateRu;
+  const _CargoCalculator({required this.rateTj, required this.rateRu});
+
+  @override
+  State<_CargoCalculator> createState() => _CargoCalculatorState();
+}
+
+class _CargoCalculatorState extends State<_CargoCalculator> {
+  final _weightCtrl = TextEditingController();
+  String _dest = 'tj';
+
+  @override
+  void dispose() {
+    _weightCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pal = context.pal;
+    final weight = double.tryParse(_weightCtrl.text.trim().replaceAll(',', '.')) ?? 0;
+    final rate = _dest == 'ru' ? widget.rateRu : widget.rateTj;
+    final cost = weight * rate;
+
+    Widget chip(String value, String label) {
+      final sel = _dest == value;
+      return Expanded(
+        child: GestureDetector(
+          onTap: () => setState(() => _dest = value),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            padding: const EdgeInsets.symmetric(vertical: 9),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: sel ? AppColors.primary.withValues(alpha: 0.12) : pal.surface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                  color: sel ? AppColors.primary : pal.border, width: sel ? 1.3 : 0.5),
+            ),
+            child: Text(label,
+                style: TextStyle(
+                    color: sel ? AppColors.primary : pal.textSecondary,
+                    fontSize: 13,
+                    fontWeight: sel ? FontWeight.w700 : FontWeight.w500)),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: pal.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: pal.border, width: 0.6),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(FeatherIcons.percent, color: AppColors.primary, size: 16),
+          const SizedBox(width: 8),
+          Text('Ҳисобкунаки нарх',
+              style: TextStyle(
+                  color: pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
+        ]),
+        const SizedBox(height: 14),
+        Row(children: [
+          Expanded(
+            flex: 3,
+            child: Container(
+              decoration: BoxDecoration(
+                  color: pal.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: pal.border, width: 0.5)),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: SafeInput(
+                controller: _weightCtrl,
+                hint: 'Вазн (кг)',
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                fontSize: 14,
+                onChanged: (_) => setState(() {}),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          chip('tj', '🇹🇯 ТҶ'),
+          chip('ru', '🇷🇺 РУ'),
+        ]),
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: _greenGradient,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Text(
+            weight > 0 ? 'Тахминан: ${cost.toStringAsFixed(0)} сом' : 'Вазнро ворид кунед',
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800),
+          ),
+        ),
+      ]),
     );
   }
 }
