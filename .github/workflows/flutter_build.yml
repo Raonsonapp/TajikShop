@@ -39,7 +39,7 @@ jobs:
       - name: Fix Android Gradle versions
         run: |
           sed -i 's/id "com.android.application" version .*/id "com.android.application" version "8.3.0" apply false/' android/settings.gradle
-          sed -i 's/id "org.jetbrains.kotlin.android" version .*/id "org.jetbrains.kotlin.android" version "1.9.10" apply false/' android/settings.gradle
+          sed -i 's/id "org.jetbrains.kotlin.android" version .*/id "org.jetbrains.kotlin.android" version "2.1.0" apply false/' android/settings.gradle
           sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/' android/app/build.gradle
           sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/' android/app/build.gradle
           sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 35/' android/app/build.gradle
