@@ -92,10 +92,11 @@ class _ProductCardState extends ConsumerState<ProductCard>
         decoration: BoxDecoration(
           color: context.pal.card,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF2A2A3E), width: 0.8),
+          border: Border.all(color: context.pal.border, width: 0.8),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.35),
-                blurRadius: 18, offset: const Offset(0, 6)),
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 16, offset: const Offset(0, 6)),
           ],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -264,11 +265,11 @@ class _ProductCardState extends ConsumerState<ProductCard>
                     const Icon(FeatherIcons.star, size: 11, color: Color(0xFFFFB800)),
                     const SizedBox(width: 2),
                     Text(p.rating.toStringAsFixed(1),
-                        style: const TextStyle(color: Color(0xFFAAADBE), fontSize: 10)),
+                        style: TextStyle(color: context.pal.textMuted, fontSize: 10)),
                     if (p.reviewCount > 0) ...[
                       const SizedBox(width: 2),
                       Text('(${p.reviewCount})',
-                          style: const TextStyle(color: Color(0xFF6B6E82), fontSize: 10)),
+                          style: TextStyle(color: context.pal.textMuted, fontSize: 10)),
                     ],
                   ]),
 
@@ -298,7 +299,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                                   fontSize: 14, fontWeight: FontWeight.w800)),
                           if (p.oldPrice != null)
                             Text('${p.oldPrice!.toStringAsFixed(0)} сом.',
-                                style: const TextStyle(color: Color(0xFF6B6E82),
+                                style: TextStyle(color: context.pal.textMuted,
                                     fontSize: 10, decoration: TextDecoration.lineThrough)),
                         ])),
                       GestureDetector(
@@ -330,9 +331,9 @@ class _ProductCardState extends ConsumerState<ProductCard>
       child: Container(color: context.pal.shimmerBase));
 
   Widget _noImage() => Container(
-      color: const Color(0xFF1C1C2E),
-      child: const Center(child: Icon(FeatherIcons.image,
-          color: Color(0xFF6B6E82), size: 36)));
+      color: context.pal.surface,
+      child: Center(child: Icon(FeatherIcons.image,
+          color: context.pal.textMuted, size: 36)));
 }
 
 class _Chip extends StatelessWidget {
