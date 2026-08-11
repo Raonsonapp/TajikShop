@@ -75,6 +75,11 @@ android {
             // Агар keystore-и release дошта бошем — бо он имзо мекунем,
             // вагарна бо debug (то build дар CI/бе калид кор кунад).
             signingConfig = hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
+            // R8-ро хомӯш мекунем: R8-и AGP 8.3 metadata-и Kotlin 2.1.0-и
+            // yandex_mobileads-ро дастгирӣ намекунад (max 2.0.0). Бе minify
+            // build дуруст мешавад (APK каме калонтар, вале кор мекунад).
+            minifyEnabled false
+            shrinkResources false
         }
     }
 }
