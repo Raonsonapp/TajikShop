@@ -65,7 +65,26 @@ class MainScaffold extends ConsumerWidget {
       child: GestureDetector(
         onTap: () => context.go(path),
         behavior: HitTestBehavior.opaque,
-        child: Icon(sel ? active : inactive, color: context.pal.textPrimary, size: 28),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(sel ? active : inactive,
+                color: sel ? AppColors.primary : context.pal.textMuted,
+                size: 26),
+            const SizedBox(height: 4),
+            // Нуқтаи хурди сабз зери tab-и фаъол
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: sel ? 5 : 0,
+              height: sel ? 5 : 0,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
