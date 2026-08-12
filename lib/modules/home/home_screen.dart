@@ -1332,9 +1332,11 @@ class _CategoriesStrip extends ConsumerWidget {
                         width: 64,
                         height: 64,
                         decoration: BoxDecoration(
-                          color: pal.surface,
+                          color: AppColors.primary.withValues(alpha: 0.08),
                           shape: BoxShape.circle,
-                          border: Border.all(color: pal.border, width: 0.8),
+                          border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.18),
+                              width: 1),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: _CategoryImage(image: c.image, name: c.name),
