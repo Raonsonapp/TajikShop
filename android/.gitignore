@@ -6,8 +6,9 @@ gradle-wrapper.jar
 /local.properties
 GeneratedPluginRegistrant.java
 
-# Keystore + key.properties коммит карда шудаанд (бо хоҳиши соҳиби репозиторий,
-# то имзои release худкор ва доимӣ бошад). Ин калиди махсуси ин барнома аст.
-# **/*.keystore
-# key.properties
-# **/*.jks
+# Signing secrets — ҲЕҶ ГОҲ ба source control гузошта нашаванд (Google Play prod).
+# Локалӣ дар android/key.properties + android/app/tajikshop-release.jks;
+# дар CI аз GitHub Secrets (KEYSTORE_BASE64, STORE_PASSWORD, KEY_PASSWORD, KEY_ALIAS).
+key.properties
+**/*.keystore
+**/*.jks
