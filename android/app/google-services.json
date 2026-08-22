@@ -9,6 +9,25 @@
       "client_info": {
         "mobilesdk_app_id": "1:940101388450:android:93c4e988c420f693ca2ffb",
         "android_client_info": {
+          "package_name": "com.example.tajikshop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbq0rcB1koinAHwujlPUgcyZQf0116AKY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:940101388450:android:0749de9f36475415ca2ffb",
+        "android_client_info": {
           "package_name": "com.tajikshop.app"
         }
       },
