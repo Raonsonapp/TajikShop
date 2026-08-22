@@ -233,6 +233,20 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS delivery_days  INT DEFAULT 0;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS delivery_price NUMERIC(12,2) DEFAULT 0;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS size_info      TEXT DEFAULT '';
 
+-- Ҳазфи ҳисоб (Google Play): аломати ҳисоби ҳазфшуда (маълумоти шахсӣ anonymize мешавад).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+
+-- Дархостҳои ҳазфи ҳисоб аз саҳифаи оммавии веб (/delete-account) — барои
+-- корбароне ки ба барнома дастрасӣ надоранд. Админ дар давоми ~7 рӯз иҷро мекунад.
+CREATE TABLE IF NOT EXISTS deletion_requests (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email      TEXT NOT NULL,
+  note       TEXT DEFAULT '',
+  status     VARCHAR(16) DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Танзимоти платформа (комиссия ва ғ.). Комиссияи пешфарз: 10%.
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 INSERT INTO settings(key,value) VALUES('commission_percent','10') ON CONFLICT(key) DO NOTHING;

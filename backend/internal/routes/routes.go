@@ -36,7 +36,14 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	// Firebase handler — FIREBASE_PROJECT_ID env-дан мегирад
 	fbh := handlers.NewFirebaseHandler(secret, getenv("FIREBASE_WEB_API_KEY", ""))
 
+	// ── Саҳифаҳои оммавии ҳуқуқӣ (Google Play) — root, бе login ──
+	legal := handlers.NewLegalHandler()
+	r.GET("/privacy", legal.Privacy)
+	r.GET("/terms", legal.Terms)
+	r.GET("/delete-account", legal.DeleteAccountPage)
+
 	api := r.Group("/api/v1")
+	api.POST("/account/deletion-request", legal.DeletionRequest)
 
 	// Auth
 	api.POST("/auth/register", uh.Register)
@@ -47,6 +54,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	// Users
 	api.GET("/users/me", middleware.Auth(), uh.Me)
 	api.PUT("/users/me", middleware.Auth(), uh.UpdateProfile)
+	api.DELETE("/users/me", middleware.Auth(), uh.DeleteAccount)
 	api.POST("/users/me/avatar", middleware.Auth(), uh.UploadAvatar)
 	api.POST("/users/me/become-seller", middleware.Auth(), uh.BecomeSellerHandler)
 	api.POST("/users/me/seller-verify", middleware.Auth(), uh.SellerVerify)

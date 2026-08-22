@@ -74,3 +74,23 @@ func (r *R2Client) Delete(key string) error {
 	})
 	return err
 }
+
+// keyFromURL — калиди объектро аз URL-и оммавӣ ҷудо мекунад (пок, тестшаванда).
+// Агар URL ба publicURL мувофиқат накунад, "" бармегардонад.
+func keyFromURL(publicURL, fileURL string) string {
+	prefix := strings.TrimRight(publicURL, "/") + "/"
+	if fileURL == "" || !strings.HasPrefix(fileURL, prefix) {
+		return ""
+	}
+	return strings.TrimPrefix(fileURL, prefix)
+}
+
+// DeleteByURL — объектро аз рӯи URL-и оммавии он ҳазф мекунад (best-effort).
+// URL шакли {publicURL}/{key} дорад; калидро ҷудо карда, ҳазф мекунем.
+func (r *R2Client) DeleteByURL(fileURL string) error {
+	key := keyFromURL(r.publicURL, fileURL)
+	if key == "" {
+		return nil
+	}
+	return r.Delete(key)
+}

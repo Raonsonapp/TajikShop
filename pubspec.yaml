@@ -45,6 +45,9 @@ dependencies:
   # пурра дастрас аст ва барои корбарони русзабон fill/даромади хуб дорад.
   yandex_mobileads: ^8.2.0
 
+  # Кушодани URL-ҳо (Сиёсати махфият, Шартҳо, Ҳазфи ҳисоб — Google Play)
+  url_launcher: ^6.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

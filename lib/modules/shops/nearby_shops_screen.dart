@@ -144,7 +144,7 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
         children: [
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.example.tajikshop',
+            userAgentPackageName: 'com.tajikshop.app',
           ),
           MarkerLayer(markers: markers),
         ],
