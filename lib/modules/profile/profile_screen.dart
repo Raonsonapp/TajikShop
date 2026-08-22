@@ -10,9 +10,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
 import 'dart:io';
 
-/// Базаи URL-и саҳифаҳои ҳуқуқӣ (backend саҳифаҳоро хизмат мекунад).
-const String _legalBase = 'https://mahmadmurodov-tajikshop.hf.space';
-
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/business_types.dart';
 import '../../core/theme/app_palette.dart';
@@ -30,6 +27,9 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/safe_input.dart';
 import '../address/map_picker_screen.dart';
 import '../seller/seller_verify_sheet.dart';
+
+/// Базаи URL-и саҳифаҳои ҳуқуқӣ (backend саҳифаҳоро хизмат мекунад).
+const String _legalBase = 'https://mahmadmurodov-tajikshop.hf.space';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
