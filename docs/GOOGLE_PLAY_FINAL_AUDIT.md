@@ -16,10 +16,10 @@ Legend: **PASS** = implemented & verified in this repo · **EXTERNAL** = require
 | 7 | Terms public URL | PASS (code) · EXTERNAL (deploy) | `GET /terms` | Confirm reachable |
 | 8 | Production package name | PASS | `applicationId`/`namespace`=`com.tajikshop.app`; MainActivity moved; grep clean | Confirm `com.tajikshop.app` unused on Play (could not verify from here) |
 | 9 | Firebase package consistency | **EXTERNAL ACTION REQUIRED** | `google-services.json` package renamed so build passes, but Firebase app is registered as old package | Register `com.tajikshop.app` in Firebase console → download & replace `google-services.json`; else FCM push + Firebase phone auth won't work under new package |
-| 10 | Dedicated TajikShop signing key | PASS | Fresh keystore generated for this app (`raonson-release.jks`, alias `raonson`) — NOT the other app's key; release signing wired in `build.gradle` | See #11 |
-| 11 | Secrets removed from source control | **DECISION / EXTERNAL** | Keystore + `key.properties` are **committed by explicit owner request** for auto‑signing; CI‑secrets fallback also wired (`flutter_build.yml` reads `KEYSTORE_BASE64` etc.) | Security tradeoff: on a public repo the key is exposed. Recommended: make repo **private** (owner 1‑click) OR remove keystore & use GitHub Secrets. See "Security note" below |
+| 10 | Dedicated TajikShop signing key | PASS (config) · EXTERNAL (key) | Release signing wired in `build.gradle` (reads `key.properties`); CI writes `tajikshop-release.jks` from secrets. Old committed key removed | Create dedicated `tajikshop-release.jks` + add 4 GitHub Secrets — see `RELEASE_SIGNING_SETUP.md` |
+| 11 | Secrets removed from source control | PASS | `git rm` of `raonson-release.jks` + `key.properties`; `.gitignore` ignores `*.jks`/`*.keystore`/`key.properties`; CI reads GitHub Secrets | Add the secrets (see #10) |
 | 12 | Android release configuration | PASS | targetSdk 35, compileSdk 35, minSdk 23, Kotlin 2.1.0, Java 17, AGP 8.3, Gradle 8.7, release signing, cleartext disabled (network_security_config), R8 off | — |
-| 13 | Minimal necessary permissions | PASS | Manifest: INTERNET, ACCESS_NETWORK_STATE, ACCESS_WIFI_STATE, FINE/COARSE location (location genuinely used) | — |
+| 13 | Minimal necessary permissions | PASS | Manifest: INTERNET, ACCESS_NETWORK_STATE, ACCESS_WIFI_STATE, FINE/COARSE location (genuinely used), POST_NOTIFICATIONS (FCM). No camera/mic/SMS/storage requested | — |
 | 14 | Data Safety audit | PASS | `docs/GOOGLE_PLAY_DATA_SAFETY_AUDIT.md` | Enter answers in Play Console |
 | 15 | Ads audit | PASS | `docs/GOOGLE_PLAY_ADS_AUDIT.md` (Yandex banner/interstitial) | Declare "contains ads"; set real ad IDs for revenue (optional) |
 | 16 | Target audience | PASS | `docs/GOOGLE_PLAY_TARGET_AUDIENCE_AUDIT.md` (recommend 18+/adults) | Set in Play Console |
@@ -42,9 +42,9 @@ Legend: **PASS** = implemented & verified in this repo · **EXTERNAL** = require
 | 33 | Reviewer instructions | PASS | `docs/GOOGLE_PLAY_REVIEW_INSTRUCTIONS.md` | Provide test account in Play Console App access |
 | 34 | Google Play submission readiness | **NOT READY — EXTERNAL ACTION REQUIRED** | Items #3,5,7,9,11,22 depend on deploy/console/Firebase | Complete external actions below |
 
-## Security note (#11, #25)
-- The release **keystore and passwords are committed** to the repo at the owner's explicit request (for automatic consistent signing). On a **public** repo this exposes the signing key. **Recommended:** make the repository **private** (Settings → Danger Zone → Change visibility) — the code cannot do this — OR delete `android/app/raonson-release.jks` + `android/key.properties` from git and use the already‑wired GitHub Secrets (`KEYSTORE_BASE64`, `STORE_PASSWORD`, `KEY_PASSWORD`, `KEY_ALIAS`).
-- No rate limiting on auth endpoints (consider adding for production hardening — not a Play blocker).
+## Security note (#25)
+- Signing secrets are now **out of source control** (keystore + `key.properties` removed from git and `.gitignore`d). CI signs from GitHub Secrets. Owner must create the dedicated `tajikshop-release.jks` and add the 4 secrets (`RELEASE_SIGNING_SETUP.md`). ⚠️ The previously‑committed key existed in public git history briefly — use a **new** dedicated key (which the setup doc creates), so the exposed one is never used for the real release.
+- No rate limiting on auth endpoints (recommended production hardening — not a Play blocker).
 
 ## External actions required before submission
 1. **Firebase:** register `com.tajikshop.app` in the Firebase console, replace `android/app/google-services.json` (else push/phone‑auth break under new package).
