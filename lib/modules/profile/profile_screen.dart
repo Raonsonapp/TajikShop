@@ -6,8 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
 import 'dart:io';
+
+/// Базаи URL-и саҳифаҳои ҳуқуқӣ (backend саҳифаҳоро хизмат мекунад).
+const String _legalBase = 'https://mahmadmurodov-tajikshop.hf.space';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/business_types.dart';
@@ -416,6 +420,74 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  // ── Кушодани URL (Сиёсат/Шартҳо/Ҳазф) ─────────────────────────────────────
+  Future<void> _openUrl(String url) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await launchUrl(Uri.parse(url),
+        mode: LaunchMode.externalApplication);
+    if (!ok) {
+      messenger.showSnackBar(SnackBar(
+          content: Text(url),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating));
+    }
+  }
+
+  // ── Ҳазфи ҳисоб (Google Play) ──────────────────────────────────────────────
+  Future<void> _deleteAccount() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.pal.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          const Icon(FeatherIcons.alertTriangle, color: Color(0xFFFF3B5C), size: 22),
+          const SizedBox(width: 8),
+          Text('Ҳазфи ҳисоб',
+              style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w800, fontSize: 18)),
+        ]),
+        content: Text(
+          'Ҳисоб ва маълумоти шахсии шумо (ном, телефон, почта, суроғаҳо, сабад, '
+          'дӯстдоштаҳо, паёмҳо, шарҳҳо, эълонҳо ва расмҳо) ҳазф мешавад.\n\n'
+          'Сабтҳои фармоиш ва пардохт барои қонунгузорӣ беном (anonymized) нигоҳ дошта мешаванд.\n\n'
+          'Ин амал бебозгашт аст. Идома медиҳед?',
+          style: TextStyle(color: context.pal.textSecondary, fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Бекор', style: TextStyle(color: context.pal.textSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF3B5C),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Ҳа, ҳазф кун', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ApiClient.instance.dio.delete(ApiEndpoints.me);
+      await ref.read(authProvider.notifier).logout();
+      if (!mounted) return;
+      context.go(RouteNames.login);
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Ҳисоби шумо ҳазф шуд'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Хатогӣ ҳангоми ҳазф. Дубора кӯшиш кунед.'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating));
+    }
+  }
+
   // ── Become Seller (бо тасдиқи паспорт) ────────────────────────────────────────
   Future<void> _becomeSeller() async {
     await showSellerVerify(context);
@@ -682,6 +754,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: _showLanguagePicker),
                 _Tile(icon: FeatherIcons.bell, iconColor: const Color(0xFFE040FB),
                     label: l.notifications, onTap: () => context.push(RouteNames.notifications)),
+              ]),
+
+              // ── Ҳуқуқӣ ва ҳисоб (Google Play) ───────────────────────────
+              _SectionLabel('Ҳуқуқӣ ва ҳисоб'),
+              _GroupCard(children: [
+                _Tile(icon: FeatherIcons.shield, iconColor: const Color(0xFF00A3FF),
+                    label: 'Сиёсати махфият',
+                    onTap: () => _openUrl('$_legalBase/privacy')),
+                _Tile(icon: FeatherIcons.fileText, iconColor: const Color(0xFF6C63FF),
+                    label: 'Шартҳои истифода',
+                    onTap: () => _openUrl('$_legalBase/terms')),
+                _Tile(icon: FeatherIcons.trash2, iconColor: const Color(0xFFFF3B5C),
+                    label: 'Ҳазфи ҳисоб',
+                    onTap: _deleteAccount),
               ]),
 
               // ── О приложении ────────────────────────────────────────────

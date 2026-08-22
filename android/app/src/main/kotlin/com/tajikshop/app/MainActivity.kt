@@ -1,4 +1,4 @@
-package com.example.tajikshop
+package com.tajikshop.app
 
 import android.os.Build
 import android.os.Bundle
