@@ -34,7 +34,7 @@ import '../../shared/widgets/safe_input.dart';
 
 /// Градиенти сабзи бренд — ҷойгузини `mainButton`-и норинҷии қолаб.
 const LinearGradient _greenGradient = LinearGradient(
-  colors: [Color(0xFF00D084), Color(0xFF00A3FF)],
+  colors: [Color(0xFF00D084), Color(0xFF00A86B)],
   begin: Alignment.topCenter,
   end: Alignment.bottomCenter,
 );
@@ -126,7 +126,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                              colors: [Color(0xFFFF416C), Color(0xFFFF4B2B)]),
+                              colors: [Color(0xFFFF416C), Color(0xFFE5484D)]),
                           borderRadius: BorderRadius.circular(12)),
                       child: Row(children: [
                         const Icon(FeatherIcons.zap, color: Colors.white, size: 20),

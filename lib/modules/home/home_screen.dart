@@ -28,9 +28,9 @@ import '../stories/story_viewer_screen.dart';
 
 const String _kMediaHost = 'https://mahmadmurodov-tajikshop.hf.space';
 
-// Brand green → blue gradient, reused across the home surface.
+// Brand emerald gradient, reused across the home surface.
 const LinearGradient _greenGradient = LinearGradient(
-  colors: [Color(0xFF00D084), Color(0xFF00A3FF)],
+  colors: [Color(0xFF00D084), Color(0xFF00A86B)],
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
 );
@@ -1134,14 +1134,14 @@ class _CargoCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFFFF6B2C), Color(0xFFFF416C)],
+              colors: [Color(0xFF06170F), Color(0xFF2ECC71)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF6B2C).withValues(alpha: 0.28),
+                color: const Color(0xFF2ECC71).withValues(alpha: 0.28),
                 blurRadius: 18,
                 offset: const Offset(0, 8),
               ),

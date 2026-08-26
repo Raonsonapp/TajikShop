@@ -299,7 +299,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                     _StatCard(value: '${data['total_sellers'] ?? 0}', label: l.sellersLabel, icon: FeatherIcons.shoppingBag, color: AppColors.info),
                     _StatCard(
                       value: '${((data['total_sales'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)} сом.',
-                      label: 'Фурӯши умумӣ', icon: FeatherIcons.trendingUp, color: const Color(0xFF00A3FF)),
+                      label: 'Фурӯши умумӣ', icon: FeatherIcons.trendingUp, color: const Color(0xFF00A86B)),
                     _StatCard(
                       value: '${((data['platform_commission'] as num?)?.toDouble() ?? 0).toStringAsFixed(0)} сом.',
                       label: 'Даромади платформа (комиссия)', icon: FeatherIcons.percent, color: AppColors.success),
@@ -365,12 +365,12 @@ class AdminDashboardScreen extends ConsumerWidget {
                   _ManageDivider(),
                   _ManageItem(
                     icon: FeatherIcons.refreshCcw, label: l.returnsExchange,
-                    subtitle: l.returnsSub, color: const Color(0xFF00A3FF), onTap: () => context.push(RouteNames.adminReturns),
+                    subtitle: l.returnsSub, color: const Color(0xFF00A86B), onTap: () => context.push(RouteNames.adminReturns),
                   ),
                   _ManageDivider(),
                   _ManageItem(
                     icon: FeatherIcons.package, label: 'Карго (доставка)',
-                    subtitle: 'Дархостҳои доставка аз Хитой', color: const Color(0xFFFF6B2C),
+                    subtitle: 'Дархостҳои доставка аз Хитой', color: AppColors.info,
                     onTap: () => context.push(RouteNames.adminCargo),
                   ),
                   _ManageDivider(),
@@ -382,7 +382,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                   _ManageDivider(),
                   _ManageItem(
                     icon: FeatherIcons.gift, label: 'Cashback: $cashLabel%',
-                    subtitle: 'Фоизи бозгашти пул ба ҳамён', color: const Color(0xFF00A3FF),
+                    subtitle: 'Фоизи бозгашти пул ба ҳамён', color: const Color(0xFF00A86B),
                     onTap: () => _editCashback(context, ref, cashAsync.asData?.value ?? 2),
                   ),
                 ]),

@@ -11,7 +11,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/safe_input.dart';
 
 const _greenGradient = LinearGradient(
-  colors: [Color(0xFF00D084), Color(0xFF00A3FF)],
+  colors: [Color(0xFF00D084), Color(0xFF00A86B)],
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
 );

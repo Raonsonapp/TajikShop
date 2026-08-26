@@ -670,11 +670,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _QuickCard(children: [
                 _QuickAction(icon: FeatherIcons.creditCard, color: const Color(0xFFFFB800),
                     label: l.myWallet, onTap: () => context.push(RouteNames.wallet)),
-                _QuickAction(icon: FeatherIcons.truck, color: const Color(0xFF00A3FF),
+                _QuickAction(icon: FeatherIcons.truck, color: const Color(0xFF00A86B),
                     label: l.orders, onTap: () => context.push(RouteNames.orders)),
                 _QuickAction(icon: FeatherIcons.heart, color: const Color(0xFF00D084),
                     label: l.favorites, onTap: () => context.go(RouteNames.favorites)),
-                _QuickAction(icon: FeatherIcons.mapPin, color: const Color(0xFFFF6B2C),
+                _QuickAction(icon: FeatherIcons.mapPin, color: AppColors.info,
                     label: l.myAddresses, onTap: () => context.push(RouteNames.addresses)),
               ]),
 
@@ -692,7 +692,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   _Tile(icon: FeatherIcons.shoppingBag, iconColor: AppColors.primary,
                       label: 'Бизнеси ман',
                       onTap: _businessSetup),
-                  _Tile(icon: FeatherIcons.mapPin, iconColor: const Color(0xFFFF6B2C),
+                  _Tile(icon: FeatherIcons.mapPin, iconColor: AppColors.info,
                       label: l.storeLocation,
                       onTap: _setStoreLocation),
                 ]),
@@ -732,7 +732,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 _Tile(icon: FeatherIcons.gift, iconColor: AppColors.primary,
                     label: '🎁 Дӯстонро даъват кунед',
                     onTap: _inviteFriends),
-                _Tile(icon: FeatherIcons.tag, iconColor: const Color(0xFFFF6B2C),
+                _Tile(icon: FeatherIcons.tag, iconColor: AppColors.info,
                     label: '🎟 Купонҳо ва промокодҳо',
                     onTap: _showCoupons),
               ]),
@@ -749,7 +749,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onChanged: (v) => ref.read(themeProvider.notifier).toggle()),
                 // Забон
                 _Tile(
-                  icon: FeatherIcons.globe, iconColor: const Color(0xFF00A3FF),
+                  icon: FeatherIcons.globe, iconColor: const Color(0xFF00A86B),
                   label: '${l.language}: ${LocaleNotifier.langName(ref.watch(localeProvider).languageCode)}',
                   onTap: _showLanguagePicker),
                 _Tile(icon: FeatherIcons.bell, iconColor: const Color(0xFFE040FB),
@@ -759,7 +759,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // ── Ҳуқуқӣ ва ҳисоб (Google Play) ───────────────────────────
               _SectionLabel('Ҳуқуқӣ ва ҳисоб'),
               _GroupCard(children: [
-                _Tile(icon: FeatherIcons.shield, iconColor: const Color(0xFF00A3FF),
+                _Tile(icon: FeatherIcons.shield, iconColor: const Color(0xFF00A86B),
                     label: 'Сиёсати махфият',
                     onTap: () => _openUrl('$_legalBase/privacy')),
                 _Tile(icon: FeatherIcons.fileText, iconColor: const Color(0xFF6C63FF),
@@ -808,7 +808,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
 // ── Green gradient (замена жёлтому/оранжевому шаблона) ───────────────────────
 const LinearGradient _greenGradient = LinearGradient(
-  colors: [Color(0xFF00D084), Color(0xFF00A3FF)],
+  colors: [Color(0xFF00D084), Color(0xFF00A86B)],
   begin: Alignment.topLeft, end: Alignment.bottomRight,
 );
 
@@ -834,7 +834,7 @@ class _RoleBadge extends StatelessWidget {
     switch (role) {
       case 'seller': c = const Color(0xFF00D084); label = '🏪 ${l.seller}'; break;
       case 'admin':  c = const Color(0xFFE040FB); label = '👑 ${l.admin}'; break;
-      default:       c = const Color(0xFF00A3FF); label = '🛍️ ${l.buyer}';
+      default:       c = const Color(0xFF00A86B); label = '🛍️ ${l.buyer}';
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

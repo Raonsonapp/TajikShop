@@ -16,7 +16,7 @@ import '../../shared/widgets/safe_input.dart';
 
 /// Градиенти сабз (ecommerce_int2 look, ранги бренди TajikShop).
 const LinearGradient _greenGradient = LinearGradient(
-  colors: [Color(0xFF00D084), Color(0xFF00A3FF)],
+  colors: [Color(0xFF00D084), Color(0xFF00A86B)],
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
 );

@@ -138,7 +138,7 @@ class _ProductRow extends StatelessWidget {
               _RowAction(
                 icon: FeatherIcons.trendingUp,
                 label: p.isFeatured ? 'Дар TOP' : '🚀 Boost',
-                color: p.isFeatured ? context.pal.textMuted : const Color(0xFF00A3FF),
+                color: p.isFeatured ? context.pal.textMuted : const Color(0xFF00A86B),
                 onTap: p.isFeatured ? () {} : () => _boost(context),
               ),
               _RowAction(

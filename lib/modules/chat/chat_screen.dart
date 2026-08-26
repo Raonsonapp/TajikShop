@@ -138,7 +138,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           shape: BoxShape.circle,
           gradient: LinearGradient(colors: [
             AppColors.primary.withOpacity(0.16),
-            const Color(0xFF00A3FF).withOpacity(0.16),
+            const Color(0xFF00A86B).withOpacity(0.16),
           ]),
         ),
         child: const Icon(FeatherIcons.messageCircle, size: 44, color: AppColors.primary),

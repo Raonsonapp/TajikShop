@@ -21,7 +21,7 @@ class CategoriesScreen extends ConsumerWidget {
 
   // Гардиенти сабз (талаботи accent)
   static const _greenGradient = LinearGradient(
-    colors: [Color(0xFF00D084), Color(0xFF00A3FF)],
+    colors: [Color(0xFF00D084), Color(0xFF00A86B)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

@@ -76,7 +76,7 @@ class FavoritesScreen extends ConsumerWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+              gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A86B)]),
               borderRadius: BorderRadius.circular(14),
               boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 12, offset: const Offset(0, 4))],
             ),
@@ -115,7 +115,7 @@ class FavoritesScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
-                  colors: [AppColors.primary.withOpacity(0.16), const Color(0xFF00A3FF).withOpacity(0.16)],
+                  colors: [AppColors.primary.withOpacity(0.16), const Color(0xFF00A86B).withOpacity(0.16)],
                 ),
               ),
               child: const Icon(FeatherIcons.heart, size: 56, color: AppColors.primary),
@@ -136,7 +136,7 @@ class FavoritesScreen extends ConsumerWidget {
                   onTap: () => context.go('/home'),
                   child: Ink(
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                      gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A86B)]),
                       borderRadius: BorderRadius.circular(15),
                       boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 14, offset: const Offset(0, 6))],
                     ),
@@ -241,7 +241,7 @@ class _FavCard extends StatelessWidget {
                       width: 30,
                       height: 30,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                        gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A86B)]),
                         borderRadius: BorderRadius.circular(9),
                         boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))],
                       ),

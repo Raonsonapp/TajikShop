@@ -134,26 +134,25 @@ class _ProductCardState extends ConsumerState<ProductCard>
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFFFF416C), Color(0xFFFF4B2B)]),
+                      gradient: const LinearGradient(colors: [Color(0xFFFF416C), Color(0xFFE5484D)]),
                       borderRadius: BorderRadius.circular(8)),
                     child: const Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(FeatherIcons.zap, color: Colors.white, size: 11),
                       Text('FLASH', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
                     ]))),
 
-              // Discount badge
+              // Discount badge — услуби Marketplace: неон-сабз дар сабзи амиқ
               if (disc > 0 && !p.isFlashSale)
                 Positioned(top: 8, left: 8,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                          colors: [Color(0xFFFF416C), Color(0xFFFF4B2B)]),
+                      color: AppColors.discountBadgeBg,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [BoxShadow(
-                          color: const Color(0xFFFF416C).withOpacity(0.5), blurRadius: 8)]),
+                          color: AppColors.neon.withOpacity(0.35), blurRadius: 8)]),
                     child: Text('-$disc%',
-                        style: const TextStyle(color: Colors.white,
+                        style: const TextStyle(color: AppColors.discountBadgeText,
                             fontSize: 10, fontWeight: FontWeight.w900)))),
 
               // TOP badge (boosted / featured)
@@ -163,7 +162,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                      gradient: AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [BoxShadow(
                           color: const Color(0xFF00D084).withOpacity(0.5), blurRadius: 8)]),
@@ -179,7 +178,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                      gradient: const LinearGradient(colors: [Color(0xFF00D084), Color(0xFF00A86B)]),
                       borderRadius: BorderRadius.circular(8)),
                     child: const Text('Нав',
                         style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)))),
@@ -233,7 +232,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                       label: p.likeCount > 0 ? '${p.likeCount}' : ''),
                   const SizedBox(width: 5),
                   _Chip(icon: FeatherIcons.messageCircle,
-                      color: const Color(0xFF00A3FF),
+                      color: const Color(0xFF00A86B),
                       label: p.reviewCount > 0 ? '${p.reviewCount}' : ''),
                   const Spacer(),
                   if (p.views > 0)
@@ -277,11 +276,11 @@ class _ProductCardState extends ConsumerState<ProductCard>
                   if (lowStock)
                     Row(mainAxisSize: MainAxisSize.min, children: [
                       const Icon(FeatherIcons.alertCircle,
-                          size: 10, color: Color(0xFFFF4B2B)),
+                          size: 10, color: Color(0xFFE5484D)),
                       const SizedBox(width: 3),
                       Text('Танҳо ${p.stock} мондааст',
                           style: const TextStyle(
-                              color: Color(0xFFFF4B2B),
+                              color: Color(0xFFE5484D),
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700)),
                     ]),
@@ -308,7 +307,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                           width: 30, height: 30,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                                colors: [Color(0xFF00D084), Color(0xFF00A3FF)]),
+                                colors: [Color(0xFF00D084), Color(0xFF00A86B)]),
                             borderRadius: BorderRadius.circular(9),
                             boxShadow: [BoxShadow(
                                 color: const Color(0xFF00D084).withOpacity(0.4),

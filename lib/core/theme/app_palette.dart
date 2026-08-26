@@ -49,17 +49,17 @@ class AppPalette extends ThemeExtension<AppPalette> {
   );
 
   static const light = AppPalette(
-    scaffold: Color(0xFFF4F6FA),
+    scaffold: Color(0xFFF5FAF6),              // сафеди сабзтоб
     card: Color(0xFFFFFFFF),
-    surface: Color(0xFFEDEFF5),
+    surface: Color(0xFFEDF4EF),
     elevated: Color(0xFFFFFFFF),
-    textPrimary: Color(0xFF0D0D1A),           // сиёҳ
-    textSecondary: Color(0xFF5A5D70),
-    textMuted: Color(0xFF8A8DA0),
-    border: Color(0xFFE2E5EE),
-    divider: Color(0xFFE2E5EE),
-    shimmerBase: Color(0xFFE6E9F0),
-    shimmerHighlight: Color(0xFFF4F6FA),
+    textPrimary: Color(0xFF0B1D14),           // сиёҳи сабзтоб
+    textSecondary: Color(0xFF4A5F52),
+    textMuted: Color(0xFF7C9686),
+    border: Color(0xFFDCEAE0),
+    divider: Color(0xFFDCEAE0),
+    shimmerBase: Color(0xFFE4F0E8),
+    shimmerHighlight: Color(0xFFF5FAF6),
   );
 
   @override

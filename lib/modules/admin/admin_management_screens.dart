@@ -710,7 +710,7 @@ class AdminReturnsScreen extends ConsumerWidget {
                           if (status == 'pending')
                             Expanded(child: _GradientButton(
                               label: l.acceptShort,
-                              gradient: const LinearGradient(colors: [AppColors.info, Color(0xFF00A3FF)]),
+                              gradient: const LinearGradient(colors: [AppColors.info, Color(0xFF00A86B)]),
                               onPressed: () => _update(context, ref, id, 'approved'))),
                           if (status == 'approved')
                             Expanded(child: _GradientButton(
