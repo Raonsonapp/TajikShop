@@ -14,6 +14,9 @@ import (
 	"github.com/google/uuid"
 )
 
+// Ҳадди болоии ҳаққи расонидан (сом.) — муштарӣ наметавонад аз ин зиёд диҳад.
+const maxDeliveryFee = 200
+
 type OrderHandler struct {
 	r2 *storage.R2Client
 }
@@ -101,15 +104,38 @@ func (h *OrderHandler) UpdateCartItem(c *gin.Context) {
 func (h *OrderHandler) Checkout(c *gin.Context) {
 	uid := utils.UserID(c)
 	var in struct {
-		AddressID     string `json:"address_id"`
-		Note          string `json:"note"`
-		PaymentMethod string `json:"payment_method"` // dc | cod | wallet
-		CouponCode    string `json:"coupon_code"`
+		AddressID     string  `json:"address_id"`
+		Note          string  `json:"note"`
+		PaymentMethod string  `json:"payment_method"` // dc | cod | wallet
+		CouponCode    string  `json:"coupon_code"`
+		Fulfilment    string  `json:"fulfilment"`     // delivery | pickup
+		DeliveryFee   float64 `json:"delivery_fee"`
+		DeliveryASAP  *bool   `json:"delivery_asap"`
+		DeliverySlot  string  `json:"delivery_slot"` // "HH:MM"
 	}
 	c.ShouldBindJSON(&in)
 	method := in.PaymentMethod
 	if method != "cod" && method != "wallet" {
 		method = "dc"
+	}
+	// Тарзи гирифтан: ҳангоми «аз мағоза гирифтан» расонидан ройгон аст.
+	fulfilment := in.Fulfilment
+	if fulfilment != "pickup" {
+		fulfilment = "delivery"
+	}
+	deliveryFee := in.DeliveryFee
+	if fulfilment == "pickup" || deliveryFee < 0 {
+		deliveryFee = 0
+	}
+	if deliveryFee > maxDeliveryFee {
+		deliveryFee = maxDeliveryFee // муҳофизат аз арзиши бофташудаи муштарӣ
+	}
+	slot := strings.TrimSpace(in.DeliverySlot)
+	if in.DeliveryASAP != nil && *in.DeliveryASAP {
+		slot = ""
+	}
+	if len(slot) > 5 {
+		slot = slot[:5]
 	}
 
 	rows, err := db.DB.Query(`SELECT ci.product_id,ci.quantity,p.price FROM cart_items ci
@@ -148,8 +174,10 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 			couponCode = ""
 		}
 	}
-	discountAmt := total * float64(discountPct) / 100
-	finalTotal := total - discountAmt
+	// Ҷамъ = маҳсулот + расонидан, баъд тахфиф (мисли ҳисоби экрани сабад).
+	gross := total + deliveryFee
+	discountAmt := gross * float64(discountPct) / 100
+	finalTotal := gross - discountAmt
 
 	// address_id метавонад холӣ бошад (NULL)
 	var addr interface{}
@@ -173,8 +201,9 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 			utils.Err(c, http.StatusBadRequest, "Тавозуни ҳамён нокифоя аст")
 			return
 		}
-		if _, e := tx.Exec(`INSERT INTO orders(id,user_id,address_id,total,note,payment_method,discount,status)
-			VALUES($1,$2,$3,$4,$5,'wallet',$6,'paid')`, orderID, uid, addr, finalTotal, in.Note, discountAmt); e != nil {
+		if _, e := tx.Exec(`INSERT INTO orders(id,user_id,address_id,total,note,payment_method,discount,fulfilment,delivery_fee,delivery_slot,status)
+			VALUES($1,$2,$3,$4,$5,'wallet',$6,$7,$8,$9,'paid')`,
+			orderID, uid, addr, finalTotal, in.Note, discountAmt, fulfilment, deliveryFee, slot); e != nil {
 			tx.Rollback()
 			utils.Err(c, http.StatusInternalServerError, e.Error())
 			return
@@ -205,9 +234,9 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 	}
 
 	// ── DC ё Cash-on-Delivery ──
-	if _, e := db.DB.Exec(`INSERT INTO orders(id,user_id,address_id,total,note,payment_method,discount,status)
-		VALUES($1,$2,$3,$4,$5,$6,$7,'pending')`,
-		orderID, uid, addr, finalTotal, in.Note, method, discountAmt); e != nil {
+	if _, e := db.DB.Exec(`INSERT INTO orders(id,user_id,address_id,total,note,payment_method,discount,fulfilment,delivery_fee,delivery_slot,status)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending')`,
+		orderID, uid, addr, finalTotal, in.Note, method, discountAmt, fulfilment, deliveryFee, slot); e != nil {
 		utils.Err(c, http.StatusInternalServerError, e.Error())
 		return
 	}

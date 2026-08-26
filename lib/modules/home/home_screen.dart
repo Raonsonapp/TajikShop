@@ -25,6 +25,7 @@ import '../../providers/stories_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/product_card.dart';
+import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/inline_ad.dart';
 import '../stories/story_viewer_screen.dart';
@@ -165,7 +166,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   sliver: SliverGrid(
                     gridDelegate: _gridDelegate,
                     delegate: SliverChildBuilderDelegate(
-                      (_, i) => ProductCard(product: ps.products[i]),
+                      (_, i) => FadeSlideIn(
+                        // Кортҳо паси ҳам мулоим пайдо мешаванд (то 10-ум).
+                        delay: Duration(milliseconds: 45 * (i % 10)),
+                        child: ProductCard(product: ps.products[i]),
+                      ),
                       childCount: ps.products.length,
                     ),
                   ),

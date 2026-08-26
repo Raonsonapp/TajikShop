@@ -289,6 +289,11 @@ DELETE FROM products p WHERE p.stock <= 0
   AND NOT EXISTS (SELECT 1 FROM order_items oi WHERE oi.product_id = p.id);
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20) DEFAULT 'dc';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount NUMERIC(12,2) DEFAULT 0;
+
+-- Тарзи гирифтан (расонидан / аз мағоза), ҳаққи расонидан ва вақти дилхоҳ.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS fulfilment    VARCHAR(20) DEFAULT 'delivery';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee  NUMERIC(12,2) DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_slot VARCHAR(10) DEFAULT '';
 ALTER TABLE addresses ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION DEFAULT 0;
 ALTER TABLE addresses ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION DEFAULT 0;
 

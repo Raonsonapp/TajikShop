@@ -8,6 +8,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import '../../core/app_l10n.dart';
+import '../../core/l10n/profile_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
@@ -23,6 +24,9 @@ import '../address/add_address_sheet.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/safe_input.dart';
+
+/// Ҳаққи расонидан (сом.) — дар як ҷо, то дар экранҳо фарқ накунад.
+const double kDeliveryFee = 20;
 
 class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
@@ -104,11 +108,11 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                     child: Column(children: [
                       _row('${AppL10n.of(context).productsWord} (${cart.itemCount})', '${cart.total.toStringAsFixed(0)} сом.'),
                       const SizedBox(height: 6),
-                      _row(AppL10n.of(context).delivery, '20 сом.'),
+                      _row(AppL10n.of(context).delivery, '${kDeliveryFee.toStringAsFixed(0)} сом.'),
                       const SizedBox(height: 10),
                       Divider(color: context.pal.divider),
                       const SizedBox(height: 10),
-                      _row(AppL10n.of(context).total, '${(cart.total + 20).toStringAsFixed(0)} сом.', bold: true),
+                      _row(AppL10n.of(context).total, '${(cart.total + kDeliveryFee).toStringAsFixed(0)} сом.', bold: true),
                       const SizedBox(height: 8),
                       Row(children: [
                         const Icon(FeatherIcons.gift, color: AppColors.primary, size: 14),
@@ -162,6 +166,9 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
   bool _sent = false;
   String? _addressId;
   String _method = 'dc'; // dc | cod | wallet
+  String _fulfilment = 'delivery'; // delivery | pickup
+  bool _asap = true;               // Ҳарчи зудтар / Вақти муайян
+  TimeOfDay? _slot;                // вақти интихобшуда (агар !_asap)
   final _couponCtrl = TextEditingController();
   int _discountPct = 0;
   String? _couponMsg;
@@ -199,12 +206,23 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
       setState(() => _error = AppL10n.of(context).uploadReceiptFirst);
       return;
     }
+    // Барои расонидан суроға ҳатмист (ҳангоми аз мағоза гирифтан не).
+    if (_fulfilment == 'delivery' && _addressId == null) {
+      setState(() => _error = AppL10n.of(context).addAddress);
+      return;
+    }
     setState(() { _loading = true; _error = null; });
     try {
       // 1) Фармоиш месозем
       final res = await ApiClient.instance.dio.post(ApiEndpoints.checkout, data: {
-        if (_addressId != null) 'address_id': _addressId,
+        if (_fulfilment == 'delivery' && _addressId != null) 'address_id': _addressId,
         'payment_method': _method,
+        'fulfilment': _fulfilment,
+        'delivery_fee': _deliveryFee,
+        'delivery_asap': _asap,
+        if (!_asap && _slot != null)
+          'delivery_slot':
+              '${_slot!.hour.toString().padLeft(2, '0')}:${_slot!.minute.toString().padLeft(2, '0')}',
         if (_discountPct > 0) 'coupon_code': _couponCtrl.text.trim(),
       });
       final body = res.data is Map ? res.data as Map : const {};
@@ -232,7 +250,11 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
   }
 
   double get _cartTotal => ref.read(cartProvider).total;
-  double get _finalTotal => (_cartTotal + 20) * (1 - _discountPct / 100);
+
+  /// Ҳаққи расонидан: ҳангоми «аз мағоза гирифтан» ройгон аст.
+  double get _deliveryFee => _fulfilment == 'pickup' ? 0 : kDeliveryFee;
+  double get _finalTotal =>
+      (_cartTotal + _deliveryFee) * (1 - _discountPct / 100);
 
   Future<void> _addAddress() async {
     final added = await showAddAddress(context);
@@ -304,11 +326,53 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
           child: Text(AppL10n.of(context).confirmOrder, style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700))),
         const SizedBox(height: 16),
 
-        // Суроғаи расонидан
+        // Тарзи расонидан (расонидан / аз мағоза гирифтан)
         Align(alignment: Alignment.centerLeft,
-          child: Text(AppL10n.of(context).deliveryAddress, style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
+          child: Text(AppL10n.of(context).deliveryMethod, style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
         const SizedBox(height: 8),
-        _addressSelector(),
+        _fulfilmentToggle(),
+        const SizedBox(height: 16),
+
+        // Суроғаи расонидан — танҳо барои расонидан лозим аст
+        AnimatedSize(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: _fulfilment == 'pickup'
+              ? Container(
+                  key: const ValueKey('pickup-note'),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(children: [
+                    const Icon(FeatherIcons.home, color: AppColors.primary, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(AppL10n.of(context).pickupNoAddress,
+                        style: TextStyle(color: context.pal.textSecondary, fontSize: 12.5))),
+                  ]),
+                )
+              : Column(
+                  key: const ValueKey('address-block'),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(AppL10n.of(context).deliveryAddress,
+                        style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    _addressSelector(),
+                  ],
+                ),
+        ),
+        const SizedBox(height: 16),
+
+        // Вақти расонидан
+        Align(alignment: Alignment.centerLeft,
+          child: Text(AppL10n.of(context).deliveryTime, style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600))),
+        const SizedBox(height: 8),
+        _timeChoice(),
         const SizedBox(height: 16),
 
         // Купон
@@ -380,10 +444,17 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
         Container(padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(12)),
           child: Column(children: [
-            _row(AppL10n.of(context).productsPlusDelivery, '${(_cartTotal + 20).toStringAsFixed(0)} сом.'),
+            _row(AppL10n.of(context).productsWord, '${_cartTotal.toStringAsFixed(0)} сом.'),
+            const SizedBox(height: 6),
+            _row(
+              AppL10n.of(context).delivery,
+              _fulfilment == 'pickup'
+                  ? AppL10n.of(context).pickupFree
+                  : '${_deliveryFee.toStringAsFixed(0)} сом.',
+            ),
             if (_discountPct > 0) ...[
               const SizedBox(height: 6),
-              _row('${AppL10n.of(context).discountWord} ($_discountPct%)', '-${((_cartTotal + 20) * _discountPct / 100).toStringAsFixed(0)} сом.'),
+              _row('${AppL10n.of(context).discountWord} ($_discountPct%)', '-${((_cartTotal + _deliveryFee) * _discountPct / 100).toStringAsFixed(0)} сом.'),
             ],
             const SizedBox(height: 8),
             Divider(color: context.pal.divider, height: 1),
@@ -403,6 +474,130 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
         const SizedBox(height: 8),
       ])),
     );
+  }
+
+  /// Тугмаи дугона: Расонидан ↔ Аз мағоза гирифтан (бо аниматсияи ҳамворшуда).
+  Widget _fulfilmentToggle() {
+    final l = AppL10n.of(context);
+    Widget half(String value, IconData icon, String label) {
+      final sel = _fulfilment == value;
+      return Expanded(
+        child: GestureDetector(
+          onTap: () => setState(() {
+            _fulfilment = value;
+            _error = null;
+          }),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 10),
+            decoration: BoxDecoration(
+              gradient: sel ? AppColors.primaryGradient : null,
+              color: sel ? null : context.pal.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                  color: sel ? Colors.transparent : context.pal.border, width: 0.8),
+              boxShadow: sel
+                  ? [BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.32),
+                      blurRadius: 12, offset: const Offset(0, 4))]
+                  : null,
+            ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(sel ? FeatherIcons.check : icon,
+                  size: 17, color: sel ? Colors.white : context.pal.textSecondary),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(label,
+                    maxLines: 2,
+                    style: TextStyle(
+                        color: sel ? Colors.white : context.pal.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)),
+              ),
+            ]),
+          ),
+        ),
+      );
+    }
+
+    return Row(children: [
+      half('delivery', FeatherIcons.truck, l.deliveryOption),
+      const SizedBox(width: 10),
+      half('pickup', FeatherIcons.home, l.pickupOption),
+    ]);
+  }
+
+  /// Интихоби вақт: Ҳарчи зудтар ↔ Вақти муайян (бо интихобгари соат).
+  Widget _timeChoice() {
+    final l = AppL10n.of(context);
+    Widget option(bool asapValue, String label) {
+      final sel = _asap == asapValue;
+      return GestureDetector(
+        onTap: () async {
+          if (!asapValue) {
+            final picked = await showTimePicker(
+              context: context,
+              initialTime: _slot ?? const TimeOfDay(hour: 12, minute: 0),
+            );
+            if (picked == null) return;
+            if (!mounted) return;
+            setState(() { _asap = false; _slot = picked; });
+          } else {
+            setState(() { _asap = true; _slot = null; });
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          child: Row(children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 21, height: 21,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                    color: sel ? AppColors.primary : context.pal.textMuted, width: 2),
+              ),
+              child: Center(
+                child: AnimatedScale(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutBack,
+                  scale: sel ? 1 : 0,
+                  child: Container(
+                    width: 11, height: 11,
+                    decoration: const BoxDecoration(
+                        color: AppColors.primary, shape: BoxShape.circle),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(label,
+                style: TextStyle(
+                    color: context.pal.textPrimary,
+                    fontSize: 14,
+                    fontWeight: sel ? FontWeight.w600 : FontWeight.w400)),
+            if (!asapValue && _slot != null) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(8)),
+                child: Text(_slot!.format(context),
+                    style: const TextStyle(
+                        color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ]),
+        ),
+      );
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      option(true, l.asSoonAsPossible),
+      option(false, l.specificTime),
+    ]);
   }
 
   Widget _payOption(String value, IconData icon, String title, String subtitle) {

@@ -51,12 +51,23 @@ class _AdBannerState extends State<AdBanner> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded || _banner == null) return const SizedBox.shrink();
-    return Align(
-      alignment: Alignment.bottomCenter,
+    // ⚠️ AdWidget платформа-view аст ва андозаи хоси худро надорад. Агар
+    // констрейнти аниқ дода нашавад, view-и нативӣ метавонад дар кунҷи
+    // чапи боло (0,0) ҳамчун росткунҷаи хокистарранг часпад. Барои ҳамин
+    // ҳатман бо баландии муайян маҳдуд мекунем.
+    return SizedBox(
+      width: double.infinity,
+      height: _kStickyBannerHeight,
       child: AdWidget(bannerAd: _banner!),
     );
   }
 }
+
+/// Баландии баннери sticky (dp) — платформа-view-ро маҳдуд мекунад.
+const double _kStickyBannerHeight = 60;
+
+/// Баландии блоки inline (MREC) — платформа-view-ро маҳдуд мекунад.
+const double _kInlineAdHeight = 250;
 
 /// Блоки калони реклама (Yandex inline) дар дохили feed — мисли маркетплейси воқеӣ.
 class AdMrec extends StatefulWidget {
@@ -107,8 +118,12 @@ class _AdMrecState extends State<AdMrec> {
   Widget build(BuildContext context) {
     if (!_loaded || _banner == null) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(child: AdWidget(bannerAd: _banner!)),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: SizedBox(
+        width: double.infinity,
+        height: _kInlineAdHeight,
+        child: AdWidget(bannerAd: _banner!),
+      ),
     );
   }
 }

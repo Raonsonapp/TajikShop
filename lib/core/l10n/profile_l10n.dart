@@ -109,3 +109,26 @@ extension ProfileL10n on AppL10n {
       ? 'Высший уровень — максимальный кэшбэк!'
       : lang == 'en' ? 'Top tier — maximum cashback!' : 'Сатҳи болоӣ — cashback-и максималӣ!';
 }
+
+/// Тарҷумаҳои қисми расонидан/пардохт (checkout).
+extension CheckoutL10n on AppL10n {
+  String get deliveryMethod => lang == 'ru'
+      ? 'Способ доставки' : lang == 'en' ? 'Delivery method' : 'Тарзи расонидан';
+  String get deliveryOption => lang == 'ru'
+      ? 'Доставка' : lang == 'en' ? 'Delivery' : 'Расонидан';
+  String get pickupOption => lang == 'ru'
+      ? 'Забрать из магазина' : lang == 'en' ? 'Pick up from store' : 'Аз мағоза гирифтан';
+  String get deliveryTime => lang == 'ru'
+      ? 'Время доставки' : lang == 'en' ? 'Delivery time' : 'Вақти расонидан';
+  String get asSoonAsPossible => lang == 'ru'
+      ? 'Как можно скорее' : lang == 'en' ? 'As soon as possible' : 'Ҳарчи зудтар';
+  String get specificTime => lang == 'ru'
+      ? 'Определённое время' : lang == 'en' ? 'Specific time' : 'Вақти муайян';
+  String get pickupFree => lang == 'ru'
+      ? 'Бесплатно — заберите сами'
+      : lang == 'en' ? 'Free — collect it yourself' : 'Ройгон — худатон мегиред';
+  String get pickupNoAddress => lang == 'ru'
+      ? 'Адрес не нужен — заберёте из магазина продавца'
+      : lang == 'en' ? 'No address needed — collect from the seller\'s store'
+      : 'Суроға лозим нест — аз мағозаи фурӯшанда мегиред';
+}
