@@ -44,7 +44,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           perm == LocationPermission.deniedForever) {
         throw mounted ? AppL10n.of(context).locationPermissionDenied : 'Permission denied';
       }
-      final pos = await Geolocator.getCurrentPosition();
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
       final here = LatLng(pos.latitude, pos.longitude);
       if (!mounted) return;
       setState(() => _center = here);

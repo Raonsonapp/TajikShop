@@ -23,6 +23,7 @@ import '../../providers/locale_provider.dart';
 import '../../routes/route_names.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
+import '../../core/l10n/profile_l10n.dart';
 import 'package:latlong2/latlong.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/safe_input.dart';
@@ -148,15 +149,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Row(children: [
                 const Icon(FeatherIcons.shoppingBag, color: AppColors.primary, size: 20),
                 const SizedBox(width: 8),
-                Text('Бизнеси ман', style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
+                Text(l.businessMine, style: TextStyle(color: context.pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
               ]),
               const SizedBox(height: 16),
-              field('Номи мағоза', nameCtrl),
-              field('Тавсифи бизнес', descCtrl, maxLines: 3),
-              field('Телефон', phoneCtrl),
-              field('Соатҳои корӣ (9:00–20:00)', hoursCtrl),
+              field(l.shopNameField, nameCtrl),
+              field(l.businessDescField, descCtrl, maxLines: 3),
+              field(l.phoneField, phoneCtrl),
+              field(l.workingHoursField, hoursCtrl),
               const SizedBox(height: 4),
-              Text('Навъи бизнес', style: TextStyle(
+              Text(l.businessTypeLabel, style: TextStyle(
                   color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
               const SizedBox(height: 10),
               Wrap(spacing: 8, runSpacing: 8, children: [
@@ -219,6 +220,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   // ── Даъвати дӯстон / Referral ─────────────────────────────────────────────
   void _inviteFriends() {
+    final l = AppL10n.of(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: context.pal.card,
@@ -250,7 +252,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   const Icon(FeatherIcons.gift, color: AppColors.primary, size: 22),
                   const SizedBox(width: 8),
-                  Flexible(child: Text('Даъват кунед — ҳарду $bonus сом мегиред',
+                  Flexible(child: Text(l.inviteBonusLine(int.tryParse(bonus) ?? 10),
                       textAlign: TextAlign.center,
                       style: TextStyle(color: context.pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800))),
                 ]),
@@ -277,19 +279,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SizedBox(height: 16),
                 // ── Copy button ───────────────────────────────────────────
                 AppButton(
-                  text: '🔗 Даъват кардан',
+                  text: l.inviteButton,
                   onTap: () async {
                     final messenger = ScaffoldMessenger.of(context);
-                    final msg =
-                        'Ба TajikShop 🛍️ ҳамроҳ шав!\nКоди даъват: $code\n'
-                        'https://mahmadmurodov-tajikshop.hf.space';
+                    final msg = l.inviteShareMsg(code);
                     Navigator.pop(ctx);
                     try {
-                      await Share.share(msg, subject: 'Даъват ба TajikShop');
+                      await Share.share(msg, subject: l.inviteFriendsTile);
                     } catch (_) {
                       await Clipboard.setData(ClipboardData(text: msg));
-                      messenger.showSnackBar(const SnackBar(
-                          content: Text('Нусхабардорӣ шуд ✅'),
+                      messenger.showSnackBar(SnackBar(
+                          content: Text(l.copiedDone),
                           backgroundColor: AppColors.success,
                           behavior: SnackBarBehavior.floating));
                     }
@@ -300,14 +300,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   const Icon(FeatherIcons.users, color: AppColors.primary, size: 16),
                   const SizedBox(width: 6),
-                  Text('$referrals дӯст',
+                  Text(l.referralsCount(referrals),
                       style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
                   const SizedBox(width: 14),
                   Text('•', style: TextStyle(color: context.pal.textMuted)),
                   const SizedBox(width: 14),
                   const Icon(FeatherIcons.dollarSign, color: AppColors.primary, size: 16),
                   const SizedBox(width: 6),
-                  Text('$earned сом кофтед',
+                  Text(l.earnedSom(earned),
                       style: TextStyle(color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
                 ]),
               ]);
@@ -320,6 +320,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   // ── Купонҳо ва промокодҳо ─────────────────────────────────────────────────
   void _showCoupons() {
+    final l = AppL10n.of(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: context.pal.card,
@@ -337,11 +338,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               const Icon(FeatherIcons.tag, color: AppColors.primary, size: 20),
               const SizedBox(width: 8),
-              Text('Купонҳои фаъол',
+              Text(l.activeCoupons,
                   style: TextStyle(color: context.pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
             ]),
             const SizedBox(height: 8),
-            Text('Кодро дар сабад ҳангоми пардохт ворид кунед',
+            Text(l.couponHint,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: context.pal.textMuted, fontSize: 12.5)),
             const SizedBox(height: 18),
@@ -368,7 +369,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         child: Column(children: [
           Icon(FeatherIcons.tag, size: 44, color: context.pal.textMuted),
           const SizedBox(height: 12),
-          Text('Ҳоло купони фаъол нест',
+          Text(AppL10n.of(context).noCouponsYet,
               style: TextStyle(color: context.pal.textSecondary, fontSize: 14)),
         ]),
       );
@@ -409,8 +410,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onTap: () {
               final messenger = ScaffoldMessenger.of(context);
               Clipboard.setData(ClipboardData(text: code));
-              messenger.showSnackBar(const SnackBar(
-                  content: Text('Код нусхабардорӣ шуд ✅'),
+              messenger.showSnackBar(SnackBar(
+                  content: Text(AppL10n.of(context).copiedDone),
                   backgroundColor: AppColors.success,
                   behavior: SnackBarBehavior.floating));
             },
@@ -442,6 +443,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   // ── Ҳазфи ҳисоб (Google Play) ──────────────────────────────────────────────
   Future<void> _deleteAccount() async {
+    final l = AppL10n.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -450,27 +452,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: Row(children: [
           const Icon(FeatherIcons.alertTriangle, color: Color(0xFFFF3B5C), size: 22),
           const SizedBox(width: 8),
-          Text('Ҳазфи ҳисоб',
-              style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w800, fontSize: 18)),
+          Expanded(
+            child: Text(l.deleteAccountTitle,
+                style: TextStyle(color: context.pal.textPrimary, fontWeight: FontWeight.w800, fontSize: 18)),
+          ),
         ]),
         content: Text(
-          'Ҳисоб ва маълумоти шахсии шумо (ном, телефон, почта, суроғаҳо, сабад, '
-          'дӯстдоштаҳо, паёмҳо, шарҳҳо, эълонҳо ва расмҳо) ҳазф мешавад.\n\n'
-          'Сабтҳои фармоиш ва пардохт барои қонунгузорӣ беном (anonymized) нигоҳ дошта мешаванд.\n\n'
-          'Ин амал бебозгашт аст. Идома медиҳед?',
+          l.deleteAccountBody,
           style: TextStyle(color: context.pal.textSecondary, fontSize: 14, height: 1.5),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Бекор', style: TextStyle(color: context.pal.textSecondary)),
+            child: Text(l.cancel, style: TextStyle(color: context.pal.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF3B5C),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Ҳа, ҳазф кун', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            child: Text(l.deleteAccountConfirm, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -483,13 +484,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await ref.read(authProvider.notifier).logout();
       if (!mounted) return;
       context.go(RouteNames.login);
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Ҳисоби шумо ҳазф шуд'),
+      messenger.showSnackBar(SnackBar(
+          content: Text(l.accountDeleted),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating));
     } catch (_) {
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Хатогӣ ҳангоми ҳазф. Дубора кӯшиш кунед.'),
+      messenger.showSnackBar(SnackBar(
+          content: Text(l.deleteAccountError),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     }
@@ -697,7 +698,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       label: l.sellerDashboard,
                       onTap: () => context.push(RouteNames.sellerDashboard)),
                   _Tile(icon: FeatherIcons.shoppingBag, iconColor: AppColors.primary,
-                      label: 'Бизнеси ман',
+                      label: l.businessMine,
                       onTap: _businessSetup),
                   _Tile(icon: FeatherIcons.mapPin, iconColor: AppColors.info,
                       label: l.storeLocation,
@@ -737,10 +738,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // ── Даъвати дӯстон + Купонҳо (visible to everyone) ──────────
               _GroupCard(children: [
                 _Tile(icon: FeatherIcons.gift, iconColor: AppColors.primary,
-                    label: '🎁 Дӯстонро даъват кунед',
+                    label: l.inviteFriendsTile,
                     onTap: _inviteFriends),
                 _Tile(icon: FeatherIcons.tag, iconColor: AppColors.info,
-                    label: '🎟 Купонҳо ва промокодҳо',
+                    label: l.couponsTile,
                     onTap: _showCoupons),
               ]),
 
@@ -764,16 +765,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ]),
 
               // ── Ҳуқуқӣ ва ҳисоб (Google Play) ───────────────────────────
-              _SectionLabel('Ҳуқуқӣ ва ҳисоб'),
+              _SectionLabel(l.legalAndAccount),
               _GroupCard(children: [
                 _Tile(icon: FeatherIcons.shield, iconColor: const Color(0xFF00A86B),
-                    label: 'Сиёсати махфият',
+                    label: l.privacyPolicy,
                     onTap: () => _openUrl('$_legalBase/privacy')),
                 _Tile(icon: FeatherIcons.fileText, iconColor: const Color(0xFF6C63FF),
-                    label: 'Шартҳои истифода',
+                    label: l.termsOfUse,
                     onTap: () => _openUrl('$_legalBase/terms')),
                 _Tile(icon: FeatherIcons.trash2, iconColor: const Color(0xFFFF3B5C),
-                    label: 'Ҳазфи ҳисоб',
+                    label: l.deleteAccountTitle,
                     onTap: _deleteAccount),
               ]),
 
@@ -1018,6 +1019,7 @@ class _LoyaltyCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pal = context.pal;
+    final l = AppL10n.of(context);
     final async = ref.watch(loyaltyProvider);
     final d = async.asData?.value ?? const {};
     final tier = (d['tier'] ?? 'bronze').toString();
@@ -1054,14 +1056,14 @@ class _LoyaltyCard extends ConsumerWidget {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  Text('Сатҳи ${info.label}',
+                  Text(l.tierLevel(info.label),
                       style: TextStyle(
                           color: pal.textPrimary,
                           fontSize: 15,
                           fontWeight: FontWeight.w800)),
                 ]),
                 const SizedBox(height: 2),
-                Text('Cashback: ${cashback.toStringAsFixed(cashback == cashback.roundToDouble() ? 0 : 1)}% аз ҳар харид',
+                Text(l.cashbackPerPurchase(cashback.toStringAsFixed(cashback == cashback.roundToDouble() ? 0 : 1)),
                     style: TextStyle(color: pal.textMuted, fontSize: 12)),
               ]),
             ),
@@ -1079,13 +1081,13 @@ class _LoyaltyCard extends ConsumerWidget {
             ),
             const SizedBox(height: 7),
             Text(
-                'То сатҳи баъдӣ: ${(nextAt - spent).clamp(0, nextAt).toStringAsFixed(0)} сом харид кунед',
+                l.toNextTier((nextAt - spent).clamp(0, nextAt).toStringAsFixed(0)),
                 style: TextStyle(color: pal.textSecondary, fontSize: 12)),
           ] else
             Row(children: [
               const Icon(FeatherIcons.checkCircle, color: AppColors.success, size: 15),
               const SizedBox(width: 6),
-              Text('Сатҳи болоӣ — cashback-и максималӣ!',
+              Text(l.topTierMax,
                   style: TextStyle(
                       color: pal.textSecondary,
                       fontSize: 12,
