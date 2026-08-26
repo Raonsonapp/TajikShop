@@ -166,7 +166,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   sliver: SliverGrid(
                     gridDelegate: _gridDelegate,
                     delegate: SliverChildBuilderDelegate(
-                      (_, i) => FadeSlideIn(
+                      (_, int i) => FadeSlideIn(
                         // Кортҳо паси ҳам мулоим пайдо мешаванд (то 10-ум).
                         delay: Duration(milliseconds: 45 * (i % 10)),
                         child: ProductCard(product: ps.products[i]),
