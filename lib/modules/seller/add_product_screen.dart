@@ -13,6 +13,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
+import '../product/barcode_scanner_screen.dart';
 import 'seller_verify_sheet.dart';
 
 class AddProductScreen extends ConsumerStatefulWidget {
@@ -27,10 +28,20 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   final _priceCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _stockCtrl = TextEditingController(text: '1');
+  final _barcodeCtrl = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   List<File> _images = [];
   bool _loading = false;
   String? _error;
+
+  Future<void> _scanForBarcode() async {
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+    if (code != null && code.isNotEmpty && mounted) {
+      setState(() => _barcodeCtrl.text = code);
+    }
+  }
 
   Future<void> _pickImage() async {
     final picked = await _picker.pickMultiImage(limit: 5);
@@ -48,6 +59,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         'price': double.tryParse(_priceCtrl.text.trim()) ?? 0,
         'description': _descCtrl.text.trim(),
         'stock': int.tryParse(_stockCtrl.text.trim()) ?? 1,
+        'barcode': _barcodeCtrl.text.trim(),
         for (int i = 0; i < _images.length; i++)
           'images': await MultipartFile.fromFile(_images[i].path),
       });
@@ -88,6 +100,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   void dispose() {
     _titleCtrl.dispose(); _priceCtrl.dispose();
     _descCtrl.dispose(); _stockCtrl.dispose();
+    _barcodeCtrl.dispose();
     super.dispose();
   }
 
@@ -226,6 +239,15 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 prefixIcon: FeatherIcons.fileText,
                 maxLines: 4,
                 validator: (v) => v!.trim().isEmpty ? l.sellerDescRequired : null,
+              ),
+              const SizedBox(height: 12),
+              // Штрих-код (ихтиёрӣ) — харидорон онро сканкарда маҳсулотро меёбанд.
+              AppTextField(
+                hint: 'Штрих-код (ихтиёрӣ)', controller: _barcodeCtrl,
+                prefixIcon: FeatherIcons.hash,
+                keyboardType: TextInputType.number,
+                suffixIcon: FeatherIcons.maximize,
+                onSuffixTap: _scanForBarcode,
               ),
               const SizedBox(height: 24),
 

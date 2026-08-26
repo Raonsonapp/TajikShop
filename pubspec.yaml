@@ -48,6 +48,9 @@ dependencies:
   # Кушодани URL-ҳо (Сиёсати махфият, Шартҳо, Ҳазфи ҳисоб — Google Play)
   url_launcher: ^6.3.1
 
+  # Сканери штрих-код (маҳсулотро аз рӯи barcode ёфтан)
+  mobile_scanner: ^5.2.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

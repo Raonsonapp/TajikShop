@@ -6,6 +6,9 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- Push notifications (FCM) — Android 13+ талаб мекунад -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Камера — сканери штрих-коди маҳсулот (mobile_scanner) -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="TajikShop"
         android:name="${applicationName}"

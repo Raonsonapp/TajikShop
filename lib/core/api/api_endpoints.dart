@@ -22,6 +22,7 @@ class ApiEndpoints {
   static const deals = '/products/deals';
   static const bestsellers = '/products/bestsellers';
   static String product(String id) => '/products/$id';
+  static String productByBarcode(String code) => '/products/barcode/$code';
   static String productImages(String id) => '/products/$id/images';
 
   // Categories

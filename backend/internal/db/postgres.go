@@ -233,6 +233,10 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS delivery_days  INT DEFAULT 0;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS delivery_price NUMERIC(12,2) DEFAULT 0;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS size_info      TEXT DEFAULT '';
 
+-- Штрих-код (barcode/EAN) барои сканери маҳсулот дар мағоза.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS barcode VARCHAR(64) DEFAULT '';
+CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode) WHERE barcode <> '';
+
 -- Ҳазфи ҳисоб (Google Play): аломати ҳисоби ҳазфшуда (маълумоти шахсӣ anonymize мешавад).
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;

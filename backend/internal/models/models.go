@@ -50,6 +50,7 @@ type Product struct {
 	DeliveryDays    int         `json:"delivery_days"`
 	DeliveryPrice   float64     `json:"delivery_price"`
 	SizeInfo        string      `json:"size_info"`
+	Barcode         string      `json:"barcode,omitempty"`
 	Variants        interface{} `json:"variants,omitempty"`
 	SaleEndsAt      *time.Time  `json:"sale_ends_at,omitempty"`
 	CreatedAt       time.Time   `json:"created_at"`

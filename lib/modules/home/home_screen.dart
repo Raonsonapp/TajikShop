@@ -12,6 +12,9 @@ import '../../core/l10n/shop_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/category_icons.dart';
 import '../../core/theme/app_palette.dart';
+import '../../core/api/api_client.dart';
+import '../../core/api/api_endpoints.dart';
+import '../product/barcode_scanner_screen.dart';
 import '../../data/models/product_model.dart';
 import '../../data/models/story_model.dart';
 import '../../providers/auth_provider.dart';
@@ -380,7 +383,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(width: 12),
           GestureDetector(
-            onTap: () => context.push(RouteNames.search),
+            onTap: _scanBarcode,
             child: Container(
               width: 54,
               height: 54,
@@ -395,13 +398,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ],
               ),
-              child: const Icon(FeatherIcons.sliders,
+              child: const Icon(FeatherIcons.maximize,
                   color: Colors.white, size: 22),
             ),
           ),
         ],
       ),
     );
+  }
+
+  /// Сканери штрих-код: камераро мекушояд, кодро мегирад ва маҳсулотро меёбад.
+  Future<void> _scanBarcode() async {
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+    if (code == null || code.isEmpty || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final res = await ApiClient.instance.dio
+          .get(ApiEndpoints.productByBarcode(Uri.encodeComponent(code)));
+      final body = res.data;
+      final data = (body is Map && body['data'] != null) ? body['data'] : body;
+      final id = (data is Map) ? data['id']?.toString() : null;
+      if (id != null && id.isNotEmpty && mounted) {
+        context.push('/product/$id');
+      } else if (mounted) {
+        _barcodeNotFound(messenger, code);
+      }
+    } catch (_) {
+      if (mounted) _barcodeNotFound(messenger, code);
+    }
+  }
+
+  void _barcodeNotFound(ScaffoldMessengerState messenger, String code) {
+    messenger.showSnackBar(SnackBar(
+      content: Text('Маҳсулот бо коди «$code» ёфт нашуд'),
+      backgroundColor: AppColors.error,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ));
   }
 
   // ── Section header row: title + "Ҳама >" ──
