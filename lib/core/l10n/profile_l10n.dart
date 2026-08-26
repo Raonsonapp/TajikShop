@@ -132,3 +132,20 @@ extension CheckoutL10n on AppL10n {
       : lang == 'en' ? 'No address needed — collect from the seller\'s store'
       : 'Суроға лозим нест — аз мағозаи фурӯшанда мегиред';
 }
+
+/// Матнҳои экрани хатогӣ (фарқи «интернет нест» аз хатои сервер).
+extension ErrorL10n on AppL10n {
+  String get somethingWentWrong => lang == 'ru'
+      ? 'Что-то пошло не так'
+      : lang == 'en' ? 'Something went wrong' : 'Чизе нодуруст рафт';
+  String get serverErrorHint => lang == 'ru'
+      ? 'Сервер не ответил. Попробуйте ещё раз.'
+      : lang == 'en' ? 'The server did not respond. Please try again.'
+      : 'Сервер ҷавоб надод. Дубора кӯшиш кунед.';
+  String get sessionExpired => lang == 'ru'
+      ? 'Сессия истекла — войдите снова'
+      : lang == 'en' ? 'Session expired — please sign in again'
+      : 'Сессия тамом шуд — дубора ворид шавед';
+  String get notFoundHint => lang == 'ru'
+      ? 'Не найдено' : lang == 'en' ? 'Not found' : 'Ёфт нашуд';
+}
