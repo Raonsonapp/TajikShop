@@ -1,6 +1,7 @@
 // ignore_for_file: curly_braces_in_flow_control_structures
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -276,16 +277,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SizedBox(height: 16),
                 // ── Copy button ───────────────────────────────────────────
                 AppButton(
-                  text: 'Нусхабардорӣ',
-                  onTap: () {
+                  text: '🔗 Даъват кардан',
+                  onTap: () async {
                     final messenger = ScaffoldMessenger.of(context);
-                    Clipboard.setData(ClipboardData(
-                        text: 'Коди даъвати ман дар TajikShop Pro: $code'));
+                    final msg =
+                        'Ба TajikShop 🛍️ ҳамроҳ шав!\nКоди даъват: $code\n'
+                        'https://mahmadmurodov-tajikshop.hf.space';
                     Navigator.pop(ctx);
-                    messenger.showSnackBar(const SnackBar(
-                        content: Text('Нусхабардорӣ шуд ✅'),
-                        backgroundColor: AppColors.success,
-                        behavior: SnackBarBehavior.floating));
+                    try {
+                      await Share.share(msg, subject: 'Даъват ба TajikShop');
+                    } catch (_) {
+                      await Clipboard.setData(ClipboardData(text: msg));
+                      messenger.showSnackBar(const SnackBar(
+                          content: Text('Нусхабардорӣ шуд ✅'),
+                          backgroundColor: AppColors.success,
+                          behavior: SnackBarBehavior.floating));
+                    }
                   },
                 ),
                 const SizedBox(height: 18),

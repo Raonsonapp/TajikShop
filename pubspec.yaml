@@ -51,6 +51,9 @@ dependencies:
   # Сканери штрих-код (маҳсулотро аз рӯи barcode ёфтан)
   mobile_scanner: ^5.2.3
 
+  # Мубодилаи маҳсулот (share ба WhatsApp/Telegram ва ғ.)
+  share_plus: ^10.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

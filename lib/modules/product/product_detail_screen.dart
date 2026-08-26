@@ -9,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
@@ -625,13 +626,21 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     ref.read(favoritesProvider.notifier).toggle(id);
   }
 
-  void _share(ProductModel p) {
-    Clipboard.setData(ClipboardData(
-        text: '${p.title} — ${p.price.toStringAsFixed(0)} сом. | TajikShop'));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(AppL10n.of(context).copied),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating));
+  Future<void> _share(ProductModel p) async {
+    final link = 'https://mahmadmurodov-tajikshop.hf.space/product/${p.id}';
+    final text =
+        '${p.title} — ${p.price.toStringAsFixed(0)} сом.\n$link\n\nTajikShop 🛍️';
+    try {
+      await Share.share(text, subject: p.title);
+    } catch (_) {
+      // Fallback — агар share sheet дастрас набошад, ба clipboard нусхабардорӣ.
+      await Clipboard.setData(ClipboardData(text: text));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppL10n.of(context).copied),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating));
+    }
   }
 
   Future<void> _buyNow(ProductModel p) async {
