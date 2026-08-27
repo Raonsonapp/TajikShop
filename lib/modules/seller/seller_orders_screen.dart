@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/seller_provider.dart';
 import '../../core/api/api_client.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 
 /// «Фармоишҳои фурӯш» — фармоишҳое ки маҳсулоти фурӯшандаро доранд.
@@ -185,6 +186,9 @@ class SellerOrdersScreen extends ConsumerWidget {
                   style: TextStyle(color: pal.textSecondary, fontSize: 13)),
             ],
           ]),
+          // ── Суроғаи расонидан — то фурӯшанда гум нашавад ──────────
+          ..._addressBlock(context, pal, o),
+
           const SizedBox(height: 10),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('$items ашё',
@@ -209,6 +213,150 @@ class SellerOrdersScreen extends ConsumerWidget {
         ]),
       ),
     );
+  }
+
+  /// Суроғаи харидор бо рақами хона + тугмаи «Роҳ».
+  ///
+  /// Ҳангоми «аз мағоза гирифтан» сервер суроға намефиристад — он ҷо
+  /// расонидан лозим нест, пас блок нишон дода намешавад.
+  List<Widget> _addressBlock(
+      BuildContext context, AppPalette pal, Map<String, dynamic> o) {
+    if ((o['fulfilment']?.toString() ?? 'delivery') != 'delivery') {
+      return [
+        const SizedBox(height: 10),
+        Row(children: [
+          Icon(FeatherIcons.home, size: 14, color: pal.textMuted),
+          const SizedBox(width: 6),
+          Text('Аз мағоза мегиранд',
+              style: TextStyle(color: pal.textSecondary, fontSize: 12.5)),
+        ]),
+      ];
+    }
+
+    final street = o['street']?.toString() ?? '';
+    final house = o['house']?.toString() ?? '';
+    final city = o['city']?.toString() ?? '';
+    final entrance = o['entrance']?.toString() ?? '';
+    final floor = o['floor']?.toString() ?? '';
+    final apartment = o['apartment']?.toString() ?? '';
+    final landmark = o['landmark']?.toString() ?? '';
+    final lat = (o['lat'] as num?)?.toDouble() ?? 0;
+    final lng = (o['lng'] as num?)?.toDouble() ?? 0;
+    if (street.isEmpty && house.isEmpty && lat == 0) return const [];
+
+    final extras = <String>[
+      if (apartment.isNotEmpty) 'ҳуҷра $apartment',
+      if (entrance.isNotEmpty) 'вуруд $entrance',
+      if (floor.isNotEmpty) 'ошёна $floor',
+    ];
+
+    return [
+      const SizedBox(height: 12),
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(FeatherIcons.mapPin, size: 16, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Рақами хона калон ва равшан — маҳз ҳамонро меҷӯянд.
+                    if (house.isNotEmpty)
+                      Text('Хонаи $house',
+                          style: TextStyle(
+                              color: pal.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800)),
+                    if (street.isNotEmpty || city.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                            [street, city].where((e) => e.isNotEmpty).join(', '),
+                            style: TextStyle(
+                                color: pal.textSecondary, fontSize: 12.5)),
+                      ),
+                    if (extras.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(extras.join(' • '),
+                            style:
+                                TextStyle(color: pal.textMuted, fontSize: 12)),
+                      ),
+                    if (landmark.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Row(children: [
+                          Icon(FeatherIcons.flag, size: 12, color: pal.textMuted),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(landmark,
+                                style: TextStyle(
+                                    color: pal.textMuted, fontSize: 12)),
+                          ),
+                        ]),
+                      ),
+                  ]),
+            ),
+          ]),
+          if (lat != 0 || lng != 0) ...[
+            const SizedBox(height: 10),
+            PressableScale(
+              onTap: () => _openRoute(context, lat, lng),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(FeatherIcons.navigation,
+                          color: Colors.white, size: 15),
+                      SizedBox(width: 8),
+                      Text('Роҳ ба ин хона',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700)),
+                    ]),
+              ),
+            ),
+          ],
+        ]),
+      ),
+    ];
+  }
+
+  /// Роҳро дар барномаи харитаи дастгоҳ мекушояд (Google Maps / Yandex / ғ.).
+  Future<void> _openRoute(BuildContext context, double lat, double lng) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final uri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    } catch (_) {/* поён fallback */}
+    // Агар барномаи харита набошад — дар браузер мекушоем.
+    final web = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
+    try {
+      await launchUrl(web, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Барномаи харита ёфт нашуд'),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
   }
 
   /// Қадамҳое, ки фурӯшанда аз ҳолати ҳозира гузошта метавонад.

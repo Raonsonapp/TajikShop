@@ -284,14 +284,22 @@ func (h *UserHandler) SellerStats(c *gin.Context) {
 // Барои иҷрои фармоиш: харидор, телефон, шумораи ашё ва маблағи фурӯшанда. GET /seller/orders
 func (h *UserHandler) SellerOrders(c *gin.Context) {
 	uid := utils.UserID(c)
+	// Суроға низ бармегардад — вагарна фурӯшанда намедонад молро ба куҷо барад.
+	// Танҳо барои фармоишҳои «расонидан» ва танҳо барои фармоиши худи ӯ.
 	rows, err := db.DB.Query(`
 		SELECT o.id, o.status, o.created_at, u.name, COALESCE(u.phone,''),
 			(SELECT COUNT(*) FROM order_items oi JOIN products p ON p.id=oi.product_id
 				WHERE oi.order_id=o.id AND p.seller_id=$1),
 			COALESCE((SELECT SUM(oi.price*oi.quantity) FROM order_items oi JOIN products p ON p.id=oi.product_id
-				WHERE oi.order_id=o.id AND p.seller_id=$1),0)
+				WHERE oi.order_id=o.id AND p.seller_id=$1),0),
+			COALESCE(o.fulfilment,'delivery'),
+			COALESCE(a.city,''), COALESCE(a.street,''), COALESCE(a.house,''),
+			COALESCE(a.entrance,''), COALESCE(a.floor,''), COALESCE(a.apartment,''),
+			COALESCE(a.landmark,''), COALESCE(a.lat,0), COALESCE(a.lng,0),
+			COALESCE(o.delivery_slot,'')
 		FROM orders o
 		JOIN users u ON u.id=o.user_id
+		LEFT JOIN addresses a ON a.id = o.address_id
 		WHERE EXISTS (SELECT 1 FROM order_items oi JOIN products p ON p.id=oi.product_id
 			WHERE oi.order_id=o.id AND p.seller_id=$1)
 		ORDER BY o.created_at DESC LIMIT 100`, uid)
@@ -303,15 +311,34 @@ func (h *UserHandler) SellerOrders(c *gin.Context) {
 	out := []gin.H{}
 	for rows.Next() {
 		var id, status, buyer, phone string
+		var fulfilment, city, street, house, entrance, floor, apartment, landmark, slot string
+		var lat, lng float64
 		var createdAt time.Time
 		var items int
 		var subtotal float64
-		rows.Scan(&id, &status, &createdAt, &buyer, &phone, &items, &subtotal)
-		out = append(out, gin.H{
+		rows.Scan(&id, &status, &createdAt, &buyer, &phone, &items, &subtotal,
+			&fulfilment, &city, &street, &house, &entrance, &floor, &apartment,
+			&landmark, &lat, &lng, &slot)
+		row := gin.H{
 			"id": id, "status": status, "created_at": createdAt,
 			"buyer_name": buyer, "buyer_phone": phone,
 			"items": items, "subtotal": subtotal,
-		})
+			"fulfilment": fulfilment, "delivery_slot": slot,
+		}
+		// Ҳангоми «аз мағоза гирифтан» суроғаи хонаи харидор лозим нест —
+		// онро намефиристем (маълумоти шахсӣ бе зарурат кушода намешавад).
+		if fulfilment == "delivery" {
+			row["city"] = city
+			row["street"] = street
+			row["house"] = house
+			row["entrance"] = entrance
+			row["floor"] = floor
+			row["apartment"] = apartment
+			row["landmark"] = landmark
+			row["lat"] = lat
+			row["lng"] = lng
+		}
+		out = append(out, row)
 	}
 	utils.OK(c, out)
 }

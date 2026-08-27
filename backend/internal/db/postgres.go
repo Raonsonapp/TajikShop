@@ -319,6 +319,15 @@ CREATE INDEX IF NOT EXISTS idx_order_events_order ON order_events(order_id, crea
 ALTER TABLE addresses ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION DEFAULT 0;
 ALTER TABLE addresses ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION DEFAULT 0;
 
+-- Тафсилоти суроға, то расонанда гум нашавад: рақами хона ҳатмист,
+-- вуруд/ошёна ва нишонаи наздик (ориентир) ихтиёрӣ.
+ALTER TABLE addresses ADD COLUMN IF NOT EXISTS house     VARCHAR(32) DEFAULT '';
+ALTER TABLE addresses ADD COLUMN IF NOT EXISTS entrance  VARCHAR(16) DEFAULT '';
+ALTER TABLE addresses ADD COLUMN IF NOT EXISTS floor     VARCHAR(16) DEFAULT '';
+ALTER TABLE addresses ADD COLUMN IF NOT EXISTS apartment VARCHAR(16) DEFAULT '';
+ALTER TABLE addresses ADD COLUMN IF NOT EXISTS landmark  TEXT DEFAULT '';
+ALTER TABLE addresses ADD COLUMN IF NOT EXISTS region    VARCHAR(80) DEFAULT '';
+
 CREATE TABLE IF NOT EXISTS wallet_transactions (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

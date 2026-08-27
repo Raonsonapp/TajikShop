@@ -11,6 +11,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/business_types.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/shops_provider.dart';
+import '../../core/constants/tj_regions.dart';
+import '../../shared/widgets/fade_slide_in.dart';
 
 const String _kMediaHost = 'https://mahmadmurodov-tajikshop.hf.space';
 const LatLng _kDushanbe = LatLng(38.5598, 68.7870);
@@ -36,6 +38,10 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
   Map<String, dynamic>? _selected;
   bool _locating = false;
   String? _filterType; // null = ҳама навъҳо
+
+  /// Реҷаи харита: тамоми кишвар → шаҳру ноҳия → кӯчаву хонаҳо.
+  _MapMode _mode = _MapMode.city;
+  TjPlace? _place; // ноҳияи интихобшуда (дар реҷаи district)
 
   @override
   void initState() {
@@ -71,6 +77,92 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
     } finally {
       if (mounted) setState(() => _locating = false);
     }
+  }
+
+  /// Гузариш байни се реҷаи харита.
+  Widget _modeSwitcher(AppPalette pal) {
+    Widget seg(_MapMode m, IconData icon, String label) {
+      final sel = _mode == m;
+      return Expanded(
+        child: GestureDetector(
+          onTap: () => _setMode(m),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
+            decoration: BoxDecoration(
+              gradient: sel ? AppColors.primaryGradient : null,
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(icon,
+                  size: 14, color: sel ? Colors.white : pal.textSecondary),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: sel ? Colors.white : pal.textSecondary,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700)),
+              ),
+            ]),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: pal.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: pal.border, width: 0.8),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.10),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Row(children: [
+        seg(_MapMode.country, FeatherIcons.globe, 'Тоҷикистон'),
+        seg(_MapMode.city, FeatherIcons.mapPin, 'Шаҳру ноҳия'),
+        seg(_MapMode.street, FeatherIcons.home, 'Кӯчаҳо'),
+      ]),
+    );
+  }
+
+  void _setMode(_MapMode m) {
+    setState(() {
+      _mode = m;
+      _selected = null;
+    });
+    switch (m) {
+      case _MapMode.country:
+        // Тамоми Тоҷикистон — ҳамаи дӯконҳо якҷоя дида мешаванд.
+        _controller.move(kTjCenter, kTjZoom);
+      case _MapMode.city:
+        _pickPlace();
+      case _MapMode.street:
+        // Ба зуми кӯча меравем — дар ин зум OSM рақами хонаҳоро нишон медиҳад.
+        _controller.move(_controller.camera.center, 17.5);
+    }
+  }
+
+  /// Рӯйхати шаҳру ноҳияҳо бо ҷустуҷӯ — гурӯҳбандӣ аз рӯи вилоят.
+  Future<void> _pickPlace() async {
+    final picked = await showModalBottomSheet<TjPlace>(
+      context: context,
+      backgroundColor: context.pal.card,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22))),
+      builder: (_) => const _PlacePickerSheet(),
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _place = picked);
+    _controller.move(picked.center, picked.zoom);
   }
 
   List<Map<String, dynamic>> _filtered(List<Map<String, dynamic>> shops) {
@@ -139,20 +231,34 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
         options: MapOptions(
           initialCenter: _kDushanbe,
           initialZoom: 12,
+          // Тамоми Тоҷикистон дар доираи ҳаракат — то корбар аз кишвар набарояд.
+          minZoom: 5,
+          maxZoom: 19,
           onTap: (_, __) => setState(() => _selected = null),
         ),
         children: [
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.tajikshop.app',
+            // OSM то зуми 19 плитка дорад — дар зумҳои калон рақами хонаҳо
+            // намоён мешаванд (реҷаи «Кӯчаву хонаҳо»).
+            maxNativeZoom: 19,
           ),
           MarkerLayer(markers: markers),
         ],
       ),
 
-      // Филтри навъи бизнес (чипҳои уфуқӣ)
+      // ── Реҷаи харита: Тоҷикистон / Шаҳру ноҳия / Кӯчаву хонаҳо ──
       Positioned(
         top: 12,
+        left: 16,
+        right: 16,
+        child: FadeSlideIn(child: _modeSwitcher(pal)),
+      ),
+
+      // Филтри навъи бизнес (чипҳои уфуқӣ)
+      Positioned(
+        top: 62,
         left: 0,
         right: 0,
         child: SizedBox(
@@ -188,7 +294,7 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
       // Ёддошт: ягон дӯкон координата надорад
       if (markers.isEmpty)
         Positioned(
-          top: 62,
+          top: 112,
           left: 16,
           right: 16,
           child: Container(
@@ -461,6 +567,140 @@ class _ShopCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+
+/// Се реҷаи харита.
+enum _MapMode { country, city, street }
+
+/// Варақаи интихоби шаҳр/ноҳия бо ҷустуҷӯ.
+class _PlacePickerSheet extends StatefulWidget {
+  const _PlacePickerSheet();
+
+  @override
+  State<_PlacePickerSheet> createState() => _PlacePickerSheetState();
+}
+
+class _PlacePickerSheetState extends State<_PlacePickerSheet> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final pal = context.pal;
+    final q = _query.trim().toLowerCase();
+    final places = q.isEmpty
+        ? kTjPlaces
+        : kTjPlaces
+            .where((p) =>
+                p.name.toLowerCase().contains(q) ||
+                p.region.toLowerCase().contains(q))
+            .toList();
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.75,
+        child: Column(children: [
+          const SizedBox(height: 10),
+          Container(
+              width: 42,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: pal.border, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 14),
+          Text('Шаҳр ё ноҳияро интихоб кунед',
+              style: TextStyle(
+                  color: pal.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800)),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              autofocus: false,
+              onChanged: (v) => setState(() => _query = v),
+              style: TextStyle(color: pal.textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Ҷустуҷӯ: Хуҷанд, Кӯлоб, Бохтар...',
+                hintStyle: TextStyle(color: pal.textMuted, fontSize: 13.5),
+                prefixIcon:
+                    Icon(FeatherIcons.search, size: 18, color: pal.textMuted),
+                filled: true,
+                fillColor: pal.surface,
+                contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(13),
+                  borderSide: BorderSide(color: pal.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(13),
+                  borderSide:
+                      const BorderSide(color: AppColors.primary, width: 1.6),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: places.isEmpty
+                ? Center(
+                    child: Text('Ёфт нашуд',
+                        style: TextStyle(color: pal.textMuted, fontSize: 14)))
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: places.length,
+                    itemBuilder: (_, i) {
+                      final p = places[i];
+                      // Сарлавҳаи вилоят — вақте вилоят иваз мешавад.
+                      final showHeader =
+                          i == 0 || places[i - 1].region != p.region;
+                      return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (showHeader)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(8, 14, 8, 6),
+                                child: Text(p.region.toUpperCase(),
+                                    style: TextStyle(
+                                        color: pal.textMuted,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.4)),
+                              ),
+                            ListTile(
+                              dense: true,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              leading: Container(
+                                width: 34,
+                                height: 34,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary
+                                      .withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(FeatherIcons.mapPin,
+                                    size: 16, color: AppColors.primary),
+                              ),
+                              title: Text(p.name,
+                                  style: TextStyle(
+                                      color: pal.textPrimary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600)),
+                              trailing: Icon(FeatherIcons.chevronRight,
+                                  size: 16, color: pal.textMuted),
+                              onTap: () => Navigator.of(context).pop(p),
+                            ),
+                          ]);
+                    },
+                  ),
+          ),
+        ]),
       ),
     );
   }

@@ -33,6 +33,11 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
   final _title = TextEditingController(text: 'Хона');
   final _city = TextEditingController(text: 'Душанбе');
   final _street = TextEditingController();
+  final _house = TextEditingController();
+  final _entrance = TextEditingController();
+  final _floor = TextEditingController();
+  final _apartment = TextEditingController();
+  final _landmark = TextEditingController();
   final _zip = TextEditingController();
   bool _loading = false;
   double _lat = 0, _lng = 0;
@@ -42,6 +47,11 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
     _title.dispose();
     _city.dispose();
     _street.dispose();
+    _house.dispose();
+    _entrance.dispose();
+    _floor.dispose();
+    _apartment.dispose();
+    _landmark.dispose();
     _zip.dispose();
     super.dispose();
   }
@@ -68,12 +78,25 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
           behavior: SnackBarBehavior.floating));
       return;
     }
+    // Рақами хона ҳатмист — бе он расонанда хонаро намеёбад.
+    if (_house.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Рақами хонаро нависед — бе он расонанда гум мешавад'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating));
+      return;
+    }
     setState(() => _loading = true);
     try {
       await AddressService.add(
           title: _title.text.trim().isEmpty ? 'Суроға' : _title.text.trim(),
           city: _city.text.trim(),
           street: _street.text.trim(),
+          house: _house.text.trim(),
+          entrance: _entrance.text.trim(),
+          floor: _floor.text.trim(),
+          apartment: _apartment.text.trim(),
+          landmark: _landmark.text.trim(),
           zip: _zip.text.trim(),
           lat: _lat,
           lng: _lng);
@@ -167,6 +190,57 @@ class _AddAddressSheetState extends ConsumerState<AddAddressSheet> {
             _f(l.cityHint, _city),
             _label(l.fullAddressLabel),
             _f(l.streetHint, _street),
+
+            // ── Рақами хона — калидӣ, то расонанда гум нашавад ──────────
+            _label('Рақами хона *'),
+            _f('Масалан: 42 ё 136/1', _house),
+            Padding(
+              padding: const EdgeInsets.only(left: 4, top: 2, bottom: 6),
+              child: Row(children: [
+                const Icon(FeatherIcons.info,
+                    size: 13, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                      'Фурӯшанда маҳз бо ҳамин рақам хонаи шуморо меёбад',
+                      style: TextStyle(
+                          color: context.pal.textMuted, fontSize: 11.5)),
+                ),
+              ]),
+            ),
+
+            Row(children: [
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label('Вуруд'),
+                      _f('№', _entrance, keyboardType: TextInputType.number),
+                    ]),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label('Ошёна'),
+                      _f('№', _floor, keyboardType: TextInputType.number),
+                    ]),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _label('Ҳуҷра'),
+                      _f('№', _apartment, keyboardType: TextInputType.number),
+                    ]),
+              ),
+            ]),
+
+            _label('Нишонаи наздик (ориентир)'),
+            _f('Масалан: назди мактаби 15', _landmark),
+
             _label(l.indexLabel),
             _f(l.indexHint, _zip,
                 keyboardType: TextInputType.number),
