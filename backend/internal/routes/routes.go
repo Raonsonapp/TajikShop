@@ -74,6 +74,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.DELETE("/users/:id/follow", middleware.Auth(), flh.Unfollow)
 	api.GET("/users/:id/followers", middleware.Auth(), flh.Followers)
 	api.GET("/users/:id/public", uh.PublicProfile)
+	api.GET("/users/:id/rating", oh.SellerRating)
 
 	// Products
 	api.GET("/products", ph.List)
@@ -125,6 +126,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/orders/:id/cancel", middleware.Auth(), oh.Cancel)
 	api.POST("/orders/:id/confirm", middleware.Auth(), oh.Confirm)
 	api.GET("/orders/:id/timeline", middleware.Auth(), oh.OrderTimeline)
+	api.POST("/orders/:id/rate-seller", middleware.Auth(), oh.RateSeller)
 	api.POST("/orders/:id/return", middleware.Auth(), reh.Create)
 	api.GET("/orders/:id/return", middleware.Auth(), reh.ForOrder)
 

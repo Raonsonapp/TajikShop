@@ -37,6 +37,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		DeliveryPrice   float64 `json:"delivery_price"`
 		SizeInfo        string  `json:"size_info"`
 		Barcode         string  `json:"barcode"`
+		HasDelivery     *bool   `json:"has_delivery"`
 	}
 	if err := c.ShouldBindJSON(&in); err != nil {
 		utils.Err(c, http.StatusBadRequest, err.Error())
@@ -57,9 +58,14 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	if in.BrandID != "" {
 		brandID = in.BrandID
 	}
-	_, err := db.DB.Exec(`INSERT INTO products(id,seller_id,category_id,brand_id,title,description,price,discount_percent,stock,min_order_qty,wholesale_price,delivery_days,delivery_price,size_info,barcode,is_active)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,true)`,
-		id, uid, catID, brandID, in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.MinOrderQty, in.WholesalePrice, in.DeliveryDays, in.DeliveryPrice, in.SizeInfo, in.Barcode)
+	// Пешфарз: расонидан ҳаст (агар фурӯшанда чизе нагӯяд).
+	hasDelivery := true
+	if in.HasDelivery != nil {
+		hasDelivery = *in.HasDelivery
+	}
+	_, err := db.DB.Exec(`INSERT INTO products(id,seller_id,category_id,brand_id,title,description,price,discount_percent,stock,min_order_qty,wholesale_price,delivery_days,delivery_price,size_info,barcode,has_delivery,is_active)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,true)`,
+		id, uid, catID, brandID, in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.MinOrderQty, in.WholesalePrice, in.DeliveryDays, in.DeliveryPrice, in.SizeInfo, in.Barcode, hasDelivery)
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return
@@ -202,14 +208,14 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.video_url, p.created_at, u.name,
 		COALESCE(u.is_verified,false),
 		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name, p.sale_ends_at,
-		COALESCE(p.delivery_days,0), COALESCE(p.delivery_price,0), COALESCE(p.size_info,''), COALESCE(p.barcode,'')
+		COALESCE(p.delivery_days,0), COALESCE(p.delivery_price,0), COALESCE(p.size_info,''), COALESCE(p.barcode,''), COALESCE(p.has_delivery,true)
 		FROM products p JOIN users u ON u.id=p.seller_id
 		LEFT JOIN brands b ON b.id=p.brand_id WHERE p.id=$1`, id).
 		Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description, &p.Price,
 			&p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.VideoURL, &p.CreatedAt, &p.SellerName,
 			&p.SellerVerified,
 			&brandID, &moq, &wholesale, &brandName, &saleEnds,
-			&p.DeliveryDays, &p.DeliveryPrice, &p.SizeInfo, &p.Barcode)
+			&p.DeliveryDays, &p.DeliveryPrice, &p.SizeInfo, &p.Barcode, &p.HasDelivery)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "product not found")
 		return
@@ -244,7 +250,7 @@ func (h *ProductHandler) GetByBarcode(c *gin.Context) {
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.video_url, p.created_at, u.name,
 		COALESCE(u.is_verified,false),
 		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name, p.sale_ends_at,
-		COALESCE(p.delivery_days,0), COALESCE(p.delivery_price,0), COALESCE(p.size_info,''), COALESCE(p.barcode,'')
+		COALESCE(p.delivery_days,0), COALESCE(p.delivery_price,0), COALESCE(p.size_info,''), COALESCE(p.barcode,''), COALESCE(p.has_delivery,true)
 		FROM products p JOIN users u ON u.id=p.seller_id
 		LEFT JOIN brands b ON b.id=p.brand_id
 		WHERE p.barcode=$1 AND p.is_active=true
@@ -253,7 +259,7 @@ func (h *ProductHandler) GetByBarcode(c *gin.Context) {
 			&p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.VideoURL, &p.CreatedAt, &p.SellerName,
 			&p.SellerVerified,
 			&brandID, &moq, &wholesale, &brandName, &saleEnds,
-			&p.DeliveryDays, &p.DeliveryPrice, &p.SizeInfo, &p.Barcode)
+			&p.DeliveryDays, &p.DeliveryPrice, &p.SizeInfo, &p.Barcode, &p.HasDelivery)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "product not found")
 		return

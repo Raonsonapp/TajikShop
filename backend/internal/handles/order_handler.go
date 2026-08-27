@@ -229,6 +229,8 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 			return
 		}
 		pushToUser(uid, "Фармоиш қабул шуд", "Фармоиши #"+shortID(orderID)+" бо ҳамён пардохт шуд")
+		// Фурӯшанда(гон) бояд фавран бидонанд, ки фармоиш омад.
+		notifySellersOfNewOrder(orderID)
 		utils.Created(c, gin.H{"order_id": orderID, "total": finalTotal, "status": "paid", "discount": discountAmt})
 		return
 	}
@@ -253,6 +255,8 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 		VALUES($1,$2,'order','Фармоиш қабул шуд','Фармоиши #`+shortID(orderID)+` қабул шуд',$3)`,
 		uuid.NewString(), uid, orderID)
 	pushToUser(uid, "Фармоиш қабул шуд", "Фармоиши #"+shortID(orderID)+" қабул шуд")
+	// Фурӯшанда(гон) бояд фавран бидонанд, ки фармоиш омад.
+	notifySellersOfNewOrder(orderID)
 
 	utils.Created(c, gin.H{"order_id": orderID, "total": finalTotal, "discount": discountAmt})
 }

@@ -28,6 +28,7 @@ class ProductModel {
   final int deliveryDays;
   final double deliveryPrice;
   final String sizeInfo;
+  final bool hasDelivery;
   final DateTime createdAt;
 
   const ProductModel({
@@ -45,6 +46,7 @@ class ProductModel {
     this.deliveryDays = 0,
     this.deliveryPrice = 0,
     this.sizeInfo = '',
+    this.hasDelivery = true,
     required this.createdAt,
   });
 
@@ -100,6 +102,7 @@ class ProductModel {
       deliveryDays:    (json['delivery_days'] as num?)?.toInt() ?? 0,
       deliveryPrice:   (json['delivery_price'] as num?)?.toDouble() ?? 0,
       sizeInfo:        json['size_info']?.toString() ?? '',
+      hasDelivery:     json['has_delivery'] as bool? ?? true,
       images:          imgs,
       rating:          (json['rating'] as num?)?.toDouble() ?? 0.0,
       reviewCount:     (json['review_count'] as num?)?.toInt() ?? 0,

@@ -9,6 +9,7 @@ import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/product_provider.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../core/app_l10n.dart';
@@ -29,6 +30,10 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   final _descCtrl = TextEditingController();
   final _stockCtrl = TextEditingController(text: '1');
   final _barcodeCtrl = TextEditingController();
+  final _deliveryDaysCtrl = TextEditingController();
+  final _deliveryPriceCtrl = TextEditingController();
+  String? _catId;          // категорияи интихобшуда
+  bool _hasDelivery = true; // оё расонидан ҳаст
   final ImagePicker _picker = ImagePicker();
   List<File> _images = [];
   bool _loading = false;
@@ -52,6 +57,14 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    // Категория ҳатмист — вагарна маҳсулот дар ҷустуҷӯ ва каталог гум мешавад.
+    if (_catId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Категорияи маҳсулотро интихоб кунед'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating));
+      return;
+    }
     setState(() { _loading = true; _error = null; });
     try {
       final formData = FormData.fromMap({
@@ -60,6 +73,15 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         'description': _descCtrl.text.trim(),
         'stock': int.tryParse(_stockCtrl.text.trim()) ?? 1,
         'barcode': _barcodeCtrl.text.trim(),
+        if (_catId != null) 'category_id': _catId,
+        'has_delivery': _hasDelivery,
+        // Ҳангоми «расонидан нест» рӯз ва нархро намефиристем.
+        'delivery_days': _hasDelivery
+            ? (int.tryParse(_deliveryDaysCtrl.text.trim()) ?? 0)
+            : 0,
+        'delivery_price': _hasDelivery
+            ? (double.tryParse(_deliveryPriceCtrl.text.trim().replaceAll(',', '.')) ?? 0)
+            : 0,
         for (int i = 0; i < _images.length; i++)
           'images': await MultipartFile.fromFile(_images[i].path),
       });
@@ -101,6 +123,8 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     _titleCtrl.dispose(); _priceCtrl.dispose();
     _descCtrl.dispose(); _stockCtrl.dispose();
     _barcodeCtrl.dispose();
+    _deliveryDaysCtrl.dispose();
+    _deliveryPriceCtrl.dispose();
     super.dispose();
   }
 
@@ -249,6 +273,18 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                 suffixIcon: FeatherIcons.maximize,
                 onSuffixTap: _scanForBarcode,
               ),
+              const SizedBox(height: 20),
+
+              // ── Категория (ҳатмӣ) ────────────────────────────────────────
+              _sectionHeader('Категория'),
+              const SizedBox(height: 12),
+              _categoryPicker(),
+              const SizedBox(height: 20),
+
+              // ── Расонидан ────────────────────────────────────────────────
+              _sectionHeader('Расонидан'),
+              const SizedBox(height: 12),
+              _deliveryBlock(),
               const SizedBox(height: 24),
 
               if (_error != null)
@@ -313,6 +349,127 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       ]),
     )),
   );
+
+  /// Интихоби категория — ҳатмист, вагарна маҳсулот дар каталог пайдо намешавад.
+  Widget _categoryPicker() {
+    final pal = context.pal;
+    final cats = ref.watch(categoriesProvider);
+    return cats.when(
+      loading: () => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: LinearProgressIndicator(
+            color: AppColors.primary, backgroundColor: pal.surface),
+      ),
+      error: (_, __) => Text('Категорияҳо бор нашуданд',
+          style: TextStyle(color: AppColors.error, fontSize: 12.5)),
+      data: (list) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: pal.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: _catId == null
+                  ? pal.border
+                  : AppColors.primary.withValues(alpha: 0.5),
+              width: _catId == null ? 0.8 : 1.3),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: _catId,
+            isExpanded: true,
+            dropdownColor: pal.card,
+            hint: Row(children: [
+              Icon(FeatherIcons.grid, size: 18, color: pal.textMuted),
+              const SizedBox(width: 10),
+              Text('Категорияро интихоб кунед *',
+                  style: TextStyle(color: pal.textMuted, fontSize: 14)),
+            ]),
+            icon: Icon(FeatherIcons.chevronDown, color: pal.textMuted),
+            style: TextStyle(color: pal.textPrimary, fontSize: 14),
+            items: [
+              for (final c in list)
+                DropdownMenuItem<String>(
+                  value: c.id as String,
+                  child: Text(c.name as String, overflow: TextOverflow.ellipsis),
+                ),
+            ],
+            onChanged: (v) => setState(() => _catId = v),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Оё расонидан ҳаст ва нархаш чанд — харидор инро дар саҳифаи маҳсулот мебинад.
+  Widget _deliveryBlock() {
+    final pal = context.pal;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: pal.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: pal.border, width: 0.8),
+        ),
+        child: Row(children: [
+          Icon(_hasDelivery ? FeatherIcons.truck : FeatherIcons.home,
+              size: 19,
+              color: _hasDelivery ? AppColors.primary : pal.textMuted),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+                _hasDelivery
+                    ? 'Ман расонида метавонам'
+                    : 'Расонидан нест — харидор худаш мегирад',
+                style: TextStyle(color: pal.textPrimary, fontSize: 14)),
+          ),
+          Switch(
+            value: _hasDelivery,
+            activeColor: AppColors.primary,
+            onChanged: (v) => setState(() => _hasDelivery = v),
+          ),
+        ]),
+      ),
+      // Нарх ва мӯҳлат танҳо вақте маъно доранд, ки расонидан бошад.
+      AnimatedSize(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.topCenter,
+        child: _hasDelivery
+            ? Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(children: [
+                  Expanded(
+                    child: AppTextField(
+                      hint: 'Нархи расонидан (сом)',
+                      controller: _deliveryPriceCtrl,
+                      prefixIcon: FeatherIcons.dollarSign,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AppTextField(
+                      hint: 'Дар чанд рӯз',
+                      controller: _deliveryDaysCtrl,
+                      prefixIcon: FeatherIcons.clock,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ]),
+              )
+            : const SizedBox(width: double.infinity),
+      ),
+      Padding(
+        padding: const EdgeInsets.only(top: 8, left: 4),
+        child: Text(
+            _hasDelivery
+                ? 'Нархро холӣ монед — расонидан ройгон ҳисоб мешавад'
+                : 'Харидор инро дар саҳифаи маҳсулот мебинад',
+            style: TextStyle(color: pal.textMuted, fontSize: 11.5)),
+      ),
+    ]);
+  }
 
   Widget _sectionHeader(String t) => Row(children: [
         Container(

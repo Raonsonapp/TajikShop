@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"tajikshop/internal/db"
 	"tajikshop/internal/utils"
@@ -378,4 +379,120 @@ func (h *OrderHandler) CartSellers(c *gin.Context) {
 		})
 	}
 	utils.OK(c, out)
+}
+
+// notifySellersOfNewOrder — ба ҳар фурӯшандаи фармоиш хабар медиҳад, ки
+// харидор маҳсулот ва маблағро интихоб кард.
+//
+// Бе ин фурӯшанда то он даме ки худаш барномаро накушояд, аз фармоиш
+// бехабар мемонад.
+func notifySellersOfNewOrder(orderID string) {
+	rows, err := db.DB.Query(`
+		SELECT p.seller_id, COUNT(*), COALESCE(SUM(oi.price*oi.quantity),0)
+		FROM order_items oi JOIN products p ON p.id = oi.product_id
+		WHERE oi.order_id = $1
+		GROUP BY p.seller_id`, orderID)
+	if err != nil || rows == nil {
+		return
+	}
+	type row struct {
+		seller string
+		items  int
+		sum    float64
+	}
+	var list []row
+	for rows.Next() {
+		var r row
+		rows.Scan(&r.seller, &r.items, &r.sum)
+		list = append(list, r)
+	}
+	rows.Close()
+
+	short := shortID(orderID)
+	for _, r := range list {
+		if r.seller == "" {
+			continue
+		}
+		title := "Фармоиши нав 🛒"
+		body := "Фармоиши #" + short + ": " +
+			strconv.Itoa(r.items) + " ашё, " +
+			strconv.FormatFloat(r.sum, 'f', 0, 64) + " сом."
+		db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
+			VALUES($1,$2,'order',$3,$4,$5)`,
+			uuid.NewString(), r.seller, title, body, orderID)
+		pushToUser(r.seller, title, body)
+	}
+}
+
+// RateSeller — POST /orders/:id/rate-seller
+// Харидор пас аз гирифтани мол ба фурӯшанда аз 1 то 10 баҳо медиҳад.
+func (h *OrderHandler) RateSeller(c *gin.Context) {
+	uid := utils.UserID(c)
+	oid := c.Param("id")
+	var in struct {
+		Score   int    `json:"score"`
+		Comment string `json:"comment"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		utils.Err(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if in.Score < 1 || in.Score > 10 {
+		utils.Err(c, http.StatusBadRequest, "Баҳо бояд аз 1 то 10 бошад")
+		return
+	}
+
+	// Фармоиш бояд аз ҳамин харидор бошад ва мол супорида шуда бошад —
+	// то касе бе харид баҳо нагузорад.
+	var status string
+	if err := db.DB.QueryRow(`SELECT status FROM orders WHERE id=$1 AND user_id=$2`,
+		oid, uid).Scan(&status); err != nil {
+		utils.Err(c, http.StatusNotFound, "order not found")
+		return
+	}
+	if status != "delivered" && status != "completed" {
+		utils.Err(c, http.StatusBadRequest, "Баъд аз гирифтани мол баҳо гузошта мешавад")
+		return
+	}
+
+	rows, err := db.DB.Query(`SELECT DISTINCT p.seller_id
+		FROM order_items oi JOIN products p ON p.id=oi.product_id
+		WHERE oi.order_id=$1`, oid)
+	if err != nil || rows == nil {
+		utils.Err(c, http.StatusInternalServerError, "sellers not found")
+		return
+	}
+	var sellers []string
+	for rows.Next() {
+		var s string
+		rows.Scan(&s)
+		if s != "" {
+			sellers = append(sellers, s)
+		}
+	}
+	rows.Close()
+
+	for _, s := range sellers {
+		db.DB.Exec(`INSERT INTO seller_ratings(id,seller_id,buyer_id,order_id,score,comment)
+			VALUES($1,$2,$3,$4,$5,$6)
+			ON CONFLICT (seller_id,buyer_id,order_id)
+			DO UPDATE SET score=EXCLUDED.score, comment=EXCLUDED.comment`,
+			uuid.NewString(), s, uid, oid, in.Score, strings.TrimSpace(in.Comment))
+	}
+	utils.OK(c, gin.H{"rated": true, "score": in.Score})
+}
+
+// SellerRating — GET /users/:id/rating
+// Баҳои миёна ва шумораи баҳоҳои фурӯшанда (оммавӣ — нишони эътимод).
+func (h *OrderHandler) SellerRating(c *gin.Context) {
+	sid := c.Param("id")
+	var avg float64
+	var count int
+	db.DB.QueryRow(`SELECT COALESCE(AVG(score),0), COUNT(*)
+		FROM seller_ratings WHERE seller_id=$1`, sid).Scan(&avg, &count)
+	utils.OK(c, gin.H{
+		"seller_id": sid,
+		"average":   avg,
+		"count":     count,
+	})
 }

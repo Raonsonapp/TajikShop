@@ -53,6 +53,7 @@ type Product struct {
 	DeliveryPrice   float64     `json:"delivery_price"`
 	SizeInfo        string      `json:"size_info"`
 	Barcode         string      `json:"barcode,omitempty"`
+	HasDelivery     bool        `json:"has_delivery"`
 	Variants        interface{} `json:"variants,omitempty"`
 	SaleEndsAt      *time.Time  `json:"sale_ends_at,omitempty"`
 	CreatedAt       time.Time   `json:"created_at"`

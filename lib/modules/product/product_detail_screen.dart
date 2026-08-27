@@ -873,11 +873,18 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     final hasSize = p.sizeInfo.isNotEmpty;
     final pal = context.pal;
     // Ҳамеша нишон медиҳем — агар холӣ бошад, «Пурсед» намегӯем, балки маълумоти пешфарз
+    // Агар фурӯшанда расонида натавонад, инро рӯирост мегӯем — то харидор
+    // интизори бефоида накашад.
     final rows = <Widget>[
-      _deliveryRow(FeatherIcons.clock, 'Мӯҳлати расиш',
-          hasDays ? '${p.deliveryDays} рӯз' : 'Бо фурӯшанда мувофиқа'),
-      _deliveryRow(FeatherIcons.truck, 'Нархи доставка',
-          p.deliveryPrice > 0 ? '${p.deliveryPrice.toStringAsFixed(0)} сом' : 'Ройгон'),
+      if (!p.hasDelivery)
+        _deliveryRow(FeatherIcons.home, 'Расонидан',
+            'Нест — аз мағоза мегиред')
+      else ...[
+        _deliveryRow(FeatherIcons.clock, 'Мӯҳлати расиш',
+            hasDays ? '${p.deliveryDays} рӯз' : 'Бо фурӯшанда мувофиқа'),
+        _deliveryRow(FeatherIcons.truck, 'Нархи доставка',
+            p.deliveryPrice > 0 ? '${p.deliveryPrice.toStringAsFixed(0)} сом' : 'Ройгон'),
+      ],
       if (hasSize) _deliveryRow(FeatherIcons.maximize2, 'Размер / тавсиф', p.sizeInfo),
     ];
     return Padding(

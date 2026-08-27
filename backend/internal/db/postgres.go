@@ -239,6 +239,24 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS delivery_days  INT DEFAULT 0;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS delivery_price NUMERIC(12,2) DEFAULT 0;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS size_info      TEXT DEFAULT '';
 
+-- Оё фурӯшанда барои ин маҳсулот расонидан пешниҳод мекунад?
+-- Харидор инро пеш аз харид мебинад, то интизори бефоида накашад.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS has_delivery BOOLEAN DEFAULT true;
+
+-- Баҳои фурӯшанда (1..10) аз ҷониби харидор пас аз гирифтани мол.
+CREATE TABLE IF NOT EXISTS seller_ratings (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	seller_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	buyer_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	order_id  UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+	score     INT NOT NULL CHECK (score BETWEEN 1 AND 10),
+	comment   TEXT DEFAULT '',
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	-- як харидор барои як фармоиш танҳо як бор баҳо медиҳад
+	UNIQUE(seller_id, buyer_id, order_id)
+);
+CREATE INDEX IF NOT EXISTS idx_seller_ratings_seller ON seller_ratings(seller_id);
+
 -- Штрих-код (barcode/EAN) барои сканери маҳсулот дар мағоза.
 ALTER TABLE products ADD COLUMN IF NOT EXISTS barcode VARCHAR(64) DEFAULT '';
 CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode) WHERE barcode <> '';
