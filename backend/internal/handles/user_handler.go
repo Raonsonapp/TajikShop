@@ -131,8 +131,8 @@ func (h *UserHandler) Login(c *gin.Context) {
 func (h *UserHandler) Me(c *gin.Context) {
 	uid := utils.UserID(c)
 	var u models.User
-	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,COALESCE(seller_requested,false),COALESCE(store_lat,0),COALESCE(store_lng,0),COALESCE(shop_name,''),COALESCE(shop_desc,''),COALESCE(shop_phone,''),COALESCE(shop_hours,''),COALESCE(business_type,'shop'),created_at FROM users WHERE id=$1`, uid).
-		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.SellerRequested, &u.StoreLat, &u.StoreLng, &u.ShopName, &u.ShopDesc, &u.ShopPhone, &u.ShopHours, &u.BusinessType, &u.CreatedAt)
+	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,COALESCE(seller_requested,false),COALESCE(store_lat,0),COALESCE(store_lng,0),COALESCE(shop_name,''),COALESCE(shop_desc,''),COALESCE(shop_phone,''),COALESCE(shop_hours,''),COALESCE(business_type,'shop'),COALESCE(card_number,''),COALESCE(card_holder,''),created_at FROM users WHERE id=$1`, uid).
+		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.SellerRequested, &u.StoreLat, &u.StoreLng, &u.ShopName, &u.ShopDesc, &u.ShopPhone, &u.ShopHours, &u.BusinessType, &u.CardNumber, &u.CardHolder, &u.CreatedAt)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "user not found")
 		return
@@ -150,6 +150,8 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		ShopPhone    string `json:"shop_phone"`
 		ShopHours    string `json:"shop_hours"`
 		BusinessType string `json:"business_type"`
+		CardNumber   string `json:"card_number"`
+		CardHolder   string `json:"card_holder"`
 	}
 	c.ShouldBindJSON(&in)
 	// Майдонҳои бизнес танҳо ҳангоми фиристодан навсозӣ мешаванд (холӣ = нигоҳ дошта мешавад).
@@ -160,8 +162,12 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		shop_phone    = COALESCE(NULLIF($5,''), shop_phone),
 		shop_hours    = COALESCE(NULLIF($6,''), shop_hours),
 		business_type = COALESCE(NULLIF($7,''), business_type),
-		updated_at=$8 WHERE id=$9`,
-		in.Name, in.Bio, in.ShopName, in.ShopDesc, in.ShopPhone, in.ShopHours, in.BusinessType, time.Now(), uid)
+		card_number   = COALESCE(NULLIF($8,''), card_number),
+		card_holder   = COALESCE(NULLIF($9,''), card_holder),
+		updated_at=$10 WHERE id=$11`,
+		in.Name, in.Bio, in.ShopName, in.ShopDesc, in.ShopPhone, in.ShopHours,
+		in.BusinessType, strings.TrimSpace(in.CardNumber), strings.TrimSpace(in.CardHolder),
+		time.Now(), uid)
 	utils.OK(c, gin.H{"message": "updated"})
 }
 

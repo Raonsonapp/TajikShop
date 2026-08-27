@@ -8,6 +8,7 @@ import '../../core/theme/app_palette.dart';
 import '../../providers/seller_provider.dart';
 import '../../core/api/api_client.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../orders/delivery_route_screen.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 
 /// «Фармоишҳои фурӯш» — фармоишҳое ки маҳсулоти фурӯшандаро доранд.
@@ -307,29 +308,55 @@ class SellerOrdersScreen extends ConsumerWidget {
           ]),
           if (lat != 0 || lng != 0) ...[
             const SizedBox(height: 10),
-            PressableScale(
-              onTap: () => _openRoute(context, lat, lng),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(12),
+            Row(children: [
+              // Роҳи сабз дар харитаи дохилӣ — «харидор дар куҷост».
+              Expanded(
+                child: PressableScale(
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => DeliveryRouteScreen(
+                      destLat: lat,
+                      destLng: lng,
+                      destLabel:
+                          house.isNotEmpty ? 'Хонаи \$house' : 'Харидор',
+                      buyerName: o['buyer_name']?.toString(),
+                    ),
+                  )),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(FeatherIcons.map, color: Colors.white, size: 15),
+                          SizedBox(width: 7),
+                          Text('Роҳи сабз',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w700)),
+                        ]),
+                  ),
                 ),
-                child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(FeatherIcons.navigation,
-                          color: Colors.white, size: 15),
-                      SizedBox(width: 8),
-                      Text('Роҳ ба ин хона',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700)),
-                    ]),
               ),
-            ),
+              const SizedBox(width: 8),
+              // Навигатсия дар барномаи харитаи телефон.
+              PressableScale(
+                onTap: () => _openRoute(context, lat, lng),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(FeatherIcons.navigation,
+                      color: AppColors.primary, size: 16),
+                ),
+              ),
+            ]),
           ],
         ]),
       ),

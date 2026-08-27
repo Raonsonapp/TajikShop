@@ -23,6 +23,8 @@ type User struct {
 	StoreLat        float64   `json:"store_lat"`
 	StoreLng        float64   `json:"store_lng"`
 	RefreshToken    string    `json:"-"`
+	CardNumber      string    `json:"card_number,omitempty"`
+	CardHolder      string    `json:"card_holder,omitempty"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }

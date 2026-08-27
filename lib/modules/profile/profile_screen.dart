@@ -124,6 +124,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final descCtrl  = TextEditingController(text: user?.shopDesc ?? '');
     final phoneCtrl = TextEditingController(text: user?.shopPhone ?? '');
     final hoursCtrl = TextEditingController(text: user?.shopHours ?? '');
+    final cardCtrl = TextEditingController(text: user?.cardNumber ?? '');
+    final holderCtrl = TextEditingController(text: user?.cardHolder ?? '');
     String bizType = user?.businessType ?? 'shop';
     showModalBottomSheet(
       context: context,
@@ -156,6 +158,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               field(l.businessDescField, descCtrl, maxLines: 3),
               field(l.phoneField, phoneCtrl),
               field(l.workingHoursField, hoursCtrl),
+              // Корти пардохт — харидор пеш аз расонидан маблағро мефиристад.
+              field('Рақами корт (барои қабули пул)', cardCtrl),
+              field('Соҳиби корт (ном)', holderCtrl),
               const SizedBox(height: 4),
               Text(l.businessTypeLabel, style: TextStyle(
                   color: context.pal.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
@@ -200,6 +205,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     'shop_desc': descCtrl.text.trim(),
                     'shop_phone': phoneCtrl.text.trim(),
                     'shop_hours': hoursCtrl.text.trim(),
+                    'card_number': cardCtrl.text.trim(),
+                    'card_holder': holderCtrl.text.trim(),
                     'business_type': bizType,
                   });
                   await ref.read(authProvider.notifier).checkAuth();
@@ -911,6 +918,12 @@ class _Tile extends StatelessWidget {
     color: Colors.transparent,
     child: InkWell(
       onTap: onTap,
+      // ⚠️ Бе borderRadius splash-и хокистарранги росткунҷа берун аз гӯшаи
+      // мудаввари корт мебарояд — маҳз ҳамон «гӯшаи хокистарранг».
+      // Ранги splash-ро низ ба сабзи бренд мегардонем.
+      borderRadius: BorderRadius.circular(14),
+      splashColor: AppColors.primary.withValues(alpha: 0.12),
+      highlightColor: AppColors.primary.withValues(alpha: 0.06),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(children: [

@@ -1,6 +1,7 @@
 // ignore_for_file: curly_braces_in_flow_control_structures, camel_case_types
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,6 +28,19 @@ import '../../shared/widgets/safe_input.dart';
 
 /// Ҳаққи расонидан (сом.) — дар як ҷо, то дар экранҳо фарқ накунад.
 const double kDeliveryFee = 20;
+
+/// Фурӯшанда(гон)-и сабад бо корти пардохт — то харидор донад ба куҷо
+/// маблағ фиристад ва бо кӣ чат кунад.
+final cartSellersProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final res = await ApiClient.instance.dio.get('/cart/sellers');
+  final raw = res.data;
+  final list = raw is Map ? raw['data'] : raw;
+  if (list is List) {
+    return list.whereType<Map>().map(Map<String, dynamic>.from).toList();
+  }
+  return const [];
+});
 
 class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
@@ -414,17 +428,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
 
         // Қисми вобаста ба усул
         if (_method == 'dc') ...[
-          Container(padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: context.pal.surface, borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.3))),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [const Icon(FeatherIcons.creditCard, color: AppColors.primary, size: 20),
-                const SizedBox(width: 8), Text(AppL10n.of(context).sellerDcNumber, style: TextStyle(color: context.pal.textMuted, fontSize: 12))]),
-              const SizedBox(height: 8),
-              Text('+992 XX XXX XXXX', style: TextStyle(color: context.pal.textPrimary, fontSize: 22, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(AppL10n.of(context).dcInstructions, style: TextStyle(color: context.pal.textSecondary, fontSize: 12)),
-            ])),
+          _sellerCards(),
           const SizedBox(height: 12),
           GestureDetector(
             onTap: _pickReceipt,
@@ -598,6 +602,163 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
       option(true, l.asSoonAsPossible),
       option(false, l.specificTime),
     ]);
+  }
+
+  /// Кортҳои воқеии фурӯшанда(гон)-и сабад.
+  ///
+  /// Пештар ин ҷо рақами қалбакии «+992 XX XXX XXXX» буд — харидор
+  /// намедонист ба куҷо пул фиристад. Ҳоло корти ҳақиқӣ, нусхабардорӣ ва
+  /// тугмаи чат бо фурӯшанда ҳаст: пеш аз он ки фурӯшанда роҳ равад,
+  /// метавонанд гуфтугӯ кунанд ва маблағ фиристода шавад.
+  Widget _sellerCards() {
+    final pal = context.pal;
+    final async = ref.watch(cartSellersProvider);
+
+    return async.when(
+      loading: () => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: LinearProgressIndicator(
+            color: AppColors.primary, backgroundColor: pal.surface),
+      ),
+      error: (_, __) => _cardNotice(pal,
+          'Маълумоти корти фурӯшанда гирифта нашуд. Бо фурӯшанда чат кунед.'),
+      data: (sellers) {
+        if (sellers.isEmpty) {
+          return _cardNotice(pal, 'Фурӯшанда ёфт нашуд.');
+        }
+        return Column(
+          children: [
+            for (final s in sellers) _sellerCardTile(pal, s),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _cardNotice(AppPalette pal, String text) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: pal.surface, borderRadius: BorderRadius.circular(14)),
+        child: Row(children: [
+          Icon(FeatherIcons.info, size: 16, color: pal.textMuted),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(text,
+                style: TextStyle(color: pal.textSecondary, fontSize: 12.5)),
+          ),
+        ]),
+      );
+
+  Widget _sellerCardTile(AppPalette pal, Map<String, dynamic> s) {
+    final card = (s['card_number'] ?? '').toString().trim();
+    final holder = (s['card_holder'] ?? '').toString().trim();
+    final shop = (s['shop_name'] ?? '').toString().trim();
+    final name = (s['name'] ?? '').toString().trim();
+    final sellerId = (s['seller_id'] ?? '').toString();
+    final title = shop.isNotEmpty ? shop : name;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: pal.surface,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(FeatherIcons.creditCard, color: AppColors.primary, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text('Корти фурӯшанда: $title',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: pal.textMuted, fontSize: 12)),
+          ),
+        ]),
+        const SizedBox(height: 10),
+        if (card.isEmpty)
+          Row(children: [
+            const Icon(FeatherIcons.alertTriangle,
+                color: AppColors.warning, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                  'Фурӯшанда ҳанӯз корт нагузоштааст — бо ӯ чат кунед',
+                  style: TextStyle(color: pal.textSecondary, fontSize: 12.5)),
+            ),
+          ])
+        else
+          GestureDetector(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: card));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(AppL10n.of(context).copiedDone),
+                backgroundColor: AppColors.success,
+                behavior: SnackBarBehavior.floating,
+                shape:
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ));
+            },
+            child: Row(children: [
+              Expanded(
+                child: Text(card,
+                    style: TextStyle(
+                        color: pal.textPrimary,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.1,
+                        fontFamily: 'monospace')),
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(10)),
+                child: const Icon(FeatherIcons.copy,
+                    color: Colors.white, size: 15),
+              ),
+            ]),
+          ),
+        if (holder.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(holder,
+              style: TextStyle(color: pal.textSecondary, fontSize: 12.5)),
+        ],
+        const SizedBox(height: 12),
+        // Чат бо фурӯшанда — то пеш аз роҳ рафтан мувофиқа кунанд.
+        if (sellerId.isNotEmpty)
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).pop(); // варақаро мебандем
+              context.push('/chat/$sellerId');
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 11),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.13),
+                borderRadius: BorderRadius.circular(12),
+                border:
+                    Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
+              ),
+              child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(FeatherIcons.messageCircle,
+                        color: AppColors.primary, size: 16),
+                    SizedBox(width: 8),
+                    Text('Чат бо фурӯшанда',
+                        style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700)),
+                  ]),
+            ),
+          ),
+      ]),
+    );
   }
 
   Widget _payOption(String value, IconData icon, String title, String subtitle) {

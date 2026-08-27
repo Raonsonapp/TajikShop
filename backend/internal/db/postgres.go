@@ -225,6 +225,12 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_name  TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_desc  TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_phone TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_hours TEXT DEFAULT '';
+
+-- Корти фурӯшанда — харидор пеш аз расонидан маблағро мефиристад, то
+-- фурӯшанда бе фоида роҳ наравад. Танҳо ба харидори фармоиши ҳамон
+-- фурӯшанда кушода мешавад.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS card_number TEXT DEFAULT '';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS card_holder TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS business_type TEXT DEFAULT 'shop';
 ALTER TABLE reviews ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb;
 

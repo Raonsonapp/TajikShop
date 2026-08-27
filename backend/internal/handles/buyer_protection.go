@@ -337,3 +337,45 @@ func settleOrder(oid, buyer string, total float64, method string, auto bool) {
 
 	logOrderEvent(oid, "completed", map[bool]string{true: "Мӯҳлати ҳимоя гузашт — худкор", false: ""}[auto])
 }
+
+// CartSellers — GET /cart/sellers
+//
+// Фурӯшанда(гон)-и маҳсулоти сабади ҳозира бо корти пардохт ва id-и онҳо.
+// Пештар дар экрани пардохт рақами қалбакии «+992 XX XXX XXXX» навишта
+// мешуд — харидор ба куҷо пул фиристоданашро намедонист. Ҳоло корти воқеӣ
+// нишон дода мешавад ва харидор метавонад бо фурӯшанда чат кунад.
+//
+// Танҳо фурӯшандагоне бармегарданд, ки маҳсулоташон дар сабади ҳамин
+// корбар ҳастанд — рӯйхати умумии кортҳо кушода намешавад.
+func (h *OrderHandler) CartSellers(c *gin.Context) {
+	uid := utils.UserID(c)
+	rows, err := db.DB.Query(`
+		SELECT DISTINCT u.id, u.name, COALESCE(u.shop_name,''),
+			COALESCE(u.card_number,''), COALESCE(u.card_holder,''),
+			COALESCE(u.shop_phone,'')
+		FROM cart_items ci
+		JOIN products p ON p.id = ci.product_id
+		JOIN users u    ON u.id = p.seller_id
+		WHERE ci.user_id = $1`, uid)
+	if err != nil || rows == nil {
+		utils.OK(c, []gin.H{})
+		return
+	}
+	defer rows.Close()
+
+	out := []gin.H{}
+	for rows.Next() {
+		var id, name, shop, card, holder, phone string
+		rows.Scan(&id, &name, &shop, &card, &holder, &phone)
+		out = append(out, gin.H{
+			"seller_id":   id,
+			"name":        name,
+			"shop_name":   shop,
+			"card_number": card,
+			"card_holder": holder,
+			"phone":       phone,
+			"has_card":    strings.TrimSpace(card) != "",
+		})
+	}
+	utils.OK(c, out)
+}

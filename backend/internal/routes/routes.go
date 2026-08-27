@@ -112,6 +112,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 
 	// Cart
 	api.GET("/cart", middleware.Auth(), oh.GetCart)
+	api.GET("/cart/sellers", middleware.Auth(), oh.CartSellers)
 	api.POST("/cart", middleware.Auth(), oh.AddToCart)
 	api.PATCH("/cart/:id", middleware.Auth(), oh.UpdateCartItem)
 	api.DELETE("/cart/:id", middleware.Auth(), oh.RemoveFromCart)

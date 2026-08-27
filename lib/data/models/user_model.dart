@@ -11,6 +11,8 @@ class UserModel {
   final String shopDesc;
   final String shopPhone;
   final String shopHours;
+  final String cardNumber;
+  final String cardHolder;
   final String businessType;
   final DateTime createdAt;
 
@@ -19,6 +21,7 @@ class UserModel {
     this.avatar, required this.role, required this.isSeller,
     required this.isVerified, this.sellerRequested = false,
     this.shopName = '', this.shopDesc = '', this.shopPhone = '', this.shopHours = '',
+    this.cardNumber = '', this.cardHolder = '',
     this.businessType = 'shop',
     required this.createdAt,
   });
@@ -43,6 +46,8 @@ class UserModel {
       shopDesc: j['shop_desc']?.toString() ?? '',
       shopPhone: j['shop_phone']?.toString() ?? '',
       shopHours: j['shop_hours']?.toString() ?? '',
+      cardNumber: j['card_number']?.toString() ?? '',
+      cardHolder: j['card_holder']?.toString() ?? '',
       businessType: (j['business_type']?.toString().isNotEmpty ?? false)
           ? j['business_type'].toString()
           : 'shop',
@@ -58,6 +63,7 @@ class UserModel {
     'is_verified': isVerified, 'seller_requested': sellerRequested,
     'shop_name': shopName, 'shop_desc': shopDesc,
     'shop_phone': shopPhone, 'shop_hours': shopHours,
+    'card_number': cardNumber, 'card_holder': cardHolder,
     'business_type': businessType,
     'created_at': createdAt.toIso8601String(),
   };
