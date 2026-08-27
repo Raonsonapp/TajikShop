@@ -799,8 +799,8 @@ class _StoriesRailState extends ConsumerState<_StoriesRail> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(storiesProvider);
-    final users = async.maybeWhen(
-        data: (list) => list, orElse: () => const <StoryUser>[]);
+    // Ҳангоми навсозӣ ҳикояҳои кӯҳна дар ҷояшон мемонанд (бе ҷаҳиши тартиб).
+    final users = async.valueOrNull ?? const <StoryUser>[];
     final isSeller = ref.watch(authProvider).user?.isSeller ?? false;
 
     // Агар ягон ҳикоя нест ва корбар фурӯшанда нест → чизе нишон намедиҳем
@@ -962,11 +962,11 @@ class _FlashDealsRailState extends ConsumerState<_FlashDealsRail> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(flashDealsProvider);
-    final deals = async.maybeWhen(
-      data: (list) =>
-          list.where((p) => p.isFlashSale && p.inStock).toList(),
-      orElse: () => const <ProductModel>[],
-    );
+    // `valueOrNull` — на `maybeWhen(data:)`: ҳангоми навсозӣ маълумоти кӯҳна
+    // мемонад ва тасма нохост нест намешавад.
+    final deals = (async.valueOrNull ?? const <ProductModel>[])
+        .where((p) => p.isFlashSale && p.inStock)
+        .toList();
     if (deals.isEmpty) return const SizedBox.shrink();
 
     final pal = context.pal;
@@ -1330,8 +1330,12 @@ class _CategoriesStrip extends ConsumerWidget {
     final cats = ref.watch(categoriesProvider);
     final pal = context.pal;
 
-    return cats.when(
-      loading: () => SizedBox(
+    // Ҳангоми навсозӣ категорияҳои кӯҳнаро нигоҳ медорем — вагарна дар вақти
+    // refresh ин ҷо як тасмаи хокистарранг пайдо мешуд.
+    final cached = cats.valueOrNull;
+    if (cached == null) {
+      if (cats.hasError) return const SizedBox.shrink();
+      return SizedBox(
         height: _height,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
@@ -1346,11 +1350,12 @@ class _CategoriesStrip extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-      error: (_, __) => const SizedBox.shrink(),
-      data: (list) {
-        if (list.isEmpty) return const SizedBox.shrink();
-        return SizedBox(
+      );
+    }
+
+    final list = cached;
+    if (list.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
           height: _height,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
@@ -1400,8 +1405,6 @@ class _CategoriesStrip extends ConsumerWidget {
             },
           ),
         );
-      },
-    );
   }
 }
 

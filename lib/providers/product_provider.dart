@@ -61,11 +61,13 @@ class ProductsNotifier extends StateNotifier<ProductsState> {
   }) async {
     if (!refresh && (!state.hasMore || state.isLoading)) return;
 
-    if (refresh) {
-      state = ProductsState(isLoading: true);
-    } else {
-      state = state.copyWith(isLoading: true);
-    }
+    // ⚠️ Ҳангоми refresh рӯйхатро НАМЕтарошем.
+    //
+    // Пештар ин ҷо `ProductsState(isLoading: true)` буд — он `products` ва
+    // `trending`-ро холӣ мекард, бинобар ин ҳангоми кашидани экран тамоми
+    // саҳифа ба shimmer-и хокистарранг мубаддал мешуд. Акнун кортҳои кӯҳна
+    // дар ҷояшон мемонанд ва танҳо вақте иваз мешаванд, ки маълумоти нав ояд.
+    state = state.copyWith(isLoading: true).clearError();
 
     try {
       final page = refresh ? 1 : state.page;
