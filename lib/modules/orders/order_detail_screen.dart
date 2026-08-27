@@ -19,6 +19,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/error_screen.dart';
 import '../../shared/widgets/safe_input.dart';
 import 'orders_screen.dart';
+import 'order_timeline.dart';
 
 final orderDetailProvider =
     FutureProvider.autoDispose.family<OrderModel, String>((ref, id) async {
@@ -277,6 +278,12 @@ class OrderDetailScreen extends ConsumerWidget {
     final current = _statusIndex(o.status);
     final isDark = pal.scaffold.computeLuminance() < 0.5;
     return ListView(padding: const EdgeInsets.all(16), children: [
+      // ── Ҳимояи харидор + қадамҳои воқеии фармоиш (мисли Alibaba) ──
+      Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: OrderProtectionCard(orderId: o.id),
+      ),
+
       // Header card — tracking hero with green gradient accent
       Container(
         padding: const EdgeInsets.all(18),

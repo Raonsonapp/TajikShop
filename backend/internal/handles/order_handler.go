@@ -358,62 +358,10 @@ func (h *OrderHandler) Confirm(c *gin.Context) {
 		utils.Err(c, http.StatusBadRequest, "Ин фармоиш аллакай анҷом ёфтааст")
 		return
 	}
-	tx, txErr := db.DB.Begin()
-	if txErr != nil {
-		utils.Err(c, http.StatusInternalServerError, "tx begin failed")
-		return
-	}
-	tx.Exec(`UPDATE orders SET status='completed',updated_at=$1 WHERE id=$2`, time.Now(), oid)
-
-	// 💸 Cashback ба харидор (settings + бонуси сатҳи вафодорӣ) — ангезаи такрор-харид.
-	if cb := total * (cashbackPercent() + float64(loyaltyBonusPercent(uid))) / 100; cb > 0 {
-		tx.Exec(`UPDATE users SET wallet_balance=COALESCE(wallet_balance,0)+$1 WHERE id=$2`, cb, uid)
-		tx.Exec(`INSERT INTO wallet_transactions(id,user_id,amount,type,status,note)
-			VALUES($1,$2,$3,'cashback','completed','💸 Cashback аз харид')`,
-			uuid.NewString(), uid, cb)
-	}
-
-	released := false
-	if method == "wallet" {
-		// Маблағро ба фурӯшанда(он) мутаносибан тақсим мекунем
-		rows, _ := tx.Query(`SELECT p.seller_id, SUM(oi.price*oi.quantity)
-			FROM order_items oi JOIN products p ON p.id=oi.product_id
-			WHERE oi.order_id=$1 GROUP BY p.seller_id`, oid)
-		type pay struct {
-			seller string
-			amount float64
-		}
-		var pays []pay
-		var sum float64
-		for rows.Next() {
-			var s string
-			var a float64
-			rows.Scan(&s, &a)
-			pays = append(pays, pay{s, a})
-			sum += a
-		}
-		rows.Close()
-		for _, p := range pays {
-			if p.seller == "" || sum <= 0 {
-				continue
-			}
-			credit := total * (p.amount / sum) // мутаносиб ба ҷамъи воқеӣ (бо тахфиф)
-			tx.Exec(`UPDATE users SET wallet_balance=COALESCE(wallet_balance,0)+$1 WHERE id=$2`, credit, p.seller)
-			tx.Exec(`INSERT INTO wallet_transactions(id,user_id,amount,type,status,note)
-				VALUES($1,$2,$3,'sale','completed',$4)`,
-				uuid.NewString(), p.seller, credit, "Фурӯш #"+shortID(oid))
-			tx.Exec(`INSERT INTO notifications(id,user_id,type,title,body)
-				VALUES($1,$2,'order','Фурӯш анҷом ёфт','Маблағ ба ҳамёни шумо илова шуд')`,
-				uuid.NewString(), p.seller)
-			pushToUser(p.seller, "Фурӯш анҷом ёфт", "Маблағ ба ҳамёни шумо илова шуд")
-		}
-		released = true
-	}
-	if err := tx.Commit(); err != nil {
-		utils.Err(c, http.StatusInternalServerError, "confirm failed")
-		return
-	}
-	utils.OK(c, gin.H{"completed": true, "released": released})
+	// Ҳамон мантиқи пул, ки озодкунии худкор истифода мебарад (settleOrder),
+	// то ду роҳи ҳисоббаробаркунӣ ҳеҷ гоҳ фарқ накунанд.
+	settleOrder(oid, uid, total, method, false)
+	utils.OK(c, gin.H{"completed": true, "released": method == "wallet"})
 }
 
 func (h *OrderHandler) UploadPaymentProof(c *gin.Context) {

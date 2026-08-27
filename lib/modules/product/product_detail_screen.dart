@@ -304,6 +304,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     style: TextStyle(
                         color: context.pal.textSecondary, fontSize: 14, height: 1.6)),
                 _deliveryInfo(p),
+              _buyerProtection(),
                 const SizedBox(height: 28),
                 _reviewsSection(p),
                 const SizedBox(height: 28),
@@ -889,6 +890,55 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           border: Border.all(color: pal.border, width: 0.6),
         ),
         child: Column(children: rows),
+      ),
+    );
+  }
+
+  // ── Кафолати «Ҳимояи харидор» (мисли Alibaba Buyer Protection) ─────────────
+  // Пеш аз харид нишон медиҳад, ки пул то тасдиқи гирифтани мол ҳифз мешавад —
+  // ин чизест, ки харидорро бовар мекунонад.
+  Widget _buyerProtection() {
+    final pal = context.pal;
+    Widget point(IconData icon, String text) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(icon, size: 15, color: AppColors.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(text,
+                  style: TextStyle(
+                      color: pal.textSecondary, fontSize: 12.5, height: 1.35)),
+            ),
+          ]),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(FeatherIcons.shield, color: AppColors.primary, size: 18),
+            const SizedBox(width: 8),
+            Text('Ҳимояи харидор',
+                style: TextStyle(
+                    color: pal.textPrimary,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800)),
+          ]),
+          const SizedBox(height: 8),
+          point(FeatherIcons.lock,
+              'Пул то тасдиқи гирифтани мол дар ҳисоби ҳифзшуда мемонад'),
+          point(FeatherIcons.rotateCcw,
+              'Агар мол наомад ё мувофиқ набошад — бозгашти маблағ'),
+          point(FeatherIcons.messageCircle,
+              'Ҳалли ихтилоф бо кӯмаки маъмурияти TajikShop'),
+        ]),
       ),
     );
   }

@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/seller_provider.dart';
+import '../../core/api/api_client.dart';
+import '../../shared/widgets/fade_slide_in.dart';
 
 /// «Фармоишҳои фурӯш» — фармоишҳое ки маҳсулоти фурӯшандаро доранд.
 /// Барои иҷро: харидор, телефон, шумораи ашё ва маблағи фурӯшанда.
@@ -81,7 +83,7 @@ class SellerOrdersScreen extends ConsumerWidget {
             return ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               itemCount: list.length,
-              itemBuilder: (_, i) => _card(context, pal, list[i]),
+              itemBuilder: (_, i) => _card(context, ref, pal, list[i]),
             );
           },
         ),
@@ -101,7 +103,7 @@ class SellerOrdersScreen extends ConsumerWidget {
         ],
       );
 
-  Widget _card(BuildContext context, AppPalette pal, Map<String, dynamic> o) {
+  Widget _card(BuildContext context, WidgetRef ref, AppPalette pal, Map<String, dynamic> o) {
     final id = o['id']?.toString() ?? '';
     final shortId =
         (id.length > 8 ? id.substring(0, 8) : id).toUpperCase();
@@ -201,8 +203,153 @@ class SellerOrdersScreen extends ConsumerWidget {
                           color: AppColors.primary, fontSize: 12)),
                 ]),
           ]),
+
+          // ── Қадами навбатӣ (фурӯшанда ҳолатро худаш нав мекунад) ──
+          ..._nextStepButtons(context, ref, pal, id, status),
         ]),
       ),
     );
+  }
+
+  /// Қадамҳое, ки фурӯшанда аз ҳолати ҳозира гузошта метавонад.
+  /// Мисли Alibaba: харидор ҳар қадамро push мегирад ва дар timeline мебинад.
+  static const _flow = <String, List<String>>{
+    'pending': ['processing'],
+    'paid': ['processing'],
+    'processing': ['shipped'],
+    'shipped': ['delivered'],
+  };
+
+  List<Widget> _nextStepButtons(BuildContext context, WidgetRef ref,
+      AppPalette pal, String id, String status) {
+    final next = _flow[status.toLowerCase()];
+    if (next == null || next.isEmpty || id.isEmpty) return const [];
+    return [
+      const SizedBox(height: 12),
+      Divider(color: pal.divider, height: 1),
+      const SizedBox(height: 12),
+      Row(
+        children: [
+          for (final s in next)
+            Expanded(
+              child: PressableScale(
+                onTap: () => _setStatus(context, ref, id, s),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(_stepIcon(s), color: Colors.white, size: 16),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(_stepLabel(s),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700)),
+                        ),
+                      ]),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ];
+  }
+
+  IconData _stepIcon(String s) => switch (s) {
+        'processing' => FeatherIcons.package,
+        'shipped' => FeatherIcons.truck,
+        'delivered' => FeatherIcons.checkCircle,
+        _ => FeatherIcons.chevronRight,
+      };
+
+  String _stepLabel(String s) => switch (s) {
+        'processing' => 'Қабул кардам',
+        'shipped' => 'Фиристодам',
+        'delivered' => 'Супоридам',
+        _ => s,
+      };
+
+  Future<void> _setStatus(
+      BuildContext context, WidgetRef ref, String id, String status) async {
+    final messenger = ScaffoldMessenger.of(context);
+    String? tracking;
+
+    // Ҳангоми фиристодан коди пайгирӣ пурсида мешавад (ихтиёрӣ).
+    if (status == 'shipped') {
+      final ctrl = TextEditingController();
+      tracking = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: ctx.pal.card,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Text('Коди пайгирӣ (ихтиёрӣ)',
+              style: TextStyle(
+                  color: ctx.pal.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700)),
+          content: TextField(
+            controller: ctrl,
+            autofocus: true,
+            style: TextStyle(color: ctx.pal.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Масалан: TJ123456789',
+              hintStyle: TextStyle(color: ctx.pal.textMuted),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: ctx.pal.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    const BorderSide(color: AppColors.primary, width: 2),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(''),
+              child: Text('Бе код',
+                  style: TextStyle(color: ctx.pal.textMuted)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
+              child: const Text('Тайёр',
+                  style: TextStyle(
+                      color: AppColors.primary, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      );
+      if (tracking == null) return; // корбар бекор кард
+    }
+
+    try {
+      await ApiClient.instance.dio.post('/seller/orders/$id/status', data: {
+        'status': status,
+        if (tracking != null && tracking.isNotEmpty) 'tracking_code': tracking,
+      });
+      ref.invalidate(sellerOrdersProvider);
+      messenger.showSnackBar(SnackBar(
+        content: Text('Ҳолат нав шуд: ${_statusLabel(status)}'),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ));
+    } catch (_) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Иваз кардани ҳолат нашуд. Дубора кӯшиш кунед.'),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
   }
 }

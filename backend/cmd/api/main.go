@@ -4,6 +4,7 @@ import (
 	"log"
 	"tajikshop/internal/config"
 	"tajikshop/internal/db"
+	handlers "tajikshop/internal/handles"
 	"tajikshop/internal/middleware"
 	"tajikshop/internal/push"
 	"tajikshop/internal/routes"
@@ -32,6 +33,11 @@ func main() {
 			log.Println("✅ Cloudflare R2 connected")
 		}
 	}
+
+	// Ҳимояи харидор: маблағи фармоишҳоеро, ки мӯҳлати ҳимояашон гузашт ва
+	// харидор шикоят накард, худкор ба фурӯшанда мегузаронад — то фурӯшанда
+	// интизори абадии тасдиқи харидор накашад.
+	handlers.StartEscrowSweeper()
 
 	r := gin.Default()
 	routes.Setup(r, cfg.JWTSecret, r2)

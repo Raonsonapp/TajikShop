@@ -294,6 +294,28 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount NUMERIC(12,2) DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS fulfilment    VARCHAR(20) DEFAULT 'delivery';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee  NUMERIC(12,2) DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_slot VARCHAR(10) DEFAULT '';
+
+-- ── Ҳимояи харидор (мисли Alibaba Buyer Protection) ──────────────────────
+-- Вақти фиристодан/супоридан ва мӯҳлати ҳимоя. Агар харидор дар ин мӯҳлат
+-- шикоят накунад, пул худкор ба фурӯшанда мегузарад (то фурӯшанда интизори
+-- абадӣ накашад), вале то он вақт пул дар escrow ҳифз мешавад.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipped_at    TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivered_at  TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS protect_until TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS auto_released BOOLEAN DEFAULT false;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_code VARCHAR(64) DEFAULT '';
+CREATE INDEX IF NOT EXISTS idx_orders_protect
+  ON orders(protect_until) WHERE status <> 'completed' AND status <> 'cancelled';
+
+-- Таърихи ҳолати фармоиш — харидор ҳар қадамро мебинад (timeline).
+CREATE TABLE IF NOT EXISTS order_events (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+	status VARCHAR(30) NOT NULL,
+	note TEXT DEFAULT '',
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_order_events_order ON order_events(order_id, created_at);
 ALTER TABLE addresses ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION DEFAULT 0;
 ALTER TABLE addresses ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION DEFAULT 0;
 

@@ -60,6 +60,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/users/me/seller-verify", middleware.Auth(), uh.SellerVerify)
 	api.GET("/seller/stats", middleware.Auth(), uh.SellerStats)
 	api.GET("/seller/orders", middleware.Auth(), middleware.SellerOnly(), uh.SellerOrders)
+	api.POST("/seller/orders/:id/status", middleware.Auth(), middleware.SellerOnly(), oh.SellerUpdateOrderStatus)
 	api.GET("/seller/sales-chart", middleware.Auth(), middleware.SellerOnly(), uh.SellerSalesChart)
 	api.GET("/users/me/referral", middleware.Auth(), uh.ReferralInfo)
 	api.GET("/users/me/loyalty", middleware.Auth(), uh.LoyaltyInfo)
@@ -122,6 +123,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/orders/:id/payment-proof", middleware.Auth(), oh.UploadPaymentProof)
 	api.POST("/orders/:id/cancel", middleware.Auth(), oh.Cancel)
 	api.POST("/orders/:id/confirm", middleware.Auth(), oh.Confirm)
+	api.GET("/orders/:id/timeline", middleware.Auth(), oh.OrderTimeline)
 	api.POST("/orders/:id/return", middleware.Auth(), reh.Create)
 	api.GET("/orders/:id/return", middleware.Auth(), reh.ForOrder)
 
