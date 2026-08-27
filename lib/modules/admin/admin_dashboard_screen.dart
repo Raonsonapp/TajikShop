@@ -9,6 +9,7 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/admin_l10n.dart';
+import '../../core/l10n/verification_l10n.dart';
 import '../../providers/seller_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/safe_input.dart';
@@ -336,6 +337,12 @@ class AdminDashboardScreen extends ConsumerWidget {
                     icon: FeatherIcons.userCheck, label: 'Дархостҳои фурӯшанда',
                     subtitle: 'Тасдиқи фурӯшандагони нав', color: AppColors.primary,
                     onTap: () => context.push('/admin/seller-requests'),
+                  ),
+                  _ManageDivider(),
+                  _ManageItem(
+                    icon: FeatherIcons.award, label: l.verifyAdminTitle,
+                    subtitle: l.verifySubtitle, color: AppColors.success,
+                    onTap: () => context.push(RouteNames.adminVerification),
                   ),
                   _ManageDivider(),
                   _ManageItem(

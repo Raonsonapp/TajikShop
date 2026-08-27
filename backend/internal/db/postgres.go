@@ -291,6 +291,29 @@ INSERT INTO settings(key,value) VALUES('cargo_rate_tj','45') ON CONFLICT(key) DO
 INSERT INTO settings(key,value) VALUES('cargo_rate_ru','60') ON CONFLICT(key) DO NOTHING;
 INSERT INTO settings(key,value) VALUES('cargo_phone','') ON CONFLICT(key) DO NOTHING;
 
+-- Галочкаи тасдиқ (расмӣ): нарх ва корти қабули пул. Ҳарду аз панели админ
+-- иваз мешаванд, то барои тағйири нарх нашри нави барнома лозим набошад.
+INSERT INTO settings(key,value) VALUES('verify_price','50') ON CONFLICT(key) DO NOTHING;
+INSERT INTO settings(key,value) VALUES('verify_card','9762 0001 9975 7344') ON CONFLICT(key) DO NOTHING;
+INSERT INTO settings(key,value) VALUES('verify_card_holder','TajikShop') ON CONFLICT(key) DO NOTHING;
+
+-- Дархостҳои галочка: харидор/фурӯшанда пул мефиристад ва чекро мегузорад,
+-- админ тасдиқ мекунад → users.is_verified=true.
+CREATE TABLE IF NOT EXISTS verification_requests (
+	id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	amount     NUMERIC(12,2) DEFAULT 0,
+	receipt_url TEXT DEFAULT '',
+	status     VARCHAR(16) DEFAULT 'pending', -- pending | approved | rejected
+	note       TEXT DEFAULT '',
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_verify_req_status ON verification_requests(status, created_at);
+-- Як корбар танҳо як дархости ҳалнашуда дошта метавонад.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_verify_req_one_pending
+  ON verification_requests(user_id) WHERE status='pending';
+
 -- Фармоишҳои карго (доставка аз Хитой). status: new→received→shipped→arrived→delivered.
 CREATE TABLE IF NOT EXISTS cargo_orders (
   id           UUID PRIMARY KEY,

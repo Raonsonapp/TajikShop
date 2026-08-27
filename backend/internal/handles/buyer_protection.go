@@ -490,9 +490,31 @@ func (h *OrderHandler) SellerRating(c *gin.Context) {
 	var count int
 	db.DB.QueryRow(`SELECT COALESCE(AVG(score),0), COUNT(*)
 		FROM seller_ratings WHERE seller_id=$1`, sid).Scan(&avg, &count)
+
+	// Шарҳҳои охирин — фурӯшанда бояд бубинад, ки чаро баҳо чунин аст.
+	reviews := []gin.H{}
+	rows, _ := db.DB.Query(`SELECT r.score,COALESCE(r.comment,''),r.created_at,
+		COALESCE(u.name,''),COALESCE(u.avatar_url,'')
+		FROM seller_ratings r LEFT JOIN users u ON u.id=r.buyer_id
+		WHERE r.seller_id=$1 ORDER BY r.created_at DESC LIMIT 20`, sid)
+	if rows != nil {
+		defer rows.Close()
+		for rows.Next() {
+			var score int
+			var comment, name, avatar string
+			var created time.Time
+			rows.Scan(&score, &comment, &created, &name, &avatar)
+			reviews = append(reviews, gin.H{
+				"score": score, "comment": comment, "created_at": created,
+				"buyer_name": name, "buyer_avatar": avatar,
+			})
+		}
+	}
+
 	utils.OK(c, gin.H{
 		"seller_id": sid,
 		"average":   avg,
 		"count":     count,
+		"reviews":   reviews,
 	})
 }

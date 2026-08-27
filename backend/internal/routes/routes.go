@@ -32,6 +32,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	vh := handlers.NewVariantHandler()
 	qah := handlers.NewQAHandler()
 	reh := handlers.NewReturnHandler()
+	vh2 := handlers.NewVerificationHandler(r2)
 
 	// Firebase handler — FIREBASE_PROJECT_ID env-дан мегирад
 	fbh := handlers.NewFirebaseHandler(secret, getenv("FIREBASE_WEB_API_KEY", ""))
@@ -78,6 +79,13 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.GET("/users/:id/rating", oh.SellerRating)
 	api.PUT("/users/me/username", middleware.Auth(), oh.SetUsername)
 	api.GET("/users/username-available", oh.CheckUsername)
+
+	// Галочкаи тасдиқ (пардохт ба корти TajikShop → тасдиқи админ)
+	api.GET("/verification/info", vh2.Info)
+	api.GET("/users/me/verification", middleware.Auth(), vh2.MyRequest)
+	api.POST("/users/me/verification", middleware.Auth(), vh2.Request)
+	api.GET("/admin/verification-requests", middleware.Auth(), middleware.AdminOnly(), vh2.AdminList)
+	api.POST("/admin/verification-requests/:id/decide", middleware.Auth(), middleware.AdminOnly(), vh2.AdminDecide)
 
 	// Products
 	api.GET("/products", ph.List)

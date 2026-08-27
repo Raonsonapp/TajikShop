@@ -24,6 +24,8 @@ import '../../routes/route_names.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
 import '../../core/l10n/profile_l10n.dart';
+import '../../core/l10n/verification_l10n.dart';
+import '../seller/seller_rating_card.dart';
 import 'package:latlong2/latlong.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/safe_input.dart';
@@ -759,9 +761,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       style: TextStyle(color: context.pal.textPrimary, fontSize: 20, fontWeight: FontWeight.w700),
                       overflow: TextOverflow.ellipsis),
                 ),
+                // Галочка сабз аст — ранги бренд, на кабуди Twitter.
                 if (user?.fullName == 'tajikshop' || user?.isVerified == true) ...[
                   const SizedBox(width: 6),
-                  const Icon(FeatherIcons.checkCircle, color: Color(0xFF1DA1F2), size: 18),
+                  const Icon(FeatherIcons.checkCircle, color: AppColors.primary, size: 18),
                 ],
               ]),
               const SizedBox(height: 4),
@@ -799,8 +802,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const SizedBox(height: 16),
               const _LoyaltyCard(),
 
+              // ── Галочкаи тасдиқ (барои ҳама) ────────────────────────────
+              _GroupCard(children: [
+                _Tile(icon: FeatherIcons.award, iconColor: AppColors.primary,
+                    label: user?.isVerified == true
+                        ? l.verifyApproved
+                        : l.verifyTile,
+                    onTap: () => context.push(RouteNames.verification)),
+              ]),
+
               // ── Seller / Become Seller ──────────────────────────────────
               if (isSeller) ...[
+                _SectionLabel(l.ratingTitle),
+                SellerRatingCard(sellerId: user?.id ?? ''),
                 _SectionLabel(l.sellerDashboard),
                 _GroupCard(children: [
                   _Tile(icon: FeatherIcons.grid, iconColor: const Color(0xFF00D084),

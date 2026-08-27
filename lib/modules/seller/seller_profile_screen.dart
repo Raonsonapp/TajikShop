@@ -15,6 +15,7 @@ import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
+import 'seller_rating_card.dart';
 import 'package:latlong2/latlong.dart';
 import '../address/map_picker_screen.dart';
 
@@ -59,6 +60,8 @@ class SellerProfileScreen extends ConsumerWidget {
             error: (_, __) => const SizedBox(height: 40),
             data: (d) => _header(context, ref, d, following),
           )),
+          // Баҳои харидорон (1–10) — нишони эътимод пеш аз харид.
+          SliverToBoxAdapter(child: SellerRatingCard(sellerId: id)),
           products.when(
             loading: () => SliverPadding(padding: const EdgeInsets.all(20),
               sliver: SliverGrid(

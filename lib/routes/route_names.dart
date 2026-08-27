@@ -31,4 +31,6 @@ class RouteNames {
   static const adminCargo      = '/admin/cargo';
   static const sellerRequests  = '/admin/seller-requests';
   static const nearbyShops     = '/shops';
+  static const verification    = '/verification';
+  static const adminVerification = '/admin/verification';
 }
