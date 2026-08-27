@@ -61,6 +61,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.GET("/seller/stats", middleware.Auth(), uh.SellerStats)
 	api.GET("/seller/orders", middleware.Auth(), middleware.SellerOnly(), uh.SellerOrders)
 	api.POST("/seller/orders/:id/status", middleware.Auth(), middleware.SellerOnly(), oh.SellerUpdateOrderStatus)
+	api.POST("/seller/payments/confirm-sms", middleware.Auth(), middleware.SellerOnly(), oh.ConfirmPaymentBySMS)
 	api.GET("/seller/sales-chart", middleware.Auth(), middleware.SellerOnly(), uh.SellerSalesChart)
 	api.GET("/users/me/referral", middleware.Auth(), uh.ReferralInfo)
 	api.GET("/users/me/loyalty", middleware.Auth(), uh.LoyaltyInfo)
@@ -75,6 +76,8 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.GET("/users/:id/followers", middleware.Auth(), flh.Followers)
 	api.GET("/users/:id/public", uh.PublicProfile)
 	api.GET("/users/:id/rating", oh.SellerRating)
+	api.PUT("/users/me/username", middleware.Auth(), oh.SetUsername)
+	api.GET("/users/username-available", oh.CheckUsername)
 
 	// Products
 	api.GET("/products", ph.List)

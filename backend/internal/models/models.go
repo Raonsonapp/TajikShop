@@ -25,6 +25,7 @@ type User struct {
 	RefreshToken    string    `json:"-"`
 	CardNumber      string    `json:"card_number,omitempty"`
 	CardHolder      string    `json:"card_holder,omitempty"`
+	Username        string    `json:"username"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }

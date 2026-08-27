@@ -226,6 +226,11 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_desc  TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_phone TEXT DEFAULT '';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_hours TEXT DEFAULT '';
 
+-- Username — ном барои ёфтани корбар/мағоза (@username), беназир.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(32) DEFAULT '';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username
+  ON users(LOWER(username)) WHERE username <> '';
+
 -- Корти фурӯшанда — харидор пеш аз расонидан маблағро мефиристад, то
 -- фурӯшанда бе фоида роҳ наравад. Танҳо ба харидори фармоиши ҳамон
 -- фурӯшанда кушода мешавад.

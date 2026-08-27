@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/seller_provider.dart';
+import 'confirm_payment_screen.dart';
 import '../../routes/route_names.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
@@ -246,6 +247,14 @@ class SellerDashboardScreen extends ConsumerWidget {
                     label: l.sellerNewOrders,
                     subtitle: l.sellerNewOrdersSub,
                     onTap: () => context.push('/seller/orders'),
+                  ),
+                  _ActionDivider(),
+                  _ActionItem(
+                    icon: FeatherIcons.checkCircle,
+                    label: 'Тасдиқи пардохт',
+                    subtitle: 'SMS-и бонкро гузоред — фармоиш худкор тасдиқ мешавад',
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => const ConfirmPaymentScreen())),
                   ),
                   _ActionDivider(),
                   _ActionItem(

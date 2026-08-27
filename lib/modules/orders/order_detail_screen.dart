@@ -270,6 +270,12 @@ class OrderDetailScreen extends ConsumerWidget {
     ));
   }
 
+  /// Корти баҳодиҳӣ: харидор ба фурӯшанда аз 1 то 10 баҳо мегузорад.
+  Widget _rateSellerCard(BuildContext context, WidgetRef ref, String orderId) {
+    final pal = context.pal;
+    return _RateSellerCard(orderId: orderId, pal: pal);
+  }
+
   Widget _build(BuildContext context, WidgetRef ref, OrderModel o) {
     final l = AppL10n.of(context);
     final pal = context.pal;
@@ -283,6 +289,11 @@ class OrderDetailScreen extends ConsumerWidget {
         padding: const EdgeInsets.only(bottom: 4),
         child: OrderProtectionCard(orderId: o.id),
       ),
+
+      // ── Баҳо ба фурӯшанда (1..10) — танҳо пас аз гирифтани мол ──
+      if (o.status.toLowerCase() == 'delivered' ||
+          o.status.toLowerCase() == 'completed')
+        _rateSellerCard(context, ref, o.id),
 
       // Header card — tracking hero with green gradient accent
       Container(
@@ -494,6 +505,134 @@ class _GradientButton extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+
+/// Баҳо ба фурӯшанда — 1..10.
+///
+/// Танҳо пас аз супоридани мол нишон дода мешавад (сервер низ ҳаминро
+/// талаб мекунад), то касе бе харид баҳо нагузорад.
+class _RateSellerCard extends StatefulWidget {
+  final String orderId;
+  final AppPalette pal;
+  const _RateSellerCard({required this.orderId, required this.pal});
+
+  @override
+  State<_RateSellerCard> createState() => _RateSellerCardState();
+}
+
+class _RateSellerCardState extends State<_RateSellerCard> {
+  int? _score;
+  bool _sending = false;
+  bool _done = false;
+  String? _error;
+
+  Future<void> _send() async {
+    if (_score == null) return;
+    setState(() { _sending = true; _error = null; });
+    try {
+      await ApiClient.instance.dio
+          .post('/orders/${widget.orderId}/rate-seller', data: {'score': _score});
+      if (mounted) setState(() { _done = true; _sending = false; });
+    } on DioException catch (e) {
+      final d = e.response?.data;
+      if (mounted) {
+        setState(() {
+          _sending = false;
+          _error = (d is Map ? d['error'] : null)?.toString() ?? 'Фиристода нашуд';
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() { _sending = false; _error = 'Фиристода нашуд'; });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pal = widget.pal;
+    if (_done) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.35)),
+        ),
+        child: Row(children: [
+          const Icon(FeatherIcons.checkCircle, color: AppColors.success, size: 19),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text('Ташаккур! Баҳои шумо: $_score/10',
+                style: TextStyle(color: pal.textPrimary, fontSize: 14)),
+          ),
+        ]),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: pal.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: pal.border, width: 0.7),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(FeatherIcons.star, color: AppColors.warning, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text('Ба фурӯшанда баҳо диҳед',
+                style: TextStyle(
+                    color: pal.textPrimary,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800)),
+          ),
+        ]),
+        const SizedBox(height: 4),
+        Text('Аз 1 то 10 — ин ба дигар харидорон кӯмак мекунад',
+            style: TextStyle(color: pal.textMuted, fontSize: 11.5)),
+        const SizedBox(height: 12),
+        Wrap(spacing: 7, runSpacing: 7, children: [
+          for (int i = 1; i <= 10; i++)
+            GestureDetector(
+              onTap: () => setState(() => _score = i),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: _score == i ? AppColors.primaryGradient : null,
+                  color: _score == i ? null : pal.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: _score == i ? Colors.transparent : pal.border,
+                      width: 0.8),
+                ),
+                child: Text('$i',
+                    style: TextStyle(
+                        color: _score == i ? Colors.white : pal.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700)),
+              ),
+            ),
+        ]),
+        if (_error != null) ...[
+          const SizedBox(height: 10),
+          Text(_error!,
+              style: const TextStyle(color: AppColors.error, fontSize: 12.5)),
+        ],
+        const SizedBox(height: 14),
+        AppButton(
+          text: 'Баҳоро фиристодан',
+          isLoading: _sending,
+          onTap: _score == null ? null : _send,
+        ),
+      ]),
     );
   }
 }

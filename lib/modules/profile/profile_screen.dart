@@ -556,6 +556,108 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  // ── Username (@nom) ─────────────────────────────────────────────────────────
+  Future<void> _editUsername() async {
+    final user = ref.read(authProvider).user;
+    final ctrl = TextEditingController(text: user?.username ?? '');
+    final messenger = ScaffoldMessenger.of(context);
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        String? err;
+        bool busy = false;
+        return StatefulBuilder(builder: (ctx, setD) {
+          return AlertDialog(
+            backgroundColor: ctx.pal.card,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            title: Text('Username',
+                style: TextStyle(
+                    color: ctx.pal.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800)),
+            content: Column(mainAxisSize: MainAxisSize.min, children: [
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                style: TextStyle(color: ctx.pal.textPrimary),
+                decoration: InputDecoration(
+                  prefixText: '@',
+                  prefixStyle: TextStyle(
+                      color: AppColors.primary, fontWeight: FontWeight.w800),
+                  hintText: 'masalan_dukoni_man',
+                  hintStyle: TextStyle(color: ctx.pal.textMuted, fontSize: 13.5),
+                  errorText: err,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: ctx.pal.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        const BorderSide(color: AppColors.primary, width: 1.8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text('3–32 аломат: ҳарфҳои лотинӣ, рақам ва _',
+                  style: TextStyle(color: ctx.pal.textMuted, fontSize: 11.5)),
+            ]),
+            actions: [
+              TextButton(
+                onPressed: busy ? null : () => Navigator.of(ctx).pop(false),
+                child: Text('Бекор',
+                    style: TextStyle(color: ctx.pal.textSecondary)),
+              ),
+              TextButton(
+                onPressed: busy
+                    ? null
+                    : () async {
+                        setD(() { busy = true; err = null; });
+                        try {
+                          await ApiClient.instance.dio.put(
+                              '/users/me/username',
+                              data: {'username': ctrl.text.trim()});
+                          if (ctx.mounted) Navigator.of(ctx).pop(true);
+                        } on DioException catch (e) {
+                          final d = e.response?.data;
+                          setD(() {
+                            busy = false;
+                            // Сервер сабабро дақиқ мегӯяд (гирифташуда / нодуруст).
+                            err = (d is Map ? d['error'] : null)?.toString() ??
+                                'Нигоҳ дошта нашуд';
+                          });
+                        } catch (_) {
+                          setD(() { busy = false; err = 'Нигоҳ дошта нашуд'; });
+                        }
+                      },
+                child: busy
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: AppColors.primary))
+                    : const Text('Нигоҳ доштан',
+                        style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700)),
+              ),
+            ],
+          );
+        });
+      },
+    );
+
+    if (saved == true) {
+      await ref.read(authProvider.notifier).checkAuth();
+      messenger.showSnackBar(SnackBar(
+        content: Text(AppL10n.of(context).profileUpdated),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+
   // ── Language picker ──────────────────────────────────────────────────────────
   void _showLanguagePicker() {
     final l = AppL10n.of(context);
@@ -762,6 +864,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   label: isDark ? l.darkMode : l.lightMode,
                   value: isDark,
                   onChanged: (v) => ref.read(themeProvider.notifier).toggle()),
+                // Username — ном барои ёфтани корбар/мағоза (@username)
+                _Tile(
+                  icon: FeatherIcons.atSign, iconColor: const Color(0xFF00A86B),
+                  label: (user?.username.isNotEmpty ?? false)
+                      ? '@${user!.username}'
+                      : 'Username гузоред',
+                  onTap: _editUsername),
                 // Забон
                 _Tile(
                   icon: FeatherIcons.globe, iconColor: const Color(0xFF00A86B),
