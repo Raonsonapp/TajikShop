@@ -3,6 +3,7 @@ import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../shared/widgets/osm_tiles.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/orders_l10n.dart';
 import '../../core/constants/app_colors.dart';
@@ -82,14 +83,12 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           options: MapOptions(
             initialCenter: widget.initial,
             initialZoom: 13,
+            minZoom: 5,
+            maxZoom: 19,
+            backgroundColor: mapBackground(context),
             onPositionChanged: (camera, _) => _center = camera.center,
           ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.tajikshop.app',
-            ),
-          ],
+          children: const [OsmTiles()],
         ),
 
         // Маркери собит дар марказ

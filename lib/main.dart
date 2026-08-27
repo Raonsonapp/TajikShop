@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/app_l10n.dart';
+import 'core/l10n/fallback_localizations.dart';
 import 'core/services/network_service.dart'; // ← ИЛОВА КУНЕД
 import 'core/services/push_service.dart';
 import 'core/ads/ad_service.dart';
@@ -68,6 +69,11 @@ class TajikShopApp extends ConsumerWidget {
       routerConfig: router,
       localizationsDelegates: const [
         _AppLocalizationsDelegate(),
+        // ⚠️ Пеш аз Global-ҳо: тоҷикӣ дар Flutter нест, бе ин сатрҳо
+        // `MaterialLocalizations` бор намешавад ва тугмаи бозгашт,
+        // bottom sheet-ҳо ва RefreshIndicator мешикананд.
+        fallbackMaterialDelegate,
+        fallbackCupertinoDelegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

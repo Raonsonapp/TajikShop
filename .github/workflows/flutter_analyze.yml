@@ -34,3 +34,9 @@ jobs:
 
       - name: Analyze (errors only, ignore warnings/infos)
         run: flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1
+
+      # `analyze` хатоҳои иҷрошавандаро намебинад. Масалан набудани
+      # `MaterialLocalizations` барои тоҷикӣ таҳлилро мегузашт, вале дар
+      # телефон тугмаи бозгашт ва ҳамаи bottom sheet-ҳоро мешикаст.
+      - name: Test
+        run: flutter test

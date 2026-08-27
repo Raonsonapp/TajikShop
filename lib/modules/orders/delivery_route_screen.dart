@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../shared/widgets/osm_tiles.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 
@@ -229,13 +230,10 @@ class _DeliveryRouteScreenState extends State<DeliveryRouteScreen> {
             initialZoom: 13,
             minZoom: 5,
             maxZoom: 19,
+            backgroundColor: mapBackground(context),
           ),
           children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.tajikshop.app',
-              maxNativeZoom: 19,
-            ),
+            const OsmTiles(),
 
             // ── Хати САБЗИ роҳ ──
             if (_route.length >= 2)

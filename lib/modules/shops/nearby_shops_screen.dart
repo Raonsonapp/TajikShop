@@ -7,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import '../../shared/widgets/osm_tiles.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/business_types.dart';
 import '../../core/theme/app_palette.dart';
@@ -235,16 +236,11 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
           // Тамоми Тоҷикистон дар доираи ҳаракат — то корбар аз кишвар набарояд.
           minZoom: 5,
           maxZoom: 19,
+          backgroundColor: mapBackground(context),
           onTap: (_, __) => setState(() => _selected = null),
         ),
         children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.tajikshop.app',
-            // OSM то зуми 19 плитка дорад — дар зумҳои калон рақами хонаҳо
-            // намоён мешаванд (реҷаи «Кӯчаву хонаҳо»).
-            maxNativeZoom: 19,
-          ),
+          const OsmTiles(),
           MarkerLayer(markers: markers),
         ],
       ),
