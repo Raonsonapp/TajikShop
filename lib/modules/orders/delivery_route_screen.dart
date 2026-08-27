@@ -248,10 +248,13 @@ class _DeliveryRouteScreenState extends State<DeliveryRouteScreen> {
                 ),
                 Polyline(
                   points: _route,
-                  strokeWidth: 5.5,
-                  color: AppColors.primary,
-                  // Хати рост = роҳи тахминӣ, пас чиндор нишон медиҳем.
-                  isDotted: _straightLine,
+                  // Роҳи тахминӣ (хати рост) борик ва шаффофтар кашида
+                  // мешавад, то аз роҳи воқеии кӯчагӣ фарқ кунад; дар
+                  // панели поён низ дар ин бора навишта мешавад.
+                  strokeWidth: _straightLine ? 4 : 5.5,
+                  color: _straightLine
+                      ? AppColors.primary.withValues(alpha: 0.65)
+                      : AppColors.primary,
                 ),
               ]),
 

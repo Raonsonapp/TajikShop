@@ -127,7 +127,8 @@ class _NearbyShopsScreenState extends ConsumerState<NearbyShopsScreen> {
       ),
       child: Row(children: [
         seg(_MapMode.country, FeatherIcons.globe, 'Тоҷикистон'),
-        seg(_MapMode.city, FeatherIcons.mapPin, 'Шаҳру ноҳия'),
+        // Агар ноҳия интихоб шуда бошад, номи ҳамонро нишон медиҳем.
+        seg(_MapMode.city, FeatherIcons.mapPin, _place?.name ?? 'Шаҳру ноҳия'),
         seg(_MapMode.street, FeatherIcons.home, 'Кӯчаҳо'),
       ]),
     );
