@@ -800,11 +800,28 @@ class _StoriesRailState extends ConsumerState<_StoriesRail> {
   Widget build(BuildContext context) {
     final async = ref.watch(storiesProvider);
     // Ҳангоми навсозӣ ҳикояҳои кӯҳна дар ҷояшон мемонанд (бе ҷаҳиши тартиб).
-    final users = async.valueOrNull ?? const <StoryUser>[];
-    final isSeller = ref.watch(authProvider).user?.isSeller ?? false;
+    final all = async.valueOrNull ?? const <StoryUser>[];
+    final me = ref.watch(authProvider).user;
+    final isSeller = me?.isSeller ?? false;
+
+    // ⚠️ Ҳикояи ХУДРО аз рӯйхати умумӣ ҷудо мекунем.
+    //
+    // Пештар ҳикояи худи корбар ҳам дар «Ҳикояи ман» ва ҳам дар рӯйхати
+    // умумӣ буд — барои ҳамин пас аз нашр ҳалқаи ДУЮМ пайдо мешуд. Акнун
+    // ҳикояи худ ба ҳамон ҳалқаи «Ҳикояи ман» дохил мешавад.
+    StoryUser? mine;
+    final others = <StoryUser>[];
+    for (final u in all) {
+      if (me != null && u.userId == me.id) {
+        mine = u;
+      } else {
+        others.add(u);
+      }
+    }
+    final hasMine = mine != null;
 
     // Агар ягон ҳикоя нест ва корбар фурӯшанда нест → чизе нишон намедиҳем
-    if (users.isEmpty && !isSeller) return const SizedBox.shrink();
+    if (others.isEmpty && !hasMine && !isSeller) return const SizedBox.shrink();
 
     final pal = context.pal;
     return Padding(
@@ -815,21 +832,26 @@ class _StoriesRailState extends ConsumerState<_StoriesRail> {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           children: [
-            if (isSeller)
+            if (isSeller || hasMine)
               _StoryRingItem(
                 label: 'Ҳикояи ман',
-                avatarUrl: ref.watch(authProvider).user?.avatar ?? '',
-                isAdd: true,
+                avatarUrl: mine?.avatarUrl ?? me?.avatar ?? '',
+                // Ҳалқаи сабз танҳо вақте, ки ҳикояи фаъол дорад.
+                hasStory: hasMine,
+                isAdd: !hasMine,
                 busy: _posting,
-                onTap: _postStory,
+                onTap: hasMine
+                    ? () => _openViewer([mine!, ...others], 0)
+                    : _postStory,
+                onLongPress: hasMine ? _postStory : null,
               ),
-            for (int i = 0; i < users.length; i++)
+            for (int i = 0; i < others.length; i++)
               _StoryRingItem(
-                label: users[i].userName,
-                avatarUrl: users[i].avatarUrl,
-                onTap: () => _openViewer(users, i),
+                label: others[i].userName,
+                avatarUrl: others[i].avatarUrl,
+                onTap: () => _openViewer(others, i),
               ),
-            if (users.isEmpty && isSeller)
+            if (others.isEmpty && !hasMine && isSeller)
               Padding(
                 padding: const EdgeInsets.only(left: 8, top: 26),
                 child: Text('Аввалин ҳикояи худро нашр кунед',
@@ -848,11 +870,19 @@ class _StoryRingItem extends StatelessWidget {
   final bool isAdd;
   final bool busy;
   final VoidCallback onTap;
+
+  /// Ҳалқаи «Ҳикояи ман» вақте ҳикояи фаъол ҳаст: ҳам ҳалқаи сабз, ҳам
+  /// нишони «+» дар кунҷ — то корбар ҳам дида тавонад, ҳам нав илова кунад.
+  final bool hasStory;
+  final VoidCallback? onLongPress;
+
   const _StoryRingItem({
     required this.label,
     required this.avatarUrl,
     this.isAdd = false,
     this.busy = false,
+    this.hasStory = false,
+    this.onLongPress,
     required this.onTap,
   });
 
@@ -861,10 +891,12 @@ class _StoryRingItem extends StatelessWidget {
     final pal = context.pal;
     return GestureDetector(
       onTap: busy ? null : onTap,
+      onLongPress: busy ? null : onLongPress,
       child: Container(
         width: 72,
         margin: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(children: [
+          Stack(clipBehavior: Clip.none, children: [
           Container(
             width: 64,
             height: 64,
@@ -918,14 +950,37 @@ class _StoryRingItem extends StatelessWidget {
               ),
             ),
           ),
+          // Ҳикоя дорад → нишони «+» барои илова кардани ҳикояи нав
+          // (ё пахши дароз). Бе ин корбар роҳи илова карданро намеёбад.
+          if (hasStory && onLongPress != null)
+            Positioned(
+              right: -1,
+              bottom: -1,
+              child: GestureDetector(
+                onTap: busy ? null : onLongPress,
+                child: Container(
+                  width: 21,
+                  height: 21,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: pal.scaffold, width: 2),
+                  ),
+                  child: const Icon(FeatherIcons.plus,
+                      color: Colors.white, size: 11),
+                ),
+              ),
+            ),
+          ]),
           const SizedBox(height: 5),
           Text(label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  color: pal.textSecondary,
+                  color: hasStory ? AppColors.primary : pal.textSecondary,
                   fontSize: 11,
-                  fontWeight: FontWeight.w500)),
+                  fontWeight: hasStory ? FontWeight.w700 : FontWeight.w500)),
         ]),
       ),
     );

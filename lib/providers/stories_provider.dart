@@ -6,12 +6,16 @@ import '../data/models/story_model.dart';
 
 const String _kMediaHost = 'https://mahmadmurodov-tajikshop.hf.space';
 
-/// Ҳикояҳои кашф (discover) — аз ҳамаи фурӯшандагон, гурӯҳбандишуда аз рӯи корбар.
-/// GET /stories/discover. Ҳангоми хатогӣ рӯйхати холӣ то UI вайрон нашавад.
+/// Ҳикояҳои лентаи корбар — танҳо аз касоне, ки ӯ ОБУНА шудааст, плюс
+/// ҳикояҳои худаш. GET /stories/feed.
+///
+/// Пештар ин ҷо `/stories/discover` буд, ки ҳикояи ҲАМАИ фурӯшандагонро
+/// нишон медод — корбар ҳикояи одамони бегонаро медид. Ҳангоми хатогӣ
+/// рӯйхати холӣ бармегардонем, то UI вайрон нашавад.
 final storiesProvider =
     FutureProvider.autoDispose<List<StoryUser>>((ref) async {
   try {
-    final res = await ApiClient.instance.dio.get(ApiEndpoints.storiesDiscover);
+    final res = await ApiClient.instance.dio.get(ApiEndpoints.stories);
     final raw = res.data;
     final list = raw is List ? raw : (raw is Map ? (raw['data'] ?? []) : []);
     final maps = (list as List).whereType<Map<String, dynamic>>().toList();

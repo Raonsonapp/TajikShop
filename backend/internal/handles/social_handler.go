@@ -301,13 +301,18 @@ func NewNotificationHandler() *NotificationHandler { return &NotificationHandler
 
 func (h *NotificationHandler) List(c *gin.Context) {
 	uid := utils.UserID(c)
-	rows, _ := db.DB.Query(`SELECT id,type,title,body,is_read,created_at FROM notifications
+	// `ref_id` бояд баргардад — бе он зеркунии огоҳӣ ҳеҷ ҷо намебарад.
+	rows, _ := db.DB.Query(`SELECT id,type,COALESCE(title,''),COALESCE(body,''),
+		COALESCE(is_read,false),COALESCE(ref_id::text,''),created_at
+		FROM notifications
 		WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50`, uid)
 	defer rows.Close()
 	var notifs []models.Notification
 	for rows.Next() {
 		var n models.Notification
-		rows.Scan(&n.ID, &n.Type, &n.Title, &n.Body, &n.IsRead, &n.CreatedAt)
+		if err := rows.Scan(&n.ID, &n.Type, &n.Title, &n.Body, &n.IsRead, &n.RefID, &n.CreatedAt); err != nil {
+			continue
+		}
 		notifs = append(notifs, n)
 	}
 	if notifs == nil {

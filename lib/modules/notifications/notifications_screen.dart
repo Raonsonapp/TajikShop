@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
+import '../../routes/route_names.dart';
+import '../seller/sold_out_screen.dart';
 import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
@@ -110,16 +113,38 @@ class _NTile extends StatelessWidget {
   final NotificationModel n;
   const _NTile({required this.n});
 
-  IconData get _icon => n.type == 'order'
-      ? FeatherIcons.fileText
-      : n.type == 'payment'
-          ? FeatherIcons.creditCard
-          : FeatherIcons.bell;
+  IconData get _icon => switch (n.type) {
+        'order' => FeatherIcons.fileText,
+        'payment' => FeatherIcons.creditCard,
+        'stock' => FeatherIcons.alertCircle,
+        'verify' => FeatherIcons.award,
+        'follow' => FeatherIcons.userPlus,
+        _ => FeatherIcons.bell,
+      };
+
+  /// Огоҳӣ бояд ба ҷои дуруст барад — вагарна зеркунӣ ҳеҷ кор намекунад.
+  void _open(BuildContext context) {
+    switch (n.type) {
+      case 'order':
+        if (n.refId.isNotEmpty) context.push('/orders/${n.refId}');
+      case 'stock':
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const SoldOutScreen()));
+      case 'verify':
+        context.push(RouteNames.verification);
+      case 'follow':
+        if (n.refId.isNotEmpty) context.push('/seller/${n.refId}');
+      case 'payment':
+        context.push(RouteNames.wallet);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final unread = !n.isRead;
-    return Container(
+    return GestureDetector(
+      onTap: () => _open(context),
+      child: Container(
       margin: const EdgeInsets.symmetric(vertical: 5),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -208,6 +233,7 @@ class _NTile extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

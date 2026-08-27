@@ -11,6 +11,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/app_l10n.dart';
+import '../../core/l10n/stock_l10n.dart';
+import '../../shared/widgets/fade_slide_in.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/services/recent_service.dart';
@@ -73,9 +75,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 ShimmerCard(height: 18, width: 120, radius: 6),
               ])),
         ])),
-      error: (e, _) => ErrorScreen(
-          message: e.toString(),
-          onRetry: () => ref.invalidate(productDetailProvider(widget.id))),
+      // 404 = маҳсулот нест карда шудааст. Ин хатои сервер НЕСТ — гуфтани
+      // «Сервер ҷавоб надод» корбарро гумроҳ мекунад ва тугмаи «Такрор кунед»
+      // ҳеҷ гоҳ кор намекунад. Барои ин ҳолат экрани ҷудогона.
+      error: (e, _) => e is DioException && e.response?.statusCode == 404
+          ? _ProductGoneScreen(id: widget.id)
+          : ErrorScreen(
+              message: e.toString(),
+              onRetry: () => ref.invalidate(productDetailProvider(widget.id))),
       data: (p) => _build(p),
     );
   }
@@ -1667,6 +1674,107 @@ class _ReviewTileState extends ConsumerState<_ReviewTile> {
           ]),
         ),
       ]),
+    );
+  }
+}
+
+/// Маҳсулот нест карда шудааст (404).
+///
+/// Пештар ин ҳолат ба экрани умумии хатогӣ мерасид ва «Сервер ҷавоб надод»
+/// менавишт — гӯё айб дар сервер бошад. Дар асл маҳсулот фақат нест шудааст,
+/// ва «Такрор кунед» ҳеҷ гоҳ кӯмак намекард. Ин ҷо ҷавоби рост ва ду роҳи
+/// давом додан.
+class _ProductGoneScreen extends StatefulWidget {
+  final String id;
+  const _ProductGoneScreen({required this.id});
+
+  @override
+  State<_ProductGoneScreen> createState() => _ProductGoneScreenState();
+}
+
+class _ProductGoneScreenState extends State<_ProductGoneScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Аз «навакак дида шуда» мебарорем — то корти мурда дар экран намонад.
+    RecentService.remove(widget.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pal = context.pal;
+    final l = AppL10n.of(context);
+    return Scaffold(
+      backgroundColor: pal.scaffold,
+      appBar: AppBar(
+        backgroundColor: pal.scaffold,
+        elevation: 0,
+        iconTheme: IconThemeData(color: pal.textPrimary),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: FadeSlideIn(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                width: 96,
+                height: 96,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(FeatherIcons.package,
+                    color: AppColors.primary, size: 40),
+              ),
+              const SizedBox(height: 22),
+              Text(l.productGoneTitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: pal.textPrimary,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 10),
+              Text(l.productGoneBody,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: pal.textSecondary, fontSize: 13.5, height: 1.45)),
+              const SizedBox(height: 26),
+              PressableScale(
+                onTap: () => context.go(RouteNames.search),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Center(
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(FeatherIcons.search,
+                              color: Colors.white, size: 17),
+                          const SizedBox(width: 9),
+                          Text(l.productGoneSearch,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700)),
+                        ]),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => context.go(RouteNames.home),
+                child: Text(l.productGoneHome,
+                    style: TextStyle(color: pal.textMuted, fontSize: 13.5)),
+              ),
+            ]),
+          ),
+        ),
+      ),
     );
   }
 }

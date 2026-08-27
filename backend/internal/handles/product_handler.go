@@ -157,9 +157,9 @@ func (h *ProductHandler) List(c *gin.Context) {
 		}
 	}
 
-	query := `SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
+	query := `SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-		u.name as seller_name, p.sale_ends_at,
+		COALESCE(u.name,'') AS seller_name, p.sale_ends_at,
 		(COALESCE(p.is_featured,false) AND COALESCE(p.featured_until, NOW()) > NOW()) AS is_featured
 		FROM products p JOIN users u ON u.id=p.seller_id` + where +
 		" ORDER BY (COALESCE(p.is_featured,false) AND COALESCE(p.featured_until, NOW()) > NOW()) DESC, " + orderBy +
@@ -177,8 +177,13 @@ func (h *ProductHandler) List(c *gin.Context) {
 	for rows.Next() {
 		var p models.Product
 		var saleEnds sql.NullTime
-		rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds, &p.IsFeatured)
+		// ⚠️ Хатои Scan-ро НАДОДА гузаштан мумкин нест: як сутуни NULL кофӣ буд,
+		// ки тамоми сатр сифр шавад ва дар барнома корти бе ном, «0 сом.» ва
+		// «Тамом шуд» пайдо гардад. Акнун сатри вайрон партофта мешавад.
+		if err := rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds, &p.IsFeatured); err != nil {
+			continue
+		}
 		if saleEnds.Valid {
 			p.SaleEndsAt = &saleEnds.Time
 		}
@@ -204,8 +209,8 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 	var moq int
 	var wholesale float64
 	var saleEnds sql.NullTime
-	err := db.DB.QueryRow(`SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
-		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.video_url, p.created_at, u.name,
+	err := db.DB.QueryRow(`SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
+		p.price, p.discount_percent, p.stock, p.is_active, p.views, COALESCE(p.video_url,''), p.created_at, COALESCE(u.name,''),
 		COALESCE(u.is_verified,false),
 		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name, p.sale_ends_at,
 		COALESCE(p.delivery_days,0), COALESCE(p.delivery_price,0), COALESCE(p.size_info,''), COALESCE(p.barcode,''), COALESCE(p.has_delivery,true)
@@ -216,7 +221,19 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 			&p.SellerVerified,
 			&brandID, &moq, &wholesale, &brandName, &saleEnds,
 			&p.DeliveryDays, &p.DeliveryPrice, &p.SizeInfo, &p.Barcode, &p.HasDelivery)
+	// «Нест» ва «сервер шикаст» ду чизи гуногунанд — барнома бояд фарқашонро
+	// бидонад, вагарна ба корбар «Сервер ҷавоб надод» менависад, дар ҳоле ки
+	// маҳсулот танҳо нест карда шудааст.
+	if err == sql.ErrNoRows {
+		utils.Err(c, http.StatusNotFound, "product not found")
+		return
+	}
 	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	// Soft-delete (is_active=false ва stock=0) — барои харидор «нест» аст.
+	if !p.IsActive && p.Stock == 0 {
 		utils.Err(c, http.StatusNotFound, "product not found")
 		return
 	}
@@ -246,8 +263,8 @@ func (h *ProductHandler) GetByBarcode(c *gin.Context) {
 	var moq int
 	var wholesale float64
 	var saleEnds sql.NullTime
-	err := db.DB.QueryRow(`SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
-		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.video_url, p.created_at, u.name,
+	err := db.DB.QueryRow(`SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
+		p.price, p.discount_percent, p.stock, p.is_active, p.views, COALESCE(p.video_url,''), p.created_at, COALESCE(u.name,''),
 		COALESCE(u.is_verified,false),
 		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name, p.sale_ends_at,
 		COALESCE(p.delivery_days,0), COALESCE(p.delivery_price,0), COALESCE(p.size_info,''), COALESCE(p.barcode,''), COALESCE(p.has_delivery,true)
@@ -360,6 +377,10 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 		utils.Err(c, http.StatusForbidden, "not your product")
 		return
 	}
+	// Маҳсулоти нестшуда набояд дар сабад ё лайкҳои касе монад — вагарна
+	// харидор ба он зер мекунад ва «Чизе нодуруст рафт» мебинад.
+	cleanupDeadReferences(id)
+	db.DB.Exec(`DELETE FROM notifications WHERE type='stock' AND ref_id=$1`, id)
 	utils.OK(c, gin.H{"deleted": true})
 }
 
@@ -397,9 +418,9 @@ func (h *ProductHandler) UploadImages(c *gin.Context) {
 // Аввал онҳое ки зудтар тамом мешаванд. GET /products/flash
 func (h *ProductHandler) FlashDeals(c *gin.Context) {
 	rows, err := db.DB.Query(`
-		SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
+		SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 			p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-			u.name as seller_name, p.sale_ends_at
+			COALESCE(u.name,'') AS seller_name, p.sale_ends_at
 		FROM products p
 		JOIN users u ON u.id = p.seller_id
 		WHERE p.is_active = true AND p.stock > 0
@@ -416,8 +437,13 @@ func (h *ProductHandler) FlashDeals(c *gin.Context) {
 	for rows.Next() {
 		var p models.Product
 		var saleEnds sql.NullTime
-		rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds)
+		// ⚠️ Хатои Scan-ро НАДОДА гузаштан мумкин нест: як сутуни NULL кофӣ буд,
+		// ки тамоми сатр сифр шавад ва дар барнома корти бе ном, «0 сом.» ва
+		// «Тамом шуд» пайдо гардад. Акнун сатри вайрон партофта мешавад.
+		if err := rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds); err != nil {
+			continue
+		}
 		if saleEnds.Valid {
 			p.SaleEndsAt = &saleEnds.Time
 		}
@@ -434,9 +460,9 @@ func (h *ProductHandler) FlashDeals(c *gin.Context) {
 // Аввал онҳое ки тахфифи бештар доранд. GET /products/deals
 func (h *ProductHandler) Deals(c *gin.Context) {
 	rows, err := db.DB.Query(`
-		SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
+		SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 			p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-			u.name as seller_name, p.sale_ends_at
+			COALESCE(u.name,'') AS seller_name, p.sale_ends_at
 		FROM products p
 		JOIN users u ON u.id = p.seller_id
 		WHERE p.is_active = true AND p.stock > 0 AND p.discount_percent > 0
@@ -451,8 +477,13 @@ func (h *ProductHandler) Deals(c *gin.Context) {
 	for rows.Next() {
 		var p models.Product
 		var saleEnds sql.NullTime
-		rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds)
+		// ⚠️ Хатои Scan-ро НАДОДА гузаштан мумкин нест: як сутуни NULL кофӣ буд,
+		// ки тамоми сатр сифр шавад ва дар барнома корти бе ном, «0 сом.» ва
+		// «Тамом шуд» пайдо гардад. Акнун сатри вайрон партофта мешавад.
+		if err := rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds); err != nil {
+			continue
+		}
 		if saleEnds.Valid {
 			p.SaleEndsAt = &saleEnds.Time
 		}
@@ -469,9 +500,9 @@ func (h *ProductHandler) Deals(c *gin.Context) {
 // GET /products/bestsellers
 func (h *ProductHandler) Bestsellers(c *gin.Context) {
 	rows, err := db.DB.Query(`
-		SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
+		SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 			p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-			u.name as seller_name, p.sale_ends_at
+			COALESCE(u.name,'') AS seller_name, p.sale_ends_at
 		FROM products p
 		JOIN users u ON u.id = p.seller_id
 		LEFT JOIN order_items oi ON oi.product_id = p.id
@@ -489,8 +520,13 @@ func (h *ProductHandler) Bestsellers(c *gin.Context) {
 	for rows.Next() {
 		var p models.Product
 		var saleEnds sql.NullTime
-		rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds)
+		// ⚠️ Хатои Scan-ро НАДОДА гузаштан мумкин нест: як сутуни NULL кофӣ буд,
+		// ки тамоми сатр сифр шавад ва дар барнома корти бе ном, «0 сом.» ва
+		// «Тамом шуд» пайдо гардад. Акнун сатри вайрон партофта мешавад.
+		if err := rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds); err != nil {
+			continue
+		}
 		if saleEnds.Valid {
 			p.SaleEndsAt = &saleEnds.Time
 		}
@@ -505,9 +541,9 @@ func (h *ProductHandler) Bestsellers(c *gin.Context) {
 
 func (h *ProductHandler) Trending(c *gin.Context) {
 	rows, err := db.DB.Query(`
-		SELECT p.id, p.seller_id, p.category_id, p.title, p.description,
+		SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 			p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-			u.name as seller_name
+			COALESCE(u.name,'') AS seller_name
 		FROM products p
 		JOIN users u ON u.id = p.seller_id
 		WHERE p.is_active = true AND p.stock > 0
@@ -521,8 +557,13 @@ func (h *ProductHandler) Trending(c *gin.Context) {
 	var products []models.Product
 	for rows.Next() {
 		var p models.Product
-		rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName)
+		// ⚠️ Хатои Scan-ро НАДОДА гузаштан мумкин нест: як сутуни NULL кофӣ буд,
+		// ки тамоми сатр сифр шавад ва дар барнома корти бе ном, «0 сом.» ва
+		// «Тамом шуд» пайдо гардад. Акнун сатри вайрон партофта мешавад.
+		if err := rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName); err != nil {
+			continue
+		}
 		products = append(products, p)
 	}
 	if products == nil {

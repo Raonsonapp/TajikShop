@@ -108,7 +108,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 		Note          string  `json:"note"`
 		PaymentMethod string  `json:"payment_method"` // dc | cod | wallet
 		CouponCode    string  `json:"coupon_code"`
-		Fulfilment    string  `json:"fulfilment"`     // delivery | pickup
+		Fulfilment    string  `json:"fulfilment"` // delivery | pickup
 		DeliveryFee   float64 `json:"delivery_fee"`
 		DeliveryASAP  *bool   `json:"delivery_asap"`
 		DeliverySlot  string  `json:"delivery_slot"` // "HH:MM"
@@ -187,6 +187,10 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 
 	orderID := uuid.NewString()
 
+	// Маҳсулоте, ки бо ин фармоиш метавонад тамом шавад — баъди commit
+	// аз фурӯшандаашон мепурсем: «боз ҳаст?»
+	soldOut := []string{}
+
 	// ── Пардохт аз ҳамён: тавозунро месанҷем ва кам мекунем (атомӣ) ──
 	if method == "wallet" {
 		tx, txErr := db.DB.Begin()
@@ -212,6 +216,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 			tx.Exec(`INSERT INTO order_items(id,order_id,product_id,quantity,price) VALUES($1,$2,$3,$4,$5)`,
 				uuid.NewString(), orderID, i.ProductID, i.Qty, i.Price)
 			tx.Exec(`UPDATE products SET stock=GREATEST(stock-$1,0) WHERE id=$2`, i.Qty, i.ProductID)
+			soldOut = append(soldOut, i.ProductID)
 		}
 		tx.Exec(`UPDATE users SET wallet_balance=wallet_balance-$1 WHERE id=$2`, finalTotal, uid)
 		tx.Exec(`INSERT INTO wallet_transactions(id,user_id,amount,type,status,note)
@@ -231,6 +236,10 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 		pushToUser(uid, "Фармоиш қабул шуд", "Фармоиши #"+shortID(orderID)+" бо ҳамён пардохт шуд")
 		// Фурӯшанда(гон) бояд фавран бидонанд, ки фармоиш омад.
 		notifySellersOfNewOrder(orderID)
+		// Ҳар маҳсулоте, ки бо ин фармоиш тамом шуд — аз фурӯшанда мепурсем.
+		for _, pid := range soldOut {
+			notifySoldOut(pid)
+		}
 		utils.Created(c, gin.H{"order_id": orderID, "total": finalTotal, "status": "paid", "discount": discountAmt})
 		return
 	}
@@ -246,6 +255,7 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 		db.DB.Exec(`INSERT INTO order_items(id,order_id,product_id,quantity,price) VALUES($1,$2,$3,$4,$5)`,
 			uuid.NewString(), orderID, i.ProductID, i.Qty, i.Price)
 		db.DB.Exec(`UPDATE products SET stock=GREATEST(stock-$1,0) WHERE id=$2`, i.Qty, i.ProductID)
+		soldOut = append(soldOut, i.ProductID)
 	}
 	db.DB.Exec(`DELETE FROM cart_items WHERE user_id=$1`, uid)
 	if couponCode != "" {
@@ -257,6 +267,9 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 	pushToUser(uid, "Фармоиш қабул шуд", "Фармоиши #"+shortID(orderID)+" қабул шуд")
 	// Фурӯшанда(гон) бояд фавран бидонанд, ки фармоиш омад.
 	notifySellersOfNewOrder(orderID)
+	for _, pid := range soldOut {
+		notifySoldOut(pid)
+	}
 
 	utils.Created(c, gin.H{"order_id": orderID, "total": finalTotal, "discount": discountAmt})
 }

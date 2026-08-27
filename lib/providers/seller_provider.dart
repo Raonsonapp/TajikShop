@@ -215,3 +215,19 @@ class SellerProductService {
     await ApiClient.instance.dio.delete(ApiEndpoints.product(id));
   }
 }
+
+/// Маҳсулоти тамомшудаи фурӯшанда (stock=0, ҳанӯз нест нашуда).
+/// GET /seller/products/sold-out → [{id,title,price,image,updated_at}]
+final soldOutProductsProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  try {
+    final res =
+        await ApiClient.instance.dio.get('/seller/products/sold-out');
+    final raw = res.data;
+    final list = raw is List ? raw : (raw is Map ? (raw['data'] ?? []) : []);
+    if (list is! List) return const [];
+    return list.whereType<Map<String, dynamic>>().toList();
+  } catch (_) {
+    return const [];
+  }
+});

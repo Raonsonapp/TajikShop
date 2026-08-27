@@ -46,4 +46,20 @@ class RecentService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key);
   }
+
+  /// Маҳсулоти нестшударо аз «навакак дида шуда» мебарорад — вагарна корбар
+  /// боз ба ҳамон корт зер мекунад ва «маҳсулот нест»-ро дубора мебинад.
+  static Future<void> remove(String id) async {
+    if (id.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_key) ?? [];
+    list.removeWhere((e) {
+      try {
+        return Map<String, dynamic>.from(jsonDecode(e))['id']?.toString() == id;
+      } catch (_) {
+        return true; // сатри вайрон — ба ҳар ҳол дур мекунем
+      }
+    });
+    await prefs.setStringList(_key, list);
+  }
 }

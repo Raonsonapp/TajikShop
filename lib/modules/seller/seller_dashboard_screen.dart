@@ -7,6 +7,8 @@ import '../../core/theme/app_palette.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/seller_provider.dart';
 import 'confirm_payment_screen.dart';
+import 'sold_out_screen.dart';
+import '../../core/l10n/stock_l10n.dart';
 import '../../routes/route_names.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
@@ -241,6 +243,19 @@ class SellerDashboardScreen extends ConsumerWidget {
                     subtitle: l.sellerManageProductsSub,
                     onTap: () => context.push(RouteNames.myProducts),
                   ),
+                  _ActionDivider(),
+                  // Маҳсулоти тамомшуда: «боз ҳаст?» — то дар барнома
+                  // маҳсулоти мавҷуднабуда наистад.
+                  Consumer(builder: (ctx, r, _) {
+                    final n = r.watch(soldOutProductsProvider).valueOrNull?.length ?? 0;
+                    return _ActionItem(
+                      icon: FeatherIcons.alertCircle,
+                      label: n > 0 ? '${l.soldOutTitle} ($n)' : l.soldOutTitle,
+                      subtitle: l.soldOutHint,
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => const SoldOutScreen())),
+                    );
+                  }),
                   _ActionDivider(),
                   _ActionItem(
                     icon: FeatherIcons.clock,

@@ -90,6 +90,8 @@ class SellerProfileScreen extends ConsumerWidget {
 
   Widget _header(BuildContext context, WidgetRef ref, Map<String, dynamic> d, bool following) {
     final l = AppL10n.of(context);
+    // Оё ин профили худи корбар аст?
+    final isMe = ref.watch(authProvider).user?.id == id;
     final avatar = d['avatar_url']?.toString() ?? '';
     final verified = d['is_verified'] == true;
     final rating = (d['rating'] as num?)?.toDouble() ?? 0;
@@ -176,7 +178,30 @@ class SellerProfileScreen extends ConsumerWidget {
                   icon: FeatherIcons.star),
             ]),
             const SizedBox(height: 16),
-            // Actions
+            // Actions — дар профили ХУДАТ «Пайгирӣ» ва «Паём» маъно надоранд:
+            // касе худашро пайгирӣ намекунад ва ба худаш паём наменависад.
+            // Ба ҷои онҳо роҳи кӯтоҳ ба панели фурӯшанда мемонад.
+            if (isMe)
+              GestureDetector(
+                onTap: () => context.push(RouteNames.sellerDashboard),
+                child: Container(
+                  height: 46,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                      color: context.pal.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.primary, width: 1.4)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(FeatherIcons.grid,
+                        color: AppColors.primary, size: 18),
+                    const SizedBox(width: 7),
+                    Text(l.sellerDashboard,
+                        style: const TextStyle(
+                            color: AppColors.primary, fontWeight: FontWeight.w800)),
+                  ]),
+                ),
+              )
+            else
             Row(children: [
               Expanded(child: GestureDetector(
                 onTap: () {
