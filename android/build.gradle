@@ -19,10 +19,6 @@ rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-subprojects {
-    project.evaluationDependsOn(":app")
-}
-
 // Плагинҳо compileSdk-и худро эълон мекунанд ва он аксаран кӯҳна мемонад.
 // Вақте ки ягон китобхона compileSdk-и навтарро талаб мекунад, билд бо
 // «Dependency X requires ... compile against version 34 or later» меафтад —
@@ -32,11 +28,16 @@ subprojects {
     afterEvaluate { project ->
         if (project.hasProperty("android")) {
             project.android {
-                compileSdkVersion 35
+                compileSdk = 35
             }
         }
     }
 }
+
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
