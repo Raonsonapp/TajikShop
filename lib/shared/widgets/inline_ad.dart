@@ -44,7 +44,14 @@ class _AdBannerState extends State<AdBanner> {
   @override
   void dispose() {
     _sub?.cancel();
-    _banner?.destroy();
+    // ⚠️ `destroy()` Future бармегардонад. Агар тарафи нативӣ объекти
+    // рекламаро насохта бошад (реклама бор нашуд ё SDK омода набуд), он бо
+    // `MissingPluginException` меафтад ва ҳамчун хатои async-и ДОШТА
+    // НАШУДА мемонад. Дар барнома онро `PlatformDispatcher.onError` фурӯ
+    // мебарад, пас касе намебинад — вале хато воқеист ва тести эмулятор
+    // маҳз ҳаминро ошкор кард.
+    _banner?.destroy().catchError((_) {});
+    _banner = null;
     super.dispose();
   }
 
@@ -110,7 +117,14 @@ class _AdMrecState extends State<AdMrec> {
   @override
   void dispose() {
     _sub?.cancel();
-    _banner?.destroy();
+    // ⚠️ `destroy()` Future бармегардонад. Агар тарафи нативӣ объекти
+    // рекламаро насохта бошад (реклама бор нашуд ё SDK омода набуд), он бо
+    // `MissingPluginException` меафтад ва ҳамчун хатои async-и ДОШТА
+    // НАШУДА мемонад. Дар барнома онро `PlatformDispatcher.onError` фурӯ
+    // мебарад, пас касе намебинад — вале хато воқеист ва тести эмулятор
+    // маҳз ҳаминро ошкор кард.
+    _banner?.destroy().catchError((_) {});
+    _banner = null;
     super.dispose();
   }
 

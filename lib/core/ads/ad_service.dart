@@ -49,12 +49,12 @@ class AdService {
       await ad.setAdEventListener(
         eventListener: InterstitialAdEventListener(
           onAdDismissed: () {
-            ad.destroy();
+            ad.destroy().catchError((_) {});
             _interstitial = null;
             _loadInterstitial();
           },
           onAdFailedToShow: (error) {
-            ad.destroy();
+            ad.destroy().catchError((_) {});
             _interstitial = null;
             _loadInterstitial();
           },
@@ -74,7 +74,8 @@ class AdService {
     if (_actionCounter % AdConfig.interstitialEveryNActions != 0) return;
     final ad = _interstitial;
     if (ad != null) {
-      ad.show();
+      // Ҳамон сабаб: `show()` низ метавонад аз тарафи нативӣ афтад.
+      ad.show().catchError((_) {});
       _interstitial = null; // callback дубора бор мекунад
     } else {
       _loadInterstitial();
