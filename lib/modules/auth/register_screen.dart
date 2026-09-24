@@ -114,7 +114,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       ]),
                     ),
 
-                  DarkTextField(controller: _nameCtrl, hint: l.usernameHint, icon: FeatherIcons.user,
+                  DarkTextField(key: const Key('reg_name'), controller: _nameCtrl, hint: l.usernameHint, icon: FeatherIcons.user,
                       formatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_.]')),
                         LengthLimitingTextInputFormatter(30),
@@ -124,10 +124,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     child: Text(l.usernameRule,
                         style: TextStyle(color: context.pal.textMuted, fontSize: 11)),
                   ),
-                  DarkTextField(controller: _emailCtrl, hint: 'Email', icon: FeatherIcons.mail,
+                  DarkTextField(key: const Key('reg_email'), controller: _emailCtrl, hint: 'Email', icon: FeatherIcons.mail,
                       keyboardType: TextInputType.emailAddress),
                   const SizedBox(height: 14),
-                  DarkTextField(controller: _passCtrl, hint: l.passwordMin6Hint, icon: FeatherIcons.lock,
+                  DarkTextField(key: const Key('reg_password'), controller: _passCtrl, hint: l.passwordMin6Hint, icon: FeatherIcons.lock,
                       obscure: _obscure,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _loading ? null : _register(),
@@ -145,6 +145,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   const SizedBox(height: 26),
 
                   _GradientButton(
+                    key: const Key('reg_submit'),
                     label: l.register,
                     loading: _loading,
                     onTap: _loading ? null : _register,
@@ -245,7 +246,7 @@ class _GradientButton extends StatelessWidget {
   final String label;
   final bool loading;
   final VoidCallback? onTap;
-  const _GradientButton({required this.label, required this.loading, required this.onTap});
+  const _GradientButton({super.key, required this.label, required this.loading, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

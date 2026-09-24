@@ -62,6 +62,9 @@ class MainScaffold extends ConsumerWidget {
       IconData active, IconData inactive, String path) {
     final sel = i == current;
     return Expanded(
+      // Калид барои тести воқеӣ дар эмулятор — вагарна тугмаро аз рӯи
+      // иконка ёфтан лозим мешуд, ки ҳангоми иваз шудани дизайн мешиканад.
+      key: Key('nav_$i'),
       child: GestureDetector(
         onTap: () => context.go(path),
         behavior: HitTestBehavior.opaque,
@@ -92,6 +95,7 @@ class MainScaffold extends ConsumerWidget {
   // Профил ҳамчун аватар (мисли Instagram)
   Widget _profileTab(BuildContext context, bool sel, String? avatar) {
     return Expanded(
+      key: const Key('nav_4'),
       child: GestureDetector(
         onTap: () => context.go(RouteNames.profile),
         behavior: HitTestBehavior.opaque,

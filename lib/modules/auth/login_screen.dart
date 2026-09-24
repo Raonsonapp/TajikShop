@@ -119,6 +119,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 20),
                   Center(
                     child: TextButton(
+                      key: const Key('to_register'),
                       onPressed: () => context.go(RouteNames.register),
                       child: RichText(
                         text: TextSpan(
