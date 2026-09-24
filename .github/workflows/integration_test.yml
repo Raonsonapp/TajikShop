@@ -42,6 +42,10 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # Танзими Android акнун дар худи репо дуруст аст (AGP 8.3, Gradle 8.7,
+      # compileSdk 35), пас ин ҷо ҳеҷ чизро бо `sed` ислоҳ кардан лозим нест —
+      # маҳз набудани он ислоҳҳо иҷрои аввали ин тестро афтонд.
+
       # Space-и Hugging Face дар бекорӣ мехобад. Агар онро бедор накунем,
       # аввалин дархости тест ба timeout мерасад ва тест бардурӯғ меафтад.
       - name: Wake the backend

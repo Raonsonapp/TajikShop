@@ -23,6 +23,21 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// Плагинҳо compileSdk-и худро эълон мекунанд ва он аксаран кӯҳна мемонад.
+// Вақте ки ягон китобхона compileSdk-и навтарро талаб мекунад, билд бо
+// «Dependency X requires ... compile against version 34 or later» меафтад —
+// маҳз ҳамон хато. Ин ҷо ҳамаи модулҳои Android-ро ба як версия меорем,
+// пас илова кардани плагини нав дигар билдро намешиканад.
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            project.android {
+                compileSdkVersion 35
+            }
+        }
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
