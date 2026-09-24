@@ -89,11 +89,14 @@ jobs:
           script: |
             adb logcat -c || true
             adb logcat -v time > "$GITHUB_WORKSPACE/logcat.txt" 2>&1 &
-            # ⚠️ `--timeout none` НАГУЗОРЕД: иҷрои гузашта пас аз насби APK
-            # 36 дақиқа хомӯш монд ва то маҳдудияти job ҳеҷ чиз таслим нашуд.
-            # Timeout-и воқеӣ хатогиро бо лог медиҳад, на хомӯширо.
-            flutter test integration_test/app_test.dart \
-              -d emulator-5554 --timeout 12x
+            # ⚠️ ФАРМОН БОЯД ДАР ЯК САТР БОШАД. `emulator-runner` скриптро
+            # сатр ба сатр иҷро мекунад, пас `\`-и идомаи сатр мешиканад:
+            # иҷрои гузашта маҳз аз ҳамин афтод — `-d ... --timeout ...` гум
+            # шуд ва `\` ҳамчун аргументи роҳ рафт, бинобар ин Flutter гуфт
+            # «Integration tests and unit tests cannot be run in a single
+            # invocation». Ҳамчунин `--timeout none` нагузоред: иҷрои пештара
+            # пас аз насби APK 36 дақиқа хомӯш монд.
+            flutter test integration_test/app_test.dart -d emulator-5554 --timeout 12x
 
       # Ҳангоми нокомӣ маҳз logcat сабабро мегӯяд — на папкаи `build/`,
       # ки 155 МБ буд ва ҳеҷ маълумоти фоиданок надошт.
