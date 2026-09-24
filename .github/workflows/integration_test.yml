@@ -39,6 +39,15 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -77,14 +86,22 @@ jobs:
           ram-size: 4096M
           disable-animations: true
           emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: flutter test integration_test/app_test.dart --timeout none
+          script: |
+            adb logcat -c || true
+            adb logcat -v time > "$GITHUB_WORKSPACE/logcat.txt" 2>&1 &
+            # ⚠️ `--timeout none` НАГУЗОРЕД: иҷрои гузашта пас аз насби APK
+            # 36 дақиқа хомӯш монд ва то маҳдудияти job ҳеҷ чиз таслим нашуд.
+            # Timeout-и воқеӣ хатогиро бо лог медиҳад, на хомӯширо.
+            flutter test integration_test/app_test.dart \
+              -d emulator-5554 --timeout 12x
 
-      - name: Keep the failure screenshots
-        if: failure()
+      # Ҳангоми нокомӣ маҳз logcat сабабро мегӯяд — на папкаи `build/`,
+      # ки 155 МБ буд ва ҳеҷ маълумоти фоиданок надошт.
+      - name: Keep logcat
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: integration-failure
-          path: |
-            build/
+          name: logcat
+          path: logcat.txt
           retention-days: 5
           if-no-files-found: ignore
