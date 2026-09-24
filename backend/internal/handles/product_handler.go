@@ -392,15 +392,28 @@ func (h *ProductHandler) UploadImages(c *gin.Context) {
 		return
 	}
 	files := form.File["images"]
+	if len(files) == 0 {
+		utils.OK(c, gin.H{"urls": []string{}})
+		return
+	}
+	// ⚠️ Бе ин санҷиш ҳангоми нодуруст будани калидҳои R2 ҳар боркунӣ
+	// хомӯшона ноком мешуд ва сервер бо «ок» ҷавоб медод — фурӯшанда
+	// маҳсулотро нашр мекард ва он БЕ РАСМ мемонд, бе ягон хатогӣ.
+	if h.r2 == nil {
+		utils.Err(c, http.StatusServiceUnavailable,
+			"Анбори файлҳо танзим нашудааст")
+		return
+	}
+
 	var urls []string
 	for i, fh := range files {
-		f, _ := fh.Open()
-		var url string
-		if h.r2 != nil {
-			url, err = h.r2.Upload(f, fh, "products")
+		f, oerr := fh.Open()
+		if oerr != nil {
+			continue
 		}
+		url, uerr := h.r2.Upload(f, fh, "products")
 		f.Close()
-		if err != nil || url == "" {
+		if uerr != nil || url == "" {
 			continue
 		}
 		imgID := uuid.NewString()
@@ -408,8 +421,11 @@ func (h *ProductHandler) UploadImages(c *gin.Context) {
 			imgID, id, url, i)
 		urls = append(urls, url)
 	}
-	if urls == nil {
-		urls = []string{}
+	if len(urls) == 0 {
+		// Ҳама ноком шуд — сабабро рӯирост мегӯем (бе ҳеҷ калид).
+		utils.Err(c, http.StatusBadGateway,
+			"Расмҳо бор нашуданд. Анбор: "+h.r2.Status())
+		return
 	}
 	utils.OK(c, gin.H{"urls": urls})
 }

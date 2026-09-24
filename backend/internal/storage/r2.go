@@ -131,8 +131,16 @@ func (r *R2Client) Upload(file multipart.File, header *multipart.FileHeader, fol
 		ContentType: aws.String(contentType),
 	})
 	if err != nil {
+		// Ҳолатро навсозӣ мекунем: агар калид дар вақти кор бекор шуда
+		// бошад, `/health` ва паёми хато бояд ростро гӯянд, на «ok»-и кӯҳна.
+		r.mu.Lock()
+		r.status = classifyR2Error(err, r.bucket)
+		r.mu.Unlock()
 		return "", fmt.Errorf("upload failed: %w", err)
 	}
+	r.mu.Lock()
+	r.status = "ok"
+	r.mu.Unlock()
 	return fmt.Sprintf("%s/%s", strings.TrimRight(r.publicURL, "/"), key), nil
 }
 
