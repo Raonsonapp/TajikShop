@@ -35,13 +35,29 @@ class ErrorInterceptor extends Interceptor {
     return fallback;
   }
 
+  /// Оё ин 401 дар бораи токен аст (на дар бораи парол)?
+  /// Матнҳо аз `middleware.Auth()` ва `RefreshToken` меоянд.
+  bool _isSessionError(dynamic data) {
+    if (data is! Map) return false;
+    final e = (data['error'] ?? data['message'] ?? '').toString().toLowerCase();
+    return e.contains('token');
+  }
+
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     String msg;
     final d = err.response?.data;
     switch (err.response?.statusCode) {
       case 400: msg = _extractMsg(d, 'Дархости нодуруст'); break;
-      case 401: msg = _extractMsg(d, 'Email ё парол нодуруст'); break;
+      // 401 ду маънои тамоман гуногун дорад:
+      //   • дар вуруд — парол нодуруст;
+      //   • дар ҳар ҷои дигар — мӯҳлати сессия гузашт.
+      // Пештар сервер «invalid token» мегуфт ва ҳамон матни хушки англисӣ
+      // рост ба корбар нишон дода мешуд — дар экрани нашри маҳсулот низ.
+      case 401: msg = _isSessionError(d)
+            ? 'Мӯҳлати сессия гузашт. Аз нав ворид шавед'
+            : _extractMsg(d, 'Email ё парол нодуруст');
+        break;
       case 403: msg = 'Дастрасӣ манъ аст'; break;
       case 404: msg = 'Ёфт нашуд'; break;
       case 409: msg = 'Ин email аллакай вуҷуд дорад'; break;

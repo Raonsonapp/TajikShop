@@ -5,14 +5,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
+import 'core/api/api_client.dart';
 import 'core/app_l10n.dart';
 import 'core/l10n/fallback_localizations.dart';
 import 'core/services/network_service.dart'; // ← ИЛОВА КУНЕД
 import 'core/services/push_service.dart';
 import 'core/ads/ad_service.dart';
+import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'routes/app_router.dart';
+import 'routes/route_names.dart';
 import 'shared/widgets/offline_banner.dart';
 
 void main() {
@@ -58,6 +61,14 @@ class TajikShopApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeProvider);
     final locale = ref.watch(localeProvider);
+
+    // Агар навсозии токен кӯмак накунад, сессияро пок карда, корбарро ба
+    // экрани вуруд мебарорем — вагарна ӯ дар ҳар экран «мӯҳлати сессия
+    // гузашт» мебинад ва намедонад, ки чӣ бояд кард.
+    ApiClient.onSessionExpired = () async {
+      await ref.read(authProvider.notifier).logout();
+      router.go(RouteNames.login);
+    };
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
