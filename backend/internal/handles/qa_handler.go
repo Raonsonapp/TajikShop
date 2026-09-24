@@ -89,11 +89,14 @@ func (h *QAHandler) Answer(c *gin.Context) {
 		utils.Err(c, http.StatusForbidden, "танҳо фурӯшанда ҷавоб дода метавонад")
 		return
 	}
-	// огоҳии пурсанда
-	var asker string
-	if err := db.DB.QueryRow(`SELECT user_id FROM questions WHERE id=$1`, qid).Scan(&asker); err == nil && asker != "" {
-		db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body)
-			VALUES($1,$2,'qa','Ҷавоб ба савол','Ба саволи шумо ҷавоб доданд')`, uuid.NewString(), asker)
+	// огоҳии пурсанда — бо `ref_id`-и маҳсулот, то зеркунӣ ҳамон
+	// саҳифаро кушояд. Бе он огоҳӣ ҳеҷ ҷо намебурд.
+	var asker, prodID string
+	if err := db.DB.QueryRow(`SELECT user_id, product_id FROM questions WHERE id=$1`, qid).
+		Scan(&asker, &prodID); err == nil && asker != "" {
+		db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
+			VALUES($1,$2,'qa','Ҷавоб ба савол','Ба саволи шумо ҷавоб доданд',$3)`,
+			uuid.NewString(), asker, prodID)
 		pushToUser(asker, "Ҷавоб ба савол", "Ба саволи шумо ҷавоб доданд")
 	}
 	utils.OK(c, gin.H{"answered": true})

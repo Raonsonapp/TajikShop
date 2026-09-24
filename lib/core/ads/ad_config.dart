@@ -30,6 +30,17 @@ class AdConfig {
   static String get interstitialAdUnitId =>
       useDemoAds ? _demoInterstitial : _realInterstitial;
 
+  /// Оё ID-ҳои ВОҚЕӢ гузошта шудаанд?
+  /// Агар ҳа, вале `useDemoAds` ҳанӯз `true` бошад — реклама демо мемонад
+  /// ва ПУЛ НАМЕОРАД. Тест маҳз ҳаминро намегузорад.
+  static bool get hasRealIds =>
+      _realBanner.isNotEmpty ||
+      _realMrec.isNotEmpty ||
+      _realInterstitial.isNotEmpty;
+
+  /// Ҳозир рекламаи демо нишон дода мешавад? (демо пул намедиҳад)
+  static bool get usingDemo => useDemoAds;
+
   /// Реклама умуман фаъол аст?
   static bool get enabled =>
       useDemoAds || bannerAdUnitId.isNotEmpty || interstitialAdUnitId.isNotEmpty;

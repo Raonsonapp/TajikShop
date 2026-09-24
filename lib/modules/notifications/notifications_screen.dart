@@ -119,6 +119,7 @@ class _NTile extends StatelessWidget {
         'stock' => FeatherIcons.alertCircle,
         'verify' => FeatherIcons.award,
         'follow' => FeatherIcons.userPlus,
+        'qa' => FeatherIcons.messageSquare,
         _ => FeatherIcons.bell,
       };
 
@@ -130,6 +131,9 @@ class _NTile extends StatelessWidget {
       case 'stock':
         Navigator.of(context)
             .push(MaterialPageRoute(builder: (_) => const SoldOutScreen()));
+      case 'qa':
+        // Савол ва ҷавоб ҳарду дар саҳифаи худи маҳсулотанд.
+        if (n.refId.isNotEmpty) context.push('/product/${n.refId}');
       case 'verify':
         context.push(RouteNames.verification);
       case 'follow':

@@ -196,6 +196,9 @@ class SellerProductService {
     int deliveryDays = 0,
     double deliveryPrice = 0,
     String sizeInfo = '',
+    // Холӣ → категория бетағйир мемонад (сервер COALESCE мекунад).
+    String categoryId = '',
+    bool? hasDelivery,
   }) async {
     await ApiClient.instance.dio.put(ApiEndpoints.product(id), data: {
       'title': title,
@@ -208,6 +211,8 @@ class SellerProductService {
       'delivery_days': deliveryDays,
       'delivery_price': deliveryPrice,
       'size_info': sizeInfo,
+      if (categoryId.isNotEmpty) 'category_id': categoryId,
+      if (hasDelivery != null) 'has_delivery': hasDelivery,
     });
   }
 

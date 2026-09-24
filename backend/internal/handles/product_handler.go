@@ -308,14 +308,34 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		DeliveryPrice   float64 `json:"delivery_price"`
 		SizeInfo        string  `json:"size_info"`
 		Barcode         string  `json:"barcode"`
+		// Пештар инҳо дар таҳрир набуданд: маҳсулоти бе категория ё бо
+		// категорияи хато то абад чунин мемонд, чунки ислоҳаш ғайриимкон буд.
+		CategoryID  string `json:"category_id"`
+		HasDelivery *bool  `json:"has_delivery"`
 	}
 	c.ShouldBindJSON(&in)
+
+	// Категория: холӣ → тағйир намедиҳем (COALESCE), вагарна мегузорем.
+	var catID interface{}
+	if strings.TrimSpace(in.CategoryID) != "" {
+		catID = strings.TrimSpace(in.CategoryID)
+	}
+	// Расонидан: агар фиристода нашуда бошад, ҳамон чизи буда мемонад.
+	var hasDelivery interface{}
+	if in.HasDelivery != nil {
+		hasDelivery = *in.HasDelivery
+	}
+
 	res, err := db.DB.Exec(`UPDATE products SET title=$1, description=$2, price=$3,
 		discount_percent=$4, stock=$5, is_active=$6,
-		delivery_days=$7, delivery_price=$8, size_info=$9, barcode=$10, updated_at=$11
-		WHERE id=$12 AND seller_id=$13`,
+		delivery_days=$7, delivery_price=$8, size_info=$9, barcode=$10,
+		category_id=COALESCE($11, category_id),
+		has_delivery=COALESCE($12, has_delivery),
+		updated_at=$13
+		WHERE id=$14 AND seller_id=$15`,
 		in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.IsActive,
-		in.DeliveryDays, in.DeliveryPrice, in.SizeInfo, in.Barcode, time.Now(), id, uid)
+		in.DeliveryDays, in.DeliveryPrice, in.SizeInfo, in.Barcode,
+		catID, hasDelivery, time.Now(), id, uid)
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return

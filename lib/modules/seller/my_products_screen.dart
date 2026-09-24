@@ -6,8 +6,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
+import '../../data/models/category_model.dart';
 import '../../data/models/product_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/search_provider.dart';
 import '../../providers/seller_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
@@ -275,6 +277,10 @@ class _EditProductSheetState extends State<_EditProductSheet> {
   late final TextEditingController _delivPrice;
   late final TextEditingController _size;
   late bool _active;
+  // Пештар категория ва «расонидан» дар таҳрир набуданд — маҳсулоти бе
+  // категория то абад чунин мемонд.
+  String? _catId;
+  late bool _hasDelivery;
   bool _loading = false;
 
   @override
@@ -290,6 +296,8 @@ class _EditProductSheetState extends State<_EditProductSheet> {
     _delivPrice = TextEditingController(text: p.deliveryPrice > 0 ? p.deliveryPrice.toStringAsFixed(0) : '');
     _size = TextEditingController(text: p.sizeInfo);
     _active = p.inStock;
+    _catId = (p.categoryId ?? '').isEmpty ? null : p.categoryId;
+    _hasDelivery = p.hasDelivery;
   }
 
   @override
@@ -314,7 +322,9 @@ class _EditProductSheetState extends State<_EditProductSheet> {
         saleHours: int.tryParse(_sale.text.trim()) ?? 0,
         deliveryDays: int.tryParse(_delivDays.text.trim()) ?? 0,
         deliveryPrice: double.tryParse(_delivPrice.text.replaceAll(',', '.')) ?? 0,
-        sizeInfo: _size.text.trim());
+        sizeInfo: _size.text.trim(),
+        categoryId: _catId ?? '',
+        hasDelivery: _hasDelivery);
       widget.onDone();
       if (!mounted) return;
       Navigator.pop(context);
@@ -345,6 +355,42 @@ class _EditProductSheetState extends State<_EditProductSheet> {
       const SizedBox(height: 12),
     ]);
 
+  /// Интихоби категория — рӯйхат аз сервер меояд.
+  Widget _categoryField() => Consumer(builder: (context, ref, _) {
+        final cats = ref.watch(categoriesProvider).valueOrNull ?? const <CategoryModel>[];
+        if (cats.isEmpty) return const SizedBox.shrink();
+        // Агар категорияи ҷорӣ дар рӯйхат набошад, DropdownButton меафтад.
+        final value = cats.any((c) => c.id == _catId) ? _catId : null;
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Категория', style: TextStyle(
+              color: context.pal.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 5),
+          Container(
+            decoration: BoxDecoration(
+                color: context.pal.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: context.pal.border, width: 0.5)),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: value,
+                isExpanded: true,
+                dropdownColor: context.pal.card,
+                hint: Text('Интихоб кунед',
+                    style: TextStyle(color: context.pal.textMuted, fontSize: 14)),
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 14),
+                items: [
+                  for (final c in cats)
+                    DropdownMenuItem(value: c.id, child: Text(c.name)),
+                ],
+                onChanged: (v) => setState(() => _catId = v),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ]);
+      });
+
   @override
   Widget build(BuildContext context) {
     final l = AppL10n.of(context);
@@ -372,7 +418,15 @@ class _EditProductSheetState extends State<_EditProductSheet> {
             Expanded(child: _f('Нархи доставка', _delivPrice, type: TextInputType.number)),
           ]),
           _f('Размер / вазн / ранг', _size),
+          _categoryField(),
           _f(l.description, _desc, maxLines: 3),
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            activeColor: AppColors.primary,
+            title: Text('Ман расонида метавонам',
+                style: TextStyle(color: context.pal.textPrimary, fontSize: 14)),
+            value: _hasDelivery,
+            onChanged: (v) => setState(() => _hasDelivery = v)),
           SwitchListTile.adaptive(
             contentPadding: EdgeInsets.zero,
             activeColor: AppColors.primary,
