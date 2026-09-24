@@ -193,12 +193,12 @@ func (h *OrderHandler) OrderTimeline(c *gin.Context) {
 	}
 
 	utils.OK(c, gin.H{
-		"status":           status,
-		"events":           events,
-		"tracking_code":    tracking,
-		"protect_until":    protectUntil,
-		"protection_days":  protectionDays,
-		"days_left":        daysLeft,
+		"status":            status,
+		"events":            events,
+		"tracking_code":     tracking,
+		"protect_until":     protectUntil,
+		"protection_days":   protectionDays,
+		"days_left":         daysLeft,
 		"protection_active": protectUntil != nil && time.Now().Before(*protectUntil),
 	})
 }

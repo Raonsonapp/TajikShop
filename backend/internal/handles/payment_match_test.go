@@ -5,11 +5,11 @@ import "testing"
 // Парсери SMS мантиқи пул аст — пас онро воқеан месанҷем.
 func TestParseBankSMS(t *testing.T) {
 	cases := []struct {
-		name    string
-		text    string
-		wantAmt float64
+		name     string
+		text     string
+		wantAmt  float64
 		wantTail string
-		wantOK  bool
+		wantOK   bool
 	}{
 		{
 			name:    "лотинӣ бо корт",
@@ -34,8 +34,8 @@ func TestParseBankSMS(t *testing.T) {
 		{
 			// SMS-и ХАРОҶОТ набояд ҳамчун воридот қабул шавад — вагарна
 			// фармоиш бе гирифтани пул тасдиқ мешуд.
-			name: "хароҷот рад мешавад",
-			text: "Spisanie 250.00 TJS. Karta *7344",
+			name:   "хароҷот рад мешавад",
+			text:   "Spisanie 250.00 TJS. Karta *7344",
 			wantOK: false,
 		},
 		{

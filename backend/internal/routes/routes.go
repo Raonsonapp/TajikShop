@@ -210,9 +210,21 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.POST("/admin/wallet/tx/:id/approve", middleware.Auth(), middleware.AdminOnly(), wh.AdminApprove)
 	api.POST("/admin/wallet/tx/:id/reject", middleware.Auth(), middleware.AdminOnly(), wh.AdminReject)
 
-	// Health
+	// Health — ҳолати сервер ВА анбори файлҳо (R2).
+	//
+	// Пас аз иваз кардани калидҳои Cloudflare маҳз ҳамин ҷо санҷида мешавад:
+	// `storage: "ok"` маънои онро дорад, ки калидҳои нав кор мекунанд.
+	// Ҳеҷ як калид ин ҷо намоён намешавад.
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok", "service": "TajikShop API"})
+		out := gin.H{"status": "ok", "service": "TajikShop API"}
+		if r2 == nil {
+			out["storage"] = "not configured"
+			out["storage_public_url"] = false
+		} else {
+			out["storage"] = r2.Status()
+			out["storage_public_url"] = r2.PublicURLSet()
+		}
+		c.JSON(200, out)
 	})
 }
 

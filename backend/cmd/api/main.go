@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"tajikshop/internal/config"
 	"tajikshop/internal/db"
@@ -9,6 +10,7 @@ import (
 	"tajikshop/internal/push"
 	"tajikshop/internal/routes"
 	"tajikshop/internal/storage"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,9 +31,26 @@ func main() {
 		r2, err = storage.NewR2Client(cfg.R2Endpoint, cfg.R2AccessKey, cfg.R2SecretKey, cfg.R2Bucket, cfg.R2PublicURL)
 		if err != nil {
 			log.Printf("⚠️  R2 not configured: %v", err)
+			r2 = nil
 		} else {
-			log.Println("✅ Cloudflare R2 connected")
+			// Калидҳоро ВОҚЕАН месанҷем. Сохтани клиент ба Cloudflare тамос
+			// намегирад, пас бе ин санҷиш лог ҳатто бо калиди мӯҳлаташ
+			// гузашта ҳам «connected» менавишт ва хатогӣ танҳо ҳангоми
+			// боркунии расми корбар маълум мешуд.
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			verr := r2.Verify(ctx)
+			cancel()
+			if verr != nil {
+				log.Printf("❌ Cloudflare R2: %s", r2.Status())
+			} else {
+				log.Printf("✅ Cloudflare R2 ok (bucket: %s)", cfg.R2Bucket)
+			}
+			if !r2.PublicURLSet() {
+				log.Println("⚠️  R2_PUBLIC_URL холӣ аст — линки расмҳо нопурра мешавад")
+			}
 		}
+	} else {
+		log.Println("⚠️  R2 не танзим шуд — боркунии файлҳо кор намекунад")
 	}
 
 	// Ҳимояи харидор: маблағи фармоишҳоеро, ки мӯҳлати ҳимояашон гузашт ва
