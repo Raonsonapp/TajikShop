@@ -3,9 +3,11 @@ package handlers
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"tajikshop/internal/auth"
@@ -52,9 +54,30 @@ const (
 	ssoCodeBytes = 32
 )
 
-type SSOHandler struct{ secret string }
+type SSOHandler struct {
+	secret string
+	// Калиди шарик: барномаи шарик онро дар сарлавҳаи `X-Partner-Key`
+	// мефиристад. Холӣ бошад, санҷиш хомӯш аст (то SSO дар рӯзи аввал
+	// нашиканад), вале сервер дар лог огоҳӣ медиҳад.
+	partnerKey string
+}
 
-func NewSSOHandler(secret string) *SSOHandler { return &SSOHandler{secret: secret} }
+func NewSSOHandler(secret, partnerKey string) *SSOHandler {
+	if strings.TrimSpace(partnerKey) == "" {
+		log.Println("⚠️  SSO_PARTNER_KEY холӣ аст — ҳар кас бо коди дуздидашуда " +
+			"сессия гирифта метавонад. Онро дар танзимоти Space гузоред.")
+	}
+	return &SSOHandler{secret: secret, partnerKey: strings.TrimSpace(partnerKey)}
+}
+
+// partnerKeyOK — муқоисаи вақташ собит: муқоисаи оддии сатрҳо вақти
+// гуногун мегирад ва калидро ҳарф ба ҳарф тахмин кардан мумкин мешавад.
+func partnerKeyOK(expected, got string) bool {
+	if expected == "" {
+		return true // санҷиш танзим нашудааст
+	}
+	return subtle.ConstantTimeCompare([]byte(expected), []byte(strings.TrimSpace(got))) == 1
+}
 
 // ── Барномаҳои шарик ───────────────────────────────────────────────────────
 
@@ -167,6 +190,12 @@ func (h *SSOHandler) Exchange(c *gin.Context) {
 	app, ok := findSSOApp(in.App)
 	if !ok {
 		utils.Err(c, http.StatusBadRequest, "Барномаи номаълум")
+		return
+	}
+	// Танҳо барномаи шарик кодро иваз карда метавонад. Бе ин, касе ки
+	// ягон тавр кодро ба даст овард, сессия мегирифт.
+	if !partnerKeyOK(h.partnerKey, c.GetHeader("X-Partner-Key")) {
+		utils.Err(c, http.StatusUnauthorized, "Калиди шарик нодуруст")
 		return
 	}
 

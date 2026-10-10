@@ -91,3 +91,30 @@ func TestDefaultSSOAppsAreUsable(t *testing.T) {
 		}
 	}
 }
+
+// Калиди шарик: бе ин ҳар кас, ки ягон тавр кодро ба даст овард, сессия
+// мегирифт. Муқоиса бояд вақташ собит бошад, вагарна калидро ҳарф ба
+// ҳарф тахмин кардан мумкин аст.
+func TestPartnerKeyOK(t *testing.T) {
+	const key = "s3cret-partner-key-0123456789"
+
+	if !partnerKeyOK("", "ҳар чӣ") {
+		t.Fatal("калид танзим нашуда бошад, санҷиш бояд нагузарад")
+	}
+	if !partnerKeyOK(key, key) {
+		t.Fatal("калиди дуруст рад шуд")
+	}
+	if partnerKeyOK(key, "") {
+		t.Fatal("калиди холӣ қабул шуд")
+	}
+	if partnerKeyOK(key, "s3cret-partner-key-012345678") {
+		t.Fatal("калиди нопурра қабул шуд")
+	}
+	if partnerKeyOK(key, key+"x") {
+		t.Fatal("калиди дарозтар қабул шуд")
+	}
+	// Фосилаҳои атроф набояд монеъ шаванд — онҳо аз сарлавҳаи HTTP меоянд.
+	if !partnerKeyOK(key, "  "+key+"  ") {
+		t.Fatal("фосилаҳои атроф калиди дурустро рад карданд")
+	}
+}

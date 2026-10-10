@@ -421,7 +421,45 @@ func notifySellersOfNewOrder(orderID string) {
 			VALUES($1,$2,'order',$3,$4,$5)`,
 			uuid.NewString(), r.seller, title, body, orderID)
 		pushToUser(r.seller, title, body)
+
+		// Пардохт байни харидор ва фурӯшанда бевосита мегузарад, пас онҳо
+		// бояд сӯҳбатро бо ҳамаи рақамҳо сар кунанд, на аз сифр. Паёми
+		// аввалро худи система менависад.
+		openPaymentChat(orderID, short, r.seller, r.items, r.sum)
 	}
+}
+
+// openPaymentChat — аз номи ХАРИДОР ба фурӯшанда паёми аввали сӯҳбат
+// мефиристад: кадом фармоиш, чанд ашё, чанд сомонӣ.
+//
+// Чаро: пардохт тавассути корти фурӯшанда мегузарад ва то ин ҳарду тараф
+// бояд худашон менавиштанд «салом, ман фалон чиз харидам, чанд шуд?».
+// Акнун сӯҳбат бо ҳамаи рақамҳо оғоз мешавад.
+func openPaymentChat(orderID, short, sellerID string, items int, sum float64) {
+	var buyerID string
+	if err := db.DB.QueryRow(`SELECT user_id FROM orders WHERE id=$1`, orderID).
+		Scan(&buyerID); err != nil || buyerID == "" || buyerID == sellerID {
+		return
+	}
+
+	// Такрор нашавад, агар фармоиш аз нав коркард шавад.
+	var already bool
+	db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM messages
+		WHERE sender_id=$1 AND receiver_id=$2 AND content LIKE $3)`,
+		buyerID, sellerID, "%#"+short+"%").Scan(&already)
+	if already {
+		return
+	}
+
+	text := "🛒 Фармоиши #" + short + "\n" +
+		strconv.Itoa(items) + " ашё · " +
+		strconv.FormatFloat(sum, 'f', 0, 64) + " сом.\n" +
+		"Салом! Ман ин фармоишро додам. Пардохтро чӣ тавр кунам?"
+
+	db.DB.Exec(`INSERT INTO messages(id,sender_id,receiver_id,content)
+		VALUES($1,$2,$3,$4)`, uuid.NewString(), buyerID, sellerID, text)
+	pushToUser(sellerID, "Паёми нав дар бораи фармоиш",
+		"Харидор дар бораи пардохти #"+short+" менависад")
 }
 
 // RateSeller — POST /orders/:id/rate-seller

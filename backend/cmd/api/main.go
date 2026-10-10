@@ -59,7 +59,7 @@ func main() {
 	handlers.StartEscrowSweeper()
 
 	r := gin.Default()
-	routes.Setup(r, cfg.JWTSecret, r2)
+	routes.Setup(r, cfg.JWTSecret, r2, cfg.SSOPartnerKey)
 
 	log.Printf("🚀 TajikShop API running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

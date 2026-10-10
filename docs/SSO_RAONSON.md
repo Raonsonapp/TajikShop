@@ -8,6 +8,32 @@
 
 Base URL: `https://mahmadmurodov-tajikshop.hf.space/api/v1`
 
+## Он чи дар Raonson гузоштан лозим аст
+
+| Танзим | Қимат |
+|---|---|
+| `TAJIKSHOP_API` | `https://mahmadmurodov-tajikshop.hf.space/api/v1` |
+| `TAJIKSHOP_PARTNER_KEY` | **махфӣ** — ҳамон калид, ки дар Space гузошта шудааст |
+| Схемаи худи Raonson | `raonson://sso?code=…` |
+
+Калид дар ҳарду ҷо як хел бошад:
+
+1. Дар Hugging Face Space → Settings → **Repository secrets** →
+   `SSO_PARTNER_KEY`
+2. Дар Raonson → ҳамон калид ҳамчун махфӣ (на дар код, на дар git)
+
+Пас аз гузоштани калид, Raonson ҳангоми `POST /sso/exchange` онро дар
+сарлавҳа мефиристад:
+
+```
+X-Partner-Key: <калид>
+```
+
+⚠️ То он даме ки `SSO_PARTNER_KEY` дар Space гузошта нашавад, сервер
+кодро **бе калид** ҳам иваз мекунад (то SSO дар рӯзи аввал нашиканад) ва
+дар лог огоҳӣ менависад. Калидро ҳатман гузоред: бе он ҳар кас, ки ягон
+тавр кодро ба даст овард, сессия мегирад.
+
 ---
 
 ## Ҷараён
@@ -64,7 +90,9 @@ Base URL: `https://mahmadmurodov-tajikshop.hf.space/api/v1`
 ## 3. `POST /sso/exchange` — оммавӣ (корбар ҳанӯз ворид нест)
 
 ```json
-→ { "code": "dX7…_kQ", "app": "raonson" }
+→ POST /sso/exchange
+  X-Partner-Key: <калид>
+  { "code": "dX7…_kQ", "app": "raonson" }
 
 ← { "success": true, "data": {
       "access_token":  "…",   // 24 соат
@@ -74,7 +102,8 @@ Base URL: `https://mahmadmurodov-tajikshop.hf.space/api/v1`
   }}
 ```
 
-Хатогиҳо: `401 "Код нодуруст ё мӯҳлаташ гузашт"`, `400 "Барномаи номаълум"`.
+Хатогиҳо: `401 "Код нодуруст ё мӯҳлаташ гузашт"`, `401 "Калиди шарик
+нодуруст"`, `400 "Барномаи номаълум"`.
 
 Токенҳоро мисли вуруди оддӣ нигоҳ доред ва пас аз 401 бо
 `POST /auth/refresh {refresh_token}` нав кунед.
@@ -118,12 +147,16 @@ Base URL: `https://mahmadmurodov-tajikshop.hf.space/api/v1`
 
 ---
 
-## Он чи ҳанӯз карда нашудааст
+## Ҳолат
 
-- **Қабули deep link дар худи TajikShop.** Ҳоло TajikShop кодро дода
-  метавонад, вале коди воридшавандаро қабул намекунад — барои он плагини
-  deep link (`app_links`) ва `intent-filter` лозим аст. То он вақт роҳ
-  якҷониба аст: TajikShop → Raonson.
-- **Ҳисобҳои ҷудогона дар Raonson.** Агар Raonson базаи худро дошта бошад,
-  ҳангоми аввалин `exchange` бояд корбарро аз рӯи `user.id`-и TajikShop ба
-  ҳисоби худаш пайваст кунад (ё ҳамон ҳисобро истифода барад).
+Ҳарду тараф тайёранд: TajikShop ҳам код медиҳад, ҳам коди воридшавандаро
+қабул мекунад (`tajikshop://sso?code=…`, `app_links` + `intent-filter`).
+
+Боқӣ дар тарафи Raonson:
+
+- **Ҳисобҳои ҷудогона.** Агар Raonson базаи худро дошта бошад, ҳангоми
+  аввалин `exchange` бояд корбарро аз рӯи `user.id`-и TajikShop ба ҳисоби
+  худаш пайваст кунад (ё ҳамон ҳисобро истифода барад).
+- **Чати пардохт.** Агар хоҳед, ки пардохт тавассути чати Raonson гузарад,
+  схемаи чати Raonson лозим аст (масалан `raonson://chat?user=<id>`) — онро
+  гӯед, ман тугмаашро дар TajikShop мегузорам.

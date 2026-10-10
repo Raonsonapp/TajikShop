@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
+func Setup(r *gin.Engine, secret string, r2 *storage.R2Client, ssoPartnerKey string) {
 	r.Use(middleware.CORS())
 
 	uh := handlers.NewUserHandler(secret, r2)
@@ -82,7 +82,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 
 	// Галочкаи тасдиқ (пардохт ба корти TajikShop → тасдиқи админ)
 	// ── SSO: як ҳисоб барои Raonson ва TajikShop ──
-	sso := handlers.NewSSOHandler(secret)
+	sso := handlers.NewSSOHandler(secret, ssoPartnerKey)
 	api.GET("/sso/apps", sso.Apps)
 	api.POST("/sso/code", middleware.Auth(), sso.IssueCode)
 	api.POST("/sso/exchange", sso.Exchange)
