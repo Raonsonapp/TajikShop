@@ -26,6 +26,7 @@ import '../../core/l10n/seller_l10n.dart';
 import '../../core/l10n/profile_l10n.dart';
 import '../../core/l10n/verification_l10n.dart';
 import '../seller/seller_rating_card.dart';
+import '../../shared/widgets/partner_app_tile.dart';
 import 'package:latlong2/latlong.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/safe_input.dart';
@@ -801,6 +802,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // ── Барномаи вафодорӣ (Bronze/Silver/Gold) ──────────────────
               const SizedBox(height: 16),
               const _LoyaltyCard(),
+
+              // ── Гузариш ба Raonson (як ҳисоб барои ҳар ду барнома) ──────
+              const SizedBox(height: 8),
+              const PartnerAppTile(),
 
               // ── Галочкаи тасдиқ (барои ҳама) ────────────────────────────
               _GroupCard(children: [

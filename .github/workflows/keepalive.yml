@@ -1,0 +1,44 @@
+name: Keep backend awake
+
+# Space-и ройгони Hugging Face дар бекорӣ мехобад. Корбари воқеӣ барномаро
+# мекушояд ва 30–60 сония чизе намебинад, то контейнер аз нав бор шавад —
+# маҳз ҳамин барнома «мурда» ҳис мешавад.
+#
+# То гузаштан ба сервери пулакӣ ин ping-и сабук Space-ро бедор нигоҳ медорад.
+# Як дархости `/health` дар 10 дақиқа — ҳеҷ бори зиёдатӣ намедиҳад.
+#
+# Ин ҷойгузини сервери воқеӣ НЕСТ: агар Space аз тарафи Hugging Face
+# бозсозӣ шавад ё хато диҳад, ping онро барнамегардонад. Барои бори воқеии
+# корбарон сервери доимӣ лозим аст.
+
+on:
+  schedule:
+    # Ҳар 10 дақиқа. GitHub метавонад каме дер кунад — ин барои бедорӣ бас аст.
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+# Ду ping-и баробар маъно надорад.
+concurrency:
+  group: keepalive
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Ping /health
+        run: |
+          host="https://mahmadmurodov-tajikshop.hf.space"
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/h.json -w '%{http_code}' --max-time 120 "$host/health" || echo 000)
+            echo "urinish $i → HTTP $code"
+            if [ "$code" = "200" ]; then
+              cat /tmp/h.json; echo
+              exit 0
+            fi
+            sleep 20
+          done
+          # Space бедор нашуд — инро ҳамчун нокомӣ намеҳисобем, вагарна
+          # почтаи шумо аз огоҳиҳои шабона пур мешавад. Лог сабаб дорад.
+          echo "⚠️ Space ҷавоб надод — эҳтимол бозсозӣ шуда истодааст"

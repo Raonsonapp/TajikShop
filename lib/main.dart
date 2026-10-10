@@ -10,6 +10,7 @@ import 'core/app_l10n.dart';
 import 'core/l10n/fallback_localizations.dart';
 import 'core/services/network_service.dart'; // ← ИЛОВА КУНЕД
 import 'core/services/push_service.dart';
+import 'core/services/sso_link_service.dart';
 import 'core/ads/ad_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
@@ -69,6 +70,14 @@ class TajikShopApp extends ConsumerWidget {
       await ref.read(authProvider.notifier).logout();
       router.go(RouteNames.login);
     };
+
+    // SSO: Raonson моро бо `tajikshop://sso?code=…` мекушояд — корбар бе
+    // парол ворид мешавад ва фавран ба саҳифаи асосӣ меравад.
+    SsoLinkService.instance.onSignedIn = () async {
+      await ref.read(authProvider.notifier).checkAuth();
+      router.go(RouteNames.home);
+    };
+    SsoLinkService.instance.init();
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,

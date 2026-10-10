@@ -47,6 +47,9 @@ dependencies:
 
   # Кушодани URL-ҳо (Сиёсати махфият, Шартҳо, Ҳазфи ҳисоб — Google Play)
   url_launcher: ^6.3.1
+  # Қабули `tajikshop://sso?code=…` аз Raonson.
+  # ⚠️ 7.x Flutter >=3.44-ро талаб мекунад, лоиҳа дар 3.29 аст.
+  app_links: ^6.4.1
 
   # Сканери штрих-код (маҳсулотро аз рӯи barcode ёфтан)
   mobile_scanner: ^5.2.3
