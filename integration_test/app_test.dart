@@ -73,7 +73,21 @@ void main() {
       // механизми гирифтани хатогии тестро мешиканад — онро бармегардонем.
       final harnessOnError = FlutterError.onError;
       app.main();
-      FlutterError.onError = harnessOnError;
+      // ⚠️ Плагини `yandex_mobileads` дар дохили худаш
+      // `_channel.invokeMethod('destroy')`-ро БЕ `await` даъват мекунад
+      // (ad.dart:28). Агар реклама бор нашуда бошад, он
+      // `MissingPluginException` мепартояд ва он аз дохили плагин мебарояд —
+      // онро аз тарафи мо гирифтан мумкин нест. Ин хатои китобхонаи бегона
+      // аст, на барнома, пас тестро намеафтонад. Ҳар хатои дигар мегузарад.
+      FlutterError.onError = (details) {
+        final text = details.exception.toString();
+        if (details.exception is MissingPluginException &&
+            text.contains('yandex_mobileads')) {
+          debugPrint('⚠ нодида: хатои плагини Yandex — $text');
+          return;
+        }
+        harnessOnError?.call(details);
+      };
 
       await settle(tester, frames: 40, step: const Duration(milliseconds: 250));
       expect(find.byType(MaterialApp), findsOneWidget,

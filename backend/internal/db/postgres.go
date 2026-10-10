@@ -297,6 +297,22 @@ INSERT INTO settings(key,value) VALUES('verify_price','50') ON CONFLICT(key) DO 
 INSERT INTO settings(key,value) VALUES('verify_card','9762 0001 9975 7344') ON CONFLICT(key) DO NOTHING;
 INSERT INTO settings(key,value) VALUES('verify_card_holder','TajikShop') ON CONFLICT(key) DO NOTHING;
 
+-- SSO: як ҳисоб барои ҳамаи барномаҳои Raonson. Коди якдафъаина, ки
+-- барномаи дигарро ба ҳамон корбар медарорад. Дар база ХУДИ код не,
+-- балки ҳэши он нигоҳ дошта мешавад — пас дастрасӣ ба база ба касе
+-- сессия намедиҳад.
+CREATE TABLE IF NOT EXISTS sso_codes (
+	id UUID PRIMARY KEY,
+	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	target_app TEXT NOT NULL,
+	code_hash TEXT NOT NULL,
+	expires_at TIMESTAMPTZ NOT NULL,
+	used_at TIMESTAMPTZ,
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sso_code_hash ON sso_codes(code_hash);
+CREATE INDEX IF NOT EXISTS idx_sso_user ON sso_codes(user_id);
+
 -- Дархостҳои галочка: харидор/фурӯшанда пул мефиристад ва чекро мегузорад,
 -- админ тасдиқ мекунад → users.is_verified=true.
 CREATE TABLE IF NOT EXISTS verification_requests (

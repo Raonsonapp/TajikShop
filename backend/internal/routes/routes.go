@@ -81,6 +81,12 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client) {
 	api.GET("/users/username-available", oh.CheckUsername)
 
 	// Галочкаи тасдиқ (пардохт ба корти TajikShop → тасдиқи админ)
+	// ── SSO: як ҳисоб барои Raonson ва TajikShop ──
+	sso := handlers.NewSSOHandler(secret)
+	api.GET("/sso/apps", sso.Apps)
+	api.POST("/sso/code", middleware.Auth(), sso.IssueCode)
+	api.POST("/sso/exchange", sso.Exchange)
+
 	api.GET("/verification/info", vh2.Info)
 	api.GET("/users/me/verification", middleware.Auth(), vh2.MyRequest)
 	api.POST("/users/me/verification", middleware.Auth(), vh2.Request)
