@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
+
+	"tajikshop/internal/models"
 )
 
 // Коди SSO як бор кор мекунад ва дар база ҲЭШИ он мемонад. Ин тестҳо маҳз
@@ -116,5 +119,35 @@ func TestPartnerKeyOK(t *testing.T) {
 	// Фосилаҳои атроф набояд монеъ шаванд — онҳо аз сарлавҳаи HTTP меоянд.
 	if !partnerKeyOK(key, "  "+key+"  ") {
 		t.Fatal("фосилаҳои атроф калиди дурустро рад карданд")
+	}
+}
+
+// email_verified true ТАНҲО вақте ки почта воқеан тасдиқ шудааст — ва
+// ҳеҷ гоҳ аз is_verified (галочкаи фурӯшанда) гирифта намешавад.
+func TestSSOUserPayloadEmailVerified(t *testing.T) {
+	u := models.User{ID: "1", Email: "a@b.tj", IsVerified: true}
+	if p := ssoUserPayload(u); p.EmailVerified || !p.IsVerified {
+		t.Fatalf("is_verified ба email_verified омехта шуд: %+v", p)
+	}
+	u.EmailVerified = true
+	if !ssoUserPayload(u).EmailVerified {
+		t.Fatal("почтаи тасдиқшуда false шуд")
+	}
+	u.Email = ""
+	if ssoUserPayload(u).EmailVerified {
+		t.Fatal("бе почта email_verified набояд true бошад")
+	}
+	b, _ := json.Marshal(ssoUserPayload(models.User{ID: "1"}))
+	if !strings.Contains(string(b), `"email_verified":false`) {
+		t.Fatalf("email_verified дар JSON нест: %s", b)
+	}
+}
+
+func TestSessionClientForApp(t *testing.T) {
+	cases := map[string]string{"raonson": "raonson", "RAONSON ": "raonson", "tajikshop": "app", "": "app"}
+	for in, want := range cases {
+		if got := sessionClientForApp(in); got != want {
+			t.Fatalf("%q → %q, бояд %q", in, got, want)
+		}
 	}
 }

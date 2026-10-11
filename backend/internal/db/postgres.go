@@ -313,6 +313,31 @@ CREATE TABLE IF NOT EXISTS sso_codes (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_sso_code_hash ON sso_codes(code_hash);
 CREATE INDEX IF NOT EXISTS idx_sso_user ON sso_codes(user_id);
 
+-- Сессияҳо: як сатр барои ҳар вуруд (дастгоҳи TajikShop, Raonson, ...).
+-- Пештар users.refresh_token ЯК сутун буд, пас ҳар вуруди нав (ё
+-- /sso/exchange-и Raonson) сессияи дигарро мекушт. Дар база ҳэши токен
+-- (SHA-256) мемонад, на худи токен. prev_token_hash — токени қаблӣ пас аз
+-- ротатсия (барои барномаҳои кӯҳна, ки токени навро нигоҳ намедоранд).
+-- Сутуни кӯҳнаи users.refresh_token ҳангоми аввалин /auth/refresh ба
+-- сессияи client=app гузаронида мешавад (ниг. handles/sessions.go).
+CREATE TABLE IF NOT EXISTS auth_sessions (
+	id UUID PRIMARY KEY,
+	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	client TEXT NOT NULL DEFAULT 'app',
+	token_hash TEXT NOT NULL,
+	prev_token_hash TEXT,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+	last_used_at TIMESTAMPTZ,
+	expires_at TIMESTAMPTZ NOT NULL,
+	revoked_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_sessions_token ON auth_sessions(token_hash);
+
+-- Почта тасдиқ шудааст? Ҳоло TajikShop ҷараёни тасдиқи почта НАДОРАД, пас
+-- ҳамеша false аст. Бо is_verified (галочкаи фурӯшанда) омехта накунед.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false;
+
 -- Дархостҳои галочка: харидор/фурӯшанда пул мефиристад ва чекро мегузорад,
 -- админ тасдиқ мекунад → users.is_verified=true.
 CREATE TABLE IF NOT EXISTS verification_requests (

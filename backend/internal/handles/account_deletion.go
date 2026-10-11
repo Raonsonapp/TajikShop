@@ -83,6 +83,9 @@ func (h *UserHandler) DeleteAccount(c *gin.Context) {
 
 	// ── Маълумоти сирф шахсиро ҳазф мекунем ──
 	personal := []string{
+		// Ҳамаи сессияҳо (барнома, Raonson, …) — токенҳои навсозӣ мемиранд.
+		`DELETE FROM auth_sessions WHERE user_id=$1`,
+		`DELETE FROM sso_codes WHERE user_id=$1`,
 		`DELETE FROM cart_items WHERE user_id=$1`,
 		`DELETE FROM favorites WHERE user_id=$1`,
 		`DELETE FROM addresses WHERE user_id=$1`,

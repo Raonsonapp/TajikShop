@@ -93,8 +93,11 @@ func (h *FirebaseHandler) VerifyPhone(c *gin.Context) {
 
 	// Token месозем
 	accessToken, _ := auth.GenerateAccessToken(userID, role, h.secret)
-	refreshToken, _ := auth.GenerateRefreshToken(userID, h.secret)
-	db.DB.Exec(`UPDATE users SET refresh_token=$1 WHERE id=$2`, refreshToken, userID)
+	refreshToken, err := issueSession(db.DB, h.secret, userID, clientApp)
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, "session error")
+		return
+	}
 
 	utils.Created(c, gin.H{
 		"access_token":   accessToken,

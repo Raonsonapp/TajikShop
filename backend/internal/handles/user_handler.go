@@ -82,8 +82,11 @@ func (h *UserHandler) Register(c *gin.Context) {
 		}
 	}
 	accessToken, _ := auth.GenerateAccessToken(id, "buyer", h.secret)
-	refreshToken, _ := auth.GenerateRefreshToken(id, h.secret)
-	db.DB.Exec(`UPDATE users SET refresh_token=$1 WHERE id=$2`, refreshToken, id)
+	refreshToken, err := issueSession(db.DB, h.secret, id, clientApp)
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, "session error")
+		return
+	}
 	utils.Created(c, gin.H{"access_token": accessToken, "refresh_token": refreshToken})
 }
 
@@ -123,16 +126,21 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 	accessToken, _ := auth.GenerateAccessToken(u.ID, u.Role, h.secret)
-	refreshToken, _ := auth.GenerateRefreshToken(u.ID, h.secret)
-	db.DB.Exec(`UPDATE users SET refresh_token=$1,updated_at=$2 WHERE id=$3`, refreshToken, time.Now(), u.ID)
+	// Сессияи НАВ — дигар дастгоҳҳо ва Raonson берун намешаванд.
+	refreshToken, err := issueSession(db.DB, h.secret, u.ID, clientApp)
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, "session error")
+		return
+	}
+	db.DB.Exec(`UPDATE users SET updated_at=$1 WHERE id=$2`, time.Now(), u.ID)
 	utils.OK(c, gin.H{"access_token": accessToken, "refresh_token": refreshToken, "user": u})
 }
 
 func (h *UserHandler) Me(c *gin.Context) {
 	uid := utils.UserID(c)
 	var u models.User
-	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,is_seller,COALESCE(seller_requested,false),COALESCE(store_lat,0),COALESCE(store_lng,0),COALESCE(shop_name,''),COALESCE(shop_desc,''),COALESCE(shop_phone,''),COALESCE(shop_hours,''),COALESCE(business_type,'shop'),COALESCE(card_number,''),COALESCE(card_holder,''),COALESCE(username,''),created_at FROM users WHERE id=$1`, uid).
-		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.IsSeller, &u.SellerRequested, &u.StoreLat, &u.StoreLng, &u.ShopName, &u.ShopDesc, &u.ShopPhone, &u.ShopHours, &u.BusinessType, &u.CardNumber, &u.CardHolder, &u.Username, &u.CreatedAt)
+	err := db.DB.QueryRow(`SELECT id,name,COALESCE(email,''),COALESCE(phone,''),COALESCE(avatar_url,''),COALESCE(bio,''),role,is_verified,COALESCE(email_verified,false),is_seller,COALESCE(seller_requested,false),COALESCE(store_lat,0),COALESCE(store_lng,0),COALESCE(shop_name,''),COALESCE(shop_desc,''),COALESCE(shop_phone,''),COALESCE(shop_hours,''),COALESCE(business_type,'shop'),COALESCE(card_number,''),COALESCE(card_holder,''),COALESCE(username,''),created_at FROM users WHERE id=$1`, uid).
+		Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.AvatarURL, &u.Bio, &u.Role, &u.IsVerified, &u.EmailVerified, &u.IsSeller, &u.SellerRequested, &u.StoreLat, &u.StoreLng, &u.ShopName, &u.ShopDesc, &u.ShopPhone, &u.ShopHours, &u.BusinessType, &u.CardNumber, &u.CardHolder, &u.Username, &u.CreatedAt)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "user not found")
 		return
@@ -470,6 +478,12 @@ func (h *UserHandler) PublicProfile(c *gin.Context) {
 	})
 }
 
+// RefreshToken — POST /auth/refresh {refresh_token}
+//
+// Токени навсозиро ИВАЗ мекунад (ротатсия) — танҳо дар сессияи худаш.
+// Ҷавоб: {access_token, refresh_token}. Мизоҷ бояд refresh_token-и навро
+// нигоҳ дорад. Барномаҳои кӯҳна, ки танҳо access_token-ро мегиранд, бо
+// токени қаблӣ кор карданро идома медиҳанд (ниг. sessions.go).
 func (h *UserHandler) RefreshToken(c *gin.Context) {
 	var in struct {
 		RefreshToken string `json:"refresh_token" binding:"required"`
@@ -478,18 +492,83 @@ func (h *UserHandler) RefreshToken(c *gin.Context) {
 		utils.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	claims, err := auth.ParseToken(in.RefreshToken, h.secret)
+	res, err := rotateRefreshToken(h.secret, in.RefreshToken)
 	if err != nil {
+		if err == errUserBlocked {
+			utils.Err(c, http.StatusUnauthorized, "account blocked")
+			return
+		}
 		utils.Err(c, http.StatusUnauthorized, "invalid refresh token")
 		return
 	}
-	var u models.User
-	db.DB.QueryRow(`SELECT id,role,refresh_token FROM users WHERE id=$1`, claims.UserID).
-		Scan(&u.ID, &u.Role, &u.RefreshToken)
-	if u.RefreshToken != in.RefreshToken {
-		utils.Err(c, http.StatusUnauthorized, "token mismatch")
+	accessToken, _ := auth.GenerateAccessToken(res.UserID, res.Role, h.secret)
+	utils.OK(c, gin.H{"access_token": accessToken, "refresh_token": res.Refresh})
+}
+
+// Logout — POST /auth/logout {refresh_token}
+// Танҳо ҳамин сессияро мебандад; дигар дастгоҳҳо ва Raonson дахл надоранд.
+// Ҳамеша 200 (идемпотент) — токени нодуруст ҳам «аллакай баромада» аст.
+func (h *UserHandler) Logout(c *gin.Context) {
+	var in struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	c.ShouldBindJSON(&in)
+	revokeSessionByToken(h.secret, in.RefreshToken)
+	utils.OK(c, gin.H{"logged_out": true})
+}
+
+// ChangePassword — PUT /users/me/password {current_password, new_password}
+// Пас аз ивази парол ҲАМАИ сессияҳо (дигар дастгоҳҳо, Raonson) баста
+// мешаванд; ин дастгоҳ сессияи нав мегирад, то корбар берун наравад.
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	uid := utils.UserID(c)
+	var in struct {
+		CurrentPassword string `json:"current_password" binding:"required"`
+		NewPassword     string `json:"new_password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&in); err != nil {
+		utils.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	accessToken, _ := auth.GenerateAccessToken(u.ID, u.Role, h.secret)
-	utils.OK(c, gin.H{"access_token": accessToken})
+	var hash, role string
+	if err := db.DB.QueryRow(`SELECT password_hash, COALESCE(role,'buyer') FROM users
+		WHERE id=$1 AND COALESCE(is_deleted,false)=false`, uid).Scan(&hash, &role); err != nil {
+		utils.Err(c, http.StatusNotFound, "user not found")
+		return
+	}
+	if !utils.CheckPassword(hash, in.CurrentPassword) {
+		utils.Err(c, http.StatusUnauthorized, "wrong password")
+		return
+	}
+	newHash, err := utils.HashPassword(in.NewPassword)
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, "hash error")
+		return
+	}
+	tx, err := db.DB.Begin()
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, "db error")
+		return
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`UPDATE users SET password_hash=$1, updated_at=$2 WHERE id=$3`,
+		newHash, time.Now(), uid); err != nil {
+		utils.Err(c, http.StatusInternalServerError, "db error")
+		return
+	}
+	if err := revokeAllSessions(tx, uid); err != nil {
+		utils.Err(c, http.StatusInternalServerError, "db error")
+		return
+	}
+	refresh, err := issueSession(tx, h.secret, uid, clientApp)
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, "session error")
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		utils.Err(c, http.StatusInternalServerError, "db error")
+		return
+	}
+	access, _ := auth.GenerateAccessToken(uid, role, h.secret)
+	utils.OK(c, gin.H{"access_token": access, "refresh_token": refresh})
 }

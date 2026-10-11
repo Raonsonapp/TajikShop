@@ -212,25 +212,63 @@ func (h *SSOHandler) Exchange(c *gin.Context) {
 		return
 	}
 
-	var u models.User
-	if e := db.DB.QueryRow(`SELECT id,COALESCE(name,''),COALESCE(email,''),role,
-		COALESCE(avatar_url,''),COALESCE(is_seller,false),COALESCE(is_verified,false)
-		FROM users WHERE id=$1 AND COALESCE(is_deleted,false)=false`, uid).
-		Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.AvatarURL, &u.IsSeller, &u.IsVerified); e != nil {
+	u, err := loadSSOUser(uid)
+	if err != nil {
 		utils.Err(c, http.StatusUnauthorized, "Корбар ёфт нашуд")
 		return
 	}
 
 	access, _ := auth.GenerateAccessToken(u.ID, u.Role, h.secret)
-	refresh, _ := auth.GenerateRefreshToken(u.ID, h.secret)
-	db.DB.Exec(`UPDATE users SET refresh_token=$1, updated_at=$2 WHERE id=$3`,
-		refresh, time.Now(), u.ID)
+	// Сессияи АЛОҲИДА барои барномаи шарик (client=raonson): сессияи худи
+	// барномаи TajikShop-и корбар ва дигар дастгоҳҳо дахл надоранд.
+	refresh, err := issueSession(db.DB, h.secret, u.ID, sessionClientForApp(app.ID))
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, "сессия сохта нашуд")
+		return
+	}
 
 	utils.OK(c, gin.H{
 		"access_token":  access,
 		"refresh_token": refresh,
-		"user":          u,
+		"user":          ssoUserPayload(u),
 	})
+}
+
+// ssoUser — маълумоти корбар барои барномаи шарик.
+type ssoUser struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Email      string `json:"email"`
+	Role       string `json:"role"`
+	AvatarURL  string `json:"avatar_url"`
+	IsSeller   bool   `json:"is_seller"`
+	IsVerified bool   `json:"is_verified"` // галочкаи фурӯшанда (KYC) — НА почта
+	// EmailVerified — true ТАНҲО агар TajikShop почтаро воқеан тасдиқ карда
+	// бошад. Ҳоло TajikShop ҷараёни тасдиқи почта надорад (на OTP, на
+	// линк), пас ҳамеша false. Шарик набояд ҳисобро танҳо аз рӯи почта
+	// пайваст кунад, вақте ки ин false аст.
+	EmailVerified bool `json:"email_verified"`
+}
+
+func loadSSOUser(uid string) (models.User, error) {
+	var u models.User
+	err := db.DB.QueryRow(`SELECT id,COALESCE(name,''),COALESCE(email,''),role,
+		COALESCE(avatar_url,''),COALESCE(is_seller,false),COALESCE(is_verified,false),
+		COALESCE(email_verified,false)
+		FROM users WHERE id=$1 AND COALESCE(is_deleted,false)=false
+		  AND COALESCE(is_banned,false)=false`, uid).
+		Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.AvatarURL, &u.IsSeller, &u.IsVerified,
+			&u.EmailVerified)
+	return u, err
+}
+
+// ssoUserPayload — почта бе тасдиқ ҳеҷ гоҳ «тасдиқшуда» намешавад.
+func ssoUserPayload(u models.User) ssoUser {
+	return ssoUser{
+		ID: u.ID, Name: u.Name, Email: u.Email, Role: u.Role, AvatarURL: u.AvatarURL,
+		IsSeller: u.IsSeller, IsVerified: u.IsVerified,
+		EmailVerified: u.EmailVerified && strings.TrimSpace(u.Email) != "",
+	}
 }
 
 // ── Ёрирасонҳо (тестшаванда, бе база) ──────────────────────────────────────

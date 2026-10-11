@@ -391,6 +391,8 @@ func (h *AdminHandler) Stats(c *gin.Context) {
 func (h *AdminHandler) BanUser(c *gin.Context) {
 	id := c.Param("id")
 	db.DB.Exec(`UPDATE users SET is_banned=true,updated_at=$1 WHERE id=$2`, time.Now(), id)
+	// Корбари бандшуда набояд бо токени навсозӣ (барнома ё Raonson) боз ворид шавад.
+	revokeAllSessions(db.DB, id)
 	utils.OK(c, gin.H{"message": "user banned"})
 }
 

@@ -3,15 +3,18 @@ package models
 import "time"
 
 type User struct {
-	ID              string    `json:"id"`
-	Name            string    `json:"name"`
-	Email           string    `json:"email"`
-	Phone           string    `json:"phone"`
-	PasswordHash    string    `json:"-"`
-	AvatarURL       string    `json:"avatar_url"`
-	Bio             string    `json:"bio"`
-	Role            string    `json:"role"`
-	IsVerified      bool      `json:"is_verified"`
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Phone        string `json:"phone"`
+	PasswordHash string `json:"-"`
+	AvatarURL    string `json:"avatar_url"`
+	Bio          string `json:"bio"`
+	Role         string `json:"role"`
+	IsVerified   bool   `json:"is_verified"` // галочкаи фурӯшанда (KYC), на почта
+	// EmailVerified — почта воқеан тасдиқ шудааст. TajikShop ҳоло ҷараёни
+	// тасдиқи почта надорад, пас ҳамеша false (ниг. docs/SSO_RAONSON.md).
+	EmailVerified   bool      `json:"email_verified"`
 	IsSeller        bool      `json:"is_seller"`
 	SellerRequested bool      `json:"seller_requested"`
 	IsBanned        bool      `json:"is_banned"`

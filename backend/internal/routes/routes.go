@@ -50,6 +50,8 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client, ssoPartnerKey str
 	api.POST("/auth/register", uh.Register)
 	api.POST("/auth/login", uh.Login)
 	api.POST("/auth/refresh", uh.RefreshToken)
+	api.POST("/auth/logout", uh.Logout)
+	api.PUT("/users/me/password", middleware.Auth(), uh.ChangePassword)
 	api.POST("/auth/phone-verify", fbh.VerifyPhone)
 
 	// Users
