@@ -45,6 +45,11 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Линкҳои tajikshop:// -ро app_links (SsoLinkService) мегирад.
+                 Бе ин, Flutter (3.27+) онҳоро ба GoRouter ҳам медиҳад ва
+                 `tajikshop://sso/authorize?…` ба саҳифаи «роҳ ёфт нашуд»
+                 мебарад. -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
             <!-- SSO: Raonson бо `tajikshop://sso?code=…` моро мекушояд ва
                  корбар бе парол ворид мешавад. Бе ин intent-filter Android
                  линкро ба барнома умуман намедиҳад. -->
@@ -52,6 +57,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
+                <!-- host=sso бе path: ҳам `sso?code=…`, ҳам `sso/authorize?…` -->
                 <data android:scheme="tajikshop" android:host="sso"/>
             </intent-filter>
         </activity>

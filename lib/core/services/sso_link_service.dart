@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../api/api_client.dart';
 import '../storage/token_storage.dart';
+import 'sso_authorize.dart';
 
 /// Қабули `tajikshop://sso?code=…` аз барномаҳои шарик (Raonson).
 ///
@@ -27,6 +28,22 @@ class SsoLinkService {
   /// Вақте ки вуруд муваффақ шуд — барнома профилро нав мекунад ва ба
   /// саҳифаи асосӣ меравад.
   void Function()? onSignedIn;
+
+  /// `tajikshop://sso/authorize?app=…&state=…` — барномаи шарик мехоҳад
+  /// корбар «бо TajikShop ворид шавад». `main.dart` розигиро мепурсад.
+  void Function(SsoAuthorizeRequest request)? onAuthorize;
+
+  /// Дархосте, ки то вуруди корбар интизор аст (корбар ҳанӯз ворид набуд).
+  SsoAuthorizeRequest? _pendingAuthorize;
+
+  void setPendingAuthorize(SsoAuthorizeRequest? r) => _pendingAuthorize = r;
+
+  /// Дархости интизорро мегирад ва пок мекунад (як бор).
+  SsoAuthorizeRequest? takePendingAuthorize() {
+    final r = _pendingAuthorize;
+    _pendingAuthorize = null;
+    return r;
+  }
 
   Future<void> init() async {
     if (_started) return;
@@ -54,6 +71,19 @@ class SsoLinkService {
   }
 
   Future<void> _handle(Uri uri) async {
+    // `tajikshop://sso/authorize?app=raonson&state=…` — «Бо TajikShop ворид шавед».
+    final authorize = SsoAuthorizeRequest.tryParse(uri);
+    if (authorize != null) {
+      debugPrint('[SSO] дархости вуруд аз ${authorize.app}');
+      final cb = onAuthorize;
+      if (cb != null) {
+        cb(authorize);
+      } else {
+        _pendingAuthorize = authorize;
+      }
+      return;
+    }
+
     // Танҳо `tajikshop://sso?code=…` — ҳар линки дигарро намегирем.
     if (uri.scheme != 'tajikshop' || uri.host != 'sso') return;
     final code = uri.queryParameters['code']?.trim() ?? '';

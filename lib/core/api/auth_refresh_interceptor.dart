@@ -94,9 +94,13 @@ class AuthRefreshInterceptor extends Interceptor {
           : const {};
       final access = data['access_token']?.toString();
       if (access == null || access.isEmpty) return null;
-      // Сервер танҳо токени дастрасиро бармегардонад — токени навсозӣ
-      // ҳамон мемонад.
-      await TokenStorage.saveTokens(accessToken: access);
+      // Сервер токени навсозиро ИВАЗ мекунад (ротатсия) — навашро нигоҳ
+      // медорем. Сервери кӯҳна онро намедиҳад — он гоҳ ҳамон мемонад.
+      final newRefresh = data['refresh_token']?.toString();
+      await TokenStorage.saveTokens(
+          accessToken: access,
+          refreshToken:
+              (newRefresh != null && newRefresh.isNotEmpty) ? newRefresh : null);
       return access;
     } catch (_) {
       return null;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
@@ -230,6 +231,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   // ── Logout ───────────────────────────────────────────────────────────────
   Future<void> logout() async {
+    // Танҳо сессияи ҲАМИН дастгоҳро дар сервер мебандем (best-effort):
+    // дигар дастгоҳҳо ва Raonson ворид мемонанд.
+    final refresh = await TokenStorage.getRefreshToken();
+    if (refresh != null && refresh.isNotEmpty) {
+      unawaited(_dio
+          .post('/auth/logout', data: {'refresh_token': refresh})
+          .timeout(const Duration(seconds: 5))
+          .then((_) {}, onError: (_) {}));
+    }
     await TokenStorage.clearTokens();
     await UserSession.clear();
     state = const AuthState();
