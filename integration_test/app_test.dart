@@ -90,6 +90,56 @@ Finder byText(String pattern) =>
 int _ignoredImages = 0;
 int _ignoredPlugin = 0;
 
+
+/// Ба экрани асосӣ бармегардад, ҳар чи дар рӯи он кушода бошад.
+///
+/// Чаро ин лозим шуд: тест пештар чунин мекард —
+///
+///     await tapIfPresent(tester, find.byType(BackButton));
+///     await tester.tap(find.byKey(const Key('nav_0')));
+///
+/// Вале на ҳар экран виҷети `BackButton` дорад — баъзеҳо тугмаи худро бо
+/// `IconButton` месозанд. Он гоҳ `tapIfPresent` хомӯшона `false`
+/// бармегардонад, экран кушода мемонад, ва сатри навбатӣ хато медиҳад:
+///
+///     Found 0 widgets with key [<'nav_0'>]
+///
+/// Ҳоло худи `Navigator` баста мешавад — ба ягон виҷет вобаста нест.
+///
+/// `tester.binding.handlePopRoute()` (тугмаи «ақиб»-и Android) мувофиқтар
+/// менамуд, вале он `@protected` аст — истифодаи он аз берун огоҳии
+/// таҳлилгар медиҳад. API-и оммавии `NavigatorState` ҳамон кор мекунад.
+Future<void> backToRoot(WidgetTester tester, {int max = 5}) async {
+  for (var i = 0; i < max; i++) {
+    if (find.byKey(const Key('nav_0')).evaluate().isNotEmpty) return;
+
+    // Навигаторҳоро аз ДОХИЛӢ ба берунӣ мегардем: экрани кушода дар
+    // навигатори дохилӣ аст (GoRouter shell), ва бастани навигатори
+    // берунӣ онро намебандад.
+    var popped = false;
+    for (final el in find.byType(Navigator).evaluate().toList().reversed) {
+      final state = (el as StatefulElement).state;
+      if (state is NavigatorState && state.canPop()) {
+        state.pop();
+        popped = true;
+        break;
+      }
+    }
+    if (!popped) return; // дигар ҷое барои баргаштан нест
+    await settle(tester, frames: 12);
+  }
+}
+
+/// Бахши поёнӣ. Агар панел набошад — хатои ФАҲМО, на «Found 0 widgets».
+Future<void> tapNav(WidgetTester tester, int index) async {
+  await backToRoot(tester);
+  final f = find.byKey(Key('nav_$index'));
+  expect(f, findsOneWidget,
+      reason: 'Панели поёнӣ нест — эҳтимол экрани дигар кушода мондааст');
+  await tester.tap(f);
+  await settle(tester, frames: 15);
+}
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -188,15 +238,14 @@ void main() {
       };
       for (final e in tabs.entries) {
         debugPrint('   → бахши «${e.value}»');
-        await tester.tap(find.byKey(Key('nav_${e.key}')));
-        await settle(tester, frames: 25, step: const Duration(milliseconds: 150));
+        await tapNav(tester, e.key);
+        await settle(tester, frames: 15, step: const Duration(milliseconds: 150));
         expectClean(tester, e.value);
       }
     });
 
     await step('интихоби забон (пештар кушода намешуд)', () async {
-      await tester.tap(find.byKey(const Key('nav_4')));
-      await settle(tester, frames: 25);
+      await tapNav(tester, 4);
 
       // Маҳз ин `showModalBottomSheet` буд, ки бе `MaterialLocalizations`
       // хомӯшона намекушода шуд ва тугма «кор намекард».
@@ -211,18 +260,16 @@ void main() {
     });
 
     await step('галочкаи тасдиқ', () async {
-      await tester.tap(find.byKey(const Key('nav_4')));
-      await settle(tester, frames: 20);
+      await tapNav(tester, 4);
       if (await tapIfPresent(
           tester, byText('Галочка|галочка|Verified|Синяя'))) {
         expectClean(tester, 'галочкаи тасдиқ');
-        await tapIfPresent(tester, find.byType(BackButton));
+        await backToRoot(tester);
       }
     });
 
     await step('username, даъват, купонҳо', () async {
-      await tester.tap(find.byKey(const Key('nav_4')));
-      await settle(tester, frames: 20);
+      await tapNav(tester, 4);
 
       for (final item in ['Username', 'Дӯстон|Пригласить|Invite', 'Купон']) {
         if (await tapIfPresent(tester, byText(item))) {
@@ -230,46 +277,96 @@ void main() {
           // Варақа/диалогро мепӯшем.
           await tester.tapAt(const Offset(20, 60));
           await settle(tester, frames: 12);
-          await tapIfPresent(tester, find.byType(BackButton), frames: 12);
-          await tester.tap(find.byKey(const Key('nav_4')));
-          await settle(tester, frames: 15);
+          await backToRoot(tester);
+          await tapNav(tester, 4);
         }
       }
     });
 
     await step('ҷустуҷӯ ва категорияҳо', () async {
-      await tester.tap(find.byKey(const Key('nav_0')));
-      await settle(tester, frames: 20);
+      await tapNav(tester, 0);
 
       if (await tapIfPresent(tester, byText('Ҷустуҷӯ|Поиск|Search'))) {
         expectClean(tester, 'ҷустуҷӯ');
-        await tapIfPresent(tester, find.byType(BackButton));
+        await backToRoot(tester);
       }
-      await tester.tap(find.byKey(const Key('nav_0')));
-      await settle(tester, frames: 15);
+      await tapNav(tester, 0);
 
       if (await tapIfPresent(tester, byText('Категория'))) {
         expectClean(tester, 'категорияҳо');
-        await tapIfPresent(tester, find.byType(BackButton));
+        await backToRoot(tester);
       }
     });
 
     await step('дӯконҳои наздик (харита)', () async {
-      await tester.tap(find.byKey(const Key('nav_0')));
-      await settle(tester, frames: 15);
+      await tapNav(tester, 0);
       if (await tapIfPresent(tester, byText('Дӯконҳои наздик'), frames: 30)) {
         expectClean(tester, 'дӯконҳои наздик');
-        await tapIfPresent(tester, find.byType(BackButton));
+        await backToRoot(tester);
       }
     });
 
     await step('огоҳиҳо', () async {
-      await tester.tap(find.byKey(const Key('nav_0')));
-      await settle(tester, frames: 15);
+      await tapNav(tester, 0);
       if (await tapIfPresent(tester, find.byIcon(FeatherIcons.bell))) {
         expectClean(tester, 'огоҳиҳо');
-        await tapIfPresent(tester, find.byType(BackButton));
+        await backToRoot(tester);
       }
+    });
+
+
+    await step('дархости нарх (RFQ): сохтан ва дидан', () async {
+      await tapNav(tester, 4);
+
+      if (!await tapIfPresent(
+          tester, byText('Дархости нарх|Запрос цены|Request for quote'))) {
+        debugPrint('   ⚠ тугмаи RFQ ёфт нашуд — қадам гузаронида шуд');
+        await backToRoot(tester);
+        return;
+      }
+      expectClean(tester, 'RFQ: рӯйхат');
+
+      // Форма.
+      if (!await tapIfPresent(
+          tester, byText('Дархости нав|Новый запрос|New request'))) {
+        debugPrint('   ⚠ тугмаи «Дархости нав» ёфт нашуд');
+        await backToRoot(tester);
+        return;
+      }
+      expectClean(tester, 'RFQ: форма');
+
+      // Майдонҳо аз рӯи матни ишорашон пур карда мешаванд — калид нест,
+      // чунки варақа майдонҳои зиёд дорад ва калид ба ҳар кадом гузоштан
+      // кодро ифлос мекунад.
+      final title = find.byType(TextField);
+      if (title.evaluate().length < 3) {
+        debugPrint('   ⚠ майдонҳои форма ёфт нашуданд');
+        await backToRoot(tester);
+        return;
+      }
+      await tester.enterText(title.at(0), 'CI: 500 кг орд');
+      await tester.pump();
+      // Майдони сеюм шумора аст (ном, тавзеҳ, шумора).
+      await tester.enterText(title.at(2), '500');
+      await tester.pump();
+      await settle(tester, frames: 8);
+
+      // Фиристодан — тугмаи поёни варақа.
+      await tapIfPresent(
+          tester, byText('Дархости нав|Новый запрос|New request'), frames: 30);
+      await settle(tester, frames: 25);
+      expectClean(tester, 'RFQ: пас аз сохтан');
+
+      // Дархости сохташуда бояд дар рӯйхат бошад.
+      expect(byText('CI: 500 кг орд'), findsWidgets,
+          reason: 'Дархости сохташуда дар рӯйхат пайдо нашуд — '
+              'эҳтимол сервер онро рад кард');
+
+      // Ва кушода шавад.
+      if (await tapIfPresent(tester, byText('CI: 500 кг орд'), frames: 25)) {
+        expectClean(tester, 'RFQ: тафсилот');
+      }
+      await backToRoot(tester);
     });
 
     await step('тозакунӣ: нест кардани ҳисоби санҷишӣ', () async {
