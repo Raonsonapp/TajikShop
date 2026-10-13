@@ -71,6 +71,13 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client, ssoPartnerKey str
 	api.GET("/users/me/loyalty", middleware.Auth(), uh.LoyaltyInfo)
 	api.GET("/settings", adm.PublicSettings)
 	api.GET("/shops", uh.ShopsList)
+	// Ҷустуҷӯи таъминкунанда — барои савдои яклухт.
+	//
+	// `/shops` танҳо дӯконҳои дар ХАРИТА (бо координата) медод; барои
+	// яклухт ин кифоя нест — таъминкунанда метавонад анбор дошта бошад,
+	// на дӯкони дар кӯча.
+	api.GET("/suppliers", uh.Suppliers)
+	api.GET("/suppliers/:id", uh.SupplierProfile)
 	api.POST("/admin/settings/commission", middleware.Auth(), middleware.AdminOnly(), middleware.AuditAdmin(), adm.SetCommission)
 	api.POST("/admin/settings/cashback", middleware.Auth(), middleware.AdminOnly(), middleware.AuditAdmin(), adm.SetCashback)
 	api.POST("/users/me/fcm-token", middleware.Auth(), uh.SaveFCMToken)
