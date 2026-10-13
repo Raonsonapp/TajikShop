@@ -12,15 +12,23 @@ def strip_comments(src):
     src = re.sub(r"/\*.*?\*/", "", src, flags=re.S)
     return re.sub(r"//[^\n]*", "", src)
 
+# ⚠️ На танҳо `lib/`: хатои `MissingPluginException` маҳз дар
+# `integration_test/` буд ва муҳофиз онро умуман намедид.
+SCAN_DIRS = [LIB, os.path.join(ROOT, "test"), os.path.join(ROOT, "integration_test")]
+
 files, decl_prov, decl_l10n = {}, {}, {}
-for dp, _, ns in os.walk(LIB):
-    for n in ns:
-        if not n.endswith(".dart"): continue
-        p = os.path.join(dp, n); s = open(p, encoding="utf-8").read(); files[p] = s
-        for m in re.finditer(r"^\s*(?:final|const)\s+(?:\w[\w<>,\s?]*\s+)?(\w*[Pp]rovider\w*)\s*=", s, re.M):
-            decl_prov.setdefault(m.group(1), set()).add(p)
-        for m in re.finditer(r"^\s*(?:String|int|double|bool|List<[^>]+>)\s+(?:get\s+)?(\w+)\s*(?:=>|\()", s, re.M):
-            decl_l10n.setdefault(m.group(1), set()).add(p)
+for _root in SCAN_DIRS:
+  if not os.path.isdir(_root):
+    continue
+  for dp, _, ns in os.walk(_root):
+      for n in ns:
+          if not n.endswith(".dart"): continue
+          p = os.path.join(dp, n); s = open(p, encoding="utf-8").read(); files[p] = s
+          for m in re.finditer(r"^\s*(?:final|const)\s+(?:\w[\w<>,\s?]*\s+)?(\w*[Pp]rovider\w*)\s*=", s, re.M):
+              decl_prov.setdefault(m.group(1), set()).add(p)
+          for m in re.finditer(r"^\s*(?:String|int|double|bool|List<[^>]+>)\s+(?:get\s+)?(\w+)\s*(?:=>|\()", s, re.M):
+              decl_l10n.setdefault(m.group(1), set()).add(p)
+
 
 def res(cur, imp):
     if imp.startswith("package:tajikshop/"):
@@ -49,6 +57,29 @@ for p, s in files.items():
         n = m.group(1)
         if n in decl_l10n and not (decl_l10n[n] & imports):
             print(f"{p}: `l.{n}` бе import (дар {sorted(decl_l10n[n])[0]})"); bad += 1
+
+# Номҳое, ки `package:flutter/services.dart` талаб мекунанд.
+# `material.dart` онҳоро содир намекунад — ва `dart format` инро
+# намебинад, чунки синтаксис дуруст аст.
+SERVICES_NAMES = [
+    "MissingPluginException", "PlatformException", "MethodChannel",
+    "Clipboard", "ClipboardData", "HapticFeedback", "SystemChrome",
+    "SystemUiOverlayStyle", "DeviceOrientation", "TextInputFormatter",
+    "FilteringTextInputFormatter", "LengthLimitingTextInputFormatter",
+    "rootBundle",
+]
+
+for p, s in files.items():
+    code = strip_comments(s)
+    has_services = ("package:flutter/services.dart" in s)
+    if has_services:
+        continue
+    for name in SERVICES_NAMES:
+        if re.search(r"\b" + name + r"\b", code):
+            print(f"{p}: `{name}` бе import-и "
+                  f"'package:flutter/services.dart'")
+            bad += 1
+            break
 
 print(f"checked={len(files)} problems={bad}")
 sys.exit(1 if bad else 0)
