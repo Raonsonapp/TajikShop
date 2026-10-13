@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/seller_provider.dart';
 import 'confirm_payment_screen.dart';
 import 'sold_out_screen.dart';
+import 'expiring_screen.dart';
 import '../../core/l10n/stock_l10n.dart';
 import '../../routes/route_names.dart';
 import '../../core/app_l10n.dart';
@@ -254,6 +255,18 @@ class SellerDashboardScreen extends ConsumerWidget {
                       subtitle: l.soldOutHint,
                       onTap: () => Navigator.of(context).push(MaterialPageRoute(
                           builder: (_) => const SoldOutScreen())),
+                    );
+                  }),
+                  _ActionDivider(),
+                  // Мағозаи хӯрокворӣ: моли мӯҳлаташ гузашта зарари тоза аст.
+                  Consumer(builder: (ctx, r, _) {
+                    final n = r.watch(expiringProductsProvider).valueOrNull?.length ?? 0;
+                    return _ActionItem(
+                      icon: FeatherIcons.calendar,
+                      label: n > 0 ? '${l.expiryTitle} ($n)' : l.expiryTitle,
+                      subtitle: l.expiryHint,
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => const ExpiringScreen())),
                     );
                   }),
                   _ActionDivider(),

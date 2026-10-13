@@ -39,12 +39,55 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   bool _loading = false;
   String? _error;
 
+  /// Воҳид ва мӯҳлат — барои мағозаи хӯрокворӣ.
+  String _unit = 'дона';
+  DateTime? _expiresOn;
+  /// Пас аз сканер каталог маълумотро дод?
+  bool _filledFromCatalog = false;
+
   Future<void> _scanForBarcode() async {
     final code = await Navigator.of(context).push<String>(
       MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
     );
-    if (code != null && code.isNotEmpty && mounted) {
-      setState(() => _barcodeCtrl.text = code);
+    if (code == null || code.isEmpty || !mounted) return;
+    setState(() => _barcodeCtrl.text = code);
+    await _fillFromCatalog(code);
+  }
+
+  /// Каталоги УМУМӢ: агар ягон мағоза ин штрих-кодро аллакай гузошта
+  /// бошад, ном, бренд ва воҳид худкор пур мешаванд. Мағозаи хӯрокворӣ
+  /// бо 500 ном маҳсулот маҳз барои ҳамин вақт ҷамъ мекунад.
+  Future<void> _fillFromCatalog(String code) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final res =
+          await ApiClient.instance.dio.get('/catalog/barcode/$code');
+      final raw = res.data;
+      final d = raw is Map
+          ? (raw['data'] is Map ? raw['data'] as Map : raw)
+          : const {};
+      if (d['found'] != true || !mounted) return;
+
+      final title = (d['title'] ?? '').toString();
+      final unit = (d['unit'] ?? '').toString();
+      final catId = (d['category_id'] ?? '').toString();
+
+      setState(() {
+        // Он чиро, ки фурӯшанда худаш навиштааст, нест намекунем.
+        if (_titleCtrl.text.trim().isEmpty && title.isNotEmpty) {
+          _titleCtrl.text = title;
+        }
+        if (unit.isNotEmpty) _unit = unit;
+        if (_catId == null && catId.isNotEmpty) _catId = catId;
+        _filledFromCatalog = true;
+      });
+
+      messenger.showSnackBar(SnackBar(
+          content: Text('«$title» аз каталог пур шуд — нарх ва шумора монд'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating));
+    } catch (_) {
+      // Каталог дастрас нашуд — фурӯшанда ҳамаашро бо даст менависад.
     }
   }
 
@@ -73,6 +116,10 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         'description': _descCtrl.text.trim(),
         'stock': int.tryParse(_stockCtrl.text.trim()) ?? 1,
         'barcode': _barcodeCtrl.text.trim(),
+        'unit': _unit,
+        if (_expiresOn != null)
+          'expires_on':
+              '${_expiresOn!.year.toString().padLeft(4, '0')}-${_expiresOn!.month.toString().padLeft(2, '0')}-${_expiresOn!.day.toString().padLeft(2, '0')}',
         if (_catId != null) 'category_id': _catId,
         'has_delivery': _hasDelivery,
         // Ҳангоми «расонидан нест» рӯз ва нархро намефиристем.
@@ -275,6 +322,12 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
               ),
               const SizedBox(height: 20),
 
+              // ── Мағозаи хӯрокворӣ: воҳид ва мӯҳлат ───────────────────────
+              _sectionHeader('Воҳид ва мӯҳлат'),
+              const SizedBox(height: 12),
+              _groceryBlock(),
+              const SizedBox(height: 20),
+
               // ── Категория (ҳатмӣ) ────────────────────────────────────────
               _sectionHeader('Категория'),
               const SizedBox(height: 12),
@@ -351,6 +404,109 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   );
 
   /// Интихоби категория — ҳатмист, вагарна маҳсулот дар каталог пайдо намешавад.
+  /// Воҳид (дона/кг/литр) ва мӯҳлати нигоҳдорӣ.
+  ///
+  /// Барои мағозаи хӯрокворӣ ин ду чиз ҳатмист: бе воҳид нарх маъно
+  /// надорад («120 сом.» — барои чӣ?), ва бе мӯҳлат моли вайроншуда дар
+  /// рафҳо мемонад. Сервер 3 рӯз пеш огоҳӣ мефиристад.
+  Widget _groceryBlock() {
+    const units = ['дона', 'кг', 'грамм', 'литр', 'мл', 'баста', 'қуттӣ', 'халта'];
+    final pal = context.pal;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (_filledFromCatalog)
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.success.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: AppColors.success.withValues(alpha: 0.32)),
+          ),
+          child: Row(children: [
+            const Icon(FeatherIcons.checkCircle,
+                color: AppColors.success, size: 17),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                  'Аз каталоги умумӣ пур шуд. Нарх ва шуморро гузоред.',
+                  style: TextStyle(color: pal.textSecondary, fontSize: 12.5)),
+            ),
+          ]),
+        ),
+      SizedBox(
+        height: 38,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: units.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, i) {
+            final u = units[i];
+            final sel = _unit == u;
+            return GestureDetector(
+              onTap: () => setState(() => _unit = u),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: sel ? AppColors.primaryGradient : null,
+                  color: sel ? null : pal.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: sel ? Colors.transparent : pal.border),
+                ),
+                child: Text(u,
+                    style: TextStyle(
+                        color: sel ? Colors.white : pal.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600)),
+              ),
+            );
+          },
+        ),
+      ),
+      const SizedBox(height: 14),
+      GestureDetector(
+        onTap: _pickExpiry,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+          decoration: BoxDecoration(
+            color: pal.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: pal.border, width: 0.8),
+          ),
+          child: Row(children: [
+            Icon(FeatherIcons.calendar, size: 18, color: pal.textMuted),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Text(
+                  _expiresOn == null
+                      ? 'Мӯҳлати нигоҳдорӣ (ихтиёрӣ)'
+                      : '${_expiresOn!.day}.${_expiresOn!.month}.${_expiresOn!.year}',
+                  style: TextStyle(
+                      color: _expiresOn == null ? pal.textMuted : pal.textPrimary,
+                      fontSize: 14)),
+            ),
+            if (_expiresOn != null)
+              GestureDetector(
+                onTap: () => setState(() => _expiresOn = null),
+                child: Icon(FeatherIcons.x, size: 17, color: pal.textMuted),
+              ),
+          ]),
+        ),
+      ),
+    ]);
+  }
+
+  Future<void> _pickExpiry() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _expiresOn ?? now.add(const Duration(days: 30)),
+      firstDate: now.subtract(const Duration(days: 1)),
+      lastDate: now.add(const Duration(days: 365 * 5)),
+    );
+    if (picked != null && mounted) setState(() => _expiresOn = picked);
+  }
+
   Widget _categoryPicker() {
     final pal = context.pal;
     final cats = ref.watch(categoriesProvider);

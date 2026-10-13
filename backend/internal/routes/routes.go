@@ -102,6 +102,11 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client, ssoPartnerKey str
 	api.GET("/products/deals", ph.Deals)
 	api.GET("/products/bestsellers", ph.Bestsellers)
 	api.GET("/products/barcode/:code", ph.GetByBarcode)
+	// ── Каталоги умумии штрих-кодҳо (мағозаҳои хӯрокворӣ) ──
+	cat := handlers.NewCatalogHandler()
+	api.GET("/catalog/barcode/:code", cat.Lookup)
+	api.POST("/catalog/barcode", middleware.Auth(), middleware.SellerOnly(), cat.Contribute)
+	api.GET("/seller/products/expiring", middleware.Auth(), middleware.SellerOnly(), cat.ExpiringSoon)
 	api.GET("/products/:id", ph.GetByID)
 	api.POST("/products", middleware.Auth(), middleware.SellerOnly(), ph.Create)
 	api.PUT("/products/:id", middleware.Auth(), middleware.SellerOnly(), ph.Update)

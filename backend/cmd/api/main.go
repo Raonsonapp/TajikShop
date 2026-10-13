@@ -57,6 +57,8 @@ func main() {
 	// харидор шикоят накард, худкор ба фурӯшанда мегузаронад — то фурӯшанда
 	// интизори абадии тасдиқи харидор накашад.
 	handlers.StartEscrowSweeper()
+	// Мӯҳлати нигоҳдорӣ: фурӯшанда 3 рӯз пеш огоҳӣ мегирад.
+	handlers.StartExpirySweeper()
 
 	r := gin.Default()
 	routes.Setup(r, cfg.JWTSecret, r2, cfg.SSOPartnerKey)

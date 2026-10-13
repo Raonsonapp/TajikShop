@@ -236,3 +236,19 @@ final soldOutProductsProvider =
     return const [];
   }
 });
+
+/// Маҳсулоте, ки мӯҳлаташон дар 7 рӯз тамом мешавад.
+/// GET /seller/products/expiring → [{id,title,price,stock,image,expires_on,days_left,expired}]
+final expiringProductsProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  try {
+    final res =
+        await ApiClient.instance.dio.get('/seller/products/expiring');
+    final raw = res.data;
+    final list = raw is List ? raw : (raw is Map ? (raw['data'] ?? []) : []);
+    if (list is! List) return const [];
+    return list.whereType<Map<String, dynamic>>().toList();
+  } catch (_) {
+    return const [];
+  }
+});

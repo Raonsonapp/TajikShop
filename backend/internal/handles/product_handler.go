@@ -38,6 +38,10 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		SizeInfo        string  `json:"size_info"`
 		Barcode         string  `json:"barcode"`
 		HasDelivery     *bool   `json:"has_delivery"`
+		// Барои мағозаи хӯрокворӣ: воҳид ва мӯҳлати нигоҳдорӣ.
+		Unit      string `json:"unit"`
+		ExpiresOn string `json:"expires_on"` // YYYY-MM-DD
+		Brand     string `json:"brand_name"`
 	}
 	if err := c.ShouldBindJSON(&in); err != nil {
 		utils.Err(c, http.StatusBadRequest, err.Error())
@@ -63,13 +67,28 @@ func (h *ProductHandler) Create(c *gin.Context) {
 	if in.HasDelivery != nil {
 		hasDelivery = *in.HasDelivery
 	}
-	_, err := db.DB.Exec(`INSERT INTO products(id,seller_id,category_id,brand_id,title,description,price,discount_percent,stock,min_order_qty,wholesale_price,delivery_days,delivery_price,size_info,barcode,has_delivery,is_active)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,true)`,
-		id, uid, catID, brandID, in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.MinOrderQty, in.WholesalePrice, in.DeliveryDays, in.DeliveryPrice, in.SizeInfo, in.Barcode, hasDelivery)
+	barcode := normalizeBarcode(in.Barcode)
+	var expires interface{}
+	if d := strings.TrimSpace(in.ExpiresOn); d != "" {
+		if t, e := time.Parse("2006-01-02", d); e == nil {
+			expires = t
+		}
+	}
+
+	_, err := db.DB.Exec(`INSERT INTO products(id,seller_id,category_id,brand_id,title,description,price,discount_percent,stock,min_order_qty,wholesale_price,delivery_days,delivery_price,size_info,barcode,has_delivery,unit,expires_on,is_active)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,true)`,
+		id, uid, catID, brandID, in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.MinOrderQty, in.WholesalePrice, in.DeliveryDays, in.DeliveryPrice, in.SizeInfo, barcode, hasDelivery, normalizeUnit(in.Unit), expires)
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	// Каталоги умумиро бой мекунем: мағозаи навбатӣ ҳамин кодро сканер
+	// карда, ҳамаи ин майдонҳоро тайёр мегирад.
+	if barcode != "" {
+		upsertCatalog(barcode, in.Title, in.Brand, "", in.Unit, in.CategoryID, uid)
+	}
+
 	utils.Created(c, gin.H{"id": id})
 }
 

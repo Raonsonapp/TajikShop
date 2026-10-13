@@ -297,6 +297,41 @@ INSERT INTO settings(key,value) VALUES('verify_price','50') ON CONFLICT(key) DO 
 INSERT INTO settings(key,value) VALUES('verify_card','9762 0001 9975 7344') ON CONFLICT(key) DO NOTHING;
 INSERT INTO settings(key,value) VALUES('verify_card_holder','TajikShop') ON CONFLICT(key) DO NOTHING;
 
+-- ═══ Каталоги УМУМИИ штрих-кодҳо ═══════════════════════════════════════
+-- Масъалаи мағозаи хӯрокворӣ: 500 маҳсулот гузоштан — чанд рӯз кор.
+-- Ҳар мағоза ҳамон «Coca-Cola 1л»-ро аз нав менависад ва расм меёбад.
+--
+-- Ҳал: вақте ки ЯК мағоза маҳсулотро бо штрих-код мегузорад, ном, бренд,
+-- расм ва воҳиди он ба каталоги умумӣ меафтад. Мағозаи дигар ҳамон кодро
+-- сканер мекунад ва ҳамааш худкор пур мешавад — ӯ танҳо нарх ва шумора
+-- мегузорад.
+--
+-- Ҳар мағозаи нав каталогро бойтар мекунад, ва каталоги бойтар мағозаи
+-- навбатиро ҷалб мекунад.
+CREATE TABLE IF NOT EXISTS barcode_catalog (
+	barcode VARCHAR(64) PRIMARY KEY,
+	title TEXT NOT NULL,
+	brand TEXT DEFAULT '',
+	image_url TEXT DEFAULT '',
+	unit TEXT DEFAULT 'дона',
+	category_id UUID REFERENCES categories(id),
+	created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+	-- Админ тасдиқ кардааст? Сатри тасдиқшуда аз ҷониби мағозаҳо иваз
+	-- намешавад — вагарна як хатои касе ба ҳамаи мағозаҳо мегузарад.
+	is_verified BOOLEAN DEFAULT false,
+	times_used INT DEFAULT 1,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_catalog_title ON barcode_catalog(title);
+
+-- Мағозаи хӯрокворӣ бе инҳо кор карда наметавонад:
+-- воҳид (дона/кг/литр) ва мӯҳлати нигоҳдорӣ.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS unit TEXT DEFAULT 'дона';
+ALTER TABLE products ADD COLUMN IF NOT EXISTS expires_on DATE;
+CREATE INDEX IF NOT EXISTS idx_products_expires ON products(expires_on)
+	WHERE expires_on IS NOT NULL;
+
 -- SSO: як ҳисоб барои ҳамаи барномаҳои Raonson. Коди якдафъаина, ки
 -- барномаи дигарро ба ҳамон корбар медарорад. Дар база ХУДИ код не,
 -- балки ҳэши он нигоҳ дошта мешавад — пас дастрасӣ ба база ба касе

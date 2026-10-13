@@ -75,6 +75,33 @@ extension StockL10n on AppL10n {
       : lang == 'en'
           ? 'Everything is in stock'
           : 'Ҳамаи маҳсулот дар анбор аст';
+  // ── Мӯҳлати нигоҳдорӣ ──
+  String get expiryTitle => lang == 'ru'
+      ? 'Скоро истекает срок'
+      : lang == 'en'
+          ? 'Expiring soon'
+          : 'Мӯҳлат наздик аст';
+  String get expiryHint => lang == 'ru'
+      ? 'Поставьте скидку, пока товар не пропал'
+      : lang == 'en'
+          ? 'Discount them before they are wasted'
+          : 'Тахфиф гузоред, то зарар нашавад';
+  String get expiryEmpty => lang == 'ru'
+      ? 'Ничего не истекает'
+      : lang == 'en'
+          ? 'Nothing is expiring'
+          : 'Мӯҳлати ҳеҷ чиз наздик нест';
+  String get expiredWord => lang == 'ru'
+      ? 'Срок вышел'
+      : lang == 'en'
+          ? 'Expired'
+          : 'Мӯҳлат гузашт';
+  String expiryDaysLeft(int n) => lang == 'ru'
+      ? '$n дн.'
+      : lang == 'en'
+          ? '$n d.'
+          : '$n рӯз';
+
   String soldOutCount(int n) => lang == 'ru'
       ? '$n товаров ждут ответа'
       : lang == 'en'
