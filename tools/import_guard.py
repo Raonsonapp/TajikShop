@@ -58,28 +58,54 @@ for p, s in files.items():
         if n in decl_l10n and not (decl_l10n[n] & imports):
             print(f"{p}: `l.{n}` бе import (дар {sorted(decl_l10n[n])[0]})"); bad += 1
 
-# Номҳое, ки `package:flutter/services.dart` талаб мекунанд.
-# `material.dart` онҳоро содир намекунад — ва `dart format` инро
-# намебинад, чунки синтаксис дуруст аст.
-SERVICES_NAMES = [
-    "MissingPluginException", "PlatformException", "MethodChannel",
-    "Clipboard", "ClipboardData", "HapticFeedback", "SystemChrome",
-    "SystemUiOverlayStyle", "DeviceOrientation", "TextInputFormatter",
-    "FilteringTextInputFormatter", "LengthLimitingTextInputFormatter",
-    "rootBundle",
-]
+# Номҳое, ки китобхонаи муайянро талаб мекунанд.
+#
+# `material.dart` онҳоро содир НАМЕКУНАД, вале `dart format` инро
+# намебинад — синтаксис дуруст аст, танҳо ном номуайян. Маҳз ҳамин хато
+# билди release-ро шикаст (`MissingPluginException`).
+REQUIRED_IMPORTS = {
+    "package:flutter/services.dart": [
+        "MissingPluginException", "PlatformException", "MethodChannel",
+        "Clipboard", "ClipboardData", "HapticFeedback", "SystemChrome",
+        "SystemUiOverlayStyle", "DeviceOrientation", "TextInputFormatter",
+        "FilteringTextInputFormatter", "LengthLimitingTextInputFormatter",
+        "rootBundle",
+    ],
+    "dart:math": ["Random", "pi", "sqrt", "atan2", "min(", "max("],
+    "dart:convert": ["jsonEncode", "jsonDecode", "utf8", "base64Url", "base64Encode"],
+    "dart:io": ["File(", "Directory(", "Platform.", "SocketException"],
+    "dart:async": ["StreamController", "Completer", "Timer("],
+}
+
+# Номҳое, ки аз якчанд ҷо омада метавонанд — муҳофиз онҳоро намесанҷад,
+# то хабари бардурӯғ надиҳад.
+AMBIGUOUS = {
+    # `min`/`max` метавонанд усули синфи худӣ бошанд.
+    "min(", "max(",
+    # `Timer` дар `flutter/scheduler.dart` ҳам ҳаст.
+    "Timer(",
+}
 
 for p, s in files.items():
     code = strip_comments(s)
-    has_services = ("package:flutter/services.dart" in s)
-    if has_services:
-        continue
-    for name in SERVICES_NAMES:
-        if re.search(r"\b" + name + r"\b", code):
-            print(f"{p}: `{name}` бе import-и "
-                  f"'package:flutter/services.dart'")
-            bad += 1
-            break
+    for lib, names in REQUIRED_IMPORTS.items():
+        if lib in s:
+            continue
+        # `dart:io` ва `dart:math` метавонанд тавассути `export` оянд.
+        for name in names:
+            if name in AMBIGUOUS:
+                continue
+            # `(?<![\w.$])` ҳатмист: бе он `MultipartFile.fromFile(` ба
+            # `File(` мувофиқ меомад ва муҳофиз хабари бардурӯғ медод.
+            pat = r"(?<![\w.$])" + re.escape(name)
+            if not name[-1].isalnum():
+                pass  # `File(` — ҳамчунон охираш `(` аст, қавс кифоя
+            else:
+                pat += r"\b"
+            if re.search(pat, code):
+                print(f"{p}: `{name}` бе import-и '{lib}'")
+                bad += 1
+                break
 
 print(f"checked={len(files)} problems={bad}")
 sys.exit(1 if bad else 0)

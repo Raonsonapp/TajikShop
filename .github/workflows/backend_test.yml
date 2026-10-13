@@ -1,0 +1,72 @@
+name: Backend (Go + PostgreSQL)
+
+# Тестҳои backend бо базаи ВОҚЕИИ Postgres.
+#
+# Чаро база лозим аст: мантиқи сохтани фармоиш (анбор, транзаксия,
+# idempotency, купон) танҳо бо базаи воқеӣ санҷида мешавад. Фурӯши
+# зиёдатӣ ҳангоми дархостҳои ҲАМЗАМОН рӯй медиҳад — бе Postgres онро
+# умуман такрор кардан номумкин аст.
+#
+# Инчунин ин ҷо migration воқеан иҷро мешавад. Ин муҳим аст, чунки
+# `execEach` хатои ҳар амрро ба лог менависад ва МЕГУЗАРАД — яъне як
+# амри вайрон дар production хомӯшона ҳеҷ кор намекунад ва то рӯзи
+# аввалин фармоиш маълум намешавад.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  go-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tajikshop_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: backend/go.sum
+
+      - name: go vet
+        working-directory: backend
+        run: go vet ./...
+
+      - name: go build
+        working-directory: backend
+        run: go build ./...
+
+      # Аввал бе база: мантиқи тоза (пул, ҳисоб, санҷиши сатрҳо) бояд
+      # дар ҳар ҳол сабз бошад.
+      - name: Тестҳои мантиқи тоза
+        working-directory: backend
+        run: go test ./... -count=1
+
+      # Баъд бо база: транзаксия, қулфи анбор, idempotency.
+      #
+      # `-count=1` кэшро хомӯш мекунад, `-race` мусобиқаи додаҳоро
+      # медорад — маҳз он чизе, ки дар checkout хатарнок аст.
+      - name: Тестҳои база (Postgres)
+        working-directory: backend
+        env:
+          TAJIKSHOP_TEST_DB_URL: postgres://postgres:postgres@127.0.0.1:5432/tajikshop_test?sslmode=disable
+        run: go test ./... -count=1 -race -timeout 10m

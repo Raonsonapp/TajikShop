@@ -544,6 +544,84 @@ CREATE TABLE IF NOT EXISTS returns (
 );
 CREATE INDEX IF NOT EXISTS idx_returns_order ON returns(order_id);
 
+-- ═══════════════════════════════════════════════════════════════════════
+--  Фармоиши бисёрфурӯшанда, idempotency ва маҳдудияти купон
+-- ═══════════════════════════════════════════════════════════════════════
+
+-- Сурати маҳсулот дар лаҳзаи фармоиш.
+--
+-- order_items танҳо product_id ва нарх дошт. Агар фурӯшанда баъд
+-- номи маҳсулотро иваз кунад, таърихи фармоиши кӯҳна ҳам иваз мешуд —
+-- яъне харидор дар фармоиши дусолаи худ номи дигарро мебинад. Ҳоло
+-- ном, фурӯшанда ва воҳид дар лаҳзаи фармоиш нигоҳ дошта мешаванд.
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS seller_id UUID;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS title     TEXT DEFAULT '';
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS unit      TEXT DEFAULT 'дона';
+CREATE INDEX IF NOT EXISTS idx_order_items_seller ON order_items(seller_id);
+
+-- Барои сатрҳои кӯҳна seller_id-ро аз маҳсулот мегирем (як бор).
+UPDATE order_items oi SET seller_id = p.seller_id
+	FROM products p WHERE p.id = oi.product_id AND oi.seller_id IS NULL;
+
+-- Зер-фармоиш: ҳолати ҲАР ФУРӮШАНДА дар як фармоиш.
+--
+-- Масъалаи аслӣ: дар сабад моли ду фурӯшанда буд, вале orders як сатр
+-- буд ва як status дошт. Фурӯшандаи A «фиристодам» мезад — ва тамоми
+-- фармоиш, аз ҷумла моли фурӯшандаи B, «фиристода шуд» мешуд. Ҳимояи
+-- харидор ҳам барои моли нафиристодаи B сар мешуд.
+CREATE TABLE IF NOT EXISTS order_sellers (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+	seller_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	status VARCHAR(30) DEFAULT 'pending',
+	subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+	tracking_code VARCHAR(64) DEFAULT '',
+	shipped_at TIMESTAMPTZ,
+	delivered_at TIMESTAMPTZ,
+	protect_until TIMESTAMPTZ,
+	released BOOLEAN DEFAULT false,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	updated_at TIMESTAMPTZ DEFAULT NOW(),
+	UNIQUE(order_id, seller_id)
+);
+CREATE INDEX IF NOT EXISTS idx_order_sellers_seller ON order_sellers(seller_id, status);
+
+-- Фармоишҳои кӯҳнаро ба order_sellers мегузаронем, то фурӯшандагон
+-- таърихи худро гум накунанд.
+INSERT INTO order_sellers(order_id, seller_id, status, subtotal)
+SELECT oi.order_id, oi.seller_id, o.status, SUM(oi.price * oi.quantity)
+	FROM order_items oi
+	JOIN orders o ON o.id = oi.order_id
+	WHERE oi.seller_id IS NOT NULL
+	GROUP BY oi.order_id, oi.seller_id, o.status
+ON CONFLICT (order_id, seller_id) DO NOTHING;
+
+-- Idempotency: як зеркунӣ = як фармоиш.
+--
+-- Пештар калид набуд. Агар харидор тугмаро ду бор занад ё интернет
+-- ҷавобро гум кунад ва барнома такрор фиристад — ДУ фармоиш сохта мешуд
+-- ва аз ҳамёнаш ду бор пул мерафт.
+CREATE TABLE IF NOT EXISTS checkout_keys (
+	key TEXT PRIMARY KEY,
+	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Купон: маҳдудияти ҳар корбар.
+--
+-- coupons.used_count ҷамъи умумӣ буд, пас як корбар метавонист ҳамон
+-- купонро бефосила истифода кунад.
+ALTER TABLE coupons ADD COLUMN IF NOT EXISTS per_user_limit INT DEFAULT 1;
+CREATE TABLE IF NOT EXISTS coupon_redemptions (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	code VARCHAR(40) NOT NULL,
+	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_coupon_redeem ON coupon_redemptions(code, user_id);
+
 -- ===== Индексҳои иловагӣ барои зудӣ (scale) =====
 CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);

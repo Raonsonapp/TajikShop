@@ -14,9 +14,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Ҳадди болоии ҳаққи расонидан (сом.) — муштарӣ наметавонад аз ин зиёд диҳад.
-const maxDeliveryFee = 200
-
 type OrderHandler struct {
 	r2 *storage.R2Client
 }
@@ -27,12 +24,26 @@ func NewOrderHandler(r2 *storage.R2Client) *OrderHandler {
 
 // ========== CART ==========
 
+// GetCart — GET /cart
+//
+// Ҳоло ҳолати ҳақиқии анбор низ бармегардад (`stock`, `available`,
+// `min_order_qty`). Пештар сабад танҳо ном ва нархро медод, пас харидор
+// метавонист моли хомӯш ё тамомшударо дар сабадаш бинад ва то лаҳзаи
+// пардохт нафаҳмад, ки он нест.
 func (h *OrderHandler) GetCart(c *gin.Context) {
 	uid := utils.UserID(c)
-	rows, err := db.DB.Query(`SELECT ci.id,ci.product_id,ci.quantity,p.title,p.price FROM cart_items ci
-		JOIN products p ON p.id=ci.product_id WHERE ci.user_id=$1`, uid)
+	rows, err := db.DB.Query(`SELECT ci.id, ci.product_id, ci.quantity,
+			COALESCE(p.title,''), p.price, p.stock,
+			COALESCE(p.is_active,true), COALESCE(p.min_order_qty,1),
+			p.seller_id,
+			COALESCE((SELECT url FROM product_images WHERE product_id=p.id
+				ORDER BY position LIMIT 1),'')
+		FROM cart_items ci
+		JOIN products p ON p.id = ci.product_id
+		WHERE ci.user_id = $1
+		ORDER BY ci.created_at DESC`, uid)
 	if err != nil {
-		utils.Err(c, http.StatusInternalServerError, err.Error())
+		utils.Err(c, http.StatusInternalServerError, "Сабад хонда нашуд")
 		return
 	}
 	defer rows.Close()
@@ -42,19 +53,31 @@ func (h *OrderHandler) GetCart(c *gin.Context) {
 		Quantity  int     `json:"quantity"`
 		Title     string  `json:"title"`
 		Price     float64 `json:"price"`
+		Stock     int     `json:"stock"`
+		Active    bool    `json:"is_active"`
+		MinQty    int     `json:"min_order_qty"`
+		SellerID  string  `json:"seller_id"`
+		Image     string  `json:"image"`
+		Available bool    `json:"available"`
 	}
-	var items []CartRow
+	items := []CartRow{}
 	for rows.Next() {
-		var item CartRow
-		rows.Scan(&item.ID, &item.ProductID, &item.Quantity, &item.Title, &item.Price)
-		items = append(items, item)
-	}
-	if items == nil {
-		items = []CartRow{}
+		var it CartRow
+		if e := rows.Scan(&it.ID, &it.ProductID, &it.Quantity, &it.Title, &it.Price,
+			&it.Stock, &it.Active, &it.MinQty, &it.SellerID, &it.Image); e != nil {
+			continue
+		}
+		it.Available = it.Active && it.Stock >= it.Quantity && it.Quantity >= it.MinQty
+		items = append(items, it)
 	}
 	utils.OK(c, items)
 }
 
+// AddToCart — POST /cart
+//
+// Пештар ин ҷо ҳеҷ санҷиш набуд: `INSERT` фавран иҷро мешуд. Яъне
+// метавонистед моли хомӯш, моли тамомшуда ё `{"quantity": 2000000000}`-ро
+// ба сабад гузоред, ва хато танҳо дар лаҳзаи пардохт пайдо мешуд.
 func (h *OrderHandler) AddToCart(c *gin.Context) {
 	uid := utils.UserID(c)
 	var in struct {
@@ -62,17 +85,61 @@ func (h *OrderHandler) AddToCart(c *gin.Context) {
 		Quantity  int    `json:"quantity"`
 	}
 	if err := c.ShouldBindJSON(&in); err != nil {
-		utils.Err(c, http.StatusBadRequest, err.Error())
+		utils.Err(c, http.StatusBadRequest, "Маҳсулот нишон дода нашуд")
 		return
 	}
-	if in.Quantity == 0 {
+	if in.Quantity <= 0 {
 		in.Quantity = 1
 	}
-	id := uuid.NewString()
-	db.DB.Exec(`INSERT INTO cart_items(id,user_id,product_id,quantity) VALUES($1,$2,$3,$4)
-		ON CONFLICT(user_id,product_id) DO UPDATE SET quantity=cart_items.quantity+$4`,
-		id, uid, in.ProductID, in.Quantity)
-	utils.OK(c, gin.H{"message": "added to cart"})
+
+	var stock, minQty int
+	var active bool
+	var sellerID, title string
+	err := db.DB.QueryRow(`SELECT p.stock, COALESCE(p.min_order_qty,1),
+			COALESCE(p.is_active,true), p.seller_id, COALESCE(p.title,'')
+		FROM products p WHERE p.id=$1`, in.ProductID).
+		Scan(&stock, &minQty, &active, &sellerID, &title)
+	if err != nil {
+		utils.Err(c, http.StatusNotFound, "Маҳсулот ёфт нашуд")
+		return
+	}
+	if !active || stock <= 0 {
+		utils.Err(c, http.StatusConflict, "Ин маҳсулот ҳоло дастрас нест")
+		return
+	}
+	// Фурӯшанда моли худашро нахарад — вагарна ҳисоби фурӯш вайрон мешавад.
+	if sellerID == uid {
+		utils.Err(c, http.StatusBadRequest, "Моли худро харидан мумкин нест")
+		return
+	}
+	if minQty > 1 && in.Quantity < minQty {
+		in.Quantity = minQty // ҳадди ақали фурӯшандаро худкор мегирем
+	}
+
+	// Шумораи ниҳоӣ набояд аз анбор зиёд шавад — аз ҷумла баъди ҷамъ
+	// шудан бо он чизе, ки аллакай дар сабад аст.
+	var have int
+	db.DB.QueryRow(`SELECT COALESCE(quantity,0) FROM cart_items
+		WHERE user_id=$1 AND product_id=$2`, uid, in.ProductID).Scan(&have)
+	want := have + in.Quantity
+	if want > stock {
+		want = stock
+	}
+	if want > maxLineQty {
+		want = maxLineQty
+	}
+
+	if _, e := db.DB.Exec(`INSERT INTO cart_items(id,user_id,product_id,quantity)
+		VALUES($1,$2,$3,$4)
+		ON CONFLICT(user_id,product_id) DO UPDATE SET quantity=$4`,
+		uuid.NewString(), uid, in.ProductID, want); e != nil {
+		utils.Err(c, http.StatusInternalServerError, "Ба сабад илова нашуд")
+		return
+	}
+	utils.OK(c, gin.H{
+		"message": "added to cart", "quantity": want,
+		"capped": want < have+in.Quantity, "stock": stock,
+	})
 }
 
 func (h *OrderHandler) RemoveFromCart(c *gin.Context) {
@@ -95,184 +162,46 @@ func (h *OrderHandler) UpdateCartItem(c *gin.Context) {
 		utils.OK(c, gin.H{"removed": true})
 		return
 	}
-	db.DB.Exec(`UPDATE cart_items SET quantity=$1 WHERE id=$2 AND user_id=$3`, in.Quantity, itemID, uid)
-	utils.OK(c, gin.H{"updated": true, "quantity": in.Quantity})
+
+	// Шумора бо анбор ва ҳадди ақали фурӯшанда маҳдуд мешавад. Бе ин
+	// харидор метавонист дар сабад 500 дона гузорад, дар ҳоле ки дар
+	// анбор 3 дона буд.
+	var stock, minQty int
+	err := db.DB.QueryRow(`SELECT p.stock, COALESCE(p.min_order_qty,1)
+		FROM cart_items ci JOIN products p ON p.id=ci.product_id
+		WHERE ci.id=$1 AND ci.user_id=$2`, itemID, uid).Scan(&stock, &minQty)
+	if err != nil {
+		utils.Err(c, http.StatusNotFound, "Ин мол дар сабади шумо нест")
+		return
+	}
+	q := in.Quantity
+	if q > stock {
+		q = stock
+	}
+	if q > maxLineQty {
+		q = maxLineQty
+	}
+	if minQty > 1 && q < minQty {
+		q = minQty
+	}
+	if q <= 0 {
+		db.DB.Exec(`DELETE FROM cart_items WHERE id=$1 AND user_id=$2`, itemID, uid)
+		utils.OK(c, gin.H{"removed": true, "reason": "out_of_stock"})
+		return
+	}
+
+	if _, e := db.DB.Exec(`UPDATE cart_items SET quantity=$1 WHERE id=$2 AND user_id=$3`,
+		q, itemID, uid); e != nil {
+		utils.Err(c, http.StatusInternalServerError, "Нав карда нашуд")
+		return
+	}
+	utils.OK(c, gin.H{
+		"updated": true, "quantity": q,
+		"capped": q != in.Quantity, "stock": stock, "min_order_qty": minQty,
+	})
 }
 
 // ========== ORDERS ==========
-
-func (h *OrderHandler) Checkout(c *gin.Context) {
-	uid := utils.UserID(c)
-	var in struct {
-		AddressID     string  `json:"address_id"`
-		Note          string  `json:"note"`
-		PaymentMethod string  `json:"payment_method"` // dc | cod | wallet
-		CouponCode    string  `json:"coupon_code"`
-		Fulfilment    string  `json:"fulfilment"` // delivery | pickup
-		DeliveryFee   float64 `json:"delivery_fee"`
-		DeliveryASAP  *bool   `json:"delivery_asap"`
-		DeliverySlot  string  `json:"delivery_slot"` // "HH:MM"
-	}
-	c.ShouldBindJSON(&in)
-	method := in.PaymentMethod
-	if method != "cod" && method != "wallet" {
-		method = "dc"
-	}
-	// Тарзи гирифтан: ҳангоми «аз мағоза гирифтан» расонидан ройгон аст.
-	fulfilment := in.Fulfilment
-	if fulfilment != "pickup" {
-		fulfilment = "delivery"
-	}
-	deliveryFee := in.DeliveryFee
-	if fulfilment == "pickup" || deliveryFee < 0 {
-		deliveryFee = 0
-	}
-	if deliveryFee > maxDeliveryFee {
-		deliveryFee = maxDeliveryFee // муҳофизат аз арзиши бофташудаи муштарӣ
-	}
-	slot := strings.TrimSpace(in.DeliverySlot)
-	if in.DeliveryASAP != nil && *in.DeliveryASAP {
-		slot = ""
-	}
-	if len(slot) > 5 {
-		slot = slot[:5]
-	}
-
-	rows, err := db.DB.Query(`SELECT ci.product_id,ci.quantity,p.price FROM cart_items ci
-		JOIN products p ON p.id=ci.product_id WHERE ci.user_id=$1`, uid)
-	if err != nil || rows == nil {
-		utils.Err(c, http.StatusBadRequest, "cart is empty")
-		return
-	}
-	defer rows.Close()
-
-	type item struct {
-		ProductID string
-		Qty       int
-		Price     float64
-	}
-	var items []item
-	var total float64
-	for rows.Next() {
-		var i item
-		rows.Scan(&i.ProductID, &i.Qty, &i.Price)
-		items = append(items, i)
-		total += i.Price * float64(i.Qty)
-	}
-	if len(items) == 0 {
-		utils.Err(c, http.StatusBadRequest, "cart is empty")
-		return
-	}
-
-	// Купон (агар эътибор дошта бошад)
-	couponCode := strings.ToUpper(strings.TrimSpace(in.CouponCode))
-	discountPct := 0
-	if couponCode != "" {
-		if d, ok, _ := lookupCoupon(couponCode); ok {
-			discountPct = d
-		} else {
-			couponCode = ""
-		}
-	}
-	// Ҷамъ = маҳсулот + расонидан, баъд тахфиф (мисли ҳисоби экрани сабад).
-	gross := total + deliveryFee
-	discountAmt := gross * float64(discountPct) / 100
-	finalTotal := gross - discountAmt
-
-	// address_id метавонад холӣ бошад (NULL)
-	var addr interface{}
-	if in.AddressID != "" {
-		addr = in.AddressID
-	}
-
-	orderID := uuid.NewString()
-
-	// Маҳсулоте, ки бо ин фармоиш метавонад тамом шавад — баъди commit
-	// аз фурӯшандаашон мепурсем: «боз ҳаст?»
-	soldOut := []string{}
-
-	// ── Пардохт аз ҳамён: тавозунро месанҷем ва кам мекунем (атомӣ) ──
-	if method == "wallet" {
-		tx, txErr := db.DB.Begin()
-		if txErr != nil {
-			utils.Err(c, http.StatusInternalServerError, "tx begin failed")
-			return
-		}
-		var bal float64
-		tx.QueryRow(`SELECT COALESCE(wallet_balance,0) FROM users WHERE id=$1 FOR UPDATE`, uid).Scan(&bal)
-		if bal < finalTotal {
-			tx.Rollback()
-			utils.Err(c, http.StatusBadRequest, "Тавозуни ҳамён нокифоя аст")
-			return
-		}
-		if _, e := tx.Exec(`INSERT INTO orders(id,user_id,address_id,total,note,payment_method,discount,fulfilment,delivery_fee,delivery_slot,status)
-			VALUES($1,$2,$3,$4,$5,'wallet',$6,$7,$8,$9,'paid')`,
-			orderID, uid, addr, finalTotal, in.Note, discountAmt, fulfilment, deliveryFee, slot); e != nil {
-			tx.Rollback()
-			utils.Err(c, http.StatusInternalServerError, e.Error())
-			return
-		}
-		for _, i := range items {
-			tx.Exec(`INSERT INTO order_items(id,order_id,product_id,quantity,price) VALUES($1,$2,$3,$4,$5)`,
-				uuid.NewString(), orderID, i.ProductID, i.Qty, i.Price)
-			tx.Exec(`UPDATE products SET stock=GREATEST(stock-$1,0) WHERE id=$2`, i.Qty, i.ProductID)
-			soldOut = append(soldOut, i.ProductID)
-		}
-		tx.Exec(`UPDATE users SET wallet_balance=wallet_balance-$1 WHERE id=$2`, finalTotal, uid)
-		tx.Exec(`INSERT INTO wallet_transactions(id,user_id,amount,type,status,note)
-			VALUES($1,$2,$3,'purchase','completed',$4)`,
-			uuid.NewString(), uid, -finalTotal, "Харид #"+shortID(orderID))
-		tx.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
-			VALUES($1,$2,'order','Фармоиш қабул шуд','Фармоиши #`+shortID(orderID)+` бо ҳамён пардохт шуд',$3)`,
-			uuid.NewString(), uid, orderID)
-		tx.Exec(`DELETE FROM cart_items WHERE user_id=$1`, uid)
-		if couponCode != "" {
-			tx.Exec(`UPDATE coupons SET used_count=used_count+1 WHERE UPPER(code)=$1`, couponCode)
-		}
-		if e := tx.Commit(); e != nil {
-			utils.Err(c, http.StatusInternalServerError, "checkout failed")
-			return
-		}
-		pushToUser(uid, "Фармоиш қабул шуд", "Фармоиши #"+shortID(orderID)+" бо ҳамён пардохт шуд")
-		// Фурӯшанда(гон) бояд фавран бидонанд, ки фармоиш омад.
-		notifySellersOfNewOrder(orderID)
-		// Ҳар маҳсулоте, ки бо ин фармоиш тамом шуд — аз фурӯшанда мепурсем.
-		for _, pid := range soldOut {
-			notifySoldOut(pid)
-		}
-		utils.Created(c, gin.H{"order_id": orderID, "total": finalTotal, "status": "paid", "discount": discountAmt})
-		return
-	}
-
-	// ── DC ё Cash-on-Delivery ──
-	if _, e := db.DB.Exec(`INSERT INTO orders(id,user_id,address_id,total,note,payment_method,discount,fulfilment,delivery_fee,delivery_slot,status)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'pending')`,
-		orderID, uid, addr, finalTotal, in.Note, method, discountAmt, fulfilment, deliveryFee, slot); e != nil {
-		utils.Err(c, http.StatusInternalServerError, e.Error())
-		return
-	}
-	for _, i := range items {
-		db.DB.Exec(`INSERT INTO order_items(id,order_id,product_id,quantity,price) VALUES($1,$2,$3,$4,$5)`,
-			uuid.NewString(), orderID, i.ProductID, i.Qty, i.Price)
-		db.DB.Exec(`UPDATE products SET stock=GREATEST(stock-$1,0) WHERE id=$2`, i.Qty, i.ProductID)
-		soldOut = append(soldOut, i.ProductID)
-	}
-	db.DB.Exec(`DELETE FROM cart_items WHERE user_id=$1`, uid)
-	if couponCode != "" {
-		db.DB.Exec(`UPDATE coupons SET used_count=used_count+1 WHERE UPPER(code)=$1`, couponCode)
-	}
-	db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
-		VALUES($1,$2,'order','Фармоиш қабул шуд','Фармоиши #`+shortID(orderID)+` қабул шуд',$3)`,
-		uuid.NewString(), uid, orderID)
-	pushToUser(uid, "Фармоиш қабул шуд", "Фармоиши #"+shortID(orderID)+" қабул шуд")
-	// Фурӯшанда(гон) бояд фавран бидонанд, ки фармоиш омад.
-	notifySellersOfNewOrder(orderID)
-	for _, pid := range soldOut {
-		notifySoldOut(pid)
-	}
-
-	utils.Created(c, gin.H{"order_id": orderID, "total": finalTotal, "discount": discountAmt})
-}
 
 func shortID(id string) string {
 	if len(id) > 8 {

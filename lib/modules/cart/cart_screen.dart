@@ -1,5 +1,6 @@
 // ignore_for_file: curly_braces_in_flow_control_structures, camel_case_types
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:feather_icons/feather_icons.dart';
@@ -10,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/profile_l10n.dart';
+import '../../core/l10n/checkout_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../core/api/api_client.dart';
@@ -190,6 +192,26 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
   String? _error;
   final _picker = ImagePicker();
 
+  /// Мушкилоти сабад, ки сервер баргардонд (мол тамом шуд ва ғайра).
+  List<Map<String, dynamic>> _issues = const [];
+
+  /// Калиди idempotency — ЯК бор барои ҳар кӯшиши фармоиш сохта мешавад.
+  ///
+  /// Маҳз «як бор» муҳим аст. Агар он дар ҳар зеркунӣ нав шавад, маъно
+  /// надорад: сервер ҳар дархостро нав мебинад ва боз ду фармоиш месозад.
+  /// Пас ҳамин калид дар тамоми кӯшишҳои ҳамин фармоиш як хел мемонад ва
+  /// танҳо баъди фармоиши муваффақ нав мешавад.
+  late String _idemKey = _newIdemKey();
+
+  /// Вақт + рақами тасодуфӣ. Танҳо вақт кифоя нест: ду дастгоҳ метавонанд
+  /// дар як микросония фармоиш диҳанд, ва он гоҳ калидҳояшон як хел
+  /// мешаванд — яъне фармоиши дуюм «такрор» ҳисоб мешуд ва гум мешуд.
+  static String _newIdemKey() {
+    final r = Random.secure();
+    final tail = List.generate(8, (_) => r.nextInt(16).toRadixString(16)).join();
+    return 'co-${DateTime.now().microsecondsSinceEpoch}-$tail';
+  }
+
   @override
   void dispose() { _couponCtrl.dispose(); super.dispose(); }
 
@@ -225,14 +247,19 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
       setState(() => _error = AppL10n.of(context).addAddress);
       return;
     }
-    setState(() { _loading = true; _error = null; });
+    setState(() { _loading = true; _error = null; _issues = const []; });
     try {
       // 1) Фармоиш месозем
-      final res = await ApiClient.instance.dio.post(ApiEndpoints.checkout, data: {
+      //
+      // `Idempotency-Key` ҳатмист: бе он ду зеркунии тугма ё такрори
+      // шабака ДУ фармоиш месохт ва аз ҳамён ду бор пул мерафт.
+      final res = await ApiClient.instance.dio.post(
+        ApiEndpoints.checkout,
+        options: Options(headers: {'Idempotency-Key': _idemKey}),
+        data: {
         if (_fulfilment == 'delivery' && _addressId != null) 'address_id': _addressId,
         'payment_method': _method,
         'fulfilment': _fulfilment,
-        'delivery_fee': _deliveryFee,
         'delivery_asap': _asap,
         if (!_asap && _slot != null)
           'delivery_slot':
@@ -254,13 +281,87 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
       await ref.read(cartProvider.notifier).loadCart();
       if (_method == 'wallet') ref.invalidate(walletProvider);
       if (!mounted) return;
+      // Фармоиш гузашт — калиди нав барои фармоиши ОЯНДА.
+      _idemKey = _newIdemKey();
       setState(() { _loading = false; _sent = true; });
     } on DioException catch (e) {
-      final msg = (e.response?.data is Map ? e.response?.data['error'] : null)?.toString();
-      if (mounted) setState(() { _loading = false; _error = msg ?? AppL10n.of(context).errorDuringPayment; });
+      final resp = e.response?.data;
+      final map = resp is Map ? resp : const {};
+      final msg = map['error']?.toString();
+
+      // 409 = сабад то лаҳзаи пардохт тағйир ёфт. Сервер мегӯяд КАДОМ
+      // мол — пас харидор мебинад, чиро дуруст кунад, на танҳо «Хато».
+      final raw = map['issues'];
+      final issues = raw is List
+          ? raw.whereType<Map>().map((m) => m.cast<String, dynamic>()).toList()
+          : const <Map<String, dynamic>>[];
+      if (issues.isNotEmpty) {
+        await ref.read(cartProvider.notifier).loadCart();
+      }
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _issues = issues;
+          _error = issues.isNotEmpty
+              ? AppL10n.of(context).cartChangedBody
+              : (msg ?? AppL10n.of(context).errorDuringPayment);
+        });
+      }
     } catch (_) {
       if (mounted) setState(() { _loading = false; _error = AppL10n.of(context).errorDuringPayment; });
     }
+  }
+
+  /// Рӯйхати молҳое, ки сервер рад кард — бо сабаби ҳар кадом.
+  ///
+  /// Пештар харидор дар ин ҳолат танҳо «Ҳангоми пардохт хато» мегирифт ва
+  /// намедонист кадом молро аз сабад бардорад.
+  Widget _issuesBox() {
+    final l = AppL10n.of(context);
+    final pal = context.pal;
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.32)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(FeatherIcons.alertCircle, color: AppColors.warning, size: 18),
+          const SizedBox(width: 9),
+          Expanded(child: Text(l.cartChangedTitle,
+              style: TextStyle(color: pal.textPrimary, fontSize: 14,
+                  fontWeight: FontWeight.w700))),
+        ]),
+        const SizedBox(height: 9),
+        for (final it in _issues)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('• ', style: TextStyle(color: pal.textMuted, fontSize: 13)),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text((it['title'] ?? '').toString().isEmpty
+                          ? '—' : it['title'].toString(),
+                      maxLines: 2, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: pal.textPrimary, fontSize: 13,
+                          fontWeight: FontWeight.w600)),
+                  Text(
+                    l.cartIssue(
+                      (it['code'] ?? '').toString(),
+                      available: (it['available'] as num?)?.toInt() ?? 0,
+                      minQty: (it['min_qty'] as num?)?.toInt() ?? 0,
+                    ),
+                    style: TextStyle(color: pal.textMuted, fontSize: 12.5),
+                  ),
+                ]),
+              ),
+            ]),
+          ),
+      ]),
+    );
   }
 
   double get _cartTotal => ref.read(cartProvider).total;
@@ -468,6 +569,8 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
 
         if (_error != null) Padding(padding: const EdgeInsets.only(top: 12),
           child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13))),
+
+        if (_issues.isNotEmpty) _issuesBox(),
 
         const SizedBox(height: 16),
         AppButton(
