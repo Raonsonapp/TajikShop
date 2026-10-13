@@ -51,10 +51,30 @@ void expectClean(WidgetTester tester, String screen) {
 
 /// Тугмаро мезанад, агар он бошад. Баъзе бахшҳо танҳо барои фурӯшанда ё
 /// танҳо ҳангоми мавҷудияти маълумот пайдо мешаванд.
+///
+/// ⚠️ Муҳим: виҷет метавонад БЕРУН АЗ ЭКРАН бошад.
+///
+/// `find.textContaining` онро меёбад (он сохта шудааст, вале поёнтар аз
+/// экран аст), ва `tester.tap` ба маркази он мезанад — яъне ба ҷои холӣ.
+/// Бо `warnIfMissed: false` ин ХОМӮШОНА мегузашт, ва қадами тест
+/// «гузашт» ҳисоб мешуд, ҳол он ки ҳеҷ чиз накарда буд.
+///
+/// Маҳз ҳамин тугмаи «Забон»-ро дар профил вайрон кард: он поёни экран
+/// аст, зеркунӣ ба ҷои холӣ мерафт, варақа кушода намешуд.
 Future<bool> tapIfPresent(WidgetTester tester, Finder f,
     {int frames = 20}) async {
   if (f.evaluate().isEmpty) return false;
-  await tester.tap(f.first, warnIfMissed: false);
+  final target = f.first;
+  try {
+    // Виҷетро ба экран меорем — вагарна зеркунӣ ба ҷои холӣ меравад.
+    await tester.ensureVisible(target);
+    await settle(tester, frames: 6);
+  } catch (_) {
+    // Волиди ҷойивазшаванда нест (масалан тугмаи bottom bar) — ҳамон
+    // тавре мезанем.
+  }
+  // `warnIfMissed: true` — акнун норасидан дар лог намоён мешавад.
+  await tester.tap(target);
   await settle(tester, frames: frames);
   return true;
 }

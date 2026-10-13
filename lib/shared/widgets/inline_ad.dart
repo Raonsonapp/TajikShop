@@ -6,6 +6,35 @@ import '../../core/ads/ad_service.dart';
 
 /// Баннери реклама (Yandex, sticky) — дар поёни экран.
 /// Интизори омодагии SDK мешавад, баъд бор мекунад (то «холӣ» намонад).
+
+/// Рекламаро БЕХАТАР нест мекунад.
+///
+/// `.catchError` ин ҷо КИФОЯ НЕСТ, ва ман инро аз рӯи коди худи плагин
+/// тасдиқ кардам. `yandex_mobileads/ad.dart:28` чунин аст:
+///
+///     _channel.invokeMethod('destroy');     // бе `return`, бе `await`
+///
+/// Яъне Future-и `invokeMethod` ба ҷое намеравад. `BannerAd.destroy()`
+/// муваффақона тамом мешавад, ва хатои дарунӣ ДОШТА НАШУДА мемонад — пас
+/// ягон `.catchError`-и мо ба он намерасад.
+///
+/// Агар тарафи нативӣ объекти рекламаро насохта бошад (реклама бор нашуд
+/// ё SDK омода набуд), он `MissingPluginException` мепартояд. Дар барнома
+/// онро `PlatformDispatcher.onError` фурӯ мебарад, пас касе намебинад —
+/// вале дар тести эмулятор он тамоми тестро мешиканад ва хатои АСЛИРО
+/// пинҳон мекунад.
+///
+/// `runZonedGuarded` хатоҳои async-и дохили зонаро медорад, аз ҷумла
+/// Future-и партофташудаи плагин.
+void _safeDestroyAd(BannerAd? ad) {
+  if (ad == null) return;
+  runZonedGuarded(() {
+    ad.destroy();
+  }, (_, __) {
+    // Хатои плагини сеюм ҳангоми пӯшидани экран — барои мо коре нест.
+  });
+}
+
 class AdBanner extends StatefulWidget {
   const AdBanner({super.key});
   @override
@@ -44,13 +73,7 @@ class _AdBannerState extends State<AdBanner> {
   @override
   void dispose() {
     _sub?.cancel();
-    // ⚠️ `destroy()` Future бармегардонад. Агар тарафи нативӣ объекти
-    // рекламаро насохта бошад (реклама бор нашуд ё SDK омода набуд), он бо
-    // `MissingPluginException` меафтад ва ҳамчун хатои async-и ДОШТА
-    // НАШУДА мемонад. Дар барнома онро `PlatformDispatcher.onError` фурӯ
-    // мебарад, пас касе намебинад — вале хато воқеист ва тести эмулятор
-    // маҳз ҳаминро ошкор кард.
-    _banner?.destroy().catchError((_) {});
+    _safeDestroyAd(_banner);
     _banner = null;
     super.dispose();
   }
@@ -117,13 +140,7 @@ class _AdMrecState extends State<AdMrec> {
   @override
   void dispose() {
     _sub?.cancel();
-    // ⚠️ `destroy()` Future бармегардонад. Агар тарафи нативӣ объекти
-    // рекламаро насохта бошад (реклама бор нашуд ё SDK омода набуд), он бо
-    // `MissingPluginException` меафтад ва ҳамчун хатои async-и ДОШТА
-    // НАШУДА мемонад. Дар барнома онро `PlatformDispatcher.onError` фурӯ
-    // мебарад, пас касе намебинад — вале хато воқеист ва тести эмулятор
-    // маҳз ҳаминро ошкор кард.
-    _banner?.destroy().catchError((_) {});
+    _safeDestroyAd(_banner);
     _banner = null;
     super.dispose();
   }

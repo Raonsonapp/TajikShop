@@ -74,7 +74,12 @@ REQUIRED_IMPORTS = {
     "dart:math": ["Random", "pi", "sqrt", "atan2", "min(", "max("],
     "dart:convert": ["jsonEncode", "jsonDecode", "utf8", "base64Url", "base64Encode"],
     "dart:io": ["File(", "Directory(", "Platform.", "SocketException"],
-    "dart:async": ["StreamController", "Completer", "Timer("],
+    "dart:async": [
+        "StreamController", "Completer", "Timer(",
+        # `runZonedGuarded` барои доштани хатоҳои async-и плагинҳои сеюм
+        # лозим аст — бе import он ном номуайян аст.
+        "runZonedGuarded", "runZoned", "unawaited(", "scheduleMicrotask",
+    ],
 }
 
 # Номҳое, ки аз якчанд ҷо омада метавонанд — муҳофиз онҳоро намесанҷад,
