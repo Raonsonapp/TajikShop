@@ -741,6 +741,33 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS rfq_quote_id UUID;
 -- фармоиши RFQ-и худро дар панелаш НАМЕДИД.
 ALTER TABLE order_items ALTER COLUMN product_id DROP NOT NULL;
 
+-- Дафтари амалҳои админ.
+--
+-- Дар аудит ин ҳамчун камбудии АМНИЯТ навишта шуда буд: админ метавонад
+-- корбарро бандад, фурӯшандаро тасдиқ кунад, амалиёти ҳамёнро тасдиқ
+-- кунад — ва ҳеҷ осоре намемонад.
+--
+-- Платформа бо пули ҳақиқӣ кор мекунад. Агар рӯзе маблағе нопадид шавад
+-- ё фурӯшандае бегуноҳ баста шавад, бе ин дафтар ҳеҷ роҳе нест фаҳмидан,
+-- КӢ ва КАЙ инро кард.
+--
+-- «ON DELETE SET NULL» барои admin_id: сатри дафтар бояд ҳатто баъди
+-- нест шудани ҳисоби админ монад — вагарна осори амал бо худи админ
+-- нопадид мешавад.
+CREATE TABLE IF NOT EXISTS admin_actions (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	admin_id UUID REFERENCES users(id) ON DELETE SET NULL,
+	method VARCHAR(10) NOT NULL,
+	path TEXT NOT NULL,
+	target_id UUID,
+	payload JSONB,
+	status INT,
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_admin_actions_time ON admin_actions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_actions_admin ON admin_actions(admin_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_admin_actions_target ON admin_actions(target_id);
+
 -- ===== Индексҳои иловагӣ барои зудӣ (scale) =====
 CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);

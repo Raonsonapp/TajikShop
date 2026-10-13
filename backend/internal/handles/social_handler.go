@@ -388,9 +388,34 @@ func (h *AdminHandler) Stats(c *gin.Context) {
 	})
 }
 
+// applyToUser — амри админро ба як корбар иҷро мекунад.
+//
+// Пештар ҳамаи ин handler-ҳо натиҷаи `Exec`-ро ПАРТОФТА мегузаштанд ва
+// ҳамеша «OK» медоданд. Яъне агар админ дар ID ҳарфе хато кунад, ӯ
+// «корбар баста шуд» мебинад — вале ҳеҷ кас баста намешавад. Ва ӯ ҳеҷ
+// гоҳ намефаҳмад.
+//
+// `false` бармегардонад, агар корбар набошад (ва ҷавоби 404-ро худаш
+// мефиристад).
+func applyToUser(c *gin.Context, query string, args ...interface{}) bool {
+	res, err := db.DB.Exec(query, args...)
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, "Амал иҷро нашуд")
+		return false
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		utils.Err(c, http.StatusNotFound, "Корбар ёфт нашуд")
+		return false
+	}
+	return true
+}
+
 func (h *AdminHandler) BanUser(c *gin.Context) {
 	id := c.Param("id")
-	db.DB.Exec(`UPDATE users SET is_banned=true,updated_at=$1 WHERE id=$2`, time.Now(), id)
+	if !applyToUser(c, `UPDATE users SET is_banned=true,updated_at=$1 WHERE id=$2`,
+		time.Now(), id) {
+		return
+	}
 	// Корбари бандшуда набояд бо токени навсозӣ (барнома ё Raonson) боз ворид шавад.
 	revokeAllSessions(db.DB, id)
 	utils.OK(c, gin.H{"message": "user banned"})
@@ -398,7 +423,10 @@ func (h *AdminHandler) BanUser(c *gin.Context) {
 
 func (h *AdminHandler) UnbanUser(c *gin.Context) {
 	id := c.Param("id")
-	db.DB.Exec(`UPDATE users SET is_banned=false,updated_at=$1 WHERE id=$2`, time.Now(), id)
+	if !applyToUser(c, `UPDATE users SET is_banned=false,updated_at=$1 WHERE id=$2`,
+		time.Now(), id) {
+		return
+	}
 	utils.OK(c, gin.H{"message": "user unbanned"})
 }
 
@@ -406,15 +434,21 @@ func (h *AdminHandler) UnbanUser(c *gin.Context) {
 // тасдиқшуда мешавад ва акнун метавонад эълон гузорад.
 func (h *AdminHandler) VerifySeller(c *gin.Context) {
 	id := c.Param("id")
-	db.DB.Exec(`UPDATE users SET is_verified=true,is_seller=true,role='seller',seller_requested=false,updated_at=$1 WHERE id=$2`,
-		time.Now(), id)
+	if !applyToUser(c, `UPDATE users SET is_verified=true,is_seller=true,
+		role='seller',seller_requested=false,updated_at=$1 WHERE id=$2`,
+		time.Now(), id) {
+		return
+	}
 	utils.OK(c, gin.H{"message": "seller verified"})
 }
 
 // RejectSeller — админ дархости фурӯшандаро рад мекунад.
 func (h *AdminHandler) RejectSeller(c *gin.Context) {
 	id := c.Param("id")
-	db.DB.Exec(`UPDATE users SET seller_requested=false,updated_at=$1 WHERE id=$2`, time.Now(), id)
+	if !applyToUser(c, `UPDATE users SET seller_requested=false,updated_at=$1 WHERE id=$2`,
+		time.Now(), id) {
+		return
+	}
 	utils.OK(c, gin.H{"message": "seller request rejected"})
 }
 
