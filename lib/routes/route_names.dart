@@ -14,6 +14,7 @@ class RouteNames {
   static const sellerDashboard = '/seller-dashboard';
   static const seller          = '/seller';
   static const addProduct      = '/add-product';
+  static const rfq             = '/rfq';
   static const admin           = '/admin';
   static const phoneAuth       = '/phone-auth';
   static const phoneOtp        = '/phone-otp';

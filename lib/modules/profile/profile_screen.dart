@@ -24,6 +24,7 @@ import '../../routes/route_names.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
 import '../../core/l10n/profile_l10n.dart';
+import '../../core/l10n/rfq_l10n.dart';
 import '../../core/l10n/verification_l10n.dart';
 import '../seller/seller_rating_card.dart';
 import '../../shared/widgets/partner_app_tile.dart';
@@ -797,6 +798,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     label: l.favorites, onTap: () => context.go(RouteNames.favorites)),
                 _QuickAction(icon: FeatherIcons.mapPin, color: AppColors.info,
                     label: l.myAddresses, onTap: () => context.push(RouteNames.addresses)),
+                // Дархости нарх — савдои яклухт. Ҳам харидор, ҳам
+                // фурӯшанда аз ҳамин ҷо медароянд.
+                _QuickAction(icon: FeatherIcons.fileText, color: const Color(0xFF7C4DFF),
+                    label: l.rfqTitle, onTap: () => context.push(RouteNames.rfq)),
               ]),
 
               // ── Барномаи вафодорӣ (Bronze/Silver/Gold) ──────────────────
