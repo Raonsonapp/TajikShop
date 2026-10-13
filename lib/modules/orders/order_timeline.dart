@@ -3,6 +3,8 @@ import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/api/api_client.dart';
+import '../../core/app_l10n.dart';
+import '../../core/l10n/order_steps_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../shared/widgets/fade_slide_in.dart';
@@ -20,15 +22,13 @@ final orderTimelineProvider =
 /// бидонад дар кадом марҳила аст ва баъд чӣ мешавад (мисли Alibaba).
 const _steps = <String>['pending', 'processing', 'shipped', 'delivered', 'completed'];
 
-String _stepLabel(String s) => switch (s) {
-      'pending' => 'Фармоиш қабул шуд',
-      'processing' => 'Фурӯшанда омода мекунад',
-      'shipped' => 'Дар роҳ',
-      'delivered' => 'Супорида шуд',
-      'completed' => 'Анҷом ёфт',
-      'cancelled' => 'Бекор шуд',
-      _ => s,
-    };
+/// `paid` (пардохт аз ҳамён) марҳилаи расонидан нест — он дар ҳамон
+/// зинаи «қабул шуд» меистад. Бе ин харидори бо ҳамён пардохткарда
+/// ягон зинаи фаъол намебинад.
+int _stepIndex(String status) =>
+    status == 'paid' ? 0 : _steps.indexOf(status);
+
+
 
 IconData _stepIcon(String s) => switch (s) {
       'pending' => FeatherIcons.fileText,
@@ -55,12 +55,19 @@ class OrderProtectionCard extends ConsumerWidget {
 
   Widget _body(BuildContext context, Map<String, dynamic> d) {
     final pal = context.pal;
+    final l = AppL10n.of(context);
     final status = (d['status'] ?? 'pending').toString();
     final tracking = (d['tracking_code'] ?? '').toString();
     final daysLeft = (d['days_left'] as num?)?.toInt() ?? 0;
     final protectionActive = d['protection_active'] == true;
     final protectionDays = (d['protection_days'] as num?)?.toInt() ?? 7;
     final events = (d['events'] is List) ? (d['events'] as List) : const [];
+    final sellers = (d['sellers'] is List)
+        ? (d['sellers'] as List)
+            .whereType<Map>()
+            .map((m) => m.cast<String, dynamic>())
+            .toList()
+        : const <Map<String, dynamic>>[];
 
     // Вақти ҳар қадам аз рӯйдодҳо (агар бошад).
     final times = <String, DateTime>{};
@@ -72,7 +79,7 @@ class OrderProtectionCard extends ConsumerWidget {
       }
     }
 
-    final currentIdx = _steps.indexOf(status);
+    final currentIdx = _stepIndex(status);
     final cancelled = status == 'cancelled';
 
     return FadeSlideIn(
@@ -105,7 +112,7 @@ class OrderProtectionCard extends ConsumerWidget {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Ҳимояи харидор',
+                    Text(l.buyerProtection,
                         style: TextStyle(
                             color: pal.textPrimary,
                             fontSize: 15,
@@ -151,7 +158,7 @@ class OrderProtectionCard extends ConsumerWidget {
               child: Row(children: [
                 Icon(FeatherIcons.hash, size: 15, color: pal.textMuted),
                 const SizedBox(width: 8),
-                Text('Коди пайгирӣ: ',
+                Text(l.trackingCodeLabel,
                     style: TextStyle(color: pal.textMuted, fontSize: 12.5)),
                 Expanded(
                   child: Text(tracking,
@@ -174,7 +181,7 @@ class OrderProtectionCard extends ConsumerWidget {
             Row(children: [
               const Icon(FeatherIcons.xCircle, color: AppColors.error, size: 20),
               const SizedBox(width: 10),
-              Text(_stepLabel('cancelled'),
+              Text(l.orderStep('cancelled'),
                   style: TextStyle(
                       color: pal.textPrimary,
                       fontSize: 14,
@@ -184,19 +191,93 @@ class OrderProtectionCard extends ConsumerWidget {
             for (int i = 0; i < _steps.length; i++)
               _stepRow(
                 pal: pal,
+                l: l,
                 step: _steps[i],
                 done: currentIdx >= 0 && i <= currentIdx,
                 active: i == currentIdx,
                 last: i == _steps.length - 1,
                 at: times[_steps[i]],
               ),
+
+          // ── Пешрафти ҳар фурӯшанда ──
+          //
+          // Танҳо вақте нишон дода мешавад, ки фармоиш моли ЧАНД
+          // фурӯшанда дошта бошад. Бе ин харидор як ҳолат мебинад ва
+          // намедонад, кадом мол дар роҳ аст ва кадомаш ҳанӯз не.
+          if (sellers.length > 1) _sellersBlock(pal, l, sellers),
         ]),
       ),
     );
   }
 
+  Widget _sellersBlock(AppPalette pal, AppL10n l, List<Map<String, dynamic>> sellers) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const SizedBox(height: 6),
+      Divider(color: pal.divider, height: 1),
+      const SizedBox(height: 12),
+      Row(children: [
+        Icon(FeatherIcons.users, size: 15, color: pal.textMuted),
+        const SizedBox(width: 8),
+        Text(l.sellersWord,
+            style: TextStyle(color: pal.textMuted, fontSize: 12.5,
+                fontWeight: FontWeight.w600)),
+      ]),
+      const SizedBox(height: 10),
+      for (final s in sellers) _sellerRow(pal, l, s),
+    ]);
+  }
+
+  Widget _sellerRow(AppPalette pal, AppL10n l, Map<String, dynamic> s) {
+    final status = (s['status'] ?? 'pending').toString();
+    final name = (s['seller_name'] ?? '').toString();
+    final items = (s['items'] as num?)?.toInt() ?? 0;
+    final subtotal = (s['subtotal'] as num?)?.toDouble() ?? 0;
+
+    final done = status == 'delivered' || status == 'completed';
+    final cancelled = status == 'cancelled';
+    final color = cancelled
+        ? AppColors.error
+        : (done ? AppColors.success : AppColors.primary);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(children: [
+        Icon(
+          cancelled
+              ? FeatherIcons.xCircle
+              : (done ? FeatherIcons.checkCircle : _stepIcon(status)),
+          size: 16,
+          color: color,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name.isEmpty ? '—' : name,
+                maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: pal.textPrimary, fontSize: 13,
+                    fontWeight: FontWeight.w600)),
+            Text('${l.itemsCount(items)} · ${subtotal.toStringAsFixed(0)} сом.',
+                style: TextStyle(color: pal.textMuted, fontSize: 11.5)),
+          ]),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.13),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Text(l.orderStep(status),
+              style: TextStyle(color: color, fontSize: 11,
+                  fontWeight: FontWeight.w700)),
+        ),
+      ]),
+    );
+  }
+
   Widget _stepRow({
     required AppPalette pal,
+    required AppL10n l,
     required String step,
     required bool done,
     required bool active,
@@ -237,7 +318,7 @@ class OrderProtectionCard extends ConsumerWidget {
           child: Padding(
             padding: EdgeInsets.only(bottom: last ? 0 : 16, top: 4),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_stepLabel(step),
+              Text(l.orderStep(step),
                   style: TextStyle(
                       color: done ? pal.textPrimary : pal.textMuted,
                       fontSize: 13.5,

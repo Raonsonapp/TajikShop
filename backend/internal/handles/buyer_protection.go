@@ -74,7 +74,13 @@ func logOrderEvent(oid, status, note string) {
 }
 
 // SellerUpdateOrderStatus — POST /seller/orders/:id/status
-// Фурӯшанда танҳо фармоишеро тағйир дода метавонад, ки маҳсулоти ӯ дар он бошад.
+//
+// Фурӯшанда ТАНҲО сатри худро дар `order_sellers` иваз мекунад. Ҳолати
+// умумии фармоиш баъд аз ҳамаи фурӯшандагон ҳисоб мешавад.
+//
+// Пештар ин ҷо `UPDATE orders SET status=...` буд — яъне фурӯшандаи A
+// моли нафиристодаи фурӯшандаи B-ро ҳам «фиристода шуд» мекард, ва
+// мӯҳлати шикояти харидор барои он мол сар мешуд.
 func (h *OrderHandler) SellerUpdateOrderStatus(c *gin.Context) {
 	uid := utils.UserID(c)
 	oid := c.Param("id")
@@ -83,62 +89,104 @@ func (h *OrderHandler) SellerUpdateOrderStatus(c *gin.Context) {
 		TrackingCode string `json:"tracking_code"`
 	}
 	if err := c.ShouldBindJSON(&in); err != nil {
-		utils.Err(c, http.StatusBadRequest, err.Error())
+		utils.Err(c, http.StatusBadRequest, "Ҳолат нишон дода нашуд")
 		return
 	}
 	next := strings.TrimSpace(strings.ToLower(in.Status))
-
-	// Фармоиш бояд маҳсулоти ҳамин фурӯшандаро дошта бошад.
-	var owns bool
-	db.DB.QueryRow(`SELECT EXISTS(
-		SELECT 1 FROM order_items oi JOIN products p ON p.id=oi.product_id
-		WHERE oi.order_id=$1 AND p.seller_id=$2)`, oid, uid).Scan(&owns)
-	if !owns {
-		utils.Err(c, http.StatusForbidden, "Ин фармоиши шумо нест")
-		return
+	track := strings.TrimSpace(in.TrackingCode)
+	if len(track) > 64 {
+		track = track[:64]
 	}
 
-	var cur, buyer string
-	if err := db.DB.QueryRow(`SELECT status,user_id FROM orders WHERE id=$1`, oid).
-		Scan(&cur, &buyer); err != nil {
-		utils.Err(c, http.StatusNotFound, "order not found")
+	tx, err := db.DB.Begin()
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, "Ҳолат нав нашуд")
 		return
 	}
+	committed := false
+	defer func() {
+		if !committed {
+			tx.Rollback()
+		}
+	}()
 
-	allowed := false
-	for _, s := range sellerStatusFlow[cur] {
-		if s == next {
-			allowed = true
-			break
+	// Сатри зер-фармоиши ҳамин фурӯшанда. `FOR UPDATE` — то ду дархости
+	// ҳамзамон аз ҳамон фурӯшанда қадамро ду бор нагузаронанд.
+	var cur string
+	err = tx.QueryRow(`SELECT status FROM order_sellers
+		WHERE order_id=$1 AND seller_id=$2 FOR UPDATE`, oid, uid).Scan(&cur)
+	if err != nil {
+		// Зер-фармоиш нест. Эҳтимол фармоиши кӯҳна аст, ки пеш аз ин
+		// тағйирот сохта шуда — онро аз `order_items` месозем, то
+		// фурӯшанда таърихи худро гум накунад.
+		if !backfillOrderSeller(tx, oid, uid) {
+			utils.Err(c, http.StatusForbidden, "Ин фармоиши шумо нест")
+			return
+		}
+		if e := tx.QueryRow(`SELECT status FROM order_sellers
+			WHERE order_id=$1 AND seller_id=$2 FOR UPDATE`, oid, uid).Scan(&cur); e != nil {
+			utils.Err(c, http.StatusForbidden, "Ин фармоиши шумо нест")
+			return
 		}
 	}
-	if !allowed {
-		utils.Err(c, http.StatusBadRequest, "Ин тағйирот аз ҳолати «"+cur+"» имконнопазир аст")
+
+	var buyer string
+	if e := tx.QueryRow(`SELECT user_id FROM orders WHERE id=$1`, oid).Scan(&buyer); e != nil {
+		utils.Err(c, http.StatusNotFound, "Фармоиш ёфт нашуд")
+		return
+	}
+
+	if !sellerCanMoveTo(cur, next) {
+		utils.Err(c, http.StatusBadRequest,
+			"Ин тағйирот аз ҳолати «"+cur+"» имконнопазир аст")
 		return
 	}
 
 	now := time.Now()
 	switch next {
 	case "shipped":
-		db.DB.Exec(`UPDATE orders SET status=$1, shipped_at=$2, tracking_code=$3, updated_at=$2
-			WHERE id=$4`, next, now, strings.TrimSpace(in.TrackingCode), oid)
+		_, err = tx.Exec(`UPDATE order_sellers
+			SET status=$1, shipped_at=$2, tracking_code=$3, updated_at=$2
+			WHERE order_id=$4 AND seller_id=$5`, next, now, track, oid, uid)
 	case "delivered":
-		// Мӯҳлати ҳимояи харидор аз ҳамин лаҳза сар мешавад.
-		until := now.AddDate(0, 0, protectionDays)
-		db.DB.Exec(`UPDATE orders SET status=$1, delivered_at=$2, protect_until=$3, updated_at=$2
-			WHERE id=$4`, next, now, until, oid)
+		_, err = tx.Exec(`UPDATE order_sellers
+			SET status=$1, delivered_at=$2, updated_at=$2
+			WHERE order_id=$3 AND seller_id=$4`, next, now, oid, uid)
 	default:
-		db.DB.Exec(`UPDATE orders SET status=$1, updated_at=$2 WHERE id=$3`, next, now, oid)
+		_, err = tx.Exec(`UPDATE order_sellers SET status=$1, updated_at=$2
+			WHERE order_id=$3 AND seller_id=$4`, next, now, oid, uid)
+	}
+	if err != nil {
+		utils.Err(c, http.StatusInternalServerError, "Ҳолат нав нашуд")
+		return
 	}
 
+	parent, perr := recomputeOrderStatus(tx, oid, now)
+	if perr != nil {
+		utils.Err(c, http.StatusInternalServerError, "Ҳолати фармоиш ҳисоб нашуд")
+		return
+	}
+
+	if e := tx.Commit(); e != nil {
+		utils.Err(c, http.StatusInternalServerError, "Ҳолат нигоҳ дошта нашуд")
+		return
+	}
+	committed = true
+
 	short := shortID(oid)
-	logOrderEvent(oid, next, strings.TrimSpace(in.TrackingCode))
+	logOrderEvent(oid, next, track)
+	// Харидор қадами ҲАР ФУРӮШАНДАро мебинад — пас огоҳӣ ҳамеша
+	// фиристода мешавад, ҳатто агар ҳолати умумӣ ҳанӯз тағйир наёфта
+	// бошад (фурӯшандаи дигар ҳанӯз ақиб аст).
 	db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
 		VALUES($1,$2,'order',$3,$4,$5)`,
 		uuid.NewString(), buyer, statusTitleTJ(next), statusBodyTJ(next, short), oid)
 	pushToUser(buyer, statusTitleTJ(next), statusBodyTJ(next, short))
 
-	utils.OK(c, gin.H{"status": next})
+	utils.OK(c, gin.H{
+		"status":       next,   // ҳолати ҲАМИН фурӯшанда
+		"order_status": parent, // ҳолати умумии фармоиш
+	})
 }
 
 // OrderTimeline — GET /orders/:id/timeline
@@ -200,7 +248,56 @@ func (h *OrderHandler) OrderTimeline(c *gin.Context) {
 		"protection_days":   protectionDays,
 		"days_left":         daysLeft,
 		"protection_active": protectUntil != nil && time.Now().Before(*protectUntil),
+		// Пешрафти ҲАР ФУРӮШАНДА ҷудогона.
+		//
+		// Бе ин харидор дар фармоиши дуфурӯшанда танҳо як ҳолат мебинад
+		// ва намедонад, ки кадом мол дар роҳ аст ва кадомаш ҳанӯз не.
+		"sellers": orderSellerProgress(oid),
 	})
+}
+
+// orderSellerProgress — ҳолати ҳар фурӯшанда дар ин фармоиш.
+func orderSellerProgress(orderID string) []gin.H {
+	rows, err := db.DB.Query(`SELECT os.seller_id,
+			COALESCE(NULLIF(u.shop_name,''), u.name, ''),
+			os.status, os.subtotal, COALESCE(os.tracking_code,''),
+			os.shipped_at, os.delivered_at,
+			(SELECT COUNT(*) FROM order_items oi
+				WHERE oi.order_id=os.order_id AND oi.seller_id=os.seller_id)
+		FROM order_sellers os
+		LEFT JOIN users u ON u.id = os.seller_id
+		WHERE os.order_id=$1
+		ORDER BY os.created_at`, orderID)
+	out := []gin.H{}
+	if err != nil || rows == nil {
+		return out
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var sid, name, status, track string
+		var subtotal float64
+		var items int
+		var shipped, delivered interface{}
+		if e := rows.Scan(&sid, &name, &status, &subtotal, &track,
+			&shipped, &delivered, &items); e != nil {
+			continue
+		}
+		row := gin.H{
+			"seller_id": sid, "seller_name": name, "status": status,
+			"subtotal": subtotal, "items": items,
+		}
+		if track != "" {
+			row["tracking_code"] = track
+		}
+		if t, ok := shipped.(time.Time); ok {
+			row["shipped_at"] = t
+		}
+		if t, ok := delivered.(time.Time); ok {
+			row["delivered_at"] = t
+		}
+		out = append(out, row)
+	}
+	return out
 }
 
 // releaseExpiredEscrow — фармоишҳоеро, ки мӯҳлати ҳимояашон гузашт ва харидор

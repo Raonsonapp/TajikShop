@@ -300,8 +300,15 @@ func (h *UserHandler) SellerOrders(c *gin.Context) {
 	uid := utils.UserID(c)
 	// Суроға низ бармегардад — вагарна фурӯшанда намедонад молро ба куҷо барад.
 	// Танҳо барои фармоишҳои «расонидан» ва танҳо барои фармоиши худи ӯ.
+	// `status` ҳолати ХУДИ ҲАМИН ФУРӮШАНДА аст, на ҳолати умумии
+	// фармоиш. Пештар ҳолати умумӣ бармегашт — пас фурӯшандаи A
+	// «фиристода шуд» мебинад, ҳол он ки худаш ҳанӯз нафиристодааст ва
+	// он ҳолатро фурӯшандаи B гузоштааст.
+	//
+	// `COALESCE(os.status, o.status)` барои фармоишҳои КӮҲНА, ки сатри
+	// `order_sellers` надоранд.
 	rows, err := db.DB.Query(`
-		SELECT o.id, o.status, o.created_at, u.name, COALESCE(u.phone,''),
+		SELECT o.id, COALESCE(os.status, o.status), o.created_at, u.name, COALESCE(u.phone,''),
 			(SELECT COUNT(*) FROM order_items oi JOIN products p ON p.id=oi.product_id
 				WHERE oi.order_id=o.id AND p.seller_id=$1),
 			COALESCE((SELECT SUM(oi.price*oi.quantity) FROM order_items oi JOIN products p ON p.id=oi.product_id
@@ -310,10 +317,11 @@ func (h *UserHandler) SellerOrders(c *gin.Context) {
 			COALESCE(a.city,''), COALESCE(a.street,''), COALESCE(a.house,''),
 			COALESCE(a.entrance,''), COALESCE(a.floor,''), COALESCE(a.apartment,''),
 			COALESCE(a.landmark,''), COALESCE(a.lat,0), COALESCE(a.lng,0),
-			COALESCE(o.delivery_slot,'')
+			COALESCE(o.delivery_slot,''), o.status
 		FROM orders o
 		JOIN users u ON u.id=o.user_id
 		LEFT JOIN addresses a ON a.id = o.address_id
+		LEFT JOIN order_sellers os ON os.order_id = o.id AND os.seller_id = $1
 		WHERE EXISTS (SELECT 1 FROM order_items oi JOIN products p ON p.id=oi.product_id
 			WHERE oi.order_id=o.id AND p.seller_id=$1)
 		ORDER BY o.created_at DESC LIMIT 100`, uid)
@@ -326,16 +334,25 @@ func (h *UserHandler) SellerOrders(c *gin.Context) {
 	for rows.Next() {
 		var id, status, buyer, phone string
 		var fulfilment, city, street, house, entrance, floor, apartment, landmark, slot string
+		var orderStatus string
 		var lat, lng float64
 		var createdAt time.Time
 		var items int
 		var subtotal float64
-		rows.Scan(&id, &status, &createdAt, &buyer, &phone, &items, &subtotal,
+		// Хатои `Scan` НАДИДА намегузарад: агар сутуни NULL ба `string`
+		// афтад, тамоми сатр сифр мемонад ва фурӯшанда фармоиши холӣ
+		// мебинад.
+		if e := rows.Scan(&id, &status, &createdAt, &buyer, &phone, &items, &subtotal,
 			&fulfilment, &city, &street, &house, &entrance, &floor, &apartment,
-			&landmark, &lat, &lng, &slot)
+			&landmark, &lat, &lng, &slot, &orderStatus); e != nil {
+			continue
+		}
 		row := gin.H{
 			"id": id, "status": status, "created_at": createdAt,
-			"buyer_name": buyer, "buyer_phone": phone,
+			// Ҳолати умумии фармоиш низ — то фурӯшанда бидонад, ки
+			// фармоиш интизори фурӯшандаи дигар аст.
+			"order_status": orderStatus,
+			"buyer_name":   buyer, "buyer_phone": phone,
 			"items": items, "subtotal": subtotal,
 			"fulfilment": fulfilment, "delivery_slot": slot,
 		}
