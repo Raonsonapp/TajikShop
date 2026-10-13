@@ -7,6 +7,7 @@ import (
 	"tajikshop/internal/db"
 	handlers "tajikshop/internal/handles"
 	"tajikshop/internal/middleware"
+	"tajikshop/internal/payments"
 	"tajikshop/internal/push"
 	"tajikshop/internal/routes"
 	"tajikshop/internal/storage"
@@ -66,7 +67,28 @@ func main() {
 	handlers.StartRFQSweeper()
 
 	r := gin.Default()
-	routes.Setup(r, cfg.JWTSecret, r2, cfg.SSOPartnerKey)
+	// Провайдери пардохт.
+	//
+	// Холӣ = пардохти онлайн хомӯш, ва ҳамаи масирҳои он 503 медиҳанд.
+	// Ин аз «провайдери қалбакӣ, ки ҳамеша мегӯяд пардохт шуд» беҳтар
+	// аст — чунин провайдер дар production моли ройгон медод.
+	var pay payments.Provider
+	switch cfg.PaymentProvider {
+	case "sandbox":
+		if cfg.PaymentSecret == "" {
+			log.Println("⚠️  PAYMENT_PROVIDER=sandbox, вале PAYMENT_WEBHOOK_SECRET холӣ — пардохт хомӯш")
+		} else {
+			pay = payments.NewSandbox(cfg.PaymentSecret)
+			log.Println("🧪 Пардохт: SANDBOX (барои тест, на пули воқеӣ)")
+		}
+	case "":
+		log.Println("ℹ️  Пардохти онлайн хомӯш (PAYMENT_PROVIDER холӣ)")
+	default:
+		log.Printf("⚠️  Провайдери «%s» ҳанӯз сохта нашудааст — пардохт хомӯш",
+			cfg.PaymentProvider)
+	}
+
+	routes.Setup(r, cfg.JWTSecret, r2, cfg.SSOPartnerKey, pay)
 
 	log.Printf("🚀 TajikShop API running on :%s", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {

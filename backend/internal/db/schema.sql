@@ -765,6 +765,60 @@ CREATE INDEX IF NOT EXISTS idx_products_desc_trgm
 CREATE INDEX IF NOT EXISTS idx_products_title_prefix
   ON products (lower(title) text_pattern_ops);
 
+-- ═══════════════════════════════════════════════════════════════════════
+--  Пардохт тавассути провайдер
+-- ═══════════════════════════════════════════════════════════════════════
+--
+-- Провайдери воқеӣ (Алиф / Корти Миллӣ) ҳанӯз пайваст нашудааст —
+-- маълумоти merchant лозим. Вале се чизи аз ҳама хатарноки пардохт ба
+-- провайдер ҳеҷ рабте надоранд ва ҳоло сохта мешаванд:
+--
+--   1. такрори webhook — провайдер ҳамон рӯйдодро чанд бор мефиристад,
+--      ва ин МЕЪЁРИ КОР аст, на хато;
+--   2. имзои webhook — бе он ҳар кас «пардохт шуд» фиристода метавонад;
+--   3. тартиби ҳолатҳо — пардохти бекоршуда набояд ба «пардохтшуда»
+--      баргардад.
+
+CREATE TABLE IF NOT EXISTS payment_intents (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+	user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	provider VARCHAR(40) NOT NULL,
+	provider_ref TEXT NOT NULL,
+	amount NUMERIC(12,2) NOT NULL,
+	currency VARCHAR(8) DEFAULT 'TJS',
+	status VARCHAR(20) DEFAULT 'pending',
+	-- Калиди idempotency: як зеркунии тугма = як пардохт.
+	idempotency_key TEXT,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	updated_at TIMESTAMPTZ DEFAULT NOW(),
+	UNIQUE(provider, provider_ref)
+);
+CREATE INDEX IF NOT EXISTS idx_pay_intents_order ON payment_intents(order_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pay_intents_key
+	ON payment_intents(user_id, idempotency_key)
+	WHERE idempotency_key IS NOT NULL AND idempotency_key <> '';
+
+-- Дафтари рӯйдодҳои webhook.
+--
+-- `UNIQUE(provider, event_id)` ин ҷо МАҲЗ он чизест, ки такрорро бас
+-- мекунад. Он дар БАЗА аст, на дар код: ду дархости ҳамзамон метавонанд
+-- ҳарду санҷиши «оё аллакай ҳаст?»-ро гузаранд, вале `UNIQUE` ҳеҷ гоҳ
+-- ду сатр намегузорад.
+CREATE TABLE IF NOT EXISTS payment_events (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	provider VARCHAR(40) NOT NULL,
+	event_id TEXT NOT NULL,
+	provider_ref TEXT NOT NULL,
+	status VARCHAR(20) NOT NULL,
+	amount NUMERIC(12,2),
+	raw TEXT,
+	applied BOOLEAN DEFAULT false,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	UNIQUE(provider, event_id)
+);
+CREATE INDEX IF NOT EXISTS idx_pay_events_ref ON payment_events(provider_ref);
+
 -- ===== Индексҳои иловагӣ барои зудӣ (scale) =====
 CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);

@@ -4,12 +4,14 @@ import (
 	"os"
 	"tajikshop/internal/handles"
 	"tajikshop/internal/middleware"
+	"tajikshop/internal/payments"
 	"tajikshop/internal/storage"
 
 	"github.com/gin-gonic/gin"
 )
 
-func Setup(r *gin.Engine, secret string, r2 *storage.R2Client, ssoPartnerKey string) {
+func Setup(r *gin.Engine, secret string, r2 *storage.R2Client, ssoPartnerKey string,
+	pay payments.Provider) {
 	r.Use(middleware.CORS())
 
 	uh := handlers.NewUserHandler(secret, r2)
@@ -27,6 +29,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client, ssoPartnerKey str
 	wh := handlers.NewWalletHandler()
 	cph := handlers.NewCouponHandler()
 	rfq := handlers.NewRFQHandler()
+	ph2 := handlers.NewPaymentHandler(pay)
 	cargo := handlers.NewCargoHandler()
 	rph := handlers.NewReportHandler()
 	bh := handlers.NewBrandHandler()
@@ -71,6 +74,17 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client, ssoPartnerKey str
 	api.GET("/users/me/loyalty", middleware.Auth(), uh.LoyaltyInfo)
 	api.GET("/settings", adm.PublicSettings)
 	api.GET("/shops", uh.ShopsList)
+	// ── Пардохт тавассути провайдер ─────────────────────────────────────
+	//
+	// `webhook` БЕ аутентификатсия аст — провайдер токени мо надорад.
+	// Ҳимоя танҳо ИМЗО аст, ва он дар худи handler санҷида мешавад.
+	api.POST("/payments/start", middleware.Auth(), ph2.Start)
+	api.GET("/payments/:order_id/status", middleware.Auth(), ph2.Status)
+	api.POST("/payments/webhook/:provider", ph2.Webhook)
+	api.POST("/admin/payments/reconcile",
+		middleware.Auth(), middleware.AdminOnly(), middleware.AuditAdmin(),
+		ph2.Reconcile)
+
 	// Ҷустуҷӯи таъминкунанда — барои савдои яклухт.
 	//
 	// `/shops` танҳо дӯконҳои дар ХАРИТА (бо координата) медод; барои

@@ -67,15 +67,76 @@ func Migrate() {
 // execEach — схемаро ба амрҳои алоҳида ҷудо карда, ҳар якро иҷро мекунад.
 // Хатои як амр тамоми migration-ро (ва серверро) аз кор намебарорад.
 func execEach(schema string) {
-	for _, stmt := range strings.Split(schema, ";") {
-		s := strings.TrimSpace(stmt)
-		if s == "" {
-			continue
-		}
+	for _, s := range splitStatements(schema) {
 		if _, err := DB.Exec(s); err != nil {
 			log.Printf("⚠️  migration stmt skipped: %v", err)
 		}
 	}
+}
+
+// splitStatements — схемаро ба амрҳои алоҳида ҷудо мекунад.
+//
+// ЧАРО ИН ФУНКСИЯ ҲАСТ, НА ОДДӢ `strings.Split(schema, ";")`:
+//
+// Нусхаи кӯҳна ҳамин тавр мекард, ва он дар ШАРҲ мешикаст. Шарҳи
+//
+//	-- АНДОЗАГИРӢ: ILIKE = 116 мс Seq Scan; префикси ор% бо ин
+//	-- индекс = 0.13 мс
+//	CREATE INDEX ...
+//
+// ба ду пора ҷудо мешуд, ва пораи дуюм бо «префикси ор% бо ин» сар
+// мешуд — амри нодуруст. Postgres хато медод, `execEach` онро ба лог
+// менавишт ва МЕГУЗАШТ, ва `CREATE INDEX`-и баъди он ҲЕҶ ГОҲ иҷро
+// намешуд.
+//
+// Ин хаторо ман худам кардам, ва тести худам (`TestSearchIndexesExist`)
+// онро дар CI дошт — индекс сохта нашуда буд. Вагарна ҷустуҷӯ дар
+// production хомӯшона суст мемонд.
+//
+// Ҳоло шарҳҳои сатрӣ ПЕШ аз ҷудокунӣ бароварда мешаванд, бо назардошти
+// он ки `--` дар дохили сатри матнӣ шарҳ НЕСТ.
+func splitStatements(schema string) []string {
+	var clean strings.Builder
+	inString := false
+
+	for _, line := range strings.Split(schema, "\n") {
+		cut := len(line)
+		// Байт ба байт. `'` ва `-` дар UTF-8 ҳеҷ гоҳ дар дохили ҳарфи
+		// бисёрбайта пайдо намешаванд, пас индекси байтӣ бехатар аст.
+		//
+		// ⚠️ Шарт `i < len(line)` аст, на `i+1 < len(line)`.
+		//
+		// Нусхаи аввали ман `i+1 < len(line)` дошт ва байти ОХИРИНи
+		// сатрро ҳеҷ гоҳ намедид. Сатри схема
+		//
+		//     UPDATE categories SET icon_url = '...' || slug || '/400'
+		//
+		// бо нохунак тамом мешавад — пас он ҳисоб намешуд, `inString`
+		// абадӣ кушода мемонд, ва ҲАМАИ шарҳҳои баъдӣ ҳамчун SQL
+		// мегузаштанд. Тести `TestSplitRealSchemaHasNoBrokenStatements`
+		// маҳз ҳаминро дошт.
+		for i := 0; i < len(line); i++ {
+			switch line[i] {
+			case '\'':
+				inString = !inString
+			case '-':
+				if !inString && i+1 < len(line) && line[i+1] == '-' {
+					cut = i
+					i = len(line) // аз ҳалқа мебароем
+				}
+			}
+		}
+		clean.WriteString(line[:cut])
+		clean.WriteByte('\n')
+	}
+
+	var out []string
+	for _, stmt := range strings.Split(clean.String(), ";") {
+		if s := strings.TrimSpace(stmt); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 func seedCategories() {

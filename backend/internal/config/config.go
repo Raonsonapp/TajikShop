@@ -18,7 +18,9 @@ type Config struct {
 	// ҳатмӣ талаб мекунад — яъне танҳо барномаи шарик кодро иваз карда
 	// метавонад. Холӣ бошад, иваз кардан бе калид иҷозат аст (вале лог
 	// огоҳӣ медиҳад).
-	SSOPartnerKey string
+	PaymentProvider string
+	PaymentSecret   string
+	SSOPartnerKey   string
 }
 
 func Load() *Config {
@@ -32,6 +34,12 @@ func Load() *Config {
 		R2Bucket:      getEnv("R2_BUCKET", "tajikshop"),
 		R2PublicURL:   getEnv("R2_PUBLIC_URL", ""),
 		SSOPartnerKey: getEnv("SSO_PARTNER_KEY", ""),
+		// Провайдери пардохт. Холӣ = пардохти онлайн хомӯш, ва ҳамаи
+		// масирҳои он 503 медиҳанд. Ин аз «провайдери қалбакӣ, ки
+		// ҳамеша мегӯяд пардохт шуд» беҳтар аст — чунин провайдер дар
+		// production моли ройгон медод.
+		PaymentProvider: getEnv("PAYMENT_PROVIDER", ""),
+		PaymentSecret:   getEnv("PAYMENT_WEBHOOK_SECRET", ""),
 	}
 	return cfg
 }
