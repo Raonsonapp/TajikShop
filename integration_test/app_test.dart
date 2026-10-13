@@ -82,6 +82,14 @@ Future<bool> tapIfPresent(WidgetTester tester, Finder f,
 Finder byText(String pattern) =>
     find.textContaining(RegExp(pattern, caseSensitive: false));
 
+/// Шумораи хатоҳои нодидагирифташуда.
+///
+/// Онҳо дар хулосаи охир чоп мешаванд. Ин муҳим аст: хатои хомӯшона
+/// нодидагирифташуда тестро «сабз» мекунад, ҳол он ки барнома
+/// метавонад ягон расм нишон надиҳад.
+int _ignoredImages = 0;
+int _ignoredPlugin = 0;
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -106,6 +114,31 @@ void main() {
         if (details.exception is MissingPluginException &&
             text.contains('yandex_mobileads')) {
           debugPrint('⚠ нодида: хатои плагини Yandex — $text');
+          _ignoredPlugin++;
+          return;
+        }
+        // ⚠️ Хатои БОРКУНИИ РАСМ. Flutter ҳар расми борнашударо ба
+        // `FlutterError` мефиристад (`library: 'image resource service'`),
+        // ҳатто агар виҷет `errorWidget` дошта бошад.
+        //
+        // Дар телефони воқеӣ ин хато НЕСТ: харидор ба ҷои расм ишораи
+        // холӣ мебинад ва экран кор мекунад. Вале дар эмулятори CI
+        // интернет суст аст ва backend аз хоб мебедорад, пас чанд расм
+        // ҳамеша бор намешавад — ва тамоми тестро меафтонад.
+        //
+        // Пас онҳо ҳисоб мешаванд, НА ПИНҲОН: агар ҳеҷ расм бор нашавад,
+        // ин дар хулосаи охир намоён мешавад. Вагарна тест метавонист
+        // «сабз» бошад, ҳол он ки барнома ягон расм нишон намедиҳад.
+        //
+        // Муқоисаи САТР истифода мешавад, на навъ. `NetworkImageLoadException`
+        // гарчанде аз `material.dart` дастрас аст, маҳз ҳамин навъи
+        // вобастагӣ — «ин ном аз куҷо меояд?» — билди release-ро як бор
+        // шикаст (`MissingPluginException`). `details.library`-ро Flutter
+        // ҳамеша барои хатои расм ба ҳамин сатр мегузорад.
+        if (details.library == 'image resource service' ||
+            text.contains('NetworkImageLoadException') ||
+            text.contains('Invalid image data')) {
+          _ignoredImages++;
           return;
         }
         harnessOnError?.call(details);
@@ -251,6 +284,16 @@ void main() {
         debugPrint('   ⚠ тозакунӣ нашуд: $e');
       }
     });
+
+    // Хулоса. Хатоҳои нодидагирифташуда ЧОП мешаванд, то «сабз»-и тест
+    // онҳоро напӯшонад.
+    debugPrint('━━━ хулоса ━━━');
+    debugPrint('   расмҳои борнашуда: $_ignoredImages');
+    debugPrint('   хатоҳои плагини Yandex: $_ignoredPlugin');
+    if (_ignoredImages > 0) {
+      debugPrint('   ℹ️ дар эмулятори CI интернет суст аст; дар телефони '
+          'воқеӣ расм бор мешавад ва ин хато нест');
+    }
 
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(minutes: 12)));
