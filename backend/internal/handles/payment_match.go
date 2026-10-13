@@ -134,7 +134,7 @@ func (h *OrderHandler) ConfirmPaymentBySMS(c *gin.Context) {
 		FROM orders o
 		WHERE o.status IN ('pending','payment_uploaded')
 		  AND ABS(o.total - $1) <= $2
-		  AND EXISTS (SELECT 1 FROM order_items oi JOIN products p ON p.id=oi.product_id
+		  AND EXISTS (SELECT 1 FROM order_items oi
 		              WHERE oi.order_id=o.id AND p.seller_id=$3)`
 	args := []interface{}{amount, amountTolerance, uid}
 	if strings.TrimSpace(in.OrderID) != "" {

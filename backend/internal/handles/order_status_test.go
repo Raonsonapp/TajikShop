@@ -60,11 +60,11 @@ func TestSellerCanMoveTo(t *testing.T) {
 	}
 
 	bad := [][2]string{
-		{"pending", "shipped"},    // бе қабул кардан фиристодан мумкин нест
-		{"pending", "delivered"},  // ва якбора супоридан ҳам
+		{"pending", "shipped"},   // бе қабул кардан фиристодан мумкин нест
+		{"pending", "delivered"}, // ва якбора супоридан ҳам
 		{"processing", "delivered"},
-		{"shipped", "cancelled"},  // моли дар роҳ бекор карда намешавад
-		{"delivered", "shipped"},  // ақиб рафтан мумкин нест
+		{"shipped", "cancelled"}, // моли дар роҳ бекор карда намешавад
+		{"delivered", "shipped"}, // ақиб рафтан мумкин нест
 		{"completed", "shipped"},
 		{"cancelled", "processing"},
 		{"", "shipped"},

@@ -26,6 +26,7 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client, ssoPartnerKey str
 	adm := handlers.NewAdminHandler()
 	wh := handlers.NewWalletHandler()
 	cph := handlers.NewCouponHandler()
+	rfq := handlers.NewRFQHandler()
 	cargo := handlers.NewCargoHandler()
 	rph := handlers.NewReportHandler()
 	bh := handlers.NewBrandHandler()
@@ -232,6 +233,20 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client, ssoPartnerKey str
 	// Пас аз иваз кардани калидҳои Cloudflare маҳз ҳамин ҷо санҷида мешавад:
 	// `storage: "ok"` маънои онро дорад, ки калидҳои нав кор мекунанд.
 	// Ҳеҷ як калид ин ҷо намоён намешавад.
+	// ── RFQ: дархости нарх (Request for Quotation) ───────────────────────
+	//
+	// Қоидаи амният: фурӯшанда пешниҳоди РАҚИБОНАШро намебинад. Бе ин
+	// тамоми RFQ бефоида аст — фурӯшандаи дуюм нархи аввалро мебинад ва
+	// як дирам камтар мегузорад.
+	api.POST("/rfqs", middleware.Auth(), rfq.Create)
+	api.GET("/rfqs/my", middleware.Auth(), rfq.MyRFQs)
+	api.GET("/rfqs/open", middleware.Auth(), middleware.SellerOnly(), rfq.Open)
+	api.GET("/rfqs/:id", middleware.Auth(), rfq.Get)
+	api.POST("/rfqs/:id/close", middleware.Auth(), rfq.Close)
+	api.POST("/rfqs/:id/quotes", middleware.Auth(), middleware.SellerOnly(), rfq.Quote)
+	api.POST("/quotes/:id/withdraw", middleware.Auth(), middleware.SellerOnly(), rfq.Withdraw)
+	api.POST("/quotes/:id/accept", middleware.Auth(), rfq.Award)
+
 	r.GET("/health", func(c *gin.Context) {
 		out := gin.H{"status": "ok", "service": "TajikShop API"}
 		if r2 == nil {

@@ -35,6 +35,14 @@ func Connect(dsn string) {
 // Migrate — ҷадвалҳоро танҳо агар вуҷуд надошта бошанд месозад.
 // Init()-ро ДАР PRODUCTION истифода НАБАРЕД — маълумот тоза мешавад!
 func Migrate() {
+	// ⚠️ ОГОҲӢ: ин сатри raw-и Go аст ва бо backtick маҳдуд мешавад.
+	//
+	// Дар шарҳҳои SQL-и дохили он BACKTICK НАНАВИСЕД — он сатрро дар
+	// ҳамон ҷо мепӯшад ва Go хатои «syntax error: unexpected name»
+	// медиҳад, ки ба SQL ҳеҷ рабте надорад ва фаҳмиданаш душвор аст.
+	//
+	// Ман ин хаторо ду бор кардам. Барои номи ҷадвал ё сутун дар шарҳ
+	// нохунак истифода баред: «order_items», на қолаби backtick.
 	schema := `
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -637,6 +645,101 @@ CREATE TABLE IF NOT EXISTS product_price_tiers (
 	UNIQUE(product_id, min_qty)
 );
 CREATE INDEX IF NOT EXISTS idx_price_tiers_product ON product_price_tiers(product_id, min_qty);
+
+-- ═══════════════════════════════════════════════════════════════════════
+--  RFQ — дархости нарх (Request for Quotation)
+-- ═══════════════════════════════════════════════════════════════════════
+--
+-- Ин маркази савдои B2B аст. Харидор намегӯяд «ин молро мехарам» —
+-- мегӯяд «ба ман 500 кг орд лозим, кӣ чанд медиҳад?». Фурӯшандагон
+-- пешниҳод медиҳанд, харидор муқоиса мекунад, гуфтушунид мешавад, ва
+-- пешниҳоди қабулшуда ба фармоиш табдил меёбад.
+--
+-- Бе ин савдои яклухт дар барнома умуман нест: харидори калон маҷбур
+-- мешавад бо ҳар фурӯшанда ҷудогона дар чат гуфтугӯ кунад.
+
+CREATE TABLE IF NOT EXISTS rfqs (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	buyer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	title VARCHAR(200) NOT NULL,
+	description TEXT DEFAULT '',
+	category_id UUID REFERENCES categories(id),
+	quantity INT NOT NULL,
+	unit TEXT DEFAULT 'дона',
+	target_price NUMERIC(12,2) DEFAULT 0,   -- 0 = нишон дода нашуд
+	destination VARCHAR(200) DEFAULT '',
+	needed_by DATE,
+	closes_at TIMESTAMPTZ NOT NULL,
+	status VARCHAR(20) DEFAULT 'open',      -- open | closed | awarded | cancelled
+	awarded_quote_id UUID,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_rfqs_buyer ON rfqs(buyer_id, created_at DESC);
+-- Фурӯшанда дархостҳои КУШОДАро мебинад — пас индекс маҳз аз рӯи ҳолат
+-- ва мӯҳлат.
+CREATE INDEX IF NOT EXISTS idx_rfqs_open ON rfqs(status, closes_at DESC);
+
+CREATE TABLE IF NOT EXISTS rfq_attachments (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	rfq_id UUID NOT NULL REFERENCES rfqs(id) ON DELETE CASCADE,
+	url TEXT NOT NULL,
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Пешниҳоди фурӯшанда.
+--
+-- Версия НИГОҲ ДОШТА МЕШАВАД, иваз намешавад. Фурӯшанда нархро тағйир
+-- медиҳад → сатри НАВ бо version+1, сатри кӯҳна 'revised' мешавад.
+--
+-- Чаро: бе ин харидор нархи дидаашро исбот карда наметавонад. Маҳз
+-- ҳамин ҷойест, ки ихтилоф ба вуҷуд меояд — «шумо 80 гуфта будед».
+CREATE TABLE IF NOT EXISTS rfq_quotes (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	rfq_id UUID NOT NULL REFERENCES rfqs(id) ON DELETE CASCADE,
+	seller_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	version INT NOT NULL DEFAULT 1,
+	unit_price NUMERIC(12,2) NOT NULL,
+	min_qty INT DEFAULT 1,
+	shipping_cost NUMERIC(12,2) DEFAULT 0,
+	lead_days INT DEFAULT 0,
+	payment_terms VARCHAR(200) DEFAULT '',
+	note TEXT DEFAULT '',
+	valid_until TIMESTAMPTZ,
+	status VARCHAR(20) DEFAULT 'active',
+		-- active | revised | withdrawn | accepted | rejected
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_rfq_quotes_rfq ON rfq_quotes(rfq_id, status);
+CREATE INDEX IF NOT EXISTS idx_rfq_quotes_seller ON rfq_quotes(seller_id, created_at DESC);
+
+-- Гуфтушунид. Паёмҳо ба дархост баста мешаванд, на ба чати умумӣ — то
+-- дар як ҷо бошанд ва баъд ҳамчун таърихи шартҳо хонда шаванд.
+CREATE TABLE IF NOT EXISTS rfq_messages (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	rfq_id UUID NOT NULL REFERENCES rfqs(id) ON DELETE CASCADE,
+	sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	-- Паёми фурӯшанда танҳо ба харидор меравад, на ба рақибон.
+	seller_id UUID REFERENCES users(id) ON DELETE CASCADE,
+	body TEXT NOT NULL,
+	created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_rfq_msgs ON rfq_messages(rfq_id, seller_id, created_at);
+
+-- Фармоише, ки аз пешниҳод сохта шуд — то робита гум нашавад.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS rfq_quote_id UUID;
+
+-- Фармоиши RFQ маҳсулоти мушаххас НАДОРАД.
+--
+-- Дар дархости нарх харидор «500 кг орд» мехоҳад, на моли мушаххаси
+-- ин ё он фурӯшандаро. Пас сатри order_items бе product_id сохта
+-- мешавад, вале бо ном, воҳид, фурӯшанда ва нарх ҳамчун СУРАТ.
+--
+-- Барои ҳамин ҳамаи дархостҳои «моли ин фурӯшанда» аз
+-- JOIN products ... WHERE p.seller_id ба oi.seller_id гузаштанд:
+-- бо INNER JOIN сатри бе маҳсулот умуман гум мешуд, ва фурӯшанда
+-- фармоиши RFQ-и худро дар панелаш НАМЕДИД.
+ALTER TABLE order_items ALTER COLUMN product_id DROP NOT NULL;
 
 -- ===== Индексҳои иловагӣ барои зудӣ (scale) =====
 CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);

@@ -37,8 +37,8 @@ import (
 
 // priceTier — як зинаи нарх.
 type priceTier struct {
-	MinQty int   `json:"min_qty"`
-	Price  int64 `json:"-"`     // дирам, дарунӣ
+	MinQty int     `json:"min_qty"`
+	Price  int64   `json:"-"`     // дирам, дарунӣ
 	Somoni float64 `json:"price"` // барои JSON
 }
 

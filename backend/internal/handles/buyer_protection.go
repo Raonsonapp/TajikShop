@@ -199,8 +199,8 @@ func (h *OrderHandler) OrderTimeline(c *gin.Context) {
 	db.DB.QueryRow(`SELECT EXISTS(
 		SELECT 1 FROM orders o WHERE o.id=$1 AND (
 			o.user_id=$2 OR EXISTS(
-				SELECT 1 FROM order_items oi JOIN products p ON p.id=oi.product_id
-				WHERE oi.order_id=o.id AND p.seller_id=$2)))`, oid, uid).Scan(&allowed)
+				SELECT 1 FROM order_items oi
+				WHERE oi.order_id=o.id AND oi.seller_id=$2)))`, oid, uid).Scan(&allowed)
 	if !allowed {
 		utils.Err(c, http.StatusForbidden, "no access")
 		return
@@ -386,9 +386,10 @@ func settleOrder(oid, buyer string, total float64, method string, auto bool) {
 	// Маблағро мутаносибан ба фурӯшандагон медиҳем (танҳо барои пардохти ҳамён,
 	// чунки танҳо он дар escrow нигоҳ дошта мешавад).
 	if method == "wallet" {
-		rows, _ := tx.Query(`SELECT p.seller_id, SUM(oi.price*oi.quantity)
-			FROM order_items oi JOIN products p ON p.id=oi.product_id
-			WHERE oi.order_id=$1 GROUP BY p.seller_id`, oid)
+		rows, _ := tx.Query(`SELECT oi.seller_id, SUM(oi.price*oi.quantity)
+			FROM order_items oi
+			WHERE oi.order_id=$1 AND oi.seller_id IS NOT NULL
+			GROUP BY oi.seller_id`, oid)
 		type pay struct {
 			seller string
 			amount float64
@@ -485,10 +486,10 @@ func (h *OrderHandler) CartSellers(c *gin.Context) {
 // бехабар мемонад.
 func notifySellersOfNewOrder(orderID string) {
 	rows, err := db.DB.Query(`
-		SELECT p.seller_id, COUNT(*), COALESCE(SUM(oi.price*oi.quantity),0)
-		FROM order_items oi JOIN products p ON p.id = oi.product_id
-		WHERE oi.order_id = $1
-		GROUP BY p.seller_id`, orderID)
+		SELECT oi.seller_id, COUNT(*), COALESCE(SUM(oi.price*oi.quantity),0)
+		FROM order_items oi
+		WHERE oi.order_id = $1 AND oi.seller_id IS NOT NULL
+		GROUP BY oi.seller_id`, orderID)
 	if err != nil || rows == nil {
 		return
 	}
@@ -590,9 +591,9 @@ func (h *OrderHandler) RateSeller(c *gin.Context) {
 		return
 	}
 
-	rows, err := db.DB.Query(`SELECT DISTINCT p.seller_id
-		FROM order_items oi JOIN products p ON p.id=oi.product_id
-		WHERE oi.order_id=$1`, oid)
+	rows, err := db.DB.Query(`SELECT DISTINCT oi.seller_id
+		FROM order_items oi
+		WHERE oi.order_id=$1 AND oi.seller_id IS NOT NULL`, oid)
 	if err != nil || rows == nil {
 		utils.Err(c, http.StatusInternalServerError, "sellers not found")
 		return

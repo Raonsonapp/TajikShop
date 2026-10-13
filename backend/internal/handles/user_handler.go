@@ -284,9 +284,9 @@ func (h *UserHandler) SellerStats(c *gin.Context) {
 	db.DB.QueryRow(`SELECT
 		(SELECT COUNT(*) FROM products WHERE seller_id=$1),
 		(SELECT COUNT(*) FROM products WHERE seller_id=$1 AND is_active=true AND stock>0),
-		COALESCE((SELECT COUNT(DISTINCT oi.order_id) FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE p.seller_id=$1),0),
-		COALESCE((SELECT SUM(oi.quantity) FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE p.seller_id=$1),0),
-		COALESCE((SELECT SUM(oi.price*oi.quantity) FROM order_items oi JOIN products p ON p.id=oi.product_id WHERE p.seller_id=$1),0)
+		COALESCE((SELECT COUNT(DISTINCT oi.order_id) FROM order_items oi WHERE oi.seller_id=$1),0),
+		COALESCE((SELECT SUM(oi.quantity) FROM order_items oi WHERE oi.seller_id=$1),0),
+		COALESCE((SELECT SUM(oi.price*oi.quantity) FROM order_items oi WHERE oi.seller_id=$1),0)
 	`, uid).Scan(&products, &active, &orders, &sold, &revenue)
 	utils.OK(c, gin.H{
 		"products": products, "active_products": active,
@@ -309,10 +309,10 @@ func (h *UserHandler) SellerOrders(c *gin.Context) {
 	// `order_sellers` надоранд.
 	rows, err := db.DB.Query(`
 		SELECT o.id, COALESCE(os.status, o.status), o.created_at, u.name, COALESCE(u.phone,''),
-			(SELECT COUNT(*) FROM order_items oi JOIN products p ON p.id=oi.product_id
-				WHERE oi.order_id=o.id AND p.seller_id=$1),
-			COALESCE((SELECT SUM(oi.price*oi.quantity) FROM order_items oi JOIN products p ON p.id=oi.product_id
-				WHERE oi.order_id=o.id AND p.seller_id=$1),0),
+			(SELECT COUNT(*) FROM order_items oi
+				WHERE oi.order_id=o.id AND oi.seller_id=$1),
+			COALESCE((SELECT SUM(oi.price*oi.quantity) FROM order_items oi
+				WHERE oi.order_id=o.id AND oi.seller_id=$1),0),
 			COALESCE(o.fulfilment,'delivery'),
 			COALESCE(a.city,''), COALESCE(a.street,''), COALESCE(a.house,''),
 			COALESCE(a.entrance,''), COALESCE(a.floor,''), COALESCE(a.apartment,''),
@@ -322,8 +322,8 @@ func (h *UserHandler) SellerOrders(c *gin.Context) {
 		JOIN users u ON u.id=o.user_id
 		LEFT JOIN addresses a ON a.id = o.address_id
 		LEFT JOIN order_sellers os ON os.order_id = o.id AND os.seller_id = $1
-		WHERE EXISTS (SELECT 1 FROM order_items oi JOIN products p ON p.id=oi.product_id
-			WHERE oi.order_id=o.id AND p.seller_id=$1)
+		WHERE EXISTS (SELECT 1 FROM order_items oi
+			WHERE oi.order_id=o.id AND oi.seller_id=$1)
 		ORDER BY o.created_at DESC LIMIT 100`, uid)
 	if err != nil {
 		utils.OK(c, []gin.H{})
@@ -382,9 +382,8 @@ func (h *UserHandler) SellerSalesChart(c *gin.Context) {
 		SELECT to_char(DATE(o.created_at),'YYYY-MM-DD') d,
 			COALESCE(SUM(oi.price*oi.quantity),0)
 		FROM order_items oi
-		JOIN products p ON p.id=oi.product_id
 		JOIN orders o ON o.id=oi.order_id
-		WHERE p.seller_id=$1 AND o.created_at >= (CURRENT_DATE - INTERVAL '6 days')
+		WHERE oi.seller_id=$1 AND o.created_at >= (CURRENT_DATE - INTERVAL '6 days')
 		GROUP BY DATE(o.created_at)
 		ORDER BY d`, uid)
 	if err != nil {

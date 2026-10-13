@@ -59,6 +59,11 @@ func main() {
 	handlers.StartEscrowSweeper()
 	// Мӯҳлати нигоҳдорӣ: фурӯшанда 3 рӯз пеш огоҳӣ мегирад.
 	handlers.StartExpirySweeper()
+	// Дархостҳои нархи мӯҳлаташон гузашта пӯшида мешаванд. Ин барои
+	// тозагии маълумот аст, на барои дурустӣ: мӯҳлат дар ҳар дархост
+	// ҳамеша санҷида мешавад, пас ҳатто агар ин sweeper кор накунад,
+	// ягон пешниҳод ба дархости пӯшида намеравад.
+	handlers.StartRFQSweeper()
 
 	r := gin.Default()
 	routes.Setup(r, cfg.JWTSecret, r2, cfg.SSOPartnerKey)
