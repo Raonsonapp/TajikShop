@@ -25,6 +25,7 @@ import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
 import '../../core/l10n/profile_l10n.dart';
 import '../../core/l10n/rfq_l10n.dart';
+import '../../core/l10n/suppliers_l10n.dart';
 import '../../core/l10n/verification_l10n.dart';
 import '../seller/seller_rating_card.dart';
 import '../../shared/widgets/partner_app_tile.dart';
@@ -802,6 +803,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 // фурӯшанда аз ҳамин ҷо медароянд.
                 _QuickAction(icon: FeatherIcons.fileText, color: const Color(0xFF7C4DFF),
                     label: l.rfqTitle, onTap: () => context.push(RouteNames.rfq)),
+                // Таъминкунандагон — ҳамроҳи RFQ, ҳарду барои яклухт.
+                _QuickAction(icon: FeatherIcons.briefcase, color: const Color(0xFF00897B),
+                    label: l.supTitle, onTap: () => context.push(RouteNames.suppliers)),
               ]),
 
               // ── Барномаи вафодорӣ (Bronze/Silver/Gold) ──────────────────

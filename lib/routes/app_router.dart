@@ -27,6 +27,7 @@ import '../modules/deals/deals_screen.dart';
 import '../modules/deals/bestsellers_screen.dart';
 import '../modules/cargo/cargo_screen.dart';
 import '../modules/rfq/rfq_list_screen.dart';
+import '../modules/suppliers/suppliers_screen.dart';
 import '../modules/seller/seller_orders_screen.dart';
 import '../modules/wallet/wallet_screen.dart';
 import '../modules/address/addresses_screen.dart';
@@ -54,6 +55,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/cargo', builder: (_, __) => const CargoScreen()),
       // Дархости нарх (RFQ) — савдои яклухт.
       GoRoute(path: RouteNames.rfq, builder: (_, __) => const RFQListScreen()),
+      // Ҷустуҷӯи таъминкунанда — барои савдои яклухт.
+      GoRoute(path: RouteNames.suppliers,
+          builder: (_, __) => const SuppliersScreen()),
       GoRoute(path: '/seller/orders', builder: (_, __) => const SellerOrdersScreen()),
       GoRoute(path: '/chat/:id',
           builder: (_, s) => ChatScreen(
