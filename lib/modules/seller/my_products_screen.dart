@@ -19,6 +19,8 @@ import '../../shared/widgets/safe_input.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
 import 'manage_variants_screen.dart';
+import 'price_tiers_sheet.dart';
+import '../../core/l10n/checkout_l10n.dart';
 
 class MyProductsScreen extends ConsumerWidget {
   const MyProductsScreen({super.key});
@@ -149,6 +151,13 @@ class _ProductRow extends StatelessWidget {
                 color: AppColors.primary,
                 onTap: () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => ManageVariantsScreen(productId: p.id, title: p.title))),
+              ),
+              _RowAction(
+                icon: FeatherIcons.layers,
+                label: l.wholesaleWord,
+                color: AppColors.success,
+                onTap: () => showPriceTiersSheet(context,
+                    productId: p.id, retailPrice: p.price),
               ),
               _RowAction(
                 icon: FeatherIcons.edit2,

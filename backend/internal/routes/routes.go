@@ -116,6 +116,10 @@ func Setup(r *gin.Engine, secret string, r2 *storage.R2Client, ssoPartnerKey str
 	api.GET("/seller/products/sold-out", middleware.Auth(), middleware.SellerOnly(), ph.SoldOutProducts)
 	api.POST("/products/:id/restock", middleware.Auth(), middleware.SellerOnly(), ph.Restock)
 	api.POST("/products/:id/images", middleware.Auth(), middleware.SellerOnly(), ph.UploadImages)
+	// Зинаҳои нархи яклухт (1–9 чакана, 10–49 яклухт, 50+ ...).
+	// Хондан оммавӣ аст — харидор бояд зинаҳоро пеш аз харид бинад.
+	api.GET("/products/:id/tiers", ph.GetTiers)
+	api.PUT("/products/:id/tiers", middleware.Auth(), middleware.SellerOnly(), ph.SetTiers)
 	api.GET("/products/:id/variants", vh.ByProduct)
 	api.POST("/products/:id/variants", middleware.Auth(), middleware.SellerOnly(), vh.Add)
 	api.DELETE("/variants/:id", middleware.Auth(), middleware.SellerOnly(), vh.Delete)

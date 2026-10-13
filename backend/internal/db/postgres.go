@@ -622,6 +622,22 @@ CREATE TABLE IF NOT EXISTS coupon_redemptions (
 );
 CREATE INDEX IF NOT EXISTS idx_coupon_redeem ON coupon_redemptions(code, user_id);
 
+-- Зинаҳои нархи яклухт.
+--
+-- Пештар маҳсулот ЯК wholesale_price дошт — як рақам, бе ҳеҷ шарт, ва он
+-- на дар сабад, на дар checkout истифода намешуд. Савдои яклухти воқеӣ
+-- бо зинаҳо кор мекунад: 1-9 дона як нарх, 10-49 нархи камтар, 50+ боз
+-- камтар.
+CREATE TABLE IF NOT EXISTS product_price_tiers (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+	min_qty INT NOT NULL,
+	price NUMERIC(12,2) NOT NULL,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	UNIQUE(product_id, min_qty)
+);
+CREATE INDEX IF NOT EXISTS idx_price_tiers_product ON product_price_tiers(product_id, min_qty);
+
 -- ===== Индексҳои иловагӣ барои зудӣ (scale) =====
 CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);

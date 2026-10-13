@@ -1,4 +1,5 @@
 import 'variant_model.dart';
+import 'price_tier.dart';
 
 class ProductModel {
   final String id;
@@ -22,6 +23,13 @@ class ProductModel {
   final String? brandName;
   final int minOrderQty;
   final double wholesalePrice;
+
+  /// Зинаҳои нархи яклухт: «аз 10 дона — 90 сом., аз 50 — 80 сом.».
+  ///
+  /// Нархро СЕРВЕР ҳисоб мекунад (`price_tiers.go`). Барнома зинаҳоро
+  /// танҳо НИШОН медиҳад — то рӯзе ду ҳисоби гуногун пайдо нашавад ва
+  /// харидор дар экран як рақам, дар ҳисобнома рақами дигар набинад.
+  final List<PriceTier> priceTiers;
   final List<VariantModel> variants;
   final DateTime? saleEndsAt;
   final bool isFeatured;
@@ -40,6 +48,7 @@ class ProductModel {
     required this.stock, required this.inStock,
     this.views = 0, this.likeCount = 0,
     this.brandName, this.minOrderQty = 1, this.wholesalePrice = 0,
+    this.priceTiers = const [],
     this.variants = const [],
     this.saleEndsAt,
     this.isFeatured = false,
@@ -113,6 +122,12 @@ class ProductModel {
       brandName:       json['brand_name']?.toString(),
       minOrderQty:     (json['min_order_qty'] as num?)?.toInt() ?? 1,
       wholesalePrice:  (json['wholesale_price'] as num?)?.toDouble() ?? 0,
+      priceTiers:      (json['price_tiers'] is List)
+          ? (json['price_tiers'] as List)
+              .whereType<Map>()
+              .map((m) => PriceTier.fromJson(m.cast<String, dynamic>()))
+              .toList()
+          : const [],
       variants: (json['variants'] is List)
           ? (json['variants'] as List)
               .whereType<Map<String, dynamic>>()

@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/stock_l10n.dart';
+import '../../core/l10n/checkout_l10n.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
@@ -175,7 +176,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     ),
                   ],
                 ]),
-                if (p.wholesalePrice > 0) ...[
+                // Зинаҳои нав (`price_tiers`) аз `wholesale_price`-и кӯҳна
+                // бартарӣ доранд: онҳо муфассалтаранд ва маҳз ҳамон
+                // нархест, ки сервер мегирад.
+                if (p.priceTiers.isNotEmpty)
+                  _tierTable(context, p)
+                else if (p.wholesalePrice > 0) ...[
                   const SizedBox(height: 4),
                   Text(
                       '${AppL10n.of(context).wholesalePriceLabel}: ${p.wholesalePrice.toStringAsFixed(0)} ${AppL10n.of(context).som}'
@@ -328,6 +334,76 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   // ── Hero (тарҳи product_display-и қолаб дар сабз) ─────────────────────────
+
+  /// Ҷадвали зинаҳои нархи яклухт.
+  ///
+  /// Харидор бояд инро ПЕШ аз харид бинад — вагарна ӯ намедонад, ки
+  /// шумораи зиёд арзонтар аст, ва фармоиши калонро умуман намедиҳад.
+  /// Зинаи ҳоло амалкунанда сабз ҷудо карда мешавад.
+  Widget _tierTable(BuildContext context, ProductModel p) {
+    final l = AppL10n.of(context);
+    final pal = context.pal;
+
+    // Зинаи ҳозира: аз ҳама калонтарин `minQty`, ки аз шумораи интихобшуда
+    // зиёд нест.
+    int activeMin = 0;
+    for (final t in p.priceTiers) {
+      if (_qty >= t.minQty && t.minQty >= activeMin) activeMin = t.minQty;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.26)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(FeatherIcons.layers, size: 15, color: AppColors.success),
+          const SizedBox(width: 7),
+          Text(l.tiersTitle,
+              style: const TextStyle(
+                  color: AppColors.success,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700)),
+        ]),
+        const SizedBox(height: 8),
+        // Зинаи чакана — то фарқият намоён бошад.
+        _tierLine(pal, l.retailWord, p.price, active: activeMin == 0),
+        for (final t in p.priceTiers)
+          _tierLine(pal, l.tierQtyLabel(t.minQty), t.price,
+              active: t.minQty == activeMin),
+      ]),
+    );
+  }
+
+  Widget _tierLine(AppPalette pal, String label, double price,
+      {required bool active}) {
+    final color = active ? AppColors.success : pal.textMuted;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.5),
+      child: Row(children: [
+        Icon(active ? FeatherIcons.checkCircle : FeatherIcons.circle,
+            size: 13, color: color),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Text(label,
+              style: TextStyle(
+                  color: active ? pal.textPrimary : pal.textMuted,
+                  fontSize: 12.5,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
+        ),
+        Text('${price.toStringAsFixed(0)} сом.',
+            style: TextStyle(
+                color: color,
+                fontSize: 12.5,
+                fontWeight: active ? FontWeight.w800 : FontWeight.w600)),
+      ]),
+    );
+  }
+
   Widget _hero(ProductModel p, bool isFav) {
     final imgs = p.images;
     final price =

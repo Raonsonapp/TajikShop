@@ -944,8 +944,41 @@ class _Item extends StatelessWidget {
                 child: Icon(FeatherIcons.x, color: pal.textMuted, size: 20))),
           ]),
           const SizedBox(height: 6),
-          Text('${item.total.toStringAsFixed(0)} сом.',
-              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 17)),
+          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text('${item.total.toStringAsFixed(0)} сом.',
+                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800, fontSize: 17)),
+            // Нархи яклухт амал мекунад — нархи чаканаи хатзада ва
+            // сарфа. Бе ин тахфиф пинҳон мемонад ва харидор намедонад,
+            // ки шумораи зиёд ба ӯ арзонтар афтод.
+            if (item.wholesale) ...[
+              const SizedBox(width: 8),
+              Text('${(item.retailPrice * item.quantity).toStringAsFixed(0)}',
+                  style: TextStyle(
+                      color: pal.textMuted,
+                      fontSize: 12.5,
+                      decoration: TextDecoration.lineThrough)),
+            ],
+          ]),
+          if (item.wholesale)
+            Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Text(
+                  '${AppL10n.of(context).wholesaleWord} · −${item.saved.toStringAsFixed(0)} сом.',
+                  style: const TextStyle(
+                      color: AppColors.success,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700)),
+            ),
+          // Зинаи навбатӣ — маҳз ин фармоиши калонтарро водор мекунад.
+          if (item.nextTier != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Text(
+                  AppL10n.of(context).tierHint(
+                      item.nextTier!.minQty - item.quantity,
+                      item.nextTier!.price),
+                  style: TextStyle(color: pal.textMuted, fontSize: 11.5)),
+            ),
           const SizedBox(height: 10),
           // Stepper-и миқдор (template style, green)
           Row(children: [

@@ -308,6 +308,7 @@ func loadAndLockCart(tx *sql.Tx, uid string) ([]checkoutLine, error) {
 	defer rows.Close()
 
 	var out []checkoutLine
+	var ids []string
 	for rows.Next() {
 		var l checkoutLine
 		var price float64
@@ -320,8 +321,25 @@ func loadAndLockCart(tx *sql.Tx, uid string) ([]checkoutLine, error) {
 		}
 		l.UnitPrice = toDirams(price)
 		out = append(out, l)
+		ids = append(ids, l.ProductID)
 	}
-	return out, rows.Err()
+	if e := rows.Err(); e != nil {
+		return nil, e
+	}
+
+	// Зинаҳои нархи яклухт. Бо ЯК дархост барои ҳамаи молҳо — вагарна
+	// сабади 30-мол 31 дархост дар дохили транзаксияи кушода медод.
+	//
+	// Нархи зина бояд маҳз ин ҷо гирифта шавад. Агар экран нархи яклухтро
+	// нишон диҳад ва сервер нархи чаканаро гирад, харидор бештар
+	// мепардозад — ва ин ҳамон навъи хатоест, ки боварии ӯро мешиканад.
+	tiers := loadTiersFor(tx, ids)
+	for i := range out {
+		if t := tiers[out[i].ProductID]; len(t) > 0 {
+			out[i].UnitPrice = priceForQty(t, out[i].UnitPrice, out[i].Qty)
+		}
+	}
+	return out, nil
 }
 
 // existingCheckout — фармоиши пештараи ҳамин калид.

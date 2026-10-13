@@ -265,6 +265,11 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 		p.SaleEndsAt = &saleEnds.Time
 	}
 	p.Variants = getProductVariants(id)
+	// Зинаҳои нархи яклухт — харидор бояд онҳоро ПЕШ аз харид бинад,
+	// вагарна ӯ намедонад, ки шумораи зиёд арзонтар аст.
+	if tiers := loadTiers(db.DB, id); len(tiers) > 0 {
+		p.PriceTiers = tiers
+	}
 	db.DB.Exec(`UPDATE products SET views=views+1 WHERE id=$1`, id)
 	utils.OK(c, p)
 }

@@ -26,6 +26,21 @@ void main() {
       expect(l.cartChangedTitle.trim(), isNotEmpty);
       expect(l.cartChangedBody.trim(), isNotEmpty);
       expect(l.cartFixAndRetry.trim(), isNotEmpty);
+      expect(l.wholesaleWord.trim(), isNotEmpty);
+      expect(l.retailWord.trim(), isNotEmpty);
+      expect(l.tiersTitle.trim(), isNotEmpty);
+    });
+
+    test('«${locale.languageCode}» — матнҳои зинаҳо рақамҳоро доранд', () {
+      // Рақам бояд ВОҚЕАН иваз шавад, на ҳамчун `$more` монад.
+      final hint = l.tierHint(4, 80);
+      expect(hint, contains('4'));
+      expect(hint, contains('80'));
+      expect(hint.contains(r'$'), isFalse, reason: 'рақами ивазнашуда: $hint');
+
+      final label = l.tierQtyLabel(10);
+      expect(label, contains('10'));
+      expect(label.contains(r'$'), isFalse, reason: 'рақами ивазнашуда: $label');
     });
 
     test('«${locale.languageCode}» — ҳар коди мушкилӣ матн дорад', () {

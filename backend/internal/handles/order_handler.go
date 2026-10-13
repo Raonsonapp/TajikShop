@@ -59,8 +59,15 @@ func (h *OrderHandler) GetCart(c *gin.Context) {
 		SellerID  string  `json:"seller_id"`
 		Image     string  `json:"image"`
 		Available bool    `json:"available"`
+		// `price` нархи ВОҚЕАН гирифташаванда аст (бо зинаи яклухт);
+		// `retail_price` нархи чакана — то экран «90 сом. ба ҷои 100»
+		// нишон диҳад.
+		RetailPrice float64     `json:"retail_price"`
+		Wholesale   bool        `json:"wholesale"`
+		Tiers       []priceTier `json:"tiers,omitempty"`
 	}
 	items := []CartRow{}
+	ids := []string{}
 	for rows.Next() {
 		var it CartRow
 		if e := rows.Scan(&it.ID, &it.ProductID, &it.Quantity, &it.Title, &it.Price,
@@ -68,7 +75,31 @@ func (h *OrderHandler) GetCart(c *gin.Context) {
 			continue
 		}
 		it.Available = it.Active && it.Stock >= it.Quantity && it.Quantity >= it.MinQty
+		it.RetailPrice = it.Price
 		items = append(items, it)
+		ids = append(ids, it.ProductID)
+	}
+
+	// Нархи зинаи яклухтро ҲАМИН ҶО татбиқ мекунем.
+	//
+	// Бе ин сабад нархи чаканаро нишон медод, вале checkout нархи
+	// яклухтро мегирифт — ду рақами гуногун дар як амал. Ҳатто агар
+	// фарқият ба фоидаи харидор бошад, ин боварии ӯро мешиканад.
+	//
+	// Манбаи ягонаи ҳақиқат сервер аст: ҳам сабад, ҳам checkout ҳамон
+	// `priceForQty`-ро истифода мебаранд.
+	if len(ids) > 0 {
+		tiers := loadTiersForDB(ids)
+		for i := range items {
+			t := tiers[items[i].ProductID]
+			if len(t) == 0 {
+				continue
+			}
+			unit := priceForQty(t, toDirams(items[i].Price), items[i].Quantity)
+			items[i].Price = toSomoni(unit)
+			items[i].Wholesale = unit < toDirams(items[i].RetailPrice)
+			items[i].Tiers = t
+		}
 	}
 	utils.OK(c, items)
 }

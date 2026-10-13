@@ -59,6 +59,9 @@ type Product struct {
 	Barcode         string      `json:"barcode,omitempty"`
 	HasDelivery     bool        `json:"has_delivery"`
 	Variants        interface{} `json:"variants,omitempty"`
+	// Зинаҳои нархи яклухт (1-9 чакана, 10-49 яклухт, 50+ ...).
+	// `interface{}` аст, то `models` ба `handles` вобаста нашавад.
+	PriceTiers      interface{} `json:"price_tiers,omitempty"`
 	SaleEndsAt      *time.Time  `json:"sale_ends_at,omitempty"`
 	CreatedAt       time.Time   `json:"created_at"`
 	UpdatedAt       time.Time   `json:"updated_at"`
