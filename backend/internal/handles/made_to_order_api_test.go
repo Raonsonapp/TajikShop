@@ -86,3 +86,79 @@ func TestMadeToOrderReachesClient(t *testing.T) {
 		t.Skip("молҳои тест дар саҳифаи аввал нашуданд")
 	}
 }
+
+// ⚠️ Камбудии ВОҚЕӢ, ки ҳангоми нависандагӣ ёфтам.
+//
+// Шакли таҳрири «Маҳсулоти ман» (`SellerProductService.update`) майдони
+// `no_stock_limit`-ро намефиристод. Арзиши пешфарзи `bool` дар Go
+// `false` аст, пас `TrackStock: !false = true` мешуд — ва ҳар
+// ТАҲРИРИ ОДДӢ (иваз кардани нарх, ё навиштани тавсиф) моли «бо
+// фармоиш»-ро ба моли оддии бо 1 000 000 дона мубаддал мекард.
+//
+// Фурӯшанда инро намедид: шумора дар шакл «1000000» менамуд, ва баъди
+// фурӯши аввал мол «Тамом шуд» намешуд — вале нишонаи «Бо фармоиш»
+// нопадид мешуд ва sweeper ба он даст мерасонд.
+//
+// Қоида: майдони НАФИРИСТОДАШУДА набояд ҳолатро иваз кунад.
+func TestUpdateWithoutFlagKeepsMadeToOrder(t *testing.T) {
+	needDB(t)
+	r := stockRouter()
+	sellerID, pid := newTestSeller(t, 100, 5, 1)
+	db.DB.Exec(`UPDATE products SET track_stock=false, stock=$2 WHERE id=$1`,
+		pid, maxStock)
+	tok := sellerToken(t, r, sellerID)
+
+	// Таҳрири оддӣ: фурӯшанда танҳо нархро иваз мекунад.
+	res := call(t, r, "PUT", "/api/v1/products/"+pid, map[string]any{
+		"title":     "Кӯрта бо фармоиш",
+		"price":     300,
+		"stock":     maxStock,
+		"is_active": true,
+	}, bearer(tok))
+	if res.Status != 200 {
+		t.Fatalf("таҳрир: %d %s", res.Status, res.Error)
+	}
+
+	var trackStock bool
+	if err := db.DB.QueryRow(`SELECT COALESCE(track_stock,true) FROM products
+		WHERE id=$1`, pid).Scan(&trackStock); err != nil {
+		t.Fatalf("хониш: %v", err)
+	}
+	if trackStock {
+		t.Fatal("таҳрири оддӣ моли «бо фармоиш»-ро ба моли захирадор " +
+			"мубаддал кард — майдони нафиристодашуда ҳолатро иваз кард")
+	}
+}
+
+// Ва фиристодани ОШКОРОИ `false` бояд КОР кунад: фурӯшанда метавонад
+// моли «бо фармоиш»-ро ба моли захирадор баргардонад.
+func TestUpdateCanTurnOffMadeToOrder(t *testing.T) {
+	needDB(t)
+	r := stockRouter()
+	sellerID, pid := newTestSeller(t, 100, 5, 1)
+	db.DB.Exec(`UPDATE products SET track_stock=false, stock=$2 WHERE id=$1`,
+		pid, maxStock)
+	tok := sellerToken(t, r, sellerID)
+
+	res := call(t, r, "PUT", "/api/v1/products/"+pid, map[string]any{
+		"title":          "Орд",
+		"price":          300,
+		"stock":          12,
+		"no_stock_limit": false,
+		"is_active":      true,
+	}, bearer(tok))
+	if res.Status != 200 {
+		t.Fatalf("таҳрир: %d %s", res.Status, res.Error)
+	}
+
+	var trackStock bool
+	var stock int
+	db.DB.QueryRow(`SELECT COALESCE(track_stock,true), stock FROM products
+		WHERE id=$1`, pid).Scan(&trackStock, &stock)
+	if !trackStock {
+		t.Error("`no_stock_limit: false`-и ОШКОРО кор накард")
+	}
+	if stock != 12 {
+		t.Errorf("захира = %d, мехостам 12", stock)
+	}
+}

@@ -21,6 +21,7 @@ import '../../core/l10n/seller_l10n.dart';
 import 'manage_variants_screen.dart';
 import 'price_tiers_sheet.dart';
 import '../../core/l10n/checkout_l10n.dart';
+import '../../core/l10n/stock_policy_l10n.dart';
 
 class MyProductsScreen extends ConsumerWidget {
   const MyProductsScreen({super.key});
@@ -117,10 +118,22 @@ class _ProductRow extends StatelessWidget {
                 Text('${p.price.toStringAsFixed(0)} ${l.som}',
                     style: const TextStyle(color: AppColors.primary, fontSize: 15, fontWeight: FontWeight.w800)),
                 const SizedBox(width: 10),
-                Icon(FeatherIcons.package, size: 13, color: context.pal.textMuted),
+                // Моли «бо фармоиш» захираи рамзӣ дорад (1 000 000).
+                // Нишон додани он рақам фурӯшандаро саросема мекард.
+                Icon(p.madeToOrder ? FeatherIcons.clock : FeatherIcons.package,
+                    size: 13,
+                    color: p.madeToOrder
+                        ? AppColors.info
+                        : context.pal.textMuted),
                 const SizedBox(width: 3),
-                Text('${p.stock}',
-                    style: TextStyle(color: context.pal.textMuted, fontSize: 12.5)),
+                Text(p.madeToOrder ? l.stockUnlimitedBadge : '${p.stock}',
+                    style: TextStyle(
+                        color: p.madeToOrder
+                            ? AppColors.info
+                            : context.pal.textMuted,
+                        fontSize: 12.5,
+                        fontWeight:
+                            p.madeToOrder ? FontWeight.w600 : FontWeight.w400)),
               ]),
               const SizedBox(height: 6),
               Container(
@@ -279,6 +292,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
   late final TextEditingController _title;
   late final TextEditingController _price;
   late final TextEditingController _stock;
+  bool _noStockLimit = false;
   late final TextEditingController _disc;
   late final TextEditingController _desc;
   final _sale = TextEditingController();
@@ -305,6 +319,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
     _delivPrice = TextEditingController(text: p.deliveryPrice > 0 ? p.deliveryPrice.toStringAsFixed(0) : '');
     _size = TextEditingController(text: p.sizeInfo);
     _active = p.inStock;
+    _noStockLimit = p.madeToOrder;
     _catId = (p.categoryId ?? '').isEmpty ? null : p.categoryId;
     _hasDelivery = p.hasDelivery;
   }
@@ -327,6 +342,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
         price: double.tryParse(_price.text.replaceAll(',', '.')) ?? widget.product.price,
         discountPercent: int.tryParse(_disc.text.trim()) ?? 0,
         stock: int.tryParse(_stock.text.trim()) ?? 0,
+        noStockLimit: _noStockLimit,
         isActive: _active,
         saleHours: int.tryParse(_sale.text.trim()) ?? 0,
         deliveryDays: int.tryParse(_delivDays.text.trim()) ?? 0,
@@ -419,7 +435,29 @@ class _EditProductSheetState extends State<_EditProductSheet> {
             const SizedBox(width: 10),
             Expanded(child: _f(l.sellerDiscountPercent, _disc, type: TextInputType.number)),
           ]),
-          _f(l.sellerStock, _stock, type: TextInputType.number),
+          // Калид бояд ПЕШ аз майдони шумора бошад: вагарна фурӯшанда
+          // рақам менависад ва баъд мефаҳмад, ки лозим набуд.
+          SwitchListTile.adaptive(
+            contentPadding: EdgeInsets.zero,
+            activeColor: AppColors.primary,
+            title: Text(l.stockUnlimited,
+                style: TextStyle(
+                    color: context.pal.textPrimary, fontSize: 14)),
+            subtitle: Text(l.stockUnlimitedHint,
+                style: TextStyle(color: context.pal.textMuted, fontSize: 11.5)),
+            value: _noStockLimit,
+            onChanged: (v) => setState(() => _noStockLimit = v)),
+          // Майдон ҳангоми «бе ҳисоби шумора» умуман нест мешавад:
+          // майдони хомӯшшуда корбарро саросема мекунад, ва
+          // `SafeInput` параметри `enabled` надорад.
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: _noStockLimit
+                ? const SizedBox(width: double.infinity)
+                : _f(l.sellerStock, _stock, type: TextInputType.number),
+          ),
           _f(l.sellerFlashSaleField, _sale, type: TextInputType.number),
           Row(children: [
             Expanded(child: _f('Расиш (рӯз)', _delivDays, type: TextInputType.number)),

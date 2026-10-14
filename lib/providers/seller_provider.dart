@@ -199,6 +199,14 @@ class SellerProductService {
     // Холӣ → категория бетағйир мемонад (сервер COALESCE мекунад).
     String categoryId = '',
     bool? hasDelivery,
+    // ⚠️ `null` → ҳолати ҳозира мемонад.
+    //
+    // Пештар ин параметр умуман набуд, ва сервер майдони
+    // нафиристодашударо ҳамчун «мол захирадор аст» мефаҳмид — пас ҳар
+    // таҳрири оддӣ моли «бо фармоиш»-ро вайрон мекард. Акнун сервер
+    // низ `null`-ро ҳамчун «тағйир надеҳ» мефаҳмад, вале фиристодани
+    // ошкоро дурусттар аст: ду ҳимоя беҳтар аз як.
+    bool? noStockLimit,
   }) async {
     await ApiClient.instance.dio.put(ApiEndpoints.product(id), data: {
       'title': title,
@@ -213,6 +221,7 @@ class SellerProductService {
       'size_info': sizeInfo,
       if (categoryId.isNotEmpty) 'category_id': categoryId,
       if (hasDelivery != null) 'has_delivery': hasDelivery,
+      if (noStockLimit != null) 'no_stock_limit': noStockLimit,
     });
   }
 

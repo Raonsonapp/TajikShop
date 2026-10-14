@@ -30,6 +30,7 @@ func stockRouter() *gin.Engine {
 	api.POST("/cart", middleware.Auth(), oh.AddToCart)
 	api.POST("/orders/checkout", middleware.Auth(), oh.Checkout)
 	api.POST("/products/:id/restock", middleware.Auth(), ph.Restock)
+	api.PUT("/products/:id", middleware.Auth(), ph.Update)
 	api.GET("/seller/products/sold-out", middleware.Auth(), ph.SoldOutProducts)
 	return r
 }

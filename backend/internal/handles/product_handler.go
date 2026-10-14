@@ -375,7 +375,15 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		Stock           int     `json:"stock"`
 		// Фурӯшанда шуморо намегирад: дӯзанда, нонвой, устои мебел бо
 		// фармоиш месозанд.
-		NoStockLimit  bool    `json:"no_stock_limit"`
+		//
+		// ⚠️ Нишондиҳанда (`*bool`), на `bool` — ва ин камбудии ВОҚЕӢ
+		// буд. Шакли таҳрири «Маҳсулоти ман» ин майдонро намефиристод;
+		// бо `bool` арзиши пешфарз `false` мешуд, `TrackStock: !false
+		// = true`, ва ҳар таҳрири оддӣ — ҳатто иваз кардани нарх —
+		// моли «бо фармоиш»-ро ба моли захирадор мубаддал мекард.
+		//
+		// Қоида: майдони НАФИРИСТОДАШУДА ҳолатро иваз накунад.
+		NoStockLimit  *bool   `json:"no_stock_limit"`
 		IsActive      bool    `json:"is_active"`
 		SaleHours     int     `json:"sale_hours"` // >0 = flash sale то N соат; <0 = бекор
 		DeliveryDays  int     `json:"delivery_days"`
@@ -406,8 +414,18 @@ func (h *ProductHandler) Update(c *gin.Context) {
 	// кунад, саволи «боз ҳаст?» дигар маъно надорад — ва бе тоза кардан
 	// sweeper молро баъди се рӯз ХУДКОР пинҳон мекард, ҳол он ки он
 	// дастрас аст.
+	// Агар майдон нафиристода шуда бошад, ҳолати ҲОЗИРА гирифта мешавад.
+	trackStock := true
+	if in.NoStockLimit != nil {
+		trackStock = !*in.NoStockLimit
+	} else if err := db.DB.QueryRow(`SELECT COALESCE(track_stock,true)
+		FROM products WHERE id=$1`, id).Scan(&trackStock); err != nil {
+		// Мол нест ё база вайрон — `UPDATE`-и поён инро мефаҳмонад.
+		// Пешфарзи эҳтиёткор: моли захирадор.
+		trackStock = true
+	}
 	stU := normalizeStock(stockInput{
-		TrackStock: !in.NoStockLimit,
+		TrackStock: trackStock,
 		Stock:      in.Stock,
 	})
 
