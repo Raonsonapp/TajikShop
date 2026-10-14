@@ -16,6 +16,7 @@ import '../../providers/return_provider.dart';
 import '../../providers/search_provider.dart';
 import '../../shared/widgets/error_screen.dart';
 import '../../shared/widgets/safe_input.dart';
+import '../../core/l10n/orders_l10n.dart';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Shared template building blocks

@@ -5,7 +5,14 @@
   • `l.<name>`-и l10n бе import-и extension.
 """
 import os, re, sys
-ROOT = "/home/user/TajikShop"; LIB = os.path.join(ROOT, "lib")
+# ⚠️ Роҳ НИСБӢ аст, на мехкӯб.
+#
+# Пештар ин `/home/user/TajikShop` буд — ва он танҳо дар ҳамин
+# муҳити кор мекард. Дар CI (`/home/runner/work/...`) муҳофиз ҳеҷ
+# файл намеёфт ва «0 мушкилот» мегуфт — яъне сабз мешуд БЕ он ки
+# чизе санҷад. Муҳофизи хомӯшона аз набудани муҳофиз бадтар аст.
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LIB = os.path.join(ROOT, "lib")
 
 def strip_comments(src):
     """Шарҳҳоро мебарорад — номи дар шарҳ зикршуда истифода нест."""

@@ -15,6 +15,8 @@ import '../../core/l10n/stock_l10n.dart';
 import '../../core/l10n/checkout_l10n.dart';
 import '../../core/l10n/stock_policy_l10n.dart';
 import '../../core/l10n/delivery_l10n.dart';
+// `buyerProtection` дар ҳамин `extension` аст.
+import '../../core/l10n/order_steps_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../core/constants/app_colors.dart';
@@ -1161,7 +1163,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       else ...[
         _deliveryRow(
             FeatherIcons.clock,
-            l.deliveryTime,
+            l.deliveryTimeLabel,
             hasDays
                 ? l.deliveryDaysValue(p.deliveryDays)
                 : l.deliveryByAgreement),

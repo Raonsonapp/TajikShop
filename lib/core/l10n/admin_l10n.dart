@@ -81,7 +81,9 @@ extension AdminL10n on AppL10n {
   // ── Returns / exchange ──
   String get returnsAndExchange=> lang == 'ru' ? 'Возврат и обмен'      : lang == 'en' ? 'Returns and exchange' : 'Бозгашт ва иваз';
   String get noRequests        => lang == 'ru' ? 'Нет запросов'         : lang == 'en' ? 'No requests'          : 'Дархост нест';
-  String get exchangeWord      => lang == 'ru' ? 'Обмен'                : lang == 'en' ? 'Exchange'             : 'Иваз';
+  // `exchangeWord` ин ҷо НЕСТ: он дар `OrdersL10n` бо ҳамон матн ҳаст.
+  // Нусхаи дуюм хато намедод, зеро ҳеҷ файл ҳарду `extension`-ро
+  // import намекард — вале ин бомбаи вақтдор буд.
   String get refundWord        => lang == 'ru' ? 'Возврат денег'        : lang == 'en' ? 'Refund'               : 'Бозгашти пул';
   String get orderPrefix       => lang == 'ru' ? 'Заказ'                : lang == 'en' ? 'Order'                : 'Фармоиш';
   String get acceptShort       => lang == 'ru' ? 'Принять'              : lang == 'en' ? 'Accept'               : 'Қабул';

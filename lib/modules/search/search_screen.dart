@@ -13,6 +13,7 @@ import '../../providers/search_provider.dart';
 import '../../shared/widgets/product_card.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/safe_input.dart';
+import '../../core/l10n/home_search_l10n.dart';
 
 /// Градиенти сабз (ecommerce_int2 look, ранги бренди TajikShop).
 const LinearGradient _greenGradient = LinearGradient(
@@ -508,15 +509,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
+            // «iPhone» тарҷума намешавад — ин ном аст, на калима.
             children: [
               'iPhone',
-              'Телевизор',
-              'Либос',
-              'Пойафзол',
-              'Ноутбук',
-              'Гӯшвора',
-              'Смартфон',
-              'Мебел'
+              ...AppL10n.of(context).searchSuggestions,
             ].map((tag) {
               final active = ref.watch(searchQueryProvider) == tag;
               return GestureDetector(
@@ -627,12 +623,9 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
   String? _categoryId;
   String? _sort;
 
-  static const _sortOpts = <String?, String>{
-    null: 'Нав',
-    'price_asc': 'Арзон',
-    'price_desc': 'Гарон',
-    'popular': 'Оммавӣ',
-  };
+  // Пештар ин `static const Map` буд — ва маҳз бо ҳамин сабаб тарҷума
+  // намешуд: `const` ба `AppL10n` даст расонида наметавонад. Ҳоло
+  // ҷадвал аз `AppL10n.sortOptions` меояд.
 
   @override
   void initState() {
@@ -705,7 +698,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
               ),
             ),
             Row(children: [
-              Text('Филтрҳо',
+              Text(AppL10n.of(context).filtersTitle,
                   style: TextStyle(
                       color: context.pal.textPrimary,
                       fontSize: 20,
@@ -713,7 +706,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
               const Spacer(),
               GestureDetector(
                 onTap: _clear,
-                child: const Text('Тоза',
+                child: Text(AppL10n.of(context).filtersClear,
                     style: TextStyle(
                         color: AppColors.primary,
                         fontSize: 14,
@@ -723,17 +716,19 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
             const SizedBox(height: 20),
 
             // ── Нарх ──
-            _sectionTitle('Нарх (сомонӣ)'),
+            _sectionTitle(AppL10n.of(context).priceSomoni),
             const SizedBox(height: 10),
             Row(children: [
-              Expanded(child: _priceField(_minCtrl, 'Аз')),
+              Expanded(
+                  child: _priceField(_minCtrl, AppL10n.of(context).priceFrom)),
               const SizedBox(width: 12),
-              Expanded(child: _priceField(_maxCtrl, 'То')),
+              Expanded(
+                  child: _priceField(_maxCtrl, AppL10n.of(context).priceTo)),
             ]),
             const SizedBox(height: 20),
 
             // ── Баҳо ──
-            _sectionTitle('Баҳои камтарин'),
+            _sectionTitle(AppL10n.of(context).minRating),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -777,14 +772,14 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
             const SizedBox(height: 20),
 
             // ── Категория ──
-            _sectionTitle('Категория'),
+            _sectionTitle(AppL10n.of(context).categoryWord),
             const SizedBox(height: 10),
             categories.when(
               data: (cats) => Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _categoryChip('Ҳама', null),
+                  _categoryChip(AppL10n.of(context).allWord, null),
                   ...cats.map((c) => _categoryChip(c.name, c.id)),
                 ],
               ),
@@ -801,12 +796,12 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
             const SizedBox(height: 20),
 
             // ── Тартиб ──
-            _sectionTitle('Тартиб'),
+            _sectionTitle(AppL10n.of(context).sortWord),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: _sortOpts.entries.map((e) {
+              children: AppL10n.of(context).sortOptions.entries.map((e) {
                 final active = _sort == e.key;
                 return GestureDetector(
                   onTap: () => setState(() => _sort = e.key),
@@ -857,7 +852,7 @@ class _FilterSheetState extends ConsumerState<_FilterSheet> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: const Text('Татбиқ',
+                  child: Text(AppL10n.of(context).applyWord,
                       style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,

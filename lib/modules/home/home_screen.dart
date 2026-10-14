@@ -30,6 +30,7 @@ import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/inline_ad.dart';
 import '../stories/story_viewer_screen.dart';
 import '../../core/theme/app_motion.dart';
+import '../../core/l10n/home_search_l10n.dart';
 
 const String _kMediaHost = 'https://mahmadmurodov-tajikshop.hf.space';
 
@@ -212,7 +213,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Салом 👋',
+                  AppL10n.of(context).greeting,
                   style: TextStyle(
                     color: pal.textMuted,
                     fontSize: 13,
@@ -438,7 +439,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _barcodeNotFound(ScaffoldMessengerState messenger, String code) {
     messenger.showSnackBar(SnackBar(
-      content: Text('Маҳсулот бо коди «$code» ёфт нашуд'),
+      content: Text(AppL10n.of(context).barcodeNotFound(code)),
       backgroundColor: AppColors.error,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -467,7 +468,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Row(
               children: const [
                 Text(
-                  'Ҳама',
+                  AppL10n.of(context).allWord,
                   style: TextStyle(
                     color: AppColors.primary,
                     fontSize: 13.5,
@@ -539,9 +540,9 @@ class _HeroBanner extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.22),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        'Тахфифи махсус',
-                        style: TextStyle(
+                      child: Text(
+                        AppL10n.of(context).specialOffer,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -549,11 +550,11 @@ class _HeroBanner extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Тарабфурӯшии тобистона',
+                    Text(
+                      AppL10n.of(context).summerSale,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 21,
                         fontWeight: FontWeight.w800,
@@ -562,7 +563,7 @@ class _HeroBanner extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'То 50% тахфиф ба маҳсулоти интихобшуда',
+                      AppL10n.of(context).summerSaleHint,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -613,7 +614,7 @@ class _PopularRail extends StatelessWidget {
           child: Row(children: [
             Icon(FeatherIcons.trendingUp, color: pal.textPrimary, size: 18),
             const SizedBox(width: 8),
-            Text('Машҳуртарин',
+            Text(AppL10n.of(context).mostPopular,
                 style: TextStyle(
                     color: pal.textPrimary,
                     fontSize: 17,
@@ -623,7 +624,7 @@ class _PopularRail extends StatelessWidget {
             GestureDetector(
               onTap: () => context.push('/bestsellers'),
               child: Row(children: [
-                Text('Серхаридор',
+                Text(AppL10n.of(context).bestSelling,
                     style: TextStyle(
                         color: AppColors.primary,
                         fontSize: 13,
@@ -673,7 +674,7 @@ class _RecentlyViewedRail extends ConsumerWidget {
           child: Row(children: [
             Icon(FeatherIcons.clock, color: pal.textPrimary, size: 17),
             const SizedBox(width: 8),
-            Text('Ба наздикӣ дидед',
+            Text(AppL10n.of(context).recentlyViewed,
                 style: TextStyle(
                     color: pal.textPrimary,
                     fontSize: 17,
@@ -763,6 +764,10 @@ class _StoriesRailState extends ConsumerState<_StoriesRail> {
   Future<void> _postStory() async {
     if (_posting) return;
     final messenger = ScaffoldMessenger.of(context);
+    // Матнҳо ПЕШ аз `await` гирифта мешаванд: баъди он `context`
+    // метавонад дигар эътибор надошта бошад.
+    final okText = AppL10n.of(context).storyPublished;
+    final errText = AppL10n.of(context).storyFailed;
     try {
       final picked =
           await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 75);
@@ -772,14 +777,14 @@ class _StoriesRailState extends ConsumerState<_StoriesRail> {
       await StoryService.upload(media);
       if (!mounted) return;
       ref.invalidate(storiesProvider);
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Ҳикоя нашр шуд ✅'),
+      messenger.showSnackBar(SnackBar(
+          content: Text(okText),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating));
     } catch (_) {
       if (!mounted) return;
-      messenger.showSnackBar(const SnackBar(
-          content: Text('Хатогӣ ҳангоми нашри ҳикоя'),
+      messenger.showSnackBar(SnackBar(
+          content: Text(errText),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating));
     } finally {
@@ -835,7 +840,7 @@ class _StoriesRailState extends ConsumerState<_StoriesRail> {
           children: [
             if (isSeller || hasMine)
               _StoryRingItem(
-                label: 'Ҳикояи ман',
+                label: AppL10n.of(context).myStory,
                 avatarUrl: mine?.avatarUrl ?? me?.avatar ?? '',
                 // Ҳалқаи сабз танҳо вақте, ки ҳикояи фаъол дорад.
                 hasStory: hasMine,
@@ -855,7 +860,7 @@ class _StoriesRailState extends ConsumerState<_StoriesRail> {
             if (others.isEmpty && !hasMine && isSeller)
               Padding(
                 padding: const EdgeInsets.only(left: 8, top: 26),
-                child: Text('Аввалин ҳикояи худро нашр кунед',
+                child: Text(AppL10n.of(context).firstStoryHint,
                     style: TextStyle(color: pal.textMuted, fontSize: 12.5)),
               ),
           ],
@@ -1041,7 +1046,7 @@ class _FlashDealsRailState extends ConsumerState<_FlashDealsRail> {
               child: const Icon(FeatherIcons.zap, color: Colors.white, size: 15),
             ),
             const SizedBox(width: 9),
-            Text('Тахфифҳои барқӣ',
+            Text(AppL10n.of(context).flashDeals,
                 style: TextStyle(
                     color: pal.textPrimary,
                     fontSize: 17,
@@ -1051,7 +1056,7 @@ class _FlashDealsRailState extends ConsumerState<_FlashDealsRail> {
             GestureDetector(
               onTap: () => context.push('/deals'),
               child: Row(children: [
-                Text('Ҳама',
+                Text(AppL10n.of(context).allWord,
                     style: TextStyle(
                         color: AppColors.primary,
                         fontSize: 13,
@@ -1256,28 +1261,28 @@ class _CargoCard extends StatelessWidget {
                     color: Colors.white, size: 24),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '📦 Карго аз Хитой',
+                      AppL10n.of(context).cargoFromChina,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.2,
                       ),
                     ),
-                    SizedBox(height: 3),
+                    const SizedBox(height: 3),
                     Text(
-                      'Доставка ба Тоҷикистон ва Русия',
+                      AppL10n.of(context).cargoHint,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w500,
@@ -1338,7 +1343,7 @@ class _NearbyShopsCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: const [
                     Text(
-                      '🗺 Дӯконҳои наздик',
+                      AppL10n.of(context).nearbyShopsTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1350,7 +1355,7 @@ class _NearbyShopsCard extends StatelessWidget {
                     ),
                     SizedBox(height: 3),
                     Text(
-                      'Бизнесҳои маҳаллиро дар харита ёбед',
+                      AppL10n.of(context).nearbyShopsHint,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

@@ -18,7 +18,17 @@ extension DeliveryL10n on AppL10n {
       _dl('Нет — забираете в магазине', 'None — pickup in store',
           'Нест — аз мағоза мегиред');
 
-  String get deliveryTime =>
+  /// ⚠️ Ном маҳз `deliveryTimeLabel` аст, на `deliveryTime`.
+  ///
+  /// `deliveryTime` аллакай дар `ProfileL10n` ҳаст (вақти расонидан дар
+  /// сабад — «то соати 18»), ва ду `extension`-и ҳамон синф бо ҳамон
+  /// ном хатои тартиб медиҳад:
+  ///
+  ///   error • A member named 'deliveryTime' is defined in two
+  ///   extensions, and neither is more specific
+  ///
+  /// `tools/l10n_guard.py` акнун чунин ҳолатро маҳаллӣ мегирад.
+  String get deliveryTimeLabel =>
       _dl('Срок доставки', 'Delivery time', 'Мӯҳлати расиш');
 
   /// `5 рӯз` / `5 дней` / `5 days`.
@@ -43,8 +53,9 @@ extension DeliveryL10n on AppL10n {
 
   // ── Ҳимояи харидор ──
 
-  String get buyerProtection =>
-      _dl('Защита покупателя', 'Buyer protection', 'Ҳимояи харидор');
+  // `buyerProtection` ин ҷо НЕСТ: он аллакай дар `OrderStepsL10n` бо
+  // ҳамон матн ҳаст. Як мафҳум — як матн; нусхаи дуюм рӯзе аз нусхаи
+  // аввал фарқ мекунад, ва ҳеҷ кас намефаҳмад кадомаш дуруст аст.
 
   String get buyerProtectionEscrow => _dl(
       'Деньги остаются на защищённом счёте до подтверждения получения товара',

@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tajikshop/core/app_l10n.dart';
 import 'package:tajikshop/core/l10n/delivery_l10n.dart';
+// `buyerProtection` дар ҳамин `extension` аст, на дар `DeliveryL10n`.
+import 'package:tajikshop/core/l10n/order_steps_l10n.dart';
 import 'package:tajikshop/providers/locale_provider.dart';
 
 /// Матнҳои расонидан ва «Ҳимояи харидор».
@@ -17,7 +19,7 @@ void main() {
       for (final s in [
         l.deliveryWord,
         l.deliveryNone,
-        l.deliveryTime,
+        l.deliveryTimeLabel,
         l.deliveryDaysValue(5),
         l.deliveryByAgreement,
         l.deliveryPriceLabel,
