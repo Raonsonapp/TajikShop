@@ -33,13 +33,20 @@ func (h *WalletHandler) Get(c *gin.Context) {
 	var balance float64
 	db.DB.QueryRow(`SELECT COALESCE(wallet_balance,0) FROM users WHERE id=$1`, uid).Scan(&balance)
 
-	rows, _ := db.DB.Query(`SELECT id,amount,type,status,note,created_at FROM wallet_transactions
+	rows, qerr := db.DB.Query(`SELECT id,amount,type,status,note,created_at FROM wallet_transactions
 		WHERE user_id=$1 ORDER BY created_at DESC LIMIT 100`, uid)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	var txs []walletTx
 	for rows.Next() {
 		var t walletTx
-		rows.Scan(&t.ID, &t.Amount, &t.Type, &t.Status, &t.Note, &t.CreatedAt)
+		if e := rows.Scan(&t.ID, &t.Amount, &t.Type, &t.Status, &t.Note, &t.CreatedAt); e != nil {
+			continue
+		}
 		txs = append(txs, t)
 	}
 	if txs == nil {
@@ -66,9 +73,14 @@ func (h *WalletHandler) TopUp(c *gin.Context) {
 
 // AdminPending — дархостҳои пополненияи интизор
 func (h *WalletHandler) AdminPending(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT wt.id,wt.user_id,wt.amount,wt.created_at,u.name,u.email
+	rows, qerr := db.DB.Query(`SELECT wt.id,wt.user_id,wt.amount,wt.created_at,u.name,u.email
 		FROM wallet_transactions wt JOIN users u ON u.id=wt.user_id
 		WHERE wt.status='pending' AND wt.type='topup' ORDER BY wt.created_at DESC`)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	type pend struct {
 		ID        string    `json:"id"`
@@ -81,7 +93,9 @@ func (h *WalletHandler) AdminPending(c *gin.Context) {
 	var list []pend
 	for rows.Next() {
 		var p pend
-		rows.Scan(&p.ID, &p.UserID, &p.Amount, &p.CreatedAt, &p.Name, &p.Email)
+		if e := rows.Scan(&p.ID, &p.UserID, &p.Amount, &p.CreatedAt, &p.Name, &p.Email); e != nil {
+			continue
+		}
 		list = append(list, p)
 	}
 	if list == nil {
@@ -170,18 +184,25 @@ func lookupCoupon(code string) (int, bool, string) {
 // ActiveList — купонҳои фаъол барои харидорон (кашф кардани промокодҳо).
 // GET /coupons/active
 func (h *CouponHandler) ActiveList(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT code,discount_percent
+	rows, qerr := db.DB.Query(`SELECT code,discount_percent
 		FROM coupons
 		WHERE is_active=true
 			AND (expires_at IS NULL OR expires_at > NOW())
 			AND (max_uses <= 0 OR used_count < max_uses)
 		ORDER BY discount_percent DESC LIMIT 20`)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	out := []gin.H{}
 	for rows.Next() {
 		var code string
 		var disc int
-		rows.Scan(&code, &disc)
+		if e := rows.Scan(&code, &disc); e != nil {
+			continue
+		}
 		out = append(out, gin.H{"code": code, "discount_percent": disc})
 	}
 	utils.OK(c, out)
@@ -209,8 +230,13 @@ func (h *CouponHandler) Create(c *gin.Context) {
 }
 
 func (h *CouponHandler) List(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT id,code,discount_percent,max_uses,used_count,is_active,created_at
+	rows, qerr := db.DB.Query(`SELECT id,code,discount_percent,max_uses,used_count,is_active,created_at
 		FROM coupons ORDER BY created_at DESC`)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	type cpn struct {
 		ID              string    `json:"id"`
@@ -224,7 +250,9 @@ func (h *CouponHandler) List(c *gin.Context) {
 	var list []cpn
 	for rows.Next() {
 		var x cpn
-		rows.Scan(&x.ID, &x.Code, &x.DiscountPercent, &x.MaxUses, &x.UsedCount, &x.IsActive, &x.CreatedAt)
+		if e := rows.Scan(&x.ID, &x.Code, &x.DiscountPercent, &x.MaxUses, &x.UsedCount, &x.IsActive, &x.CreatedAt); e != nil {
+			continue
+		}
 		list = append(list, x)
 	}
 	if list == nil {

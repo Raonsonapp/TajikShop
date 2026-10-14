@@ -17,7 +17,12 @@ type BrandHandler struct{}
 func NewBrandHandler() *BrandHandler { return &BrandHandler{} }
 
 func (h *BrandHandler) List(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT id,name,slug,COALESCE(logo_url,'') FROM brands ORDER BY name`)
+	rows, qerr := db.DB.Query(`SELECT id,name,slug,COALESCE(logo_url,'') FROM brands ORDER BY name`)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	type brand struct {
 		ID   string `json:"id"`
@@ -28,7 +33,9 @@ func (h *BrandHandler) List(c *gin.Context) {
 	var list []brand
 	for rows.Next() {
 		var b brand
-		rows.Scan(&b.ID, &b.Name, &b.Slug, &b.Logo)
+		if e := rows.Scan(&b.ID, &b.Name, &b.Slug, &b.Logo); e != nil {
+			continue
+		}
 		list = append(list, b)
 	}
 	if list == nil {
@@ -83,7 +90,9 @@ func getProductVariants(productID string) []variantOut {
 	var list []variantOut
 	for rows.Next() {
 		var v variantOut
-		rows.Scan(&v.ID, &v.Size, &v.Color, &v.SKU, &v.Price, &v.Stock)
+		if e := rows.Scan(&v.ID, &v.Size, &v.Color, &v.SKU, &v.Price, &v.Stock); e != nil {
+			continue
+		}
 		list = append(list, v)
 	}
 	if list == nil {

@@ -77,9 +77,14 @@ func (h *ReturnHandler) ForOrder(c *gin.Context) {
 
 // AdminList — GET /admin/returns
 func (h *ReturnHandler) AdminList(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT rt.id,rt.order_id,rt.type,rt.reason,rt.status,rt.created_at,u.name
+	rows, qerr := db.DB.Query(`SELECT rt.id,rt.order_id,rt.type,rt.reason,rt.status,rt.created_at,u.name
 		FROM returns rt JOIN users u ON u.id=rt.user_id
 		ORDER BY (rt.status='pending') DESC, rt.created_at DESC LIMIT 200`)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	type ret struct {
 		ID        string    `json:"id"`
@@ -93,7 +98,9 @@ func (h *ReturnHandler) AdminList(c *gin.Context) {
 	var list []ret
 	for rows.Next() {
 		var r ret
-		rows.Scan(&r.ID, &r.OrderID, &r.Type, &r.Reason, &r.Status, &r.CreatedAt, &r.UserName)
+		if e := rows.Scan(&r.ID, &r.OrderID, &r.Type, &r.Reason, &r.Status, &r.CreatedAt, &r.UserName); e != nil {
+			continue
+		}
 		list = append(list, r)
 	}
 	if list == nil {

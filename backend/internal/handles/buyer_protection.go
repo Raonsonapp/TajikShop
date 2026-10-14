@@ -218,7 +218,9 @@ func (h *OrderHandler) OrderTimeline(c *gin.Context) {
 		defer rows.Close()
 		for rows.Next() {
 			var e event
-			rows.Scan(&e.Status, &e.Note, &e.CreatedAt)
+			if e := rows.Scan(&e.Status, &e.Note, &e.CreatedAt); e != nil {
+				continue
+			}
 			events = append(events, e)
 		}
 	}
@@ -322,7 +324,9 @@ func releaseExpiredEscrow() {
 	var list []ord
 	for rows.Next() {
 		var o ord
-		rows.Scan(&o.id, &o.buyer, &o.total, &o.method)
+		if e := rows.Scan(&o.id, &o.buyer, &o.total, &o.method); e != nil {
+			continue
+		}
 		list = append(list, o)
 	}
 	rows.Close()
@@ -400,7 +404,9 @@ func settleOrder(oid, buyer string, total float64, method string, auto bool) {
 			for rows.Next() {
 				var s string
 				var a float64
-				rows.Scan(&s, &a)
+				if e := rows.Scan(&s, &a); e != nil {
+					continue
+				}
 				pays = append(pays, pay{s, a})
 				sum += a
 			}
@@ -465,7 +471,9 @@ func (h *OrderHandler) CartSellers(c *gin.Context) {
 	out := []gin.H{}
 	for rows.Next() {
 		var id, name, shop, card, holder, phone string
-		rows.Scan(&id, &name, &shop, &card, &holder, &phone)
+		if e := rows.Scan(&id, &name, &shop, &card, &holder, &phone); e != nil {
+			continue
+		}
 		out = append(out, gin.H{
 			"seller_id":   id,
 			"name":        name,
@@ -501,7 +509,9 @@ func notifySellersOfNewOrder(orderID string) {
 	var list []row
 	for rows.Next() {
 		var r row
-		rows.Scan(&r.seller, &r.items, &r.sum)
+		if e := rows.Scan(&r.seller, &r.items, &r.sum); e != nil {
+			continue
+		}
 		list = append(list, r)
 	}
 	rows.Close()
@@ -601,7 +611,9 @@ func (h *OrderHandler) RateSeller(c *gin.Context) {
 	var sellers []string
 	for rows.Next() {
 		var s string
-		rows.Scan(&s)
+		if e := rows.Scan(&s); e != nil {
+			continue
+		}
 		if s != "" {
 			sellers = append(sellers, s)
 		}
@@ -639,7 +651,9 @@ func (h *OrderHandler) SellerRating(c *gin.Context) {
 			var score int
 			var comment, name, avatar string
 			var created time.Time
-			rows.Scan(&score, &comment, &created, &name, &avatar)
+			if e := rows.Scan(&score, &comment, &created, &name, &avatar); e != nil {
+				continue
+			}
 			reviews = append(reviews, gin.H{
 				"score": score, "comment": comment, "created_at": created,
 				"buyer_name": name, "buyer_avatar": avatar,

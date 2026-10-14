@@ -38,8 +38,13 @@ func (h *ReportHandler) Create(c *gin.Context) {
 
 // AdminList — рӯйхати гузоришҳо барои админ
 func (h *ReportHandler) AdminList(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT id,target_type,target_id,reason,resolved,created_at
+	rows, qerr := db.DB.Query(`SELECT id,target_type,target_id,reason,resolved,created_at
 		FROM reports ORDER BY resolved ASC, created_at DESC LIMIT 200`)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	type rep struct {
 		ID         string    `json:"id"`
@@ -52,7 +57,9 @@ func (h *ReportHandler) AdminList(c *gin.Context) {
 	var list []rep
 	for rows.Next() {
 		var r rep
-		rows.Scan(&r.ID, &r.TargetType, &r.TargetID, &r.Reason, &r.Resolved, &r.CreatedAt)
+		if e := rows.Scan(&r.ID, &r.TargetType, &r.TargetID, &r.Reason, &r.Resolved, &r.CreatedAt); e != nil {
+			continue
+		}
 		list = append(list, r)
 	}
 	if list == nil {

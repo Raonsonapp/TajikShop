@@ -121,7 +121,12 @@ const cargoCols = `id,track_code,product_link,description,destination,weight,cos
 // MyList — посылкаҳои корбари ҷорӣ. GET /cargo
 func (h *CargoHandler) MyList(c *gin.Context) {
 	uid := utils.UserID(c)
-	rows, _ := db.DB.Query(`SELECT `+cargoCols+` FROM cargo_orders WHERE user_id=$1 ORDER BY created_at DESC`, uid)
+	rows, qerr := db.DB.Query(`SELECT `+cargoCols+` FROM cargo_orders WHERE user_id=$1 ORDER BY created_at DESC`, uid)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	out := []gin.H{}
 	for rows.Next() {
@@ -132,9 +137,14 @@ func (h *CargoHandler) MyList(c *gin.Context) {
 
 // AdminList — ҳамаи дархостҳои карго (барои шарик/админ). GET /admin/cargo
 func (h *CargoHandler) AdminList(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT ` + cargoCols + ` FROM cargo_orders ORDER BY
+	rows, qerr := db.DB.Query(`SELECT ` + cargoCols + ` FROM cargo_orders ORDER BY
 		CASE status WHEN 'new' THEN 0 WHEN 'received' THEN 1 WHEN 'shipped' THEN 2
 			WHEN 'arrived' THEN 3 ELSE 4 END, created_at DESC LIMIT 200`)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	out := []gin.H{}
 	for rows.Next() {

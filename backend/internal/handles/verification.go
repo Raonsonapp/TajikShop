@@ -131,7 +131,9 @@ func (h *VerificationHandler) Request(c *gin.Context) {
 		defer rows.Close()
 		for rows.Next() {
 			var admin string
-			rows.Scan(&admin)
+			if e := rows.Scan(&admin); e != nil {
+				continue
+			}
 			db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
 				VALUES($1,$2,'verify','Дархости галочка','Корбар барои тасдиқ пул фиристод',$3)`,
 				uuid.NewString(), admin, id)
@@ -161,7 +163,9 @@ func (h *VerificationHandler) AdminList(c *gin.Context) {
 		var id, uid, name, phone, username, receipt, st, note string
 		var amount float64
 		var created time.Time
-		rows.Scan(&id, &uid, &name, &phone, &username, &amount, &receipt, &st, &note, &created)
+		if e := rows.Scan(&id, &uid, &name, &phone, &username, &amount, &receipt, &st, &note, &created); e != nil {
+			continue
+		}
 		out = append(out, gin.H{
 			"id": id, "user_id": uid, "name": name, "phone": phone,
 			"username": username, "amount": amount, "receipt_url": receipt,

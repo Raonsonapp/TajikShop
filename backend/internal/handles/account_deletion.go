@@ -57,7 +57,9 @@ func (h *UserHandler) DeleteAccount(c *gin.Context) {
 		WHERE p.seller_id=$1 AND NOT EXISTS (SELECT 1 FROM order_items oi WHERE oi.product_id=p.id)`, uid); err == nil {
 		for rows.Next() {
 			var u string
-			rows.Scan(&u)
+			if e := rows.Scan(&u); e != nil {
+				continue
+			}
 			if u != "" {
 				mediaURLs = append(mediaURLs, u)
 			}
@@ -68,7 +70,9 @@ func (h *UserHandler) DeleteAccount(c *gin.Context) {
 	if rows, err := db.DB.Query(`SELECT media_url FROM stories WHERE user_id=$1`, uid); err == nil {
 		for rows.Next() {
 			var u string
-			rows.Scan(&u)
+			if e := rows.Scan(&u); e != nil {
+				continue
+			}
 			if u != "" {
 				mediaURLs = append(mediaURLs, u)
 			}

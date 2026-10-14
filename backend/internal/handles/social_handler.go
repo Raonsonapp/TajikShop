@@ -120,11 +120,16 @@ func (h *StoryHandler) Create(c *gin.Context) {
 
 func (h *StoryHandler) Feed(c *gin.Context) {
 	uid := utils.UserID(c)
-	rows, _ := db.DB.Query(`SELECT s.id,s.user_id,s.media_url,s.media_type,s.expires_at,u.name,u.avatar_url
+	rows, qerr := db.DB.Query(`SELECT s.id,s.user_id,s.media_url,s.media_type,s.expires_at,u.name,u.avatar_url
 		FROM stories s JOIN users u ON u.id=s.user_id
 		WHERE s.expires_at > NOW() AND (s.user_id=$1 OR s.user_id IN (
 			SELECT following_id FROM follows WHERE follower_id=$1
 		)) ORDER BY s.created_at DESC`, uid)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	type StoryFeed struct {
 		models.Story
@@ -134,7 +139,9 @@ func (h *StoryHandler) Feed(c *gin.Context) {
 	var stories []StoryFeed
 	for rows.Next() {
 		var s StoryFeed
-		rows.Scan(&s.ID, &s.UserID, &s.MediaURL, &s.MediaType, &s.ExpiresAt, &s.UserName, &s.AvatarURL)
+		if e := rows.Scan(&s.ID, &s.UserID, &s.MediaURL, &s.MediaType, &s.ExpiresAt, &s.UserName, &s.AvatarURL); e != nil {
+			continue
+		}
 		stories = append(stories, s)
 	}
 	if stories == nil {
@@ -146,11 +153,16 @@ func (h *StoryHandler) Feed(c *gin.Context) {
 // Discover — ҳикояҳои фаъоли ҳамаи фурӯшандагон (барои саҳифаи асосӣ, ошкоро).
 // Барои кашф — ба фарқ аз Feed follow лозим нест. GET /stories/discover
 func (h *StoryHandler) Discover(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT s.id,s.user_id,s.media_url,s.media_type,s.expires_at,s.created_at,
+	rows, qerr := db.DB.Query(`SELECT s.id,s.user_id,s.media_url,s.media_type,s.expires_at,s.created_at,
 			u.name,COALESCE(u.avatar_url,'')
 		FROM stories s JOIN users u ON u.id=s.user_id
 		WHERE s.expires_at > NOW() AND u.is_seller = true
 		ORDER BY s.created_at DESC LIMIT 100`)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	type StoryFeed struct {
 		models.Story
@@ -160,7 +172,9 @@ func (h *StoryHandler) Discover(c *gin.Context) {
 	var stories []StoryFeed
 	for rows.Next() {
 		var s StoryFeed
-		rows.Scan(&s.ID, &s.UserID, &s.MediaURL, &s.MediaType, &s.ExpiresAt, &s.CreatedAt, &s.UserName, &s.AvatarURL)
+		if e := rows.Scan(&s.ID, &s.UserID, &s.MediaURL, &s.MediaType, &s.ExpiresAt, &s.CreatedAt, &s.UserName, &s.AvatarURL); e != nil {
+			continue
+		}
 		stories = append(stories, s)
 	}
 	if stories == nil {
@@ -200,13 +214,20 @@ func (h *FollowHandler) Unfollow(c *gin.Context) {
 
 func (h *FollowHandler) Followers(c *gin.Context) {
 	id := c.Param("id")
-	rows, _ := db.DB.Query(`SELECT u.id,u.name,u.avatar_url FROM follows f
+	rows, qerr := db.DB.Query(`SELECT u.id,u.name,u.avatar_url FROM follows f
 		JOIN users u ON u.id=f.follower_id WHERE f.following_id=$1`, id)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	var users []models.User
 	for rows.Next() {
 		var u models.User
-		rows.Scan(&u.ID, &u.Name, &u.AvatarURL)
+		if e := rows.Scan(&u.ID, &u.Name, &u.AvatarURL); e != nil {
+			continue
+		}
 		users = append(users, u)
 	}
 	if users == nil {
@@ -241,7 +262,7 @@ func (h *MessageHandler) Send(c *gin.Context) {
 // GET /messages
 func (h *MessageHandler) Inbox(c *gin.Context) {
 	uid := utils.UserID(c)
-	rows, _ := db.DB.Query(`
+	rows, qerr := db.DB.Query(`
 		SELECT p.partner, u.name, COALESCE(u.avatar_url,''), p.content, p.created_at,
 			COALESCE((SELECT COUNT(*) FROM messages m
 				WHERE m.receiver_id=$1 AND m.sender_id=p.partner AND m.is_read=false),0)
@@ -254,13 +275,20 @@ func (h *MessageHandler) Inbox(c *gin.Context) {
 		) p
 		JOIN users u ON u.id = p.partner
 		ORDER BY p.created_at DESC`, uid)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	convos := []gin.H{}
 	for rows.Next() {
 		var partner, name, avatar, content string
 		var createdAt time.Time
 		var unread int
-		rows.Scan(&partner, &name, &avatar, &content, &createdAt, &unread)
+		if e := rows.Scan(&partner, &name, &avatar, &content, &createdAt, &unread); e != nil {
+			continue
+		}
 		convos = append(convos, gin.H{
 			"partner_id":   partner,
 			"name":         name,
@@ -276,14 +304,21 @@ func (h *MessageHandler) Inbox(c *gin.Context) {
 func (h *MessageHandler) Conversation(c *gin.Context) {
 	uid := utils.UserID(c)
 	otherID := c.Param("user_id")
-	rows, _ := db.DB.Query(`SELECT id,sender_id,receiver_id,content,is_read,created_at FROM messages
+	rows, qerr := db.DB.Query(`SELECT id,sender_id,receiver_id,content,is_read,created_at FROM messages
 		WHERE (sender_id=$1 AND receiver_id=$2) OR (sender_id=$2 AND receiver_id=$1)
 		ORDER BY created_at ASC`, uid, otherID)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	var msgs []models.Message
 	for rows.Next() {
 		var m models.Message
-		rows.Scan(&m.ID, &m.SenderID, &m.ReceiverID, &m.Content, &m.IsRead, &m.CreatedAt)
+		if e := rows.Scan(&m.ID, &m.SenderID, &m.ReceiverID, &m.Content, &m.IsRead, &m.CreatedAt); e != nil {
+			continue
+		}
 		msgs = append(msgs, m)
 	}
 	if msgs == nil {
@@ -302,10 +337,15 @@ func NewNotificationHandler() *NotificationHandler { return &NotificationHandler
 func (h *NotificationHandler) List(c *gin.Context) {
 	uid := utils.UserID(c)
 	// `ref_id` бояд баргардад — бе он зеркунии огоҳӣ ҳеҷ ҷо намебарад.
-	rows, _ := db.DB.Query(`SELECT id,type,COALESCE(title,''),COALESCE(body,''),
+	rows, qerr := db.DB.Query(`SELECT id,type,COALESCE(title,''),COALESCE(body,''),
 		COALESCE(is_read,false),COALESCE(ref_id::text,''),created_at
 		FROM notifications
 		WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50`, uid)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	var notifs []models.Notification
 	for rows.Next() {
@@ -334,12 +374,19 @@ type CategoryHandler struct{}
 func NewCategoryHandler() *CategoryHandler { return &CategoryHandler{} }
 
 func (h *CategoryHandler) List(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT id,name,slug,icon_url FROM categories ORDER BY name`)
+	rows, qerr := db.DB.Query(`SELECT id,name,slug,icon_url FROM categories ORDER BY name`)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	var cats []models.Category
 	for rows.Next() {
 		var cat models.Category
-		rows.Scan(&cat.ID, &cat.Name, &cat.Slug, &cat.IconURL)
+		if e := rows.Scan(&cat.ID, &cat.Name, &cat.Slug, &cat.IconURL); e != nil {
+			continue
+		}
 		cats = append(cats, cat)
 	}
 	if cats == nil {
@@ -465,7 +512,9 @@ func (h *AdminHandler) SellerRequests(c *gin.Context) {
 	for rows.Next() {
 		var id, name, email, passport string
 		var created time.Time
-		rows.Scan(&id, &name, &email, &passport, &created)
+		if e := rows.Scan(&id, &name, &email, &passport, &created); e != nil {
+			continue
+		}
 		list = append(list, gin.H{
 			"id": id, "name": name, "email": email,
 			"passport_url": passport, "created_at": created,
@@ -490,8 +539,13 @@ func (h *AdminHandler) DeleteProduct(c *gin.Context) {
 }
 
 func (h *AdminHandler) ListUsers(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT id,name,email,phone,role,is_verified,is_banned,
+	rows, qerr := db.DB.Query(`SELECT id,name,email,phone,role,is_verified,is_banned,
 		COALESCE(passport_url,''),created_at FROM users ORDER BY created_at DESC LIMIT 100`)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	type adminUser struct {
 		ID          string    `json:"id"`
@@ -507,7 +561,9 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	var users []adminUser
 	for rows.Next() {
 		var u adminUser
-		rows.Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.Role, &u.IsVerified, &u.IsBanned, &u.PassportURL, &u.CreatedAt)
+		if e := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Phone, &u.Role, &u.IsVerified, &u.IsBanned, &u.PassportURL, &u.CreatedAt); e != nil {
+			continue
+		}
 		users = append(users, u)
 	}
 	if users == nil {
@@ -566,12 +622,19 @@ func statusLabelTg(status string) string {
 }
 
 func (h *AdminHandler) ListOrders(c *gin.Context) {
-	rows, _ := db.DB.Query(`SELECT id,user_id,status,total,created_at FROM orders ORDER BY created_at DESC LIMIT 100`)
+	rows, qerr := db.DB.Query(`SELECT id,user_id,status,total,created_at FROM orders ORDER BY created_at DESC LIMIT 100`)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	var orders []models.Order
 	for rows.Next() {
 		var o models.Order
-		rows.Scan(&o.ID, &o.UserID, &o.Status, &o.Total, &o.CreatedAt)
+		if e := rows.Scan(&o.ID, &o.UserID, &o.Status, &o.Total, &o.CreatedAt); e != nil {
+			continue
+		}
 		orders = append(orders, o)
 	}
 	if orders == nil {

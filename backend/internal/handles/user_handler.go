@@ -395,7 +395,9 @@ func (h *UserHandler) SellerSalesChart(c *gin.Context) {
 	for rows.Next() {
 		var d string
 		var total float64
-		rows.Scan(&d, &total)
+		if e := rows.Scan(&d, &total); e != nil {
+			continue
+		}
 		out = append(out, gin.H{"date": d, "total": total})
 	}
 	utils.OK(c, out)
@@ -441,7 +443,9 @@ func (h *UserHandler) ShopsList(c *gin.Context) {
 		var lat, lng float64
 		var verified bool
 		var products int
-		rows.Scan(&id, &name, &avatar, &desc, &btype, &lat, &lng, &verified, &products)
+		if e := rows.Scan(&id, &name, &avatar, &desc, &btype, &lat, &lng, &verified, &products); e != nil {
+			continue
+		}
 		list = append(list, gin.H{
 			"id": id, "name": name, "avatar_url": avatar, "shop_desc": desc, "business_type": btype,
 			"store_lat": lat, "store_lng": lng, "is_verified": verified, "products": products,

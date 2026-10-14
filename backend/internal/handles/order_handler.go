@@ -243,12 +243,19 @@ func shortID(id string) string {
 
 func (h *OrderHandler) MyOrders(c *gin.Context) {
 	uid := utils.UserID(c)
-	rows, _ := db.DB.Query(`SELECT id,status,total,created_at FROM orders WHERE user_id=$1 ORDER BY created_at DESC`, uid)
+	rows, qerr := db.DB.Query(`SELECT id,status,total,created_at FROM orders WHERE user_id=$1 ORDER BY created_at DESC`, uid)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	var orders []models.Order
 	for rows.Next() {
 		var o models.Order
-		rows.Scan(&o.ID, &o.Status, &o.Total, &o.CreatedAt)
+		if e := rows.Scan(&o.ID, &o.Status, &o.Total, &o.CreatedAt); e != nil {
+			continue
+		}
 		orders = append(orders, o)
 	}
 	if orders == nil {
@@ -267,11 +274,18 @@ func (h *OrderHandler) GetOrder(c *gin.Context) {
 		utils.Err(c, http.StatusNotFound, "order not found")
 		return
 	}
-	rows, _ := db.DB.Query(`SELECT id,product_id,quantity,price FROM order_items WHERE order_id=$1`, oid)
+	rows, qerr := db.DB.Query(`SELECT id,product_id,quantity,price FROM order_items WHERE order_id=$1`, oid)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	for rows.Next() {
 		var i models.OrderItem
-		rows.Scan(&i.ID, &i.ProductID, &i.Quantity, &i.Price)
+		if e := rows.Scan(&i.ID, &i.ProductID, &i.Quantity, &i.Price); e != nil {
+			continue
+		}
 		o.Items = append(o.Items, i)
 	}
 	utils.OK(c, o)
@@ -422,16 +436,23 @@ func (h *ReviewHandler) UploadImages(c *gin.Context) {
 
 func (h *ReviewHandler) ByProduct(c *gin.Context) {
 	pid := c.Param("product_id")
-	rows, _ := db.DB.Query(`SELECT r.id,r.rating,r.comment,COALESCE(r.images,'[]'::jsonb),r.created_at,u.name,
+	rows, qerr := db.DB.Query(`SELECT r.id,r.rating,r.comment,COALESCE(r.images,'[]'::jsonb),r.created_at,u.name,
 		COALESCE((SELECT COUNT(*) FROM review_likes rl WHERE rl.review_id=r.id),0)
 		FROM reviews r JOIN users u ON u.id=r.user_id
 		WHERE r.product_id=$1 ORDER BY COALESCE((SELECT COUNT(*) FROM review_likes rl WHERE rl.review_id=r.id),0) DESC, r.created_at DESC`, pid)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	var reviews []models.Review
 	for rows.Next() {
 		var r models.Review
 		var imgRaw []byte
-		rows.Scan(&r.ID, &r.Rating, &r.Comment, &imgRaw, &r.CreatedAt, &r.UserName, &r.HelpfulCount)
+		if e := rows.Scan(&r.ID, &r.Rating, &r.Comment, &imgRaw, &r.CreatedAt, &r.UserName, &r.HelpfulCount); e != nil {
+			continue
+		}
 		if len(imgRaw) > 0 {
 			json.Unmarshal(imgRaw, &r.Images)
 		}
@@ -492,13 +513,20 @@ func (h *FavoriteHandler) Remove(c *gin.Context) {
 
 func (h *FavoriteHandler) List(c *gin.Context) {
 	uid := utils.UserID(c)
-	rows, _ := db.DB.Query(`SELECT p.id,p.title,p.price FROM favorites f
+	rows, qerr := db.DB.Query(`SELECT p.id,p.title,p.price FROM favorites f
 		JOIN products p ON p.id=f.product_id WHERE f.user_id=$1`, uid)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	var products []models.Product
 	for rows.Next() {
 		var p models.Product
-		rows.Scan(&p.ID, &p.Title, &p.Price)
+		if e := rows.Scan(&p.ID, &p.Title, &p.Price); e != nil {
+			continue
+		}
 		products = append(products, p)
 	}
 	if products == nil {
@@ -548,10 +576,15 @@ func (h *AddressHandler) Create(c *gin.Context) {
 
 func (h *AddressHandler) List(c *gin.Context) {
 	uid := utils.UserID(c)
-	rows, _ := db.DB.Query(`SELECT id,title,city,street,COALESCE(house,''),COALESCE(entrance,''),
+	rows, qerr := db.DB.Query(`SELECT id,title,city,street,COALESCE(house,''),COALESCE(entrance,''),
 		COALESCE(floor,''),COALESCE(apartment,''),COALESCE(landmark,''),COALESCE(region,''),
 		zip,is_default,COALESCE(lat,0),COALESCE(lng,0)
 		FROM addresses WHERE user_id=$1`, uid)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	type addr struct {
 		ID        string  `json:"id"`
@@ -572,9 +605,11 @@ func (h *AddressHandler) List(c *gin.Context) {
 	var addrs []addr
 	for rows.Next() {
 		var a addr
-		rows.Scan(&a.ID, &a.Title, &a.City, &a.Street, &a.House, &a.Entrance,
+		if e := rows.Scan(&a.ID, &a.Title, &a.City, &a.Street, &a.House, &a.Entrance,
 			&a.Floor, &a.Apartment, &a.Landmark, &a.Region,
-			&a.Zip, &a.IsDefault, &a.Lat, &a.Lng)
+			&a.Zip, &a.IsDefault, &a.Lat, &a.Lng); e != nil {
+			continue
+		}
 		addrs = append(addrs, a)
 	}
 	if addrs == nil {

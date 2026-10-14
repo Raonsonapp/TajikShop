@@ -665,7 +665,9 @@ func getProductImages(productID string) []string {
 	var urls []string
 	for rows.Next() {
 		var url string
-		rows.Scan(&url)
+		if e := rows.Scan(&url); e != nil {
+			continue
+		}
 		if url != "" {
 			urls = append(urls, url)
 		}
@@ -690,7 +692,9 @@ func getProductImagesBatch(ids []string) map[string][]string {
 	defer rows.Close()
 	for rows.Next() {
 		var pid, url string
-		rows.Scan(&pid, &url)
+		if e := rows.Scan(&pid, &url); e != nil {
+			continue
+		}
 		if url != "" {
 			out[pid] = append(out[pid], url)
 		}

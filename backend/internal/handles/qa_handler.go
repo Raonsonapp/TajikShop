@@ -27,15 +27,22 @@ type qaItem struct {
 // ByProduct — GET /products/:id/questions (оммавӣ)
 func (h *QAHandler) ByProduct(c *gin.Context) {
 	pid := c.Param("id")
-	rows, _ := db.DB.Query(`SELECT q.id,q.question,COALESCE(q.answer,''),u.name,q.created_at,q.answered_at
+	rows, qerr := db.DB.Query(`SELECT q.id,q.question,COALESCE(q.answer,''),u.name,q.created_at,q.answered_at
 		FROM questions q JOIN users u ON u.id=q.user_id
 		WHERE q.product_id=$1 ORDER BY q.created_at DESC`, pid)
+	if qerr != nil {
+		utils.Err(c, http.StatusInternalServerError,
+			"Маълумот хонда нашуд")
+		return
+	}
 	defer rows.Close()
 	var list []qaItem
 	for rows.Next() {
 		var q qaItem
 		var ans *time.Time
-		rows.Scan(&q.ID, &q.Question, &q.Answer, &q.UserName, &q.CreatedAt, &ans)
+		if e := rows.Scan(&q.ID, &q.Question, &q.Answer, &q.UserName, &q.CreatedAt, &ans); e != nil {
+			continue
+		}
 		q.AnsweredAt = ans
 		list = append(list, q)
 	}
