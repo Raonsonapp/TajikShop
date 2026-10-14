@@ -790,21 +790,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
               // ── Быстрые действия (карточка со «шэдоу», как в шаблоне) ────
               const SizedBox(height: 20),
-              _QuickCard(children: [
-                _QuickAction(icon: FeatherIcons.creditCard, color: const Color(0xFFFFB800),
+              QuickActionsCard(children: [
+                QuickAction(icon: FeatherIcons.creditCard, color: const Color(0xFFFFB800),
                     label: l.myWallet, onTap: () => context.push(RouteNames.wallet)),
-                _QuickAction(icon: FeatherIcons.truck, color: const Color(0xFF00A86B),
+                QuickAction(icon: FeatherIcons.truck, color: const Color(0xFF00A86B),
                     label: l.orders, onTap: () => context.push(RouteNames.orders)),
-                _QuickAction(icon: FeatherIcons.heart, color: const Color(0xFF00D084),
+                QuickAction(icon: FeatherIcons.heart, color: const Color(0xFF00D084),
                     label: l.favorites, onTap: () => context.go(RouteNames.favorites)),
-                _QuickAction(icon: FeatherIcons.mapPin, color: AppColors.info,
+                QuickAction(icon: FeatherIcons.mapPin, color: AppColors.info,
                     label: l.myAddresses, onTap: () => context.push(RouteNames.addresses)),
                 // Дархости нарх — савдои яклухт. Ҳам харидор, ҳам
                 // фурӯшанда аз ҳамин ҷо медароянд.
-                _QuickAction(icon: FeatherIcons.fileText, color: const Color(0xFF7C4DFF),
+                QuickAction(icon: FeatherIcons.fileText, color: const Color(0xFF7C4DFF),
                     label: l.rfqTitle, onTap: () => context.push(RouteNames.rfq)),
                 // Таъминкунандагон — ҳамроҳи RFQ, ҳарду барои яклухт.
-                _QuickAction(icon: FeatherIcons.briefcase, color: const Color(0xFF00897B),
+                QuickAction(icon: FeatherIcons.briefcase, color: const Color(0xFF00897B),
                     label: l.supTitle, onTap: () => context.push(RouteNames.suppliers)),
               ]),
 
@@ -1104,32 +1104,71 @@ class _SwitchTile extends StatelessWidget {
 }
 
 /// Полоса быстрых действий (карточка с тенью, ряд иконок — как в шаблоне).
-class _QuickCard extends StatelessWidget {
+/// Корти амалҳои тез дар профил.
+///
+/// ОММАВӢ аст, то тести виҷет онро бевосита санҷад. Он пештар хусусӣ буд,
+/// ва камбудии overflow-и он танҳо дар тести ЭМУЛЯТОР пайдо шуд — ин
+/// гарон аст (8 дақиқа) барои хатое, ки тести виҷет дар як сония
+/// медорад.
+class QuickActionsCard extends StatelessWidget {
   final List<Widget> children;
-  const _QuickCard({required this.children});
+  const QuickActionsCard({super.key, required this.children});
+
+  /// Дар як сатр чанд тугма.
+  static const _perRow = 4;
+
+  /// Тугмаҳоро ба сатрҳо тақсим мекунад.
+  ///
+  /// ЧАРО ИН ТАҒЙИР ШУД: ман ба ин корт ду тугма илова кардам (дархости
+  /// нарх ва таъминкунандагон) — 4 шуд 6, ва сатр нағунҷид:
+  ///
+  ///     A RenderFlex overflowed by 194 pixels on the right
+  ///
+  /// Тести эмулятор онро дошт. `flutter analyze` ва ҳамаи тестҳои
+  /// воҳид инро НАМЕБИНАНД — он танҳо ҳангоми расмкашии воқеӣ пайдо
+  /// мешавад.
+  ///
+  /// Ду ислоҳ:
+  ///   • `Expanded` — бе он матни дароз («Таъминкунандагон») паҳнии
+  ///     табииашро мегирад ва сатрро мешиканад;
+  ///   • сатрҳои чоргона — то ҳар шумораи тугма ғунҷад, аз ҷумла онҳое,
+  ///     ки фардо илова мешаванд.
   @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.symmetric(horizontal: 16),
-    padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
-    decoration: BoxDecoration(
-      color: context.pal.card,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: context.pal.border),
-      boxShadow: _softShadow(context),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: children,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    for (var i = 0; i < children.length; i += _perRow) {
+      final end = i + _perRow < children.length ? i + _perRow : children.length;
+      final slice = children.sublist(i, end);
+      rows.add(Row(children: [
+        for (final w in slice) Expanded(child: w),
+        // Сатри охирин метавонад нопурра бошад — ҷойи холӣ мегузорем,
+        // то тугмаҳо паҳн нашаванд ва бо сатри болоӣ ҳамроҳ истанд.
+        for (var k = slice.length; k < _perRow; k++)
+          const Expanded(child: SizedBox.shrink()),
+      ]));
+      if (end < children.length) rows.add(const SizedBox(height: 16));
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+      decoration: BoxDecoration(
+        color: context.pal.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: context.pal.border),
+        boxShadow: _softShadow(context),
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: rows),
+    );
+  }
 }
 
-class _QuickAction extends StatelessWidget {
+class QuickAction extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String label;
   final VoidCallback onTap;
-  const _QuickAction({required this.icon, required this.color,
+  const QuickAction({super.key, required this.icon, required this.color,
       required this.label, required this.onTap});
 
   @override
