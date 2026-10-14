@@ -18,6 +18,14 @@ class ProductModel {
   final int reviewCount;
   final int stock;
   final bool inStock;
+
+  /// Моли «бо фармоиш» — дӯзанда, нонвой, устои мебел.
+  ///
+  /// ⚠️ Ном маҳз МУСБАТ аст (`madeToOrder`, на `trackStock`): сервер
+  /// дар баъзе дархостҳо ин майдонро намефиристад, ва `false`-и
+  /// пешфарз бояд рафтори ОДДӢ диҳад. Бо `trackStock` ҳар ҷавоби
+  /// нопурра шуморо пинҳон мекард.
+  final bool madeToOrder;
   final int views;
   final int likeCount;
   final String? brandName;
@@ -46,6 +54,7 @@ class ProductModel {
     required this.sellerId, this.sellerName, this.sellerVerified = false,
     required this.images, required this.rating, required this.reviewCount,
     required this.stock, required this.inStock,
+    this.madeToOrder = false,
     this.views = 0, this.likeCount = 0,
     this.brandName, this.minOrderQty = 1, this.wholesalePrice = 0,
     this.priceTiers = const [],
@@ -94,7 +103,9 @@ class ProductModel {
     final isActive = json['is_active'] as bool? ?? true;
     // stock=null → маълум нест, 999 фарз мекунем; stock=0 → тамом шуд
     final realStock = stock ?? 999;
-    final inStock   = isActive && realStock > 0;
+    // Моли бо фармоиш ҳеҷ гоҳ «тамом» намешавад.
+    final madeToOrder = json['made_to_order'] == true;
+    final inStock   = isActive && (madeToOrder || realStock > 0);
 
     return ProductModel(
       id:              json['id']?.toString() ?? '',
@@ -117,6 +128,7 @@ class ProductModel {
       reviewCount:     (json['review_count'] as num?)?.toInt() ?? 0,
       stock:           realStock,
       inStock:         inStock,
+      madeToOrder:     madeToOrder,
       views:           (json['views'] as num?)?.toInt() ?? 0,
       likeCount:       (json['like_count'] ?? json['favorites_count'] as num?)?.toInt() ?? 0,
       brandName:       json['brand_name']?.toString(),

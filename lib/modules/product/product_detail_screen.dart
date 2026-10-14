@@ -13,6 +13,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/stock_l10n.dart';
 import '../../core/l10n/checkout_l10n.dart';
+import '../../core/l10n/stock_policy_l10n.dart';
+import '../../core/l10n/seller_l10n.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
@@ -28,6 +30,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/review_provider.dart';
 import '../../providers/follow_provider.dart';
 import '../../providers/report_provider.dart';
+import '../../providers/seller_provider.dart';
 import '../../routes/route_names.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/product_card.dart';
@@ -108,9 +111,20 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _hero(p, isFav),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // Варақа каме БОЛОИ расм мебарояд (−18px) ва гӯшаҳои
+            // мудаввар дорад. Ин ҳудуди байни расм ва матнро мулоим
+            // мекунад — ҳамон усуле, ки дар бозорҳои ҷиддӣ истифода
+            // мешавад; бе он расм ба матн «часпида» менамуд.
+            Transform.translate(
+              offset: const Offset(0, -18),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: context.pal.scaffold,
+                  borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(22)),
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 if (p.brandName != null && p.brandName!.isNotEmpty)
                   Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -203,21 +217,11 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       value: '${p.reviewCount} ${AppL10n.of(context).reviewsWord}',
                       color: AppColors.info),
                   const SizedBox(width: 10),
-                  Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                          color: p.inStock
-                              ? const Color(0x1A00BFA5)
-                              : const Color(0x1AFF5252),
-                          borderRadius: BorderRadius.circular(20)),
-                      child: Text(
-                          p.inStock
-                              ? AppL10n.of(context).inStock
-                              : AppL10n.of(context).notAvailable,
-                          style: TextStyle(
-                              color: p.inStock ? AppColors.success : AppColors.error,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600))),
+                  // Моли «бо фармоиш» ҳеҷ гоҳ «Тамом шуд» нест: дӯзанда
+                  // ё нонвой онро ҳар вақт месозад. Нишонаи алоҳида
+                  // лозим аст, вагарна харидор фикр мекунад, ки анбор
+                  // пур аст ва фардо мол меояд.
+                  _stateChip(p),
                 ]),
                 if (p.variants.isNotEmpty) ...[
                   const SizedBox(height: 20),
@@ -324,7 +328,8 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 _qaSection(p),
                 const SizedBox(height: 28),
                 _similarSection(p),
-              ]),
+                ]),
+              ),
             ),
           ],
         ),
@@ -334,6 +339,34 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   // ── Hero (тарҳи product_display-и қолаб дар сабз) ─────────────────────────
+
+  /// Нишонаи ҳолати мол: «Мавҷуд» / «Тамом шуд» / «Бо фармоиш».
+  ///
+  /// ЧАРО СЕ ҲОЛАТ, НА ДУ: фурӯшандае, ки бо фармоиш медӯзад ё мепазад,
+  /// шумора надорад. Пештар экран ба ӯ «Тамом шуд» менавишт — ва
+  /// харидор мерафт, дар ҳоле ки фурӯшанда омода буд мол созад.
+  Widget _stateChip(ProductModel p) {
+    final l = AppL10n.of(context);
+    final (label, color, icon) = p.madeToOrder
+        ? (l.stockUnlimitedBadge, AppColors.info, FeatherIcons.clock)
+        : p.inStock
+            ? (l.inStock, AppColors.success, FeatherIcons.check)
+            : (l.notAvailable, AppColors.error, FeatherIcons.xCircle);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+      decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(20)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 13, color: color),
+        const SizedBox(width: 5),
+        Text(label,
+            style: TextStyle(
+                color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      ]),
+    );
+  }
 
   /// Ҷадвали зинаҳои нархи яклухт.
   ///
@@ -404,154 +437,206 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     );
   }
 
+  /// Сарлавҳаи экрани маҳсулот.
+  ///
+  /// ЧАРО АЗ НАВ НАВИШТА ШУД: нусхаи кӯҳна блоки сабзи 420-пикселӣ буд,
+  /// ва расм дар дохили он бо `BoxFit.contain` ҷойгир мешуд. Барои
+  /// сурати АМУДӢ — ва аксари суратҳои фурӯшандагон маҳз амуданд — ин
+  /// ҳошияи азими сабз медод, ва худи мол хурд менамуд.
+  ///
+  /// Акнун расм тамоми паҳниро мегирад, бо таносуби 1:1 ва `cover`.
+  /// Сабз ҳамчун ранги ТАЪКИД мемонад — нарх, тугмаҳо, нишонаҳо — на
+  /// ҳамчун девори паси расм. Ин қоидаи оддии тарҳрезист: ранги бренд
+  /// таъкид мекунад, на ҳукмронӣ.
   Widget _hero(ProductModel p, bool isFav) {
     final imgs = p.images;
-    final price =
-        (_variant != null && _variant!.price > 0) ? _variant!.price : p.price;
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: _greenGradient,
-        borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(36), bottomRight: Radius.circular(36)),
-        boxShadow: [
-          BoxShadow(
-              color: Color(0x2600D084), offset: Offset(0, 8), blurRadius: 20),
-        ],
+    final pal = context.pal;
+
+    return Stack(children: [
+      // ── Расм ──
+      AspectRatio(
+        aspectRatio: 1,
+        child: Container(
+          // Фони сафеди мулоим: сурати маҳсулот аксаран фони равшан
+          // дорад, ва ҳамин фон онро табиӣ менамояд.
+          color: pal.surface,
+          child: imgs.isEmpty
+              ? Center(
+                  child: Icon(FeatherIcons.image,
+                      size: 64, color: pal.textMuted.withValues(alpha: 0.5)))
+              : PageView.builder(
+                  itemCount: imgs.length,
+                  onPageChanged: (i) => setState(() => _imgIndex = i),
+                  itemBuilder: (_, i) => Hero(
+                    tag: 'product_image_${p.id}_$i',
+                    child: CachedNetworkImage(
+                      imageUrl: imgs[i],
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(color: pal.surface),
+                      errorWidget: (_, __, ___) => Center(
+                          child: Icon(FeatherIcons.image,
+                              size: 48, color: pal.textMuted)),
+                    ),
+                  ),
+                ),
+        ),
       ),
-      child: SafeArea(
+
+      // ── Пардаи болоӣ ──
+      //
+      // Бе он тугмаҳои сафед дар сурати равшан нонамоён мешаванд. Парда
+      // танҳо дар боло аст, то худи молро напӯшонад.
+      Positioned(
+        top: 0, left: 0, right: 0,
+        child: Container(
+          height: 120,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0x55000000), Color(0x00000000)],
+            ),
+          ),
+        ),
+      ),
+
+      // ── Тугмаҳо ──
+      SafeArea(
         bottom: false,
-        child: SizedBox(
-          height: 420,
-          child: Stack(children: [
-            // Панели болоӣ: бозгашт + амалҳо
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              child: Row(children: [
-                IconButton(
-                    icon: const Icon(FeatherIcons.chevronLeft, color: Colors.white),
-                    onPressed: () => Navigator.of(context).maybePop()),
-                const Spacer(),
-                IconButton(
-                    icon: Icon(isFav ? FeatherIcons.heart : FeatherIcons.heart,
-                        color: isFav ? AppColors.error : Colors.white),
-                    onPressed: () => _toggleFavorite(p.id)),
-                IconButton(
-                    icon: const Icon(FeatherIcons.share2, color: Colors.white),
-                    onPressed: () => _share(p)),
-                PopupMenuButton<String>(
-                  color: context.pal.elevated,
-                  icon: const Icon(FeatherIcons.moreVertical, color: Colors.white),
-                  onSelected: (v) {
-                    if (v == 'report') _report(p);
-                  },
-                  itemBuilder: (_) => [
-                    PopupMenuItem(
-                        value: 'report',
-                        child: Row(children: [
-                          const Icon(FeatherIcons.flag,
-                              color: AppColors.error, size: 18),
-                          const SizedBox(width: 8),
-                          Text(AppL10n.of(context).report,
-                              style: TextStyle(color: context.pal.textPrimary)),
-                        ])),
-                  ],
-                ),
-              ]),
-            ),
-            // Расм(ҳо)-и маҳсулот
-            Positioned(
-              top: 64,
-              left: 20,
-              right: 20,
-              bottom: 42,
-              child: imgs.isNotEmpty
-                  ? PageView.builder(
-                      itemCount: imgs.length,
-                      onPageChanged: (i) => setState(() => _imgIndex = i),
-                      itemBuilder: (_, i) => Hero(
-                        tag: 'product_image_${p.id}_$i',
-                        child: CachedNetworkImage(
-                          imageUrl: imgs[i],
-                          fit: BoxFit.contain,
-                          placeholder: (_, __) => const Center(
-                              child: SizedBox(
-                                  width: 30,
-                                  height: 30,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Colors.white70))),
-                          errorWidget: (_, __, ___) => const Icon(
-                              FeatherIcons.image,
-                              color: Colors.white70,
-                              size: 60),
-                        ),
-                      ),
-                    )
-                  : const Center(
-                      child: Icon(FeatherIcons.image,
-                          color: Colors.white70, size: 60)),
-            ),
-            // Тахтаи нарх (мисли product_display, ранги торик собит)
-            Positioned(
-              top: 92,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(22, 12, 24, 12),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF202020),
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      bottomLeft: Radius.circular(10)),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Color(0x29000000),
-                        offset: Offset(0, 3),
-                        blurRadius: 6),
-                  ],
-                ),
-                child: Text('${price.toStringAsFixed(0)} сом.',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 24)),
-              ),
-            ),
-            // Нишонаи тахфиф
-            if (p.computedDiscount > 0)
-              Positioned(
-                top: 64,
-                left: 20,
-                child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                        color: AppColors.error,
-                        borderRadius: BorderRadius.circular(8)),
-                    child: Text('-${p.computedDiscount}%',
-                        style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.w700))),
-              ),
-            // Нуқтаҳои индикатор
-            if (imgs.length > 1)
-              Positioned(
-                bottom: 14,
-                left: 0,
-                right: 0,
-                child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                        imgs.length,
-                        (i) => AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            margin: const EdgeInsets.symmetric(horizontal: 3),
-                            width: _imgIndex == i ? 18 : 7,
-                            height: 7,
-                            decoration: BoxDecoration(
-                                color: _imgIndex == i
-                                    ? Colors.white
-                                    : Colors.white54,
-                                borderRadius: BorderRadius.circular(4))))),
-              ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+          child: Row(children: [
+            _roundBtn(FeatherIcons.chevronLeft,
+                () => Navigator.of(context).maybePop()),
+            const Spacer(),
+            _roundBtn(FeatherIcons.heart, () => _toggleFavorite(p.id),
+                active: isFav, activeColor: AppColors.error),
+            const SizedBox(width: 6),
+            _roundBtn(FeatherIcons.share2, () => _share(p)),
+            const SizedBox(width: 6),
+            _menuBtn(p),
           ]),
         ),
+      ),
+
+      // ── Нишонаи тахфиф ──
+      if (p.computedDiscount > 0)
+        Positioned(
+          left: 16, bottom: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.error,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: const [
+                BoxShadow(color: Color(0x33000000), blurRadius: 8,
+                    offset: Offset(0, 2)),
+              ],
+            ),
+            child: Text('-${p.computedDiscount}%',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13)),
+          ),
+        ),
+
+      // ── Нуқтаҳои галерея ──
+      if (imgs.length > 1)
+        Positioned(
+          bottom: 16, left: 0, right: 0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              imgs.length,
+              (i) => AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: _imgIndex == i ? 20 : 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: _imgIndex == i ? Colors.white : Colors.white54,
+                  borderRadius: BorderRadius.circular(4),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x33000000), blurRadius: 4),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+    ]);
+  }
+
+  /// Тугмаи мудаввари шиновар бар болои расм.
+  ///
+  /// Фони нимшаффоф ҳатмист: бе он нишона дар сурати равшан нонамоён
+  /// мешавад, ва корбар тугмаи бозгаштро намеёбад.
+  Widget _roundBtn(IconData icon, VoidCallback onTap,
+      {bool active = false, Color? activeColor}) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.32),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(9),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (c, a) =>
+                ScaleTransition(scale: a, child: c),
+            child: Icon(icon,
+                key: ValueKey('${icon.codePoint}_$active'),
+                size: 20,
+                color: active ? (activeColor ?? AppColors.error) : Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _menuBtn(ProductModel p) {
+    final mine = ref.read(authProvider).user?.id == p.sellerId;
+    return Material(
+      color: Colors.black.withValues(alpha: 0.32),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: PopupMenuButton<String>(
+        color: context.pal.elevated,
+        icon: const Icon(FeatherIcons.moreVertical,
+            color: Colors.white, size: 20),
+        onSelected: (v) {
+          if (v == 'report') _report(p);
+          if (v == 'delete') _deleteMine(p);
+        },
+        itemBuilder: (_) => [
+          // Соҳиби эълон онро аз ҳамин ҷо нест карда метавонад — пештар
+          // ин танҳо аз «Маҳсулоти ман» имкон дошт, ва касе онро
+          // намеёфт.
+          if (mine)
+            PopupMenuItem(
+              value: 'delete',
+              child: Row(children: [
+                const Icon(FeatherIcons.trash2,
+                    color: AppColors.error, size: 18),
+                const SizedBox(width: 8),
+                Text(AppL10n.of(context).deleteMyPost,
+                    style: TextStyle(color: context.pal.textPrimary)),
+              ]),
+            ),
+          if (!mine)
+            PopupMenuItem(
+              value: 'report',
+              child: Row(children: [
+                const Icon(FeatherIcons.flag, color: AppColors.error, size: 18),
+                const SizedBox(width: 8),
+                Text(AppL10n.of(context).report,
+                    style: TextStyle(color: context.pal.textPrimary)),
+              ]),
+            ),
+        ],
       ),
     );
   }
@@ -834,6 +919,73 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   }
 
   // ── Тугмаи пайгирӣ (follow) ────────────────────────────────────────────────
+  /// Соҳиби эълон онро нест мекунад.
+  ///
+  /// Пештар ин танҳо аз экрани «Маҳсулоти ман» имкон дошт. Корбар
+  /// моли худро дар каталог мебинад, нест кардан мехоҳад, ва роҳро
+  /// намеёбад — пас тугма маҳз ҳамин ҷо лозим аст.
+  Future<void> _deleteMine(ProductModel p) async {
+    final l = AppL10n.of(context);
+    final pal = context.pal;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: pal.card,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
+        title: Text(l.deleteMyPostAsk,
+            style: TextStyle(color: pal.textPrimary, fontSize: 18)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('«${p.title}»',
+                style: TextStyle(
+                    color: pal.textSecondary, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 10),
+            // Шарҳ ҳатмист: вагарна фурӯшанда молро баъди «нест кардан»
+            // дар таърихи фармоиш мебинад ва фикр мекунад, ки хато шуд.
+            Text(l.deleteMyPostNote,
+                style: TextStyle(color: pal.textMuted, fontSize: 12.5,
+                    height: 1.35)),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.cancel, style: TextStyle(color: pal.textMuted))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(l.deleteMyPost,
+                  style: const TextStyle(
+                      color: AppColors.error, fontWeight: FontWeight.w700))),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    try {
+      await SellerProductService.delete(p.id);
+      // Кэши рӯйхатҳо бояд тоза шавад — вагарна моли несткарда дар
+      // саҳифаи асосӣ боқӣ мемонад то навсозии дастӣ.
+      ref.invalidate(productsProvider);
+      messenger.showSnackBar(SnackBar(
+          content: Text(l.deletedOk),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating));
+      if (router.canPop()) {
+        router.pop();
+      }
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(
+          content: Text(l.sellerDeleteError),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating));
+    }
+  }
+
   Widget _followButton(ProductModel p) {
     if (p.sellerId.isEmpty) return const SizedBox.shrink();
     final following = ref.watch(followProvider).contains(p.sellerId);

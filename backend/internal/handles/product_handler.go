@@ -31,13 +31,16 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		Price           float64 `json:"price" binding:"required,gt=0"`
 		DiscountPercent int     `json:"discount_percent"`
 		Stock           int     `json:"stock"`
-		MinOrderQty     int     `json:"min_order_qty"`
-		WholesalePrice  float64 `json:"wholesale_price"`
-		DeliveryDays    int     `json:"delivery_days"`
-		DeliveryPrice   float64 `json:"delivery_price"`
-		SizeInfo        string  `json:"size_info"`
-		Barcode         string  `json:"barcode"`
-		HasDelivery     *bool   `json:"has_delivery"`
+		// Фурӯшанда шуморо намегирад: дӯзанда, нонвой, устои мебел бо
+		// фармоиш месозанд.
+		NoStockLimit   bool    `json:"no_stock_limit"`
+		MinOrderQty    int     `json:"min_order_qty"`
+		WholesalePrice float64 `json:"wholesale_price"`
+		DeliveryDays   int     `json:"delivery_days"`
+		DeliveryPrice  float64 `json:"delivery_price"`
+		SizeInfo       string  `json:"size_info"`
+		Barcode        string  `json:"barcode"`
+		HasDelivery    *bool   `json:"has_delivery"`
 		// Барои мағозаи хӯрокворӣ: воҳид ва мӯҳлати нигоҳдорӣ.
 		Unit      string `json:"unit"`
 		ExpiresOn string `json:"expires_on"` // YYYY-MM-DD
@@ -47,10 +50,15 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		utils.Err(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	// Stock default = 999 агар фиристода нашуда бошад
-	if in.Stock == 0 {
-		in.Stock = 999
-	}
+	// Захира.
+	//
+	// Пештар `stock == 0` ба 999 табдил меёфт — рақами бофта, ки на ба
+	// фурӯшанда ва на ба харидор ҳеҷ чиз намегӯяд. Акнун интихоби
+	// ОШКОР аст: ё шумора, ё «бешумор».
+	st := normalizeStock(stockInput{
+		TrackStock: !in.NoStockLimit,
+		Stock:      in.Stock,
+	})
 	if in.MinOrderQty < 1 {
 		in.MinOrderQty = 1
 	}
@@ -75,9 +83,11 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		}
 	}
 
-	_, err := db.DB.Exec(`INSERT INTO products(id,seller_id,category_id,brand_id,title,description,price,discount_percent,stock,min_order_qty,wholesale_price,delivery_days,delivery_price,size_info,barcode,has_delivery,unit,expires_on,is_active)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,true)`,
-		id, uid, catID, brandID, in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.MinOrderQty, in.WholesalePrice, in.DeliveryDays, in.DeliveryPrice, in.SizeInfo, barcode, hasDelivery, normalizeUnit(in.Unit), expires)
+	_, err := db.DB.Exec(`INSERT INTO products(id,seller_id,category_id,brand_id,title,description,price,discount_percent,stock,track_stock,min_order_qty,wholesale_price,delivery_days,delivery_price,size_info,barcode,has_delivery,unit,expires_on,is_active)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,true)`,
+		id, uid, catID, brandID, in.Title, in.Description, in.Price, in.DiscountPercent,
+		st.Stock, st.TrackStock,
+		in.MinOrderQty, in.WholesalePrice, in.DeliveryDays, in.DeliveryPrice, in.SizeInfo, barcode, hasDelivery, normalizeUnit(in.Unit), expires)
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, err.Error())
 		return
@@ -202,7 +212,8 @@ func (h *ProductHandler) List(c *gin.Context) {
 	query := `SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
 		COALESCE(u.name,'') AS seller_name, p.sale_ends_at,
-		(COALESCE(p.is_featured,false) AND COALESCE(p.featured_until, NOW()) > NOW()) AS is_featured
+		(COALESCE(p.is_featured,false) AND COALESCE(p.featured_until, NOW()) > NOW()) AS is_featured,
+		COALESCE(p.track_stock,true)
 		FROM products p JOIN users u ON u.id=p.seller_id` + where +
 		" ORDER BY (COALESCE(p.is_featured,false) AND COALESCE(p.featured_until, NOW()) > NOW()) DESC, " + orderBy +
 		fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIdx, argIdx+1)
@@ -219,16 +230,19 @@ func (h *ProductHandler) List(c *gin.Context) {
 	for rows.Next() {
 		var p models.Product
 		var saleEnds sql.NullTime
+		trackStock := true
 		// ⚠️ Хатои Scan-ро НАДОДА гузаштан мумкин нест: як сутуни NULL кофӣ буд,
 		// ки тамоми сатр сифр шавад ва дар барнома корти бе ном, «0 сом.» ва
 		// «Тамом шуд» пайдо гардад. Акнун сатри вайрон партофта мешавад.
 		if err := rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds, &p.IsFeatured); err != nil {
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds, &p.IsFeatured,
+			&trackStock); err != nil {
 			continue
 		}
 		if saleEnds.Valid {
 			p.SaleEndsAt = &saleEnds.Time
 		}
+		p.MadeToOrder = !trackStock
 		products = append(products, p)
 	}
 	if products == nil {
@@ -251,18 +265,22 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 	var moq int
 	var wholesale float64
 	var saleEnds sql.NullTime
+	// Пешфарз `true`: агар сутун хонда нашавад, мол ОДДӢ ҳисоб мешавад.
+	trackStock := true
 	err := db.DB.QueryRow(`SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, COALESCE(p.video_url,''), p.created_at, COALESCE(u.name,''),
 		COALESCE(u.is_verified,false),
 		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name, p.sale_ends_at,
-		COALESCE(p.delivery_days,0), COALESCE(p.delivery_price,0), COALESCE(p.size_info,''), COALESCE(p.barcode,''), COALESCE(p.has_delivery,true)
+		COALESCE(p.delivery_days,0), COALESCE(p.delivery_price,0), COALESCE(p.size_info,''), COALESCE(p.barcode,''), COALESCE(p.has_delivery,true),
+		COALESCE(p.track_stock,true)
 		FROM products p JOIN users u ON u.id=p.seller_id
 		LEFT JOIN brands b ON b.id=p.brand_id WHERE p.id=$1`, id).
 		Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description, &p.Price,
 			&p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.VideoURL, &p.CreatedAt, &p.SellerName,
 			&p.SellerVerified,
 			&brandID, &moq, &wholesale, &brandName, &saleEnds,
-			&p.DeliveryDays, &p.DeliveryPrice, &p.SizeInfo, &p.Barcode, &p.HasDelivery)
+			&p.DeliveryDays, &p.DeliveryPrice, &p.SizeInfo, &p.Barcode, &p.HasDelivery,
+			&trackStock)
 	// «Нест» ва «сервер шикаст» ду чизи гуногунанд — барнома бояд фарқашонро
 	// бидонад, вагарна ба корбар «Сервер ҷавоб надод» менависад, дар ҳоле ки
 	// маҳсулот танҳо нест карда шудааст.
@@ -280,6 +298,7 @@ func (h *ProductHandler) GetByID(c *gin.Context) {
 		return
 	}
 	p.Images = getProductImages(id)
+	p.MadeToOrder = !trackStock
 	p.BrandID = brandID.String
 	p.BrandName = brandName.String
 	p.MinOrderQty = moq
@@ -310,11 +329,14 @@ func (h *ProductHandler) GetByBarcode(c *gin.Context) {
 	var moq int
 	var wholesale float64
 	var saleEnds sql.NullTime
+	// Пешфарз `true`: агар сутун хонда нашавад, мол ОДДӢ ҳисоб мешавад.
+	trackStock := true
 	err := db.DB.QueryRow(`SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 		p.price, p.discount_percent, p.stock, p.is_active, p.views, COALESCE(p.video_url,''), p.created_at, COALESCE(u.name,''),
 		COALESCE(u.is_verified,false),
 		p.brand_id, COALESCE(p.min_order_qty,1), COALESCE(p.wholesale_price,0), b.name, p.sale_ends_at,
-		COALESCE(p.delivery_days,0), COALESCE(p.delivery_price,0), COALESCE(p.size_info,''), COALESCE(p.barcode,''), COALESCE(p.has_delivery,true)
+		COALESCE(p.delivery_days,0), COALESCE(p.delivery_price,0), COALESCE(p.size_info,''), COALESCE(p.barcode,''), COALESCE(p.has_delivery,true),
+		COALESCE(p.track_stock,true)
 		FROM products p JOIN users u ON u.id=p.seller_id
 		LEFT JOIN brands b ON b.id=p.brand_id
 		WHERE p.barcode=$1 AND p.is_active=true
@@ -323,12 +345,14 @@ func (h *ProductHandler) GetByBarcode(c *gin.Context) {
 			&p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.VideoURL, &p.CreatedAt, &p.SellerName,
 			&p.SellerVerified,
 			&brandID, &moq, &wholesale, &brandName, &saleEnds,
-			&p.DeliveryDays, &p.DeliveryPrice, &p.SizeInfo, &p.Barcode, &p.HasDelivery)
+			&p.DeliveryDays, &p.DeliveryPrice, &p.SizeInfo, &p.Barcode, &p.HasDelivery,
+			&trackStock)
 	if err != nil {
 		utils.Err(c, http.StatusNotFound, "product not found")
 		return
 	}
 	p.Images = getProductImages(p.ID)
+	p.MadeToOrder = !trackStock
 	p.BrandID = brandID.String
 	p.BrandName = brandName.String
 	p.MinOrderQty = moq
@@ -349,12 +373,15 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		Price           float64 `json:"price"`
 		DiscountPercent int     `json:"discount_percent"`
 		Stock           int     `json:"stock"`
-		IsActive        bool    `json:"is_active"`
-		SaleHours       int     `json:"sale_hours"` // >0 = flash sale то N соат; <0 = бекор
-		DeliveryDays    int     `json:"delivery_days"`
-		DeliveryPrice   float64 `json:"delivery_price"`
-		SizeInfo        string  `json:"size_info"`
-		Barcode         string  `json:"barcode"`
+		// Фурӯшанда шуморо намегирад: дӯзанда, нонвой, устои мебел бо
+		// фармоиш месозанд.
+		NoStockLimit  bool    `json:"no_stock_limit"`
+		IsActive      bool    `json:"is_active"`
+		SaleHours     int     `json:"sale_hours"` // >0 = flash sale то N соат; <0 = бекор
+		DeliveryDays  int     `json:"delivery_days"`
+		DeliveryPrice float64 `json:"delivery_price"`
+		SizeInfo      string  `json:"size_info"`
+		Barcode       string  `json:"barcode"`
 		// Пештар инҳо дар таҳрир набуданд: маҳсулоти бе категория ё бо
 		// категорияи хато то абад чунин мемонд, чунки ислоҳаш ғайриимкон буд.
 		CategoryID  string `json:"category_id"`
@@ -373,14 +400,27 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		hasDelivery = *in.HasDelivery
 	}
 
+	// Ҳамон мантиқи эълони нав: ё шумора, ё «бешумор».
+	//
+	// `sold_out_asked_at=NULL` ҳатмист: агар фурӯшанда захираро зиёд
+	// кунад, саволи «боз ҳаст?» дигар маъно надорад — ва бе тоза кардан
+	// sweeper молро баъди се рӯз ХУДКОР пинҳон мекард, ҳол он ки он
+	// дастрас аст.
+	stU := normalizeStock(stockInput{
+		TrackStock: !in.NoStockLimit,
+		Stock:      in.Stock,
+	})
+
 	res, err := db.DB.Exec(`UPDATE products SET title=$1, description=$2, price=$3,
-		discount_percent=$4, stock=$5, is_active=$6,
-		delivery_days=$7, delivery_price=$8, size_info=$9, barcode=$10,
-		category_id=COALESCE($11, category_id),
-		has_delivery=COALESCE($12, has_delivery),
-		updated_at=$13
-		WHERE id=$14 AND seller_id=$15`,
-		in.Title, in.Description, in.Price, in.DiscountPercent, in.Stock, in.IsActive,
+		discount_percent=$4, stock=$5, track_stock=$6, is_active=$7,
+		delivery_days=$8, delivery_price=$9, size_info=$10, barcode=$11,
+		category_id=COALESCE($12, category_id),
+		has_delivery=COALESCE($13, has_delivery),
+		sold_out_asked_at = CASE WHEN $5 > 0 THEN NULL ELSE sold_out_asked_at END,
+		updated_at=$14
+		WHERE id=$15 AND seller_id=$16`,
+		in.Title, in.Description, in.Price, in.DiscountPercent,
+		stU.Stock, stU.TrackStock, in.IsActive,
 		in.DeliveryDays, in.DeliveryPrice, in.SizeInfo, in.Barcode,
 		catID, hasDelivery, time.Now(), id, uid)
 	if err != nil {

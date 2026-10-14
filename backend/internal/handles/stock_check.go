@@ -28,10 +28,17 @@ import (
 func notifySoldOut(productID string) {
 	var sellerID, title string
 	var stock int
-	var active bool
-	err := db.DB.QueryRow(`SELECT seller_id, COALESCE(title,''), stock, COALESCE(is_active,true)
-		FROM products WHERE id=$1`, productID).Scan(&sellerID, &title, &stock, &active)
+	var active, trackStock bool
+	err := db.DB.QueryRow(`SELECT seller_id, COALESCE(title,''), stock,
+			COALESCE(is_active,true), COALESCE(track_stock,true)
+		FROM products WHERE id=$1`, productID).
+		Scan(&sellerID, &title, &stock, &active, &trackStock)
 	if err != nil || stock > 0 || !active || sellerID == "" {
+		return
+	}
+	// Моли бешумор ҳеҷ гоҳ тамом намешавад — чунин савол фурӯшандаро
+	// танҳо безор мекунад.
+	if !trackStock {
 		return
 	}
 
@@ -44,10 +51,13 @@ func notifySoldOut(productID string) {
 		return
 	}
 
-	body := "«" + title + "» тамом шуд. Оё боз ҳаст?"
+	body := soldOutAskBody(title)
 	db.DB.Exec(`INSERT INTO notifications(id,user_id,type,title,body,ref_id)
 		VALUES($1,$2,'stock','Маҳсулот тамом шуд',$3,$4)`,
 		uuid.NewString(), sellerID, body, productID)
+	// Лаҳзаи пурсишро сабт мекунем: аз ҳамин ҷо мӯҳлати се рӯз сар
+	// мешавад, ва баъди он мол ХУДКОР пинҳон мегардад.
+	db.DB.Exec(`UPDATE products SET sold_out_asked_at = NOW() WHERE id=$1`, productID)
 	pushToUser(sellerID, "Маҳсулот тамом шуд", body)
 }
 
@@ -61,6 +71,10 @@ func (h *ProductHandler) SoldOutProducts(c *gin.Context) {
 			p.updated_at
 		FROM products p
 		WHERE p.seller_id=$1 AND p.stock=0 AND COALESCE(p.is_active,true)=true
+		  -- Моли бешумор ҳеҷ гоҳ «тамом» намешавад: фурӯшанда шуморо
+		  -- намегирад, ва нишон додани он дар ин рӯйхат ӯро гумроҳ
+		  -- мекунад.
+		  AND COALESCE(p.track_stock,true)=true
 		ORDER BY p.updated_at DESC LIMIT 100`, uid)
 	if err != nil || rows == nil {
 		utils.OK(c, []gin.H{})
@@ -101,7 +115,11 @@ func (h *ProductHandler) Restock(c *gin.Context) {
 		in.Stock = 100000
 	}
 
-	res, err := db.DB.Exec(`UPDATE products SET stock=$1, is_active=true, updated_at=$2
+	// `sold_out_asked_at=NULL` — фурӯшанда ҷавоб дод, пас мӯҳлат бекор.
+	// Бе ин sweeper молро баъди се рӯз пинҳон мекард, ҳол он ки он
+	// аллакай баргардонда шудааст.
+	res, err := db.DB.Exec(`UPDATE products
+		SET stock=$1, is_active=true, sold_out_asked_at=NULL, updated_at=$2
 		WHERE id=$3 AND seller_id=$4`, in.Stock, time.Now(), id, uid)
 	if err != nil {
 		utils.Err(c, http.StatusInternalServerError, "restock failed")

@@ -189,6 +189,11 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 			utils.Err(c, http.StatusInternalServerError, "Моли фармоиш сабт нашуд")
 			return
 		}
+		// Моли бешумор (`track_stock=false`) захира надорад — онро кам
+		// кардан маъно надорад ва молро бардурӯғ «тамом» мекард.
+		if l.Unlimited {
+			continue
+		}
 		res, e := tx.Exec(`UPDATE products SET stock = stock - $1, updated_at = NOW()
 			WHERE id = $2 AND stock >= $1`, l.Qty, l.ProductID)
 		if e != nil {
@@ -296,7 +301,8 @@ func (h *OrderHandler) Checkout(c *gin.Context) {
 func loadAndLockCart(tx *sql.Tx, uid string) ([]checkoutLine, error) {
 	rows, err := tx.Query(`SELECT ci.product_id, ci.quantity,
 			p.price, p.stock, COALESCE(p.min_order_qty,1),
-			COALESCE(p.is_active,true), p.seller_id, COALESCE(p.title,'')
+			COALESCE(p.is_active,true), p.seller_id, COALESCE(p.title,''),
+			COALESCE(p.track_stock,true)
 		FROM cart_items ci
 		JOIN products p ON p.id = ci.product_id
 		WHERE ci.user_id = $1
@@ -312,14 +318,16 @@ func loadAndLockCart(tx *sql.Tx, uid string) ([]checkoutLine, error) {
 	for rows.Next() {
 		var l checkoutLine
 		var price float64
+		var trackStock bool
 		// Хатои `Scan`-ро НАДИДА НАМЕГУЗАРОНЕМ. Агар сутуни NULL ба
 		// `string` афтад, `Scan` хато медиҳад ва тамоми сатр сифр мемонад
 		// — он гоҳ маҳсулот бо нархи 0 ба фармоиш мегузашт.
 		if e := rows.Scan(&l.ProductID, &l.Qty, &price, &l.Stock, &l.MinQty,
-			&l.Active, &l.SellerID, &l.Title); e != nil {
+			&l.Active, &l.SellerID, &l.Title, &trackStock); e != nil {
 			return nil, e
 		}
 		l.UnitPrice = toDirams(price)
+		l.Unlimited = !trackStock
 		out = append(out, l)
 		ids = append(ids, l.ProductID)
 	}
@@ -413,7 +421,7 @@ func afterCheckout(orderID, uid string, lines []checkoutLine, method string, tot
 
 	// Моле, ки бо ҳамин фармоиш тамом шуд — аз фурӯшанда мепурсем «боз ҳаст?».
 	for _, l := range lines {
-		if l.Qty >= l.Stock {
+		if shouldAskSoldOut(!l.Unlimited, l.Stock-l.Qty) {
 			notifySoldOut(l.ProductID)
 		}
 	}

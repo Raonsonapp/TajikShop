@@ -56,6 +56,15 @@ type checkoutLine struct {
 	Stock     int
 	MinQty    int
 	Active    bool
+	// Моли БЕШУМОР: дӯзанда ё нонвой бо фармоиш месозад, ва барои онҳо
+	// «3 дона мондааст» маъно надорад.
+	//
+	// ⚠️ Ном маҳз МАНФӢ аст (`Unlimited`, на `TrackStock`), ва ин қасдан:
+	// арзиши пешфарзи `bool` дар Go `false` аст. Бо `TrackStock`
+	// фаромӯш кардани он молро БЕШУМОР мекард — яъне хатои беэътиноӣ
+	// санҷиши захираро хомӯш мекард. Бо `Unlimited` фаромӯшӣ ба рафтори
+	// эҳтиёткор меорад: захира санҷида мешавад.
+	Unlimited bool
 }
 
 // Сабабҳои он, ки сатр ба фармоиш намегузарад.
@@ -99,9 +108,10 @@ func validateLines(lines []checkoutLine) []lineIssue {
 			code = issueInvalidQty
 		case l.UnitPrice <= 0:
 			code = issueInvalidPrice
-		case l.Stock <= 0:
+		// Моли бешумор аз рӯи захира рад намешавад.
+		case !l.Unlimited && l.Stock <= 0:
 			code = issueOutOfStock
-		case l.Qty > l.Stock:
+		case !l.Unlimited && l.Qty > l.Stock:
 			code = issueNotEnough
 		case l.MinQty > 1 && l.Qty < l.MinQty:
 			code = issueBelowMinQty

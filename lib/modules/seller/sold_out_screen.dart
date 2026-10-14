@@ -8,6 +8,7 @@ import '../../core/app_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/l10n/profile_l10n.dart';
 import '../../core/l10n/stock_l10n.dart';
+import '../../core/l10n/stock_policy_l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/seller_provider.dart';
 import '../../shared/widgets/fade_slide_in.dart';
@@ -21,7 +22,10 @@ import '../../shared/widgets/fade_slide_in.dart';
 ///   • «Ҳа, боз ҳаст» → шумораро мегӯяд, маҳсулот ба бозор бармегардад;
 ///   • «Не, нест кун» → маҳсулот аз барнома нест мешавад.
 ///
-/// Бе ҷавоби фурӯшанда ҳеҷ чиз худ ба худ нест намешавад.
+/// Агар фурӯшанда се рӯз ҷавоб надиҳад, эълон ХУДКОР аз бозор пинҳон
+/// мешавад — вагарна харидор моли нобударо мебинад, зер мекунад ва
+/// харида наметавонад. Мол ҲАЗФ намешавад: фурӯшанда огоҳии дуюм
+/// мегирад ва онро ҳар вақт баргардонида метавонад.
 class SoldOutScreen extends ConsumerStatefulWidget {
   const SoldOutScreen({super.key});
 
@@ -228,6 +232,26 @@ class _SoldOutScreenState extends ConsumerState<SoldOutScreen> {
                                     color: pal.textMuted,
                                     fontSize: 11.5,
                                     height: 1.3)),
+                            // Мӯҳлат бояд ОШКОРО гуфта шавад.
+                            //
+                            // Худкор пинҳон кардан барои фурӯшанда
+                            // кори хуб аст, вале танҳо агар ӯ пешакӣ
+                            // бидонад. Вагарна эълонаш «гум мешавад»
+                            // ва ӯ ба барнома бовар намекунад.
+                            const SizedBox(height: 5),
+                            Row(children: [
+                              Icon(FeatherIcons.clock,
+                                  size: 12, color: AppColors.warning),
+                              const SizedBox(width: 5),
+                              Expanded(
+                                child: Text(l.soldOutWillHide,
+                                    style: const TextStyle(
+                                        color: AppColors.warning,
+                                        fontSize: 11.5,
+                                        height: 1.3,
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                            ]),
                           ]),
                     ),
                   ]),

@@ -34,31 +34,40 @@ type User struct {
 }
 
 type Product struct {
-	ID              string      `json:"id"`
-	SellerID        string      `json:"seller_id"`
-	CategoryID      string      `json:"category_id"`
-	Title           string      `json:"title"`
-	Description     string      `json:"description"`
-	Price           float64     `json:"price"`
-	DiscountPercent int         `json:"discount_percent"`
-	Stock           int         `json:"stock"`
-	IsActive        bool        `json:"is_active"`
-	IsFeatured      bool        `json:"is_featured"`
-	Views           int         `json:"views"`
-	VideoURL        string      `json:"video_url"`
-	Images          []string    `json:"images"`
-	SellerName      string      `json:"seller_name,omitempty"`
-	SellerVerified  bool        `json:"seller_verified,omitempty"`
-	BrandID         string      `json:"brand_id,omitempty"`
-	BrandName       string      `json:"brand_name,omitempty"`
-	MinOrderQty     int         `json:"min_order_qty,omitempty"`
-	WholesalePrice  float64     `json:"wholesale_price,omitempty"`
-	DeliveryDays    int         `json:"delivery_days"`
-	DeliveryPrice   float64     `json:"delivery_price"`
-	SizeInfo        string      `json:"size_info"`
-	Barcode         string      `json:"barcode,omitempty"`
-	HasDelivery     bool        `json:"has_delivery"`
-	Variants        interface{} `json:"variants,omitempty"`
+	ID              string  `json:"id"`
+	SellerID        string  `json:"seller_id"`
+	CategoryID      string  `json:"category_id"`
+	Title           string  `json:"title"`
+	Description     string  `json:"description"`
+	Price           float64 `json:"price"`
+	DiscountPercent int     `json:"discount_percent"`
+	Stock           int     `json:"stock"`
+	// Моли «бо фармоиш»: дӯзанда, нонвой, устои мебел.
+	//
+	// ⚠️ Ном маҳз МУСБАТ аст (`MadeToOrder`, на `TrackStock`), ва ин
+	// қасдан: арзиши пешфарзи `bool` дар Go `false` аст, ва дар
+	// дархостҳое, ки ин сутунро намегиранд, `json` ҳамон `false`-ро
+	// мефиристад. Бо `TrackStock` чунин ҷавоб ба барнома «ин мол
+	// бешумор аст» мегуфт — яъне ҳар дархости фаромӯшшуда шумораро
+	// пинҳон мекард. Бо `MadeToOrder` фаромӯшӣ рафтори оддиро медиҳад.
+	MadeToOrder    bool        `json:"made_to_order"`
+	IsActive       bool        `json:"is_active"`
+	IsFeatured     bool        `json:"is_featured"`
+	Views          int         `json:"views"`
+	VideoURL       string      `json:"video_url"`
+	Images         []string    `json:"images"`
+	SellerName     string      `json:"seller_name,omitempty"`
+	SellerVerified bool        `json:"seller_verified,omitempty"`
+	BrandID        string      `json:"brand_id,omitempty"`
+	BrandName      string      `json:"brand_name,omitempty"`
+	MinOrderQty    int         `json:"min_order_qty,omitempty"`
+	WholesalePrice float64     `json:"wholesale_price,omitempty"`
+	DeliveryDays   int         `json:"delivery_days"`
+	DeliveryPrice  float64     `json:"delivery_price"`
+	SizeInfo       string      `json:"size_info"`
+	Barcode        string      `json:"barcode,omitempty"`
+	HasDelivery    bool        `json:"has_delivery"`
+	Variants       interface{} `json:"variants,omitempty"`
 	// Зинаҳои нархи яклухт (1-9 чакана, 10-49 яклухт, 50+ ...).
 	// `interface{}` аст, то `models` ба `handles` вобаста нашавад.
 	PriceTiers interface{} `json:"price_tiers,omitempty"`

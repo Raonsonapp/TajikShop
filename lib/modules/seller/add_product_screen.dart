@@ -14,6 +14,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_text_field.dart';
 import '../../core/app_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
+import '../../core/l10n/stock_policy_l10n.dart';
 import '../product/barcode_scanner_screen.dart';
 import 'seller_verify_sheet.dart';
 
@@ -29,6 +30,13 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   final _priceCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _stockCtrl = TextEditingController(text: '1');
+
+  /// Фурӯшанда шуморо намегирад.
+  ///
+  /// Дӯзанда, нонвой, устои мебел бо ФАРМОИШ месозанд — барои онҳо
+  /// «3 дона мондааст» маъно надорад. Пештар онҳо маҷбур буданд рақами
+  /// бофта гузоранд, ва баъд мол бардурӯғ «тамом» мешуд.
+  bool _noStockLimit = false;
   final _barcodeCtrl = TextEditingController();
   final _deliveryDaysCtrl = TextEditingController();
   final _deliveryPriceCtrl = TextEditingController();
@@ -98,6 +106,61 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
     }
   }
 
+
+  /// Интихоби «бешумор».
+  ///
+  /// Матни тавзеҳ ҳатмист: бе он фурӯшанда намефаҳмад, ки ин чӣ маъно
+  /// дорад ва чаро баъд шумора нишон дода намешавад.
+  Widget _unlimitedToggle(BuildContext context) {
+    final l = AppL10n.of(context);
+    final pal = context.pal;
+    return GestureDetector(
+      onTap: () => setState(() => _noStockLimit = !_noStockLimit),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: _noStockLimit
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : pal.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: _noStockLimit ? AppColors.primary : pal.border,
+            width: _noStockLimit ? 1.3 : 0.6,
+          ),
+        ),
+        child: Row(children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: Icon(
+              _noStockLimit ? FeatherIcons.checkSquare : FeatherIcons.square,
+              key: ValueKey(_noStockLimit),
+              size: 19,
+              color: _noStockLimit ? AppColors.primary : pal.textMuted,
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l.stockUnlimited,
+                      style: TextStyle(
+                          color: pal.textPrimary,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 2),
+                  Text(l.stockUnlimitedHint,
+                      style: TextStyle(
+                          color: pal.textMuted, fontSize: 11.5, height: 1.3)),
+                ]),
+          ),
+        ]),
+      ),
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     // Категория ҳатмист — вагарна маҳсулот дар ҷустуҷӯ ва каталог гум мешавад.
@@ -114,7 +177,8 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
         'title': _titleCtrl.text.trim(),
         'price': double.tryParse(_priceCtrl.text.trim()) ?? 0,
         'description': _descCtrl.text.trim(),
-        'stock': int.tryParse(_stockCtrl.text.trim()) ?? 1,
+        'stock': _noStockLimit ? 0 : (int.tryParse(_stockCtrl.text.trim()) ?? 1),
+        'no_stock_limit': _noStockLimit,
         'barcode': _barcodeCtrl.text.trim(),
         'unit': _unit,
         if (_expiresOn != null)
@@ -294,16 +358,33 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                     validator: (v) => v!.isEmpty ? l.sellerPriceRequired : null,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AppTextField(
-                    hint: '${l.sellerStock}*', controller: _stockCtrl,
-                    prefixIcon: FeatherIcons.package,
-                    keyboardType: TextInputType.number,
-                    validator: (v) => v!.isEmpty ? l.sellerStockRequired : null,
-                  ),
+                // Майдони шумора ҳангоми «бешумор» ПИНҲОН мешавад, на
+                // хомӯш: майдони хокистарранг саволи «чаро кор намекунад?»
+                // мезояд, вале набудани он худаш ҷавоб аст.
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  child: _noStockLimit
+                      ? const SizedBox(width: 0)
+                      : Row(children: [
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: 150,
+                            child: AppTextField(
+                              hint: '${l.sellerStock}*',
+                              controller: _stockCtrl,
+                              prefixIcon: FeatherIcons.package,
+                              keyboardType: TextInputType.number,
+                              validator: (v) => _noStockLimit
+                                  ? null
+                                  : (v!.isEmpty ? l.sellerStockRequired : null),
+                            ),
+                          ),
+                        ]),
                 ),
               ]),
+              const SizedBox(height: 10),
+              _unlimitedToggle(context),
               const SizedBox(height: 12),
               AppTextField(
                 hint: '${l.sellerProductDescField}*', controller: _descCtrl,

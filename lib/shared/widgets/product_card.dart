@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/app_l10n.dart';
+import '../../core/l10n/stock_policy_l10n.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
 import '../../data/models/product_model.dart';
@@ -83,7 +84,9 @@ class _ProductCardState extends ConsumerState<ProductCard>
     final disc = p.computedDiscount;
     final isFav = ref.watch(favoritesProvider).contains(p.id);
     final isNew = DateTime.now().difference(p.createdAt).inDays <= 7;
-    final lowStock = p.inStock && p.stock <= 3;
+    // Моли «бо фармоиш» захираи рамзӣ дорад — «Танҳо 3 мондааст»
+    // барои он дурӯғ мебуд.
+    final lowStock = p.inStock && !p.madeToOrder && p.stock <= 3;
     final noLeftBadge = !p.isFlashSale && disc <= 0 && !p.isFeatured;
 
     return GestureDetector(
@@ -271,6 +274,20 @@ class _ProductCardState extends ConsumerState<ProductCard>
                           style: TextStyle(color: context.pal.textMuted, fontSize: 10)),
                     ],
                   ]),
+
+                  // «Бо фармоиш» — харидор ПЕШ аз зер кардан бидонад,
+                  // ки мол омода нест, вале сохта мешавад.
+                  if (p.madeToOrder)
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(FeatherIcons.clock,
+                          size: 10, color: Color(0xFF0091FF)),
+                      const SizedBox(width: 3),
+                      Text(AppL10n.of(context).stockUnlimitedBadge,
+                          style: const TextStyle(
+                              color: Color(0xFF0091FF),
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700)),
+                    ]),
 
                   // Low-stock urgency
                   if (lowStock)

@@ -819,6 +819,28 @@ CREATE TABLE IF NOT EXISTS payment_events (
 );
 CREATE INDEX IF NOT EXISTS idx_pay_events_ref ON payment_events(provider_ref);
 
+-- Шумораи ихтиёрӣ.
+--
+-- Ҳоло ҳар эълон ҳатман шумора талаб мекард. Вале на ҳар фурӯшанда
+-- анбор дорад: дӯзанда, нонвой, устои мебел — онҳо бо фармоиш
+-- месозанд, ва «3 дона мондааст» барои онҳо маъно надорад.
+--
+-- Бо track_stock=false:
+--   • шумора кам намешавад;
+--   • мол ҳеҷ гоҳ «тамом шуд» намешавад;
+--   • дар экран шумора умуман нишон дода намешавад.
+--
+-- Пешфарз true — рафтори ҳозираи ҳамаи эълонҳои мавҷуда тағйир намеёбад.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS track_stock BOOLEAN DEFAULT true;
+
+-- Кай аз фурӯшанда «боз ҳаст?» пурсида шуд.
+--
+-- Бе ин мо намедонем, кадом мол интизори ҷавоб аст ва аз кай — пас
+-- худкор пинҳон кардан номумкин мешавад.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS sold_out_asked_at TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_products_sold_out_asked
+  ON products(sold_out_asked_at) WHERE sold_out_asked_at IS NOT NULL;
+
 -- ===== Индексҳои иловагӣ барои зудӣ (scale) =====
 CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
