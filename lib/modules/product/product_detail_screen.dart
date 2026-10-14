@@ -18,6 +18,7 @@ import '../../core/l10n/seller_l10n.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/app_palette.dart';
+import '../../core/theme/app_motion.dart';
 import '../../core/services/recent_service.dart';
 import '../../core/ads/ad_service.dart';
 import '../../data/models/product_model.dart';
@@ -340,6 +341,21 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
 
   // ── Hero (тарҳи product_display-и қолаб дар сабз) ─────────────────────────
 
+  /// Галереяи пурраи расмҳо — зеркунӣ ва калонкунӣ.
+  Future<void> _openGallery(ProductModel p, List<String> imgs, int index) async {
+    await Navigator.of(context).push(PageRouteBuilder(
+      opaque: false,
+      barrierColor: Colors.black.withValues(alpha: 0.94),
+      transitionDuration: AppMotion.normal,
+      reverseTransitionDuration: AppMotion.fast,
+      transitionsBuilder: (ctx, a, __, child) => AppMotion.reduced(ctx)
+          ? child
+          : FadeTransition(opacity: a, child: child),
+      pageBuilder: (_, __, ___) =>
+          _Gallery(images: imgs, initial: index, heroId: p.id),
+    ));
+  }
+
   /// Нишонаи ҳолати мол: «Мавҷуд» / «Тамом шуд» / «Бо фармоиш».
   ///
   /// ЧАРО СЕ ҲОЛАТ, НА ДУ: фурӯшандае, ки бо фармоиш медӯзад ё мепазад,
@@ -467,15 +483,21 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               : PageView.builder(
                   itemCount: imgs.length,
                   onPageChanged: (i) => setState(() => _imgIndex = i),
-                  itemBuilder: (_, i) => Hero(
-                    tag: 'product_image_${p.id}_$i',
-                    child: CachedNetworkImage(
-                      imageUrl: imgs[i],
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: pal.surface),
-                      errorWidget: (_, __, ___) => Center(
-                          child: Icon(FeatherIcons.image,
-                              size: 48, color: pal.textMuted)),
+                  itemBuilder: (_, i) => GestureDetector(
+                    // `cover` расмро МЕБУРАД, пас кушодани пурра акнун
+                    // ҳатмист — вагарна харидор ҳошияи моли худро
+                    // ҳеҷ гоҳ намебинад.
+                    onTap: () => _openGallery(p, imgs, i),
+                    child: Hero(
+                      tag: 'product_image_${p.id}_$i',
+                      child: CachedNetworkImage(
+                        imageUrl: imgs[i],
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Container(color: pal.surface),
+                        errorWidget: (_, __, ___) => Center(
+                            child: Icon(FeatherIcons.image,
+                                size: 48, color: pal.textMuted)),
+                      ),
                     ),
                   ),
                 ),
@@ -538,6 +560,27 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 13)),
+          ),
+        ),
+
+      // Нишонаи «калон кардан».
+      //
+      // Бе он корбар намедонад, ки расм зер карда мешавад — ҳолати
+      // классикии «имкон ҳаст, вале касе онро намеёбад».
+      if (imgs.isNotEmpty)
+        Positioned(
+          right: 14,
+          bottom: 14,
+          child: IgnorePointer(
+            child: Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.38),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(FeatherIcons.maximize2,
+                  size: 14, color: Colors.white),
+            ),
           ),
         ),
 
@@ -2003,6 +2046,108 @@ class _ProductGoneScreenState extends State<_ProductGoneScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Галереяи пурраи расми мол.
+///
+/// Ҷудо аз `_openPhoto`-и тақризҳо: он дар `showDialog` аст ва
+/// `PageController`-ро дар ҳар расмкашӣ аз нав месозад — барои галереяи
+/// асосӣ ин маънои «паридан ба расми аввал» ҳангоми ҳар навсозӣ дорад.
+class _Gallery extends StatefulWidget {
+  final List<String> images;
+  final int initial;
+
+  /// Барои ҳамон `Hero`-и экрани мол: расм КАЛОН мешавад, на ғайб
+  /// зада аз нав пайдо.
+  final String heroId;
+  const _Gallery(
+      {required this.images, required this.initial, required this.heroId});
+
+  @override
+  State<_Gallery> createState() => _GalleryState();
+}
+
+class _GalleryState extends State<_Gallery> {
+  late final PageController _page =
+      PageController(initialPage: widget.initial);
+  late int _index = widget.initial;
+
+  @override
+  void dispose() {
+    _page.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(children: [
+        PageView.builder(
+          controller: _page,
+          itemCount: widget.images.length,
+          onPageChanged: (i) => setState(() => _index = i),
+          itemBuilder: (_, i) => InteractiveViewer(
+            // Ҳудуди калонкунӣ: бе он корбар расмро то 100× калон
+            // мекунад ва баъд роҳи бозгаштро намеёбад.
+            minScale: 1,
+            maxScale: 4,
+            child: Center(
+              child: Hero(
+                tag: 'product_image_${widget.heroId}_$i',
+                child: CachedNetworkImage(
+                  imageUrl: widget.images[i],
+                  fit: BoxFit.contain,
+                  placeholder: (_, __) => const Center(
+                      child: SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white54))),
+                  errorWidget: (_, __, ___) => const Icon(FeatherIcons.image,
+                      color: Colors.white54, size: 48),
+                ),
+              ),
+            ),
+          ),
+        ),
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(children: [
+              Material(
+                color: Colors.white12,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => Navigator.of(context).maybePop(),
+                  child: const Padding(
+                    padding: EdgeInsets.all(9),
+                    child: Icon(FeatherIcons.x, color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              if (widget.images.length > 1)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.white12,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text('${_index + 1} / ${widget.images.length}',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600)),
+                ),
+            ]),
+          ),
+        ),
+      ]),
     );
   }
 }
