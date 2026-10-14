@@ -10,6 +10,7 @@ import '../../core/l10n/suppliers_l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import 'supplier_profile_screen.dart';
+import '../../core/theme/app_motion.dart';
 
 /// Таъминкунандагон бо филтр.
 ///
@@ -98,7 +99,7 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
                     ),
                     for (var i = 0; i < list.length; i++)
                       FadeSlideIn(
-                        delay: Duration(milliseconds: 35 * i),
+                        delay: AppMotion.stagger(i),
                         child: _card(pal, l, list[i]),
                       ),
                   ],

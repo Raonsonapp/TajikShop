@@ -8,6 +8,7 @@ import '../../core/l10n/verification_l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/verification_provider.dart';
 import '../../shared/widgets/fade_slide_in.dart';
+import '../../core/theme/app_motion.dart';
 
 /// Рейтинги фурӯшанда (1–10) — дар профили худи фурӯшанда.
 ///
@@ -141,7 +142,7 @@ class SellerRatingCard extends ConsumerWidget {
               const SizedBox(height: 8),
               for (var i = 0; i < reviews.length && i < 5; i++)
                 FadeSlideIn(
-                  delay: Duration(milliseconds: 50 * i),
+                  delay: AppMotion.stagger(i),
                   child: _review(pal, Map<String, dynamic>.from(reviews[i])),
                 ),
             ],

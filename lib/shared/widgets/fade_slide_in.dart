@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 
 /// Аниматсияи мулоими «пайдошавӣ» — маҳсулот/кортҳо оҳиста аз поён бармеоянд.
 ///
-/// Барои рӯйхатҳо `delay: Duration(milliseconds: 60 * index)` диҳед, то
-/// элементҳо паси ҳам (stagger) пайдо шаванд — мисли барномаҳои ҳозиразамон.
+/// Барои рӯйхатҳо `delay: AppMotion.stagger(index)` диҳед, то элементҳо
+/// паси ҳам пайдо шаванд.
+///
+/// ⚠️ `Duration(milliseconds: 45 * index)`-и дастӣ НАНАВИСЕД: дар
+/// рӯйхати 50-элемента таъхир ба 2.2 сония мерасад, ва корбар охири
+/// рӯйхатро холӣ мебинад. `AppMotion.stagger` онро дар зинаи 8 мебандад.
 class FadeSlideIn extends StatefulWidget {
   final Widget child;
   final Duration delay;

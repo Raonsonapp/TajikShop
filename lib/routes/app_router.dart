@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/theme/app_motion.dart';
 import '../modules/splash/splash_screen.dart';
 import '../modules/auth/login_screen.dart';
 import '../modules/auth/register_screen.dart';
@@ -48,7 +49,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: RouteNames.register,  builder: (_, __) => const RegisterScreen()),
       GoRoute(path: RouteNames.phoneAuth, builder: (_, __) => const PhoneAuthScreen()),
       GoRoute(path: '/product/:id',
-          builder: (_, s) => ProductDetailScreen(id: s.pathParameters['id']!)),
+          pageBuilder: (_, s) => DeepPage(
+              key: s.pageKey,
+              child: ProductDetailScreen(id: s.pathParameters['id']!))),
       GoRoute(path: '/messages', builder: (_, __) => const InboxScreen()),
       GoRoute(path: '/deals', builder: (_, __) => const DealsScreen()),
       GoRoute(path: '/bestsellers', builder: (_, __) => const BestsellersScreen()),
@@ -65,18 +68,28 @@ final routerProvider = Provider<GoRouter>((ref) {
                 userName: s.uri.queryParameters['name'] ?? 'Фурӯшанда',
               )),
       GoRoute(path: RouteNames.orders,          builder: (_, __) => const OrdersScreen()),
-      GoRoute(path: '/orders/:id',              builder: (_, s) => OrderDetailScreen(id: s.pathParameters['id']!)),
+      GoRoute(path: '/orders/:id',
+          pageBuilder: (_, s) =>
+              DeepPage(key: s.pageKey, child: OrderDetailScreen(id: s.pathParameters['id']!))),
       GoRoute(path: RouteNames.notifications,   builder: (_, __) => const NotificationsScreen()),
-      GoRoute(path: RouteNames.categories,      builder: (_, __) => const CategoriesScreen()),
-      GoRoute(path: RouteNames.search,          builder: (_, __) => const SearchScreen()),
+      GoRoute(path: RouteNames.categories,
+          pageBuilder: (_, s) =>
+              DeepPage(key: s.pageKey, child: const CategoriesScreen())),
+      GoRoute(path: RouteNames.search,
+          pageBuilder: (_, s) =>
+              DeepPage(key: s.pageKey, child: const SearchScreen())),
       GoRoute(path: RouteNames.sellerDashboard, builder: (_, __) => const SellerDashboardScreen()),
       GoRoute(path: RouteNames.seller,          builder: (_, __) => const SellerDashboardScreen()),
-      GoRoute(path: RouteNames.addProduct,      builder: (_, __) => const AddProductScreen()),
+      GoRoute(path: RouteNames.addProduct,
+          pageBuilder: (_, s) =>
+              SheetPage(key: s.pageKey, child: const AddProductScreen())),
       GoRoute(path: RouteNames.myProducts,      builder: (_, __) => const MyProductsScreen()),
       GoRoute(path: RouteNames.wallet,          builder: (_, __) => const WalletScreen()),
       GoRoute(path: RouteNames.addresses,       builder: (_, __) => const AddressesScreen()),
       GoRoute(path: RouteNames.nearbyShops,     builder: (_, __) => const NearbyShopsScreen()),
-      GoRoute(path: RouteNames.verification,    builder: (_, __) => const VerificationScreen()),
+      GoRoute(path: RouteNames.verification,
+          pageBuilder: (_, s) =>
+              SheetPage(key: s.pageKey, child: const VerificationScreen())),
       GoRoute(path: RouteNames.adminVerification, builder: (_, __) => const AdminVerificationScreen()),
       GoRoute(path: '/seller/:id',
           builder: (_, s) => SellerProfileScreen(
@@ -95,16 +108,28 @@ final routerProvider = Provider<GoRouter>((ref) {
       ShellRoute(
         builder: (context, state, child) => MainScaffold(child: child),
         routes: [
+          // Пештар ин ҷо `NoTransitionPage` буд — варақаҳо ФАВРАН
+          // иваз мешуданд, бе ҳеҷ ҳаракат. Маҳз ҳаминро корбар ҳамчун
+          // «барнома бе аниматсия» мебинад.
+          //
+          // «Fade through», на лағжиш: «Асосӣ» ва «Профил» зинаи
+          // баробар доранд, ва лағжиш «ақиб/пеш» мегуфт — маънои
+          // нодуруст.
           GoRoute(path: RouteNames.home,
-              pageBuilder: (_, __) => const NoTransitionPage(child: HomeScreen())),
+              pageBuilder: (_, s) =>
+                  FadeThroughPage(key: s.pageKey, child: const HomeScreen())),
           GoRoute(path: RouteNames.favorites,
-              pageBuilder: (_, __) => const NoTransitionPage(child: FavoritesScreen())),
+              pageBuilder: (_, s) => FadeThroughPage(
+                  key: s.pageKey, child: const FavoritesScreen())),
           GoRoute(path: RouteNames.upload,
-              pageBuilder: (_, __) => const NoTransitionPage(child: UploadScreen())),
+              pageBuilder: (_, s) =>
+                  FadeThroughPage(key: s.pageKey, child: const UploadScreen())),
           GoRoute(path: RouteNames.cart,
-              pageBuilder: (_, __) => const NoTransitionPage(child: CartScreen())),
+              pageBuilder: (_, s) =>
+                  FadeThroughPage(key: s.pageKey, child: const CartScreen())),
           GoRoute(path: RouteNames.profile,
-              pageBuilder: (_, __) => const NoTransitionPage(child: ProfileScreen())),
+              pageBuilder: (_, s) =>
+                  FadeThroughPage(key: s.pageKey, child: const ProfileScreen())),
         ],
       ),
     ],

@@ -12,6 +12,7 @@ import '../../core/l10n/stock_policy_l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/seller_provider.dart';
 import '../../shared/widgets/fade_slide_in.dart';
+import '../../core/theme/app_motion.dart';
 
 /// Маҳсулоти тамомшуда — «боз ҳаст?»
 ///
@@ -259,7 +260,7 @@ class _SoldOutScreenState extends ConsumerState<SoldOutScreen> {
                 const SizedBox(height: 14),
                 for (var i = 0; i < list.length; i++)
                   FadeSlideIn(
-                    delay: Duration(milliseconds: 45 * i),
+                    delay: AppMotion.stagger(i),
                     child: _card(pal, l, list[i]),
                   ),
               ],

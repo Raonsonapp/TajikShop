@@ -9,6 +9,7 @@ import '../../core/l10n/stock_l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/seller_provider.dart';
 import '../../shared/widgets/fade_slide_in.dart';
+import '../../core/theme/app_motion.dart';
 
 /// Маҳсулоте, ки мӯҳлаташон наздик аст.
 ///
@@ -97,7 +98,7 @@ class ExpiringScreen extends ConsumerWidget {
                 const SizedBox(height: 14),
                 for (var i = 0; i < list.length; i++)
                   FadeSlideIn(
-                    delay: Duration(milliseconds: 40 * i),
+                    delay: AppMotion.stagger(i),
                     child: _card(pal, l, list[i]),
                   ),
               ],

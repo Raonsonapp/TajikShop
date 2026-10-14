@@ -29,6 +29,7 @@ import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/inline_ad.dart';
 import '../stories/story_viewer_screen.dart';
+import '../../core/theme/app_motion.dart';
 
 const String _kMediaHost = 'https://mahmadmurodov-tajikshop.hf.space';
 
@@ -168,7 +169,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     delegate: SliverChildBuilderDelegate(
                       (_, int i) => FadeSlideIn(
                         // Кортҳо паси ҳам мулоим пайдо мешаванд (то 10-ум).
-                        delay: Duration(milliseconds: 45 * (i % 10)),
+                        delay: AppMotion.stagger(i),
                         child: ProductCard(product: ps.products[i]),
                       ),
                       childCount: ps.products.length,

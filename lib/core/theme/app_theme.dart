@@ -4,6 +4,17 @@ import '../constants/app_colors.dart';
 import 'app_palette.dart';
 
 class AppTheme {
+  static const PageTransitionsTheme _transitions = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: ZoomPageTransitionsBuilder(),
+      TargetPlatform.iOS: ZoomPageTransitionsBuilder(),
+      TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+      TargetPlatform.macOS: ZoomPageTransitionsBuilder(),
+      TargetPlatform.linux: ZoomPageTransitionsBuilder(),
+      TargetPlatform.fuchsia: ZoomPageTransitionsBuilder(),
+    },
+  );
+
   // ── DARK ────────────────────────────────────────────────────────────────
   static ThemeData get darkTheme => ThemeData(
     brightness: Brightness.dark,
@@ -33,6 +44,11 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
     elevatedButtonTheme: _elevatedBtn,
     dividerTheme: const DividerThemeData(color: AppColors.divider, thickness: 1),
+    // Гузариши ЯКХЕЛА дар Android ва iOS.
+    //
+    // Бе ин ҳар платформа гузариши худро медод — Android «zoom»,
+    // iOS «cupertino» — ва барнома дар ду система ду хел менамуд.
+    pageTransitionsTheme: _transitions,
     useMaterial3: false,
   );
 
@@ -65,6 +81,11 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
     elevatedButtonTheme: _elevatedBtn,
     dividerTheme: const DividerThemeData(color: Color(0xFFDCEAE0), thickness: 1),
+    // Гузариши ЯКХЕЛА дар Android ва iOS.
+    //
+    // Бе ин ҳар платформа гузариши худро медод — Android «zoom»,
+    // iOS «cupertino» — ва барнома дар ду система ду хел менамуд.
+    pageTransitionsTheme: _transitions,
     useMaterial3: false,
   );
 

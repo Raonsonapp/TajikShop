@@ -11,6 +11,7 @@ import '../../core/theme/app_palette.dart';
 import '../../providers/rfq_provider.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import 'rfq_quote_sheet.dart';
+import '../../core/theme/app_motion.dart';
 
 /// Як дархости нарх бо пешниҳодҳо.
 ///
@@ -134,7 +135,7 @@ class RFQDetailScreen extends ConsumerWidget {
           else
             for (var i = 0; i < quotes.length; i++)
               FadeSlideIn(
-                delay: Duration(milliseconds: 40 * i),
+                delay: AppMotion.stagger(i),
                 child: _quoteCard(context, ref, pal, l, quotes[i],
                     isBuyer: isBuyer, rfqOpen: isOpen),
               ),

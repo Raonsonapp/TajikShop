@@ -10,6 +10,7 @@ import '../../core/l10n/verification_l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../providers/verification_provider.dart';
 import '../../shared/widgets/fade_slide_in.dart';
+import '../../core/theme/app_motion.dart';
 
 /// Баррасии дархостҳои галочка (админ).
 ///
@@ -169,7 +170,7 @@ class _AdminVerificationScreenState
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                   itemCount: list.length,
                   itemBuilder: (_, i) => FadeSlideIn(
-                    delay: Duration(milliseconds: 40 * i),
+                    delay: AppMotion.stagger(i),
                     child: _card(pal, l, list[i]),
                   ),
                 ),

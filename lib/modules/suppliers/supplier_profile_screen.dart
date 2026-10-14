@@ -10,6 +10,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/l10n/suppliers_l10n.dart';
 import '../../core/theme/app_palette.dart';
 import '../../shared/widgets/fade_slide_in.dart';
+import '../../core/theme/app_motion.dart';
 
 final supplierProvider = FutureProvider.autoDispose
     .family<Map<String, dynamic>, String>((ref, id) async {
@@ -216,7 +217,7 @@ class SupplierProfileScreen extends ConsumerWidget {
         else
           for (var i = 0; i < wholesale.length; i++)
             FadeSlideIn(
-              delay: Duration(milliseconds: 30 * i),
+              delay: AppMotion.stagger(i),
               child: _item(context, pal, l, wholesale[i]),
             ),
       ],
