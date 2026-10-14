@@ -134,7 +134,9 @@ func (h *ProductHandler) List(c *gin.Context) {
 		where += " AND NOT (p.is_active=false AND p.stock=0)"
 	} else {
 		// Маҳсулоти фурӯхташуда (stock=0) худ ба худ аз бозор пинҳон мешавад
-		where += " AND p.is_active=true AND p.stock > 0"
+		// Моли «бо фармоиш» захира надорад — санҷиши ошкоро лозим аст,
+		// вагарна он аз каталог ғайб мезанад.
+		where += " AND p.is_active=true AND (p.stock > 0 OR COALESCE(p.track_stock,true) = false)"
 	}
 	// Ҷустуҷӯи матнӣ.
 	//
@@ -561,10 +563,12 @@ func (h *ProductHandler) FlashDeals(c *gin.Context) {
 	rows, err := db.DB.Query(`
 		SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 			p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-			COALESCE(u.name,'') AS seller_name, p.sale_ends_at
+			COALESCE(u.name,'') AS seller_name, p.sale_ends_at,
+			COALESCE(p.track_stock,true)
 		FROM products p
 		JOIN users u ON u.id = p.seller_id
-		WHERE p.is_active = true AND p.stock > 0
+		WHERE p.is_active = true
+			AND (p.stock > 0 OR COALESCE(p.track_stock,true) = false)
 			AND p.discount_percent > 0
 			AND p.sale_ends_at IS NOT NULL AND p.sale_ends_at > NOW()
 		ORDER BY p.sale_ends_at ASC
@@ -578,16 +582,19 @@ func (h *ProductHandler) FlashDeals(c *gin.Context) {
 	for rows.Next() {
 		var p models.Product
 		var saleEnds sql.NullTime
+		trackStock := true
 		// ⚠️ Хатои Scan-ро НАДОДА гузаштан мумкин нест: як сутуни NULL кофӣ буд,
 		// ки тамоми сатр сифр шавад ва дар барнома корти бе ном, «0 сом.» ва
 		// «Тамом шуд» пайдо гардад. Акнун сатри вайрон партофта мешавад.
 		if err := rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds); err != nil {
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds,
+			&trackStock); err != nil {
 			continue
 		}
 		if saleEnds.Valid {
 			p.SaleEndsAt = &saleEnds.Time
 		}
+		p.MadeToOrder = !trackStock
 		products = append(products, p)
 	}
 	if products == nil {
@@ -603,10 +610,12 @@ func (h *ProductHandler) Deals(c *gin.Context) {
 	rows, err := db.DB.Query(`
 		SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 			p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-			COALESCE(u.name,'') AS seller_name, p.sale_ends_at
+			COALESCE(u.name,'') AS seller_name, p.sale_ends_at,
+			COALESCE(p.track_stock,true)
 		FROM products p
 		JOIN users u ON u.id = p.seller_id
-		WHERE p.is_active = true AND p.stock > 0 AND p.discount_percent > 0
+		WHERE p.is_active = true
+			AND (p.stock > 0 OR COALESCE(p.track_stock,true) = false) AND p.discount_percent > 0
 		ORDER BY p.discount_percent DESC, p.views DESC
 		LIMIT 60`)
 	if err != nil {
@@ -618,16 +627,19 @@ func (h *ProductHandler) Deals(c *gin.Context) {
 	for rows.Next() {
 		var p models.Product
 		var saleEnds sql.NullTime
+		trackStock := true
 		// ⚠️ Хатои Scan-ро НАДОДА гузаштан мумкин нест: як сутуни NULL кофӣ буд,
 		// ки тамоми сатр сифр шавад ва дар барнома корти бе ном, «0 сом.» ва
 		// «Тамом шуд» пайдо гардад. Акнун сатри вайрон партофта мешавад.
 		if err := rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds); err != nil {
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds,
+			&trackStock); err != nil {
 			continue
 		}
 		if saleEnds.Valid {
 			p.SaleEndsAt = &saleEnds.Time
 		}
+		p.MadeToOrder = !trackStock
 		products = append(products, p)
 	}
 	if products == nil {
@@ -643,11 +655,13 @@ func (h *ProductHandler) Bestsellers(c *gin.Context) {
 	rows, err := db.DB.Query(`
 		SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 			p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-			COALESCE(u.name,'') AS seller_name, p.sale_ends_at
+			COALESCE(u.name,'') AS seller_name, p.sale_ends_at,
+			COALESCE(p.track_stock,true)
 		FROM products p
 		JOIN users u ON u.id = p.seller_id
 		LEFT JOIN order_items oi ON oi.product_id = p.id
-		WHERE p.is_active = true AND p.stock > 0
+		WHERE p.is_active = true
+			AND (p.stock > 0 OR COALESCE(p.track_stock,true) = false)
 		GROUP BY p.id, u.name
 		HAVING COALESCE(SUM(oi.quantity),0) > 0
 		ORDER BY COALESCE(SUM(oi.quantity),0) DESC, p.views DESC
@@ -661,16 +675,19 @@ func (h *ProductHandler) Bestsellers(c *gin.Context) {
 	for rows.Next() {
 		var p models.Product
 		var saleEnds sql.NullTime
+		trackStock := true
 		// ⚠️ Хатои Scan-ро НАДОДА гузаштан мумкин нест: як сутуни NULL кофӣ буд,
 		// ки тамоми сатр сифр шавад ва дар барнома корти бе ном, «0 сом.» ва
 		// «Тамом шуд» пайдо гардад. Акнун сатри вайрон партофта мешавад.
 		if err := rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds); err != nil {
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName, &saleEnds,
+			&trackStock); err != nil {
 			continue
 		}
 		if saleEnds.Valid {
 			p.SaleEndsAt = &saleEnds.Time
 		}
+		p.MadeToOrder = !trackStock
 		products = append(products, p)
 	}
 	if products == nil {
@@ -684,10 +701,12 @@ func (h *ProductHandler) Trending(c *gin.Context) {
 	rows, err := db.DB.Query(`
 		SELECT p.id, p.seller_id, COALESCE(p.category_id::text,''), COALESCE(p.title,''), COALESCE(p.description,''),
 			p.price, p.discount_percent, p.stock, p.is_active, p.views, p.created_at,
-			COALESCE(u.name,'') AS seller_name
+			COALESCE(u.name,'') AS seller_name,
+			COALESCE(p.track_stock,true)
 		FROM products p
 		JOIN users u ON u.id = p.seller_id
-		WHERE p.is_active = true AND p.stock > 0
+		WHERE p.is_active = true
+			AND (p.stock > 0 OR COALESCE(p.track_stock,true) = false)
 		ORDER BY p.views DESC, p.created_at DESC
 		LIMIT 20`)
 	if err != nil {
@@ -698,13 +717,16 @@ func (h *ProductHandler) Trending(c *gin.Context) {
 	var products []models.Product
 	for rows.Next() {
 		var p models.Product
+		trackStock := true
 		// ⚠️ Хатои Scan-ро НАДОДА гузаштан мумкин нест: як сутуни NULL кофӣ буд,
 		// ки тамоми сатр сифр шавад ва дар барнома корти бе ном, «0 сом.» ва
 		// «Тамом шуд» пайдо гардад. Акнун сатри вайрон партофта мешавад.
 		if err := rows.Scan(&p.ID, &p.SellerID, &p.CategoryID, &p.Title, &p.Description,
-			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName); err != nil {
+			&p.Price, &p.DiscountPercent, &p.Stock, &p.IsActive, &p.Views, &p.CreatedAt, &p.SellerName,
+			&trackStock); err != nil {
 			continue
 		}
+		p.MadeToOrder = !trackStock
 		products = append(products, p)
 	}
 	if products == nil {
