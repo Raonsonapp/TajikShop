@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import 'fade_slide_in.dart';
 
 class AppButton extends StatelessWidget {
   final String text;
@@ -26,7 +27,16 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = color ?? AppColors.primary;
-    return GestureDetector(
+    // Вокуниши пахш: тугма ҳангоми зер каме хурд мешавад.
+    //
+    // Бе он тугмаи асосии барнома — «Ба сабад», «Харидан», «Фармоиш
+    // додан» — «мурда» эҳсос мешуд. Ҳангоми интернети суст корбар
+    // намедонист, оё зерашро барнома гирифт, ва боз як бор мезад.
+    //
+    // ⚠️ `isLoading` ва `onTap == null` вокуниш НАДОРАНД: вокуниши
+    // пахш дар тугмаи хомӯш дурӯғ мегӯяд.
+    return PressableScale(
+      scale: (isLoading || onTap == null) ? 1 : 0.97,
       onTap: isLoading ? null : onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),

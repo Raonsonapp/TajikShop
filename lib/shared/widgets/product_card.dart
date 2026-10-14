@@ -13,6 +13,7 @@ import '../../data/models/product_model.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/auth_provider.dart';
+import 'fade_slide_in.dart';
 
 class ProductCard extends ConsumerStatefulWidget {
   final ProductModel product;
@@ -89,7 +90,13 @@ class _ProductCardState extends ConsumerState<ProductCard>
     final lowStock = p.inStock && !p.madeToOrder && p.stock <= 3;
     final noLeftBadge = !p.isFlashSale && disc <= 0 && !p.isFeatured;
 
-    return GestureDetector(
+    // Вокуниши пахш дар корти мол.
+    //
+    // Корт чизест, ки корбар бештар аз ҳама зер мекунад — ва он ҳеҷ
+    // вокунише надошт. Зеркунӣ «мурда» эҳсос мешуд: одам намедонист,
+    // оё зерашро барнома гирифт ё не, ва боз як бор мезад.
+    return PressableScale(
+      scale: 0.97,
       onTap: () => context.push('/product/${p.id}'),
       child: Container(
         decoration: BoxDecoration(
