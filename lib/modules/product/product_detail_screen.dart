@@ -14,6 +14,7 @@ import '../../core/app_l10n.dart';
 import '../../core/l10n/stock_l10n.dart';
 import '../../core/l10n/checkout_l10n.dart';
 import '../../core/l10n/stock_policy_l10n.dart';
+import '../../core/l10n/delivery_l10n.dart';
 import '../../core/l10n/seller_l10n.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../core/constants/app_colors.dart';
@@ -1153,17 +1154,26 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     // Ҳамеша нишон медиҳем — агар холӣ бошад, «Пурсед» намегӯем, балки маълумоти пешфарз
     // Агар фурӯшанда расонида натавонад, инро рӯирост мегӯем — то харидор
     // интизори бефоида накашад.
+    final l = AppL10n.of(context);
     final rows = <Widget>[
       if (!p.hasDelivery)
-        _deliveryRow(FeatherIcons.home, 'Расонидан',
-            'Нест — аз мағоза мегиред')
+        _deliveryRow(FeatherIcons.home, l.deliveryWord, l.deliveryNone)
       else ...[
-        _deliveryRow(FeatherIcons.clock, 'Мӯҳлати расиш',
-            hasDays ? '${p.deliveryDays} рӯз' : 'Бо фурӯшанда мувофиқа'),
-        _deliveryRow(FeatherIcons.truck, 'Нархи доставка',
-            p.deliveryPrice > 0 ? '${p.deliveryPrice.toStringAsFixed(0)} сом' : 'Ройгон'),
+        _deliveryRow(
+            FeatherIcons.clock,
+            l.deliveryTime,
+            hasDays
+                ? l.deliveryDaysValue(p.deliveryDays)
+                : l.deliveryByAgreement),
+        _deliveryRow(
+            FeatherIcons.truck,
+            l.deliveryPriceLabel,
+            p.deliveryPrice > 0
+                ? '${p.deliveryPrice.toStringAsFixed(0)} ${l.som}'
+                : l.deliveryFree),
       ],
-      if (hasSize) _deliveryRow(FeatherIcons.maximize2, 'Размер / тавсиф', p.sizeInfo),
+      if (hasSize)
+        _deliveryRow(FeatherIcons.maximize2, l.sizeAndDetails, p.sizeInfo),
     ];
     return Padding(
       padding: const EdgeInsets.only(top: 18),
@@ -1210,19 +1220,18 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
           Row(children: [
             const Icon(FeatherIcons.shield, color: AppColors.primary, size: 18),
             const SizedBox(width: 8),
-            Text('Ҳимояи харидор',
+            Text(AppL10n.of(context).buyerProtection,
                 style: TextStyle(
                     color: pal.textPrimary,
                     fontSize: 14.5,
                     fontWeight: FontWeight.w800)),
           ]),
           const SizedBox(height: 8),
-          point(FeatherIcons.lock,
-              'Пул то тасдиқи гирифтани мол дар ҳисоби ҳифзшуда мемонад'),
+          point(FeatherIcons.lock, AppL10n.of(context).buyerProtectionEscrow),
           point(FeatherIcons.rotateCcw,
-              'Агар мол наомад ё мувофиқ набошад — бозгашти маблағ'),
+              AppL10n.of(context).buyerProtectionRefund),
           point(FeatherIcons.messageCircle,
-              'Ҳалли ихтилоф бо кӯмаки маъмурияти TajikShop'),
+              AppL10n.of(context).buyerProtectionDispute),
         ]),
       ),
     );

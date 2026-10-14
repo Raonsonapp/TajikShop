@@ -27,6 +27,7 @@ import '../address/add_address_sheet.dart';
 import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/shimmer_card.dart';
 import '../../shared/widgets/safe_input.dart';
+import '../../core/l10n/delivery_l10n.dart';
 
 /// Ҳаққи расонидан (сом.) — дар як ҷо, то дар экранҳо фарқ накунад.
 const double kDeliveryFee = 20;
@@ -715,6 +716,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
   /// метавонанд гуфтугӯ кунанд ва маблағ фиристода шавад.
   Widget _sellerCards() {
     final pal = context.pal;
+    final l = AppL10n.of(context);
     final async = ref.watch(cartSellersProvider);
 
     return async.when(
@@ -723,11 +725,10 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
         child: LinearProgressIndicator(
             color: AppColors.primary, backgroundColor: pal.surface),
       ),
-      error: (_, __) => _cardNotice(pal,
-          'Маълумоти корти фурӯшанда гирифта нашуд. Бо фурӯшанда чат кунед.'),
+      error: (_, __) => _cardNotice(pal, l.sellerCardFailed),
       data: (sellers) {
         if (sellers.isEmpty) {
-          return _cardNotice(pal, 'Фурӯшанда ёфт нашуд.');
+          return _cardNotice(pal, l.sellerNotFound);
         }
         return Column(
           children: [
@@ -754,6 +755,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
       );
 
   Widget _sellerCardTile(AppPalette pal, Map<String, dynamic> s) {
+    final l = AppL10n.of(context);
     final card = (s['card_number'] ?? '').toString().trim();
     final holder = (s['card_holder'] ?? '').toString().trim();
     final shop = (s['shop_name'] ?? '').toString().trim();
@@ -774,7 +776,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
           const Icon(FeatherIcons.creditCard, color: AppColors.primary, size: 18),
           const SizedBox(width: 8),
           Expanded(
-            child: Text('Корти фурӯшанда: $title',
+            child: Text(l.sellerCardTitle(title),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: pal.textMuted, fontSize: 12)),
@@ -787,8 +789,7 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
                 color: AppColors.warning, size: 16),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                  'Фурӯшанда ҳанӯз корт нагузоштааст — бо ӯ чат кунед',
+              child: Text(l.sellerCardMissing,
                   style: TextStyle(color: pal.textSecondary, fontSize: 12.5)),
             ),
           ])
@@ -846,14 +847,16 @@ class _DcCheckoutSheetState extends ConsumerState<_DcCheckoutSheet> {
                 border:
                     Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
               ),
-              child: const Row(
+              // `const Row` ин ҷо кор намекунад: матн акнун аз
+              // `AppL10n` меояд.
+              child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(FeatherIcons.messageCircle,
+                    const Icon(FeatherIcons.messageCircle,
                         color: AppColors.primary, size: 16),
-                    SizedBox(width: 8),
-                    Text('Чат бо фурӯшанда',
-                        style: TextStyle(
+                    const SizedBox(width: 8),
+                    Text(l.chatWithSeller,
+                        style: const TextStyle(
                             color: AppColors.primary,
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700)),

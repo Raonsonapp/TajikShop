@@ -193,7 +193,23 @@ class _RFQCreateSheetState extends State<_RFQCreateSheet> {
             ),
 
           const SizedBox(height: 18),
-          AppButton(text: l.rfqNew, onTap: _submit, isLoading: _saving),
+          // ⚠️ Калид барои тести эмулятор ҲАТМИСТ.
+          //
+          // Матни `l.rfqNew` дар СЕ ҷой истифода мешавад: тугмаи
+          // шиновари рӯйхат, сарлавҳаи ҳамин варақа, ва ҳамин тугма.
+          // `find.textContaining(...).first` тугмаи ПАСИ варақаро
+          // мегирифт, ва Flutter огоҳӣ медод:
+          //
+          //   derived an Offset (300.3, 557.8) that would not hit test
+          //   on the specified widget
+          //
+          // Зеркунӣ тасодуфан ба чизи дигари ҳамон нуқта мерасид — тест
+          // аз рӯи БАХТ мегузашт. Калид ин тасодуфро мебандад.
+          AppButton(
+              key: const Key('rfq_submit'),
+              text: l.rfqNew,
+              onTap: _submit,
+              isLoading: _saving),
           const SizedBox(height: 8),
         ]),
       ),

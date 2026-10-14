@@ -351,9 +351,17 @@ void main() {
       await tester.pump();
       await settle(tester, frames: 8);
 
-      // Фиристодан — тугмаи поёни варақа.
-      await tapIfPresent(
-          tester, byText('Дархости нав|Новый запрос|New request'), frames: 30);
+      // Фиристодан — БО КАЛИД, на бо матн.
+      //
+      // Матни «Дархости нав» дар се ҷой аст (тугмаи шиновар, сарлавҳаи
+      // варақа, тугмаи фиристодан), ва `.first` тугмаи ПАСИ варақаро
+      // мегирифт: Flutter огоҳӣ медод, ки зеркунӣ ба ҳадаф намерасад,
+      // ва тест аз рӯи БАХТ мегузашт.
+      final submitted = await tapIfPresent(
+          tester, find.byKey(const Key('rfq_submit')), frames: 30);
+      expect(submitted, isTrue,
+          reason: 'тугмаи фиристодани дархост ёфт нашуд — '
+              'калиди `rfq_submit` гум шудааст');
       await settle(tester, frames: 25);
       expectClean(tester, 'RFQ: пас аз сохтан');
 
