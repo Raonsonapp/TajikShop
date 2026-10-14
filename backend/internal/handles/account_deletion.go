@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+	"log"
 	"net/http"
 	"time"
 
@@ -119,26 +121,76 @@ func (h *UserHandler) DeleteAccount(c *gin.Context) {
 		return
 	}
 
-	// ── Сатри корбарро anonymize мекунем (фармоиш/пардохт/ҳамён нигоҳ дошта мешавад) ──
-	// email/phone/firebase_uid UNIQUE-анд → қиматҳои беназири «deleted» мегузорем.
-	if _, e := tx.Exec(`UPDATE users SET
+	// ── Сатри корбарро anonymize мекунем ──
+	//
+	// Фармоиш, пардохт ва ҳамён нигоҳ дошта мешаванд: онҳо таърихи
+	// ФУРӮШАНДА ва ҳисоботи пулӣ ҳастанд, на маълумоти шахсии ин корбар.
+	//
+	// ЧАРО СУТУНҲО АЗ БАЗА ПУРСИДА МЕШАВАНД, на сахт навишта:
+	//
+	// Дар тести эмулятор ин масир дар production **500** дод, ҳол он ки
+	// дар базаи маҳаллии тоза ҳамаи шаш тест сабз буданд. Фарқ дар он
+	// аст, ки базаи production кӯҳна аст ва тавассути `ALTER TABLE`
+	// рушд кардааст — ва `execEach` хатои ҳар амрро ба лог менависад ва
+	// МЕГУЗАРАД. Яъне як `ALTER TABLE` метавонад солҳо пеш афтода бошад,
+	// ва он сутун дар production НЕСТ.
+	//
+	// Як UPDATE-и калон бо сутуни нестбуда ПУРРА меафтад — ва он гоҳ
+	// корбар ҳисобашро нест карда наметавонад. Google Play инро ҳатмӣ
+	// талаб мекунад.
+	//
+	// Пас: сутунҳои МАВҶУД пурсида мешаванд, ва танҳо онҳо иваз
+	// мешаванд. Маълумоти ҳассос (`core`) ҳатмист — агар он набошад,
+	// база вайрон аст ва хато додан дуруст аст.
+	cols := existingUserColumns(tx)
+
+	// Ин сутунҳо ҳатман бояд бошанд: бе онҳо маълумоти шахсӣ нест
+	// намешавад, ва «нест кардан» маъно надорад.
+	core := `UPDATE users SET
 			name='Корбари ҳазфшуда',
 			email='deleted_'||id::text||'@deleted.tajikshop.local',
 			phone=NULL,
 			password_hash='',
-			refresh_token='',
-			firebase_uid='deleted_'||id::text,
-			fcm_token='',
-			avatar_url='',
-			bio='',
-			shop_name='', shop_desc='', shop_phone='', shop_hours='',
-			store_lat=0, store_lng=0,
-			referral_code='', referred_by=NULL,
-			is_seller=false, seller_requested=false, is_verified=false,
-			is_banned=true, is_deleted=true, deleted_at=$2,
-			updated_at=$2
-		WHERE id=$1`, uid, time.Now()); e != nil {
-		utils.Err(c, http.StatusInternalServerError, "delete failed: "+e.Error())
+			is_banned=true,
+			updated_at=$2`
+	// Сутунҳои иловагӣ — ҳар кадом танҳо агар вуҷуд дошта бошад.
+	optional := []struct{ col, set string }{
+		{"refresh_token", "refresh_token=''"},
+		{"firebase_uid", "firebase_uid='deleted_'||id::text"},
+		{"fcm_token", "fcm_token=''"},
+		{"avatar_url", "avatar_url=''"},
+		{"bio", "bio=''"},
+		{"shop_name", "shop_name=''"},
+		{"shop_desc", "shop_desc=''"},
+		{"shop_phone", "shop_phone=''"},
+		{"shop_hours", "shop_hours=''"},
+		{"store_lat", "store_lat=0"},
+		{"store_lng", "store_lng=0"},
+		{"region", "region=''"},
+		{"card_number", "card_number=''"},
+		{"card_holder", "card_holder=''"},
+		{"username", "username=NULL"},
+		{"referral_code", "referral_code=''"},
+		{"referred_by", "referred_by=NULL"},
+		{"is_seller", "is_seller=false"},
+		{"seller_requested", "seller_requested=false"},
+		{"is_verified", "is_verified=false"},
+		{"is_deleted", "is_deleted=true"},
+		{"deleted_at", "deleted_at=$2"},
+	}
+	for _, o := range optional {
+		if cols[o.col] {
+			core += ",\n\t\t\t" + o.set
+		}
+	}
+	core += "\n\t\tWHERE id=$1"
+
+	if _, e := tx.Exec(core, uid, time.Now()); e != nil {
+		// Хатои ҳақиқӣ ба лог меравад: паёми корбар онро пинҳон
+		// мекунад, ва бе лог сабаб пайдо кардан номумкин аст.
+		log.Printf("❌ DeleteAccount: %v", e)
+		utils.Err(c, http.StatusInternalServerError,
+			"Ҳисоб нест карда нашуд. Лутфан бо дастгирӣ тамос гиред.")
 		return
 	}
 
@@ -155,4 +207,26 @@ func (h *UserHandler) DeleteAccount(c *gin.Context) {
 	}
 
 	utils.OK(c, gin.H{"deleted": true, "message": "Ҳисоб ва маълумоти шахсии шумо ҳазф шуд"})
+}
+
+// existingUserColumns — сутунҳои воқеан мавҷуди ҷадвали `users`.
+//
+// Базаи production тавассути `ALTER TABLE ... IF NOT EXISTS` рушд
+// кардааст, ва `execEach` хатои ҳар амрро ба лог менависад ва мегузарад
+// — пас сутуне метавонад НАБОШАД, ҳол он ки дар схема ҳаст.
+func existingUserColumns(tx *sql.Tx) map[string]bool {
+	out := map[string]bool{}
+	rows, err := tx.Query(`SELECT column_name FROM information_schema.columns
+		WHERE table_name='users'`)
+	if err != nil || rows == nil {
+		return out
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var c string
+		if e := rows.Scan(&c); e == nil {
+			out[c] = true
+		}
+	}
+	return out
 }
