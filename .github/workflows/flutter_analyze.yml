@@ -32,10 +32,11 @@ jobs:
       # Муҳофизҳои маҳаллӣ ПЕШ аз Flutter иҷро мешаванд: онҳо дар як
       # сония кор мекунанд ва `flutter pub get` 20 сония мегирад. Агар
       # import гум бошад, маъно надорад SDK-ро интизор шавем.
-      - name: Guards (import + l10n)
+      - name: Guards (import + l10n + const)
         run: |
           python3 tools/import_guard.py
           python3 tools/l10n_guard.py
+          python3 tools/const_guard.py
 
       - name: Install dependencies
         run: flutter pub get

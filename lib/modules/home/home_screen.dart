@@ -466,17 +466,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           GestureDetector(
             onTap: onSeeAll,
             child: Row(
-              children: const [
+              children: [
                 Text(
                   AppL10n.of(context).allWord,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.primary,
                     fontSize: 13.5,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(width: 2),
-                Icon(FeatherIcons.chevronRight,
+                const SizedBox(width: 2),
+                const Icon(FeatherIcons.chevronRight,
                     color: AppColors.primary, size: 18),
               ],
             ),
@@ -1341,24 +1341,24 @@ class _NearbyShopsCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
-                  children: const [
+                  children: [
                     Text(
                       AppL10n.of(context).nearbyShopsTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.2,
                       ),
                     ),
-                    SizedBox(height: 3),
+                    const SizedBox(height: 3),
                     Text(
                       AppL10n.of(context).nearbyShopsHint,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w500,
