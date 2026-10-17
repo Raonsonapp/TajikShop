@@ -42,7 +42,8 @@ android {
 
     defaultConfig {
         applicationId = "com.tajikshop.app"
-        minSdk = 23
+        // Google Play requires minSdk 24 for this release.
+        minSdk = 24
         targetSdk = 35
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
@@ -67,8 +68,7 @@ android {
         }
     }
 
-    // Bundle native libraries uncompressed; paired with AGP 8.6.1 this supports
-    // correct alignment for 16 KB Android page-size devices.
+    // Preserve runtime loading compatibility for devices using 16 KB page sizes.
     packaging {
         jniLibs {
             useLegacyPackaging = true
