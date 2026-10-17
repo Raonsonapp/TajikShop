@@ -36,9 +36,9 @@ jobs:
           key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
           restore-keys: pub-${{ runner.os }}
 
-      # Android SDK, NDK, Gradle and 16 KB packaging are configured in the
-      # checked-in Gradle files. Do not sed-rewrite them during CI, because
-      # those rewrites previously overrode minSdk and could mask config drift.
+      # SDK/NDK/AGP/Gradle/16 KB packaging are stored in the Android project files.
+      # Do not rewrite Gradle files with sed here: those edits previously caused
+      # build configuration to differ from what developers review in GitHub.
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -67,7 +67,7 @@ jobs:
               "$STORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
             echo "Release keystore configured from GitHub secrets."
           else
-            echo "::warning::No release keystore secrets configured; outputs will use debug signing and cannot be used as a Play production update."
+            echo "::warning::No KEYSTORE_BASE64 secret is configured. Build artifacts use debug signing and are not suitable as Play production updates."
           fi
 
       - name: Build APK
@@ -76,7 +76,7 @@ jobs:
       - name: Build AAB
         run: flutter build appbundle --release --no-tree-shake-icons
 
-      - name: Verify bundle exists
+      - name: Verify AAB
         run: test -s build/app/outputs/bundle/release/app-release.aab
 
       - name: Upload APK
