@@ -18,8 +18,8 @@ pluginManagement {
 
 plugins {
     id "dev.flutter.flutter-plugin-loader" version "1.0.0"
-    // AGP 8.5.1+ is required to package native libraries correctly for 16 KB devices.
-    id "com.android.application" version "8.6.1" apply false
+    // AGP 8.10.1 supports API 36 and correct 16 KB native-library packaging.
+    id "com.android.application" version "8.10.1" apply false
     id "org.jetbrains.kotlin.android" version "2.1.0" apply false
 }
 
