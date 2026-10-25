@@ -25,7 +25,8 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.0'
+          # Flutter 3.38 includes the NDK r28-based Android toolchain for 16 KB pages.
+          flutter-version: '3.38.0'
           channel: stable
           cache: true
 
@@ -36,8 +37,7 @@ jobs:
           key: pub-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
           restore-keys: pub-${{ runner.os }}
 
-      # SDK/NDK/AGP/Gradle/16 KB packaging are stored in Android project files.
-      # Do not rewrite Gradle files with sed during CI.
+      # SDK/NDK/AGP/Gradle settings are kept in Android project files.
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -78,7 +78,7 @@ jobs:
       - name: Build AAB
         run: flutter build appbundle --release --no-tree-shake-icons
 
-      - name: Verify AAB
+      - name: Verify AAB exists
         run: test -s build/app/outputs/bundle/release/app-release.aab
 
       - name: Upload APK
