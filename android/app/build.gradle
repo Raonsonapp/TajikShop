@@ -27,9 +27,9 @@ if (hasReleaseKeystore) {
 
 android {
     namespace = "com.tajikshop.app"
-    compileSdk = 35
-    // NDK 27 supports 16 KB ELF alignment for native libraries built with this toolchain.
-    ndkVersion = "27.0.12077973"
+    compileSdk = 36
+    // NDK r28 builds native libraries with 16 KB ELF alignment by default.
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -42,9 +42,8 @@ android {
 
     defaultConfig {
         applicationId = "com.tajikshop.app"
-        // Google Play requires minSdk 24 for this release.
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
     }
@@ -68,12 +67,8 @@ android {
         }
     }
 
-    // Preserve runtime loading compatibility for devices using 16 KB page sizes.
-    packaging {
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
+    // AGP 8.10.1 packages uncompressed native libraries with 16 KB ZIP alignment.
+    // Do not enable useLegacyPackaging here; keep shared libraries uncompressed.
 }
 
 flutter {
