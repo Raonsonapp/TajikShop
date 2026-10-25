@@ -19,16 +19,13 @@ rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-// Плагинҳо compileSdk-и худро эълон мекунанд ва он аксаран кӯҳна мемонад.
-// Вақте ки ягон китобхона compileSdk-и навтарро талаб мекунад, билд бо
-// «Dependency X requires ... compile against version 34 or later» меафтад —
-// маҳз ҳамон хато. Ин ҷо ҳамаи модулҳои Android-ро ба як версия меорем,
-// пас илова кардани плагини нав дигар билдро намешиканад.
+// Keep all Android plugin modules on API 36 so native dependencies can compile
+// consistently with the app's target SDK.
 subprojects {
     afterEvaluate { project ->
         if (project.hasProperty("android")) {
             project.android {
-                compileSdk = 35
+                compileSdk = 36
             }
         }
     }
