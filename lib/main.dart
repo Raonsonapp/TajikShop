@@ -122,7 +122,7 @@ class _EditorHomeState extends State<EditorHome> {
     await old?.dispose();
     setState(() {
       _clips.removeAt(_selected);
-      _selected = _clips.isEmpty ? 0 : (_selected.clamp(0, _clips.length - 1));
+      _selected = _clips.isEmpty ? 0 : (_selected.clamp(0, _clips.length - 1).toInt());
     });
     if (_clips.isNotEmpty) await _loadPreview();
   }
