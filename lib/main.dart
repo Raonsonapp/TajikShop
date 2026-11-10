@@ -349,6 +349,17 @@ class _EditorScreenState extends State<EditorScreen> {
   double speed = 1;
   double volume = 1;
   String activePanel = 'Speed';
+  String overlayText = '';
+  int filterIndex = 0;
+  double trimStart = 0;
+  double trimEnd = 1;
+  static const List<List<double>> _filters = [
+    [1,0,0,0,0, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0],
+    [1.15,0,0,0,8, 0,1.05,0,0,4, 0,0,0.9,0,0, 0,0,0,1,0],
+    [0.75,0,0,0,22, 0,0.82,0,0,18, 0,0,0.95,0,10, 0,0,0,1,0],
+    [0.9,0,0,0,0, 0,0.95,0,0,0, 0,0,1.2,0,0, 0,0,0,1,0],
+    [0.3,0,0,0,0, 0,0.3,0,0,0, 0,0,0.3,0,0, 0,0,0,1,0],
+  ];
 
   @override
   void initState() {
@@ -405,6 +416,30 @@ class _EditorScreenState extends State<EditorScreen> {
     if (clips.isNotEmpty) await _loadSelected();
   }
 
+  void _message(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _cycleFilter() {
+    setState(() => filterIndex = (filterIndex + 1) % _filters.length);
+    _message(['Original', 'Cinematic', 'Warm', 'Cool', 'Mono'][filterIndex] + ' preview filter selected.');
+  }
+
+  Future<void> _addText() async {
+    final input = TextEditingController(text: overlayText);
+    final value = await showDialog<String>(context: context, builder: (context) => AlertDialog(
+      title: const Text('Add text layer'),
+      content: TextField(controller: input, autofocus: true, maxLines: 3, decoration: const InputDecoration(hintText: 'Write your title or caption')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context, ''), child: const Text('Remove')),
+        FilledButton(onPressed: () => Navigator.pop(context, input.text.trim()), child: const Text('Apply')),
+      ],
+    ));
+    if (value != null && mounted) setState(() => overlayText = value);
+  }
+
   String _time(Duration d) => '${d.inMinutes.remainder(60).toString().padLeft(2, '0')}:${d.inSeconds.remainder(60).toString().padLeft(2, '0')}';
 
   @override
@@ -437,11 +472,16 @@ class _EditorScreenState extends State<EditorScreen> {
             Positioned(top: 10, left: 12, child: _PreviewTag(text: current.isVideo ? 'VIDEO PREVIEW' : 'IMAGE PREVIEW')),
             if (loading) const CircularProgressIndicator(color: orange)
             else if (current.isVideo && controller != null && controller.value.isInitialized)
-              Center(child: AspectRatio(aspectRatio: controller.value.aspectRatio, child: VideoPlayer(controller)))
+              Center(child: ColorFiltered(
+                colorFilter: ColorFilter.matrix(_filters[filterIndex]),
+                child: AspectRatio(aspectRatio: controller.value.aspectRatio, child: VideoPlayer(controller)),
+              ))
             else if (!current.isVideo)
-              Center(child: Image.file(File(current.file.path), fit: BoxFit.contain))
+              Center(child: ColorFiltered(colorFilter: ColorFilter.matrix(_filters[filterIndex]), child: Image.file(File(current.file.path), fit: BoxFit.contain)))
             else
               const Center(child: Text('Preview unavailable', style: TextStyle(color: Colors.white54))),
+            if (overlayText.isNotEmpty)
+              Positioned(left: 20, right: 20, top: 0, bottom: 0, child: Center(child: Text(overlayText, textAlign: TextAlign.center, style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900, color: Colors.white, shadows: [Shadow(color: Colors.black, blurRadius: 12, offset: Offset(1, 2))])))),
             if (current.isVideo && controller != null && controller.value.isInitialized)
               IconButton.filled(
                 onPressed: () async { if (controller.value.isPlaying) { await controller.pause(); } else { await controller.play(); } setState(() {}); },
@@ -503,29 +543,35 @@ class _EditorScreenState extends State<EditorScreen> {
             Row(children: [
               _PanelTab(label: 'Speed', selected: activePanel == 'Speed', onTap: () => setState(() => activePanel = 'Speed')),
               _PanelTab(label: 'Volume', selected: activePanel == 'Volume', onTap: () => setState(() => activePanel = 'Volume')),
+              _PanelTab(label: 'Trim', selected: activePanel == 'Trim', onTap: () => setState(() => activePanel = 'Trim')),
               const Spacer(),
-              Text(activePanel == 'Speed' ? '${speed.toStringAsFixed(2)}×' : '${(volume * 100).round()}%', style: const TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 12)),
+              Text(activePanel == 'Speed' ? '${speed.toStringAsFixed(2)}×' : activePanel == 'Volume' ? '${(volume * 100).round()}%' : 'IN / OUT', style: const TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 12)),
             ]),
             const SizedBox(height: 8),
             if (activePanel == 'Speed')
               Slider(value: speed, min: .25, max: 2, divisions: 35, onChanged: controller == null ? null : (v) async { setState(() => speed = v); await controller.setPlaybackSpeed(v); })
+            else if (activePanel == 'Volume')
+              Slider(value: volume, min: 0, max: 1, divisions: 20, onChanged: controller == null ? null : (v) async { setState(() => volume = v); await controller.setVolume(v); })
             else
-              Slider(value: volume, min: 0, max: 1, divisions: 20, onChanged: controller == null ? null : (v) async { setState(() => volume = v); await controller.setVolume(v); }),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Column(children: [
+                RangeSlider(values: RangeValues(trimStart, trimEnd), min: 0, max: 1, divisions: 100, labels: RangeLabels('${(trimStart * 100).round()}%', '${(trimEnd * 100).round()}%'), onChanged: controller == null ? null : (v) => setState(() { trimStart = v.start; trimEnd = v.end; })),
+                SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: controller == null ? null : () async { final d = controller.value.duration; await controller.seekTo(Duration(milliseconds: (d.inMilliseconds * trimStart).round())); _message('Trim points selected for preview. Export rendering is not connected yet.'); }, icon: const Icon(Icons.play_arrow), label: const Text('Preview from IN point'))),
+              ]),
+            if (activePanel != 'Trim') Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text(activePanel == 'Speed' ? '0.25×' : 'Mute', style: const TextStyle(color: Colors.white38, fontSize: 9)),
               Text(activePanel == 'Speed' ? '2.00×' : '100%', style: const TextStyle(color: Colors.white38, fontSize: 9)),
             ]),
           ]),
         ),
         Container(
-          height: 70,
-          padding: const EdgeInsets.fromLTRB(8, 9, 8, 8),
-          child: const Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-            _ComingTool(icon: Icons.content_cut_rounded, label: 'Trim'),
-            _ComingTool(icon: Icons.auto_awesome_rounded, label: 'Effects'),
-            _ComingTool(icon: Icons.title_rounded, label: 'Text'),
-            _ComingTool(icon: Icons.graphic_eq_rounded, label: 'Audio'),
-            _ComingTool(icon: Icons.palette_outlined, label: 'Color'),
+          height: 76,
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
+          child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+            _EditorAction(icon: Icons.content_cut_rounded, label: 'Trim', onTap: () => setState(() => activePanel = 'Trim')),
+            _EditorAction(icon: Icons.auto_awesome_rounded, label: 'Effects', onTap: _cycleFilter),
+            _EditorAction(icon: Icons.title_rounded, label: 'Text', onTap: _addText),
+            _EditorAction(icon: Icons.graphic_eq_rounded, label: 'Audio', onTap: () => setState(() => activePanel = 'Volume')),
+            _EditorAction(icon: Icons.palette_outlined, label: 'Color', onTap: _cycleFilter),
           ]),
         ),
       ])),
@@ -553,14 +599,19 @@ class _PanelTab extends StatelessWidget {
   ));
 }
 
-class _ComingTool extends StatelessWidget {
-  const _ComingTool({required this.icon, required this.label});
+class _EditorAction extends StatelessWidget {
+  const _EditorAction({required this.icon, required this.label, required this.onTap});
   final IconData icon;
   final String label;
+  final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Opacity(opacity: .55, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-    Icon(icon, size: 20, color: Colors.white70),
-    const SizedBox(height: 5),
-    Text(label, style: const TextStyle(fontSize: 9, color: Colors.white60)),
-  ]));
+  Widget build(BuildContext context) => InkWell(
+    borderRadius: BorderRadius.circular(12),
+    onTap: onTap,
+    child: Padding(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(icon, size: 21, color: orange),
+      const SizedBox(height: 5),
+      Text(label, style: const TextStyle(fontSize: 9, color: Colors.white70)),
+    ])),
+  );
 }
