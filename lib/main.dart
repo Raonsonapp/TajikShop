@@ -18,15 +18,15 @@ void main() {
     systemNavigationBarColor: _bg,
     systemNavigationBarIconBrightness: Brightness.light,
   ));
-  runApp(const VeloraApp());
+  runApp(const AurixApp());
 }
 
-class VeloraApp extends StatelessWidget {
-  const VeloraApp({super.key});
+class AurixApp extends StatelessWidget {
+  const AurixApp({super.key});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'VELORA EDITOR',
+        title: 'AURIX',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           brightness: Brightness.dark,
