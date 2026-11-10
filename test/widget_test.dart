@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:aurix_editor/main.dart';
 
 void main() {
-  testWidgets('placeholder test', (WidgetTester tester) async {
-    expect(true, isTrue);
+  testWidgets('AURIX home screen renders its identity', (tester) async {
+    await tester.pumpWidget(const AurixApp());
+    expect(find.text('AURIX'), findsOneWidget);
+    expect(find.text('Start a new project'), findsOneWidget);
   });
 }

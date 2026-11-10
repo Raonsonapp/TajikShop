@@ -1,21 +1,22 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 
-const _bg = Color(0xFF090909);
-const _panel = Color(0xFF171717);
-const _panel2 = Color(0xFF222222);
-const _orange = Color(0xFFFF6A00);
+const bg = Color(0xFF080808);
+const surface = Color(0xFF151515);
+const surface2 = Color(0xFF202020);
+const orange = Color(0xFFFF6A00);
+const amber = Color(0xFFFFB800);
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: _bg,
+    statusBarColor: bg,
     statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: _bg,
+    systemNavigationBarColor: bg,
     systemNavigationBarIconBrightness: Brightness.light,
   ));
   runApp(const AurixApp());
@@ -23,389 +24,407 @@ void main() {
 
 class AurixApp extends StatelessWidget {
   const AurixApp({super.key});
-
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'AURIX',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: _bg,
-          colorScheme: const ColorScheme.dark(
-            primary: _orange,
-            secondary: _orange,
-            surface: _panel,
-          ),
-          fontFamily: 'Roboto',
-          useMaterial3: true,
-        ),
-        home: const EditorHome(),
-      );
+    title: 'AURIX',
+    debugShowCheckedModeBanner: false,
+    theme: ThemeData(
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: bg,
+      colorScheme: const ColorScheme.dark(primary: orange, secondary: amber, surface: surface),
+      useMaterial3: true,
+      sliderTheme: const SliderThemeData(activeTrackColor: orange, thumbColor: orange, inactiveTrackColor: Colors.white12),
+    ),
+    home: const HomeScreen(),
+  );
 }
 
-class MediaClip {
-  MediaClip(this.file, this.isVideo);
+class ProjectMedia {
+  ProjectMedia(this.file, this.isVideo);
   final XFile file;
   final bool isVideo;
 }
 
-class EditorHome extends StatefulWidget {
-  const EditorHome({super.key});
-
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
   @override
-  State<EditorHome> createState() => _EditorHomeState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _EditorHomeState extends State<EditorHome> {
-  final _picker = ImagePicker();
-  final List<MediaClip> _clips = [];
-  VideoPlayerController? _video;
-  int _selected = 0;
-  bool _busy = false;
+class _HomeScreenState extends State<HomeScreen> {
+  final picker = ImagePicker();
+  final List<ProjectMedia> recent = [];
+
+  Future<void> importVideo() async {
+    final file = await picker.pickVideo(source: ImageSource.gallery);
+    if (file == null || !mounted) return;
+    openEditor([ProjectMedia(file, true)]);
+  }
+
+  Future<void> importPhoto() async {
+    final file = await picker.pickImage(source: ImageSource.gallery);
+    if (file == null || !mounted) return;
+    openEditor([ProjectMedia(file, false)]);
+  }
+
+  void openEditor(List<ProjectMedia> media) {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => EditorScreen(initialMedia: media),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      backgroundColor: bg,
+      titleSpacing: 18,
+      title: Row(children: [
+        ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('assets/brand/aurix_logo.jpg', width: 42, height: 42, fit: BoxFit.cover)),
+        const SizedBox(width: 11),
+        const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('AURIX', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2.4)),
+          Text('VIDEO STUDIO', style: TextStyle(fontSize: 9, color: orange, letterSpacing: 2.7, fontWeight: FontWeight.bold)),
+        ]),
+      ]),
+      actions: [
+        IconButton(onPressed: () => showAboutDialog(context: context, applicationName: 'AURIX', applicationVersion: '1.0.4', applicationLegalese: 'Create beyond limits.'), icon: const Icon(Icons.info_outline_rounded)),
+        const SizedBox(width: 6),
+      ],
+    ),
+    body: SafeArea(child: ListView(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
+      children: [
+        const Text('Your next edit.\nYour vision.', style: TextStyle(fontSize: 34, height: 1.05, fontWeight: FontWeight.w900, letterSpacing: -.8)),
+        const SizedBox(height: 10),
+        const Text('A focused workspace for cinematic video creation.', style: TextStyle(color: Colors.white60, fontSize: 14)),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: orange.withOpacity(.32)),
+            gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF351707), Color(0xFF1B100A), Color(0xFF151515)]),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Container(width: 42, height: 42, decoration: BoxDecoration(color: orange.withOpacity(.15), borderRadius: BorderRadius.circular(13)), child: const Icon(Icons.movie_creation_outlined, color: orange)),
+              const Spacer(),
+              const Text('CREATE  •  EDIT  •  EXPORT', style: TextStyle(color: Colors.white54, fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+            ]),
+            const SizedBox(height: 23),
+            const Text('Start a new project', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            const Text('Bring your footage into the AURIX timeline.', style: TextStyle(color: Colors.white70, fontSize: 13)),
+            const SizedBox(height: 19),
+            SizedBox(width: double.infinity, child: FilledButton.icon(
+              onPressed: importVideo,
+              style: FilledButton.styleFrom(backgroundColor: orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+              icon: const Icon(Icons.add_rounded), label: const Text('New video project', style: TextStyle(fontWeight: FontWeight.bold)),
+            )),
+            const SizedBox(height: 9),
+            SizedBox(width: double.infinity, child: OutlinedButton.icon(
+              onPressed: importPhoto,
+              style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white24), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+              icon: const Icon(Icons.image_outlined), label: const Text('Start with a photo'),
+            )),
+          ]),
+        ),
+        const SizedBox(height: 29),
+        const _SectionHeading('YOUR CREATIVE TOOLS', '01 / WORKSPACE'),
+        const SizedBox(height: 13),
+        const Row(children: [
+          Expanded(child: _ToolCard(icon: Icons.speed_rounded, name: 'Speed control', detail: 'Smooth playback speed')),
+          SizedBox(width: 10),
+          Expanded(child: _ToolCard(icon: Icons.graphic_eq_rounded, name: 'Audio tools', detail: 'Volume and sound')),
+        ]),
+        const SizedBox(height: 10),
+        const Row(children: [
+          Expanded(child: _ToolCard(icon: Icons.auto_awesome_rounded, name: 'Visual effects', detail: 'Effects engine planned')),
+          SizedBox(width: 10),
+          Expanded(child: _ToolCard(icon: Icons.tune_rounded, name: 'Color studio', detail: 'Color tools planned')),
+        ]),
+        const SizedBox(height: 27),
+        const _SectionHeading('RECENT PROJECTS', '02 / LIBRARY'),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white10)),
+          child: const Row(children: [
+            Icon(Icons.video_library_outlined, color: Colors.white38, size: 25),
+            SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('No projects yet', style: TextStyle(fontWeight: FontWeight.w700)),
+              SizedBox(height: 3),
+              Text('Your saved editing projects will appear here.', style: TextStyle(color: Colors.white45, fontSize: 12)),
+            ])),
+          ]),
+        ),
+        const SizedBox(height: 20),
+        const Center(child: Text('AURIX  •  CREATE BEYOND LIMITS', style: TextStyle(color: Colors.white24, fontSize: 9, letterSpacing: 2))),
+      ],
+    )),
+  );
+}
+
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading(this.title, this.kicker);
+  final String title;
+  final String kicker;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+    Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.3)),
+    const Spacer(),
+    Text(kicker, style: const TextStyle(color: Colors.white30, fontSize: 9, letterSpacing: 1)),
+  ]);
+}
+
+class _ToolCard extends StatelessWidget {
+  const _ToolCard({required this.icon, required this.name, required this.detail});
+  final IconData icon;
+  final String name;
+  final String detail;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(15),
+    decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(17), border: Border.all(color: Colors.white10)),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Icon(icon, color: orange, size: 22),
+      const SizedBox(height: 13),
+      Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 4),
+      Text(detail, style: const TextStyle(fontSize: 10, color: Colors.white38)),
+    ]),
+  );
+}
+
+class EditorScreen extends StatefulWidget {
+  const EditorScreen({super.key, required this.initialMedia});
+  final List<ProjectMedia> initialMedia;
+  @override
+  State<EditorScreen> createState() => _EditorScreenState();
+}
+
+class _EditorScreenState extends State<EditorScreen> {
+  final picker = ImagePicker();
+  late final List<ProjectMedia> clips;
+  VideoPlayerController? video;
+  int selected = 0;
+  bool loading = false;
+  double speed = 1;
+  double volume = 1;
+  String activePanel = 'Speed';
+
+  @override
+  void initState() {
+    super.initState();
+    clips = [...widget.initialMedia];
+    _loadSelected();
+  }
 
   @override
   void dispose() {
-    _video?.dispose();
+    video?.dispose();
     super.dispose();
   }
 
-  Future<void> _pickVideo() async {
-    final file = await _picker.pickVideo(source: ImageSource.gallery);
-    if (file != null) await _addClip(MediaClip(file, true));
-  }
-
-  Future<void> _pickPhoto() async {
-    final file = await _picker.pickImage(source: ImageSource.gallery);
-    if (file != null) await _addClip(MediaClip(file, false));
-  }
-
-  Future<void> _addClip(MediaClip clip) async {
-    setState(() {
-      _clips.add(clip);
-      _selected = _clips.length - 1;
-    });
-    await _loadPreview();
-  }
-
-  Future<void> _loadPreview() async {
-    final clip = _clips[_selected];
-    final old = _video;
-    _video = null;
+  Future<void> _loadSelected() async {
+    if (clips.isEmpty) return;
+    final old = video;
+    video = null;
     await old?.dispose();
-    if (!clip.isVideo) {
-      if (mounted) setState(() {});
-      return;
-    }
-    setState(() => _busy = true);
-    final controller = VideoPlayerController.file(File(clip.file.path));
+    if (!clips[selected].isVideo) { if (mounted) setState(() {}); return; }
+    setState(() => loading = true);
+    final next = VideoPlayerController.file(File(clips[selected].file.path));
     try {
-      await controller.initialize();
-      await controller.setLooping(true);
-      if (!mounted) {
-        await controller.dispose();
-        return;
-      }
-      setState(() {
-        _video = controller;
-        _busy = false;
-      });
+      await next.initialize();
+      await next.setLooping(true);
+      await next.setPlaybackSpeed(speed);
+      await next.setVolume(volume);
+      if (!mounted) { await next.dispose(); return; }
+      setState(() { video = next; loading = false; });
     } catch (_) {
-      await controller.dispose();
-      if (mounted) setState(() => _busy = false);
+      await next.dispose();
+      if (mounted) setState(() => loading = false);
     }
   }
 
-  Future<void> _removeSelected() async {
-    if (_clips.isEmpty) return;
-    final old = _video;
-    _video = null;
-    await old?.dispose();
-    setState(() {
-      _clips.removeAt(_selected);
-      _selected = _clips.isEmpty ? 0 : (_selected.clamp(0, _clips.length - 1).toInt());
-    });
-    if (_clips.isNotEmpty) await _loadPreview();
+  Future<void> _addVideo() async {
+    final file = await picker.pickVideo(source: ImageSource.gallery);
+    if (file == null || !mounted) return;
+    setState(() { clips.add(ProjectMedia(file, true)); selected = clips.length - 1; });
+    await _loadSelected();
   }
 
-  String _durationLabel(Duration d) {
-    final mm = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final ss = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$mm:$ss';
+  Future<void> _addPhoto() async {
+    final file = await picker.pickImage(source: ImageSource.gallery);
+    if (file == null || !mounted) return;
+    setState(() { clips.add(ProjectMedia(file, false)); selected = clips.length - 1; });
+    await _loadSelected();
   }
+
+  Future<void> _remove() async {
+    if (clips.isEmpty) return;
+    final old = video; video = null; await old?.dispose();
+    setState(() { clips.removeAt(selected); selected = clips.isEmpty ? 0 : selected.clamp(0, clips.length - 1).toInt(); });
+    if (clips.isNotEmpty) await _loadSelected();
+  }
+
+  String _time(Duration d) => '${d.inMinutes.remainder(60).toString().padLeft(2, '0')}:${d.inSeconds.remainder(60).toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
-    final hasMedia = _clips.isNotEmpty;
+    final current = clips[selected];
+    final controller = video;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: _bg,
-        titleSpacing: 18,
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('AURIX', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2)),
-            Text('VIDEO EDITOR', style: TextStyle(fontSize: 10, color: _orange, letterSpacing: 4, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Settings',
-            onPressed: () => _showInfo('Settings', 'Project settings and export presets will be added in the next development phase.'),
-            icon: const Icon(Icons.tune_rounded),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SafeArea(
-        child: hasMedia ? _editorBody() : _dashboard(),
-      ),
-    );
-  }
-
-  Widget _dashboard() => ListView(
-        padding: const EdgeInsets.fromLTRB(18, 22, 18, 28),
-        children: [
-          const Text('Edit beyond limits.', style: TextStyle(fontSize: 29, height: 1.1, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 9),
-          const Text('Your creative studio, right in your pocket.', style: TextStyle(color: Colors.white60, fontSize: 14)),
-          const SizedBox(height: 28),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF3A1908), Color(0xFF17100C), Color(0xFF171717)],
-              ),
-              border: Border.all(color: _orange.withOpacity(.35)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.movie_creation_outlined, color: _orange, size: 34),
-                const SizedBox(height: 22),
-                const Text('Start a new project', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 7),
-                const Text('Import a video or photo to begin editing.', style: TextStyle(color: Colors.white70)),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: _orange,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    onPressed: _pickVideo,
-                    icon: const Icon(Icons.add),
-                    label: const Text('New video project', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white24),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    onPressed: _pickPhoto,
-                    icon: const Icon(Icons.image_outlined),
-                    label: const Text('Import photo'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 28),
-          const Text('TOOLS', style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 2, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 14),
-          const Row(
-            children: [
-              Expanded(child: _ToolTile(icon: Icons.speed_rounded, title: 'Speed ramp', subtitle: 'Coming next')),
-              SizedBox(width: 10),
-              Expanded(child: _ToolTile(icon: Icons.auto_awesome, title: 'Effects', subtitle: 'Coming next')),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Row(
-            children: [
-              Expanded(child: _ToolTile(icon: Icons.color_lens_outlined, title: 'Color grade', subtitle: 'Coming next')),
-              SizedBox(width: 10),
-              Expanded(child: _ToolTile(icon: Icons.graphic_eq, title: 'Audio', subtitle: 'Coming next')),
-            ],
-          ),
-          const SizedBox(height: 24),
-          const Text('RECENT PROJECTS', style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 2, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
-          const Text('Your projects will appear here.', style: TextStyle(color: Colors.white38)),
-        ],
-      );
-
-  Widget _editorBody() {
-    final clip = _clips[_selected];
-    final controller = _video;
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-          child: Row(
-            children: [
-              IconButton(onPressed: () => setState(() { _clips.clear(); _video?.dispose(); _video = null; }), icon: const Icon(Icons.arrow_back)),
-              const Expanded(child: Text('Untitled project', style: TextStyle(fontWeight: FontWeight.bold))),
-              TextButton(onPressed: () => _showInfo('Export', 'Export rendering is being implemented. No video has been exported yet.'), child: const Text('Export', style: TextStyle(color: _orange, fontWeight: FontWeight.bold))),
-            ],
-          ),
-        ),
-        Expanded(
-          flex: 5,
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            width: double.infinity,
-            decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(16)),
-            clipBehavior: Clip.antiAlias,
-            child: Center(
-              child: _busy
-                  ? const CircularProgressIndicator(color: _orange)
-                  : clip.isVideo
-                      ? (controller != null && controller.value.isInitialized
-                          ? AspectRatio(
-                              aspectRatio: controller.value.aspectRatio,
-                              child: Stack(alignment: Alignment.center, children: [
-                                VideoPlayer(controller),
-                                IconButton.filled(
-                                  style: IconButton.styleFrom(backgroundColor: Colors.black54),
-                                  onPressed: () => setState(() => controller.value.isPlaying ? controller.pause() : controller.play()),
-                                  icon: Icon(controller.value.isPlaying ? Icons.pause : Icons.play_arrow, size: 34),
-                                ),
-                              ]),
-                            )
-                          : const Text('Could not load this video', style: TextStyle(color: Colors.white70)))
-                      : Image.file(File(clip.file.path), fit: BoxFit.contain),
-            ),
-          ),
-        ),
-        if (controller != null && controller.value.isInitialized)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 10, 18, 2),
-            child: Row(
-              children: [
-                Text(_durationLabel(controller.value.position), style: const TextStyle(fontFeatures: [])),
-                Expanded(child: VideoProgressIndicator(controller, allowScrubbing: true, colors: const VideoProgressColors(playedColor: _orange, bufferedColor: Colors.white24, backgroundColor: Colors.white12))),
-                Text(_durationLabel(controller.value.duration)),
-              ],
-            ),
-          ),
-        const SizedBox(height: 10),
-        Container(
-          height: 178,
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-          decoration: const BoxDecoration(color: _panel, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                const Text('TIMELINE', style: TextStyle(fontSize: 11, color: Colors.white60, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
-                const Spacer(),
-                IconButton(onPressed: _pickVideo, icon: const Icon(Icons.video_library_outlined, size: 20)),
-                IconButton(onPressed: _pickPhoto, icon: const Icon(Icons.add_photo_alternate_outlined, size: 20)),
-                IconButton(onPressed: _removeSelected, icon: const Icon(Icons.delete_outline, size: 20, color: Colors.white70)),
-              ]),
-              Expanded(
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _clips.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, i) {
-                    final item = _clips[i];
-                    return GestureDetector(
-                      onTap: () async { setState(() => _selected = i); await _loadPreview(); },
-                      child: Container(
-                        width: 112,
-                        decoration: BoxDecoration(
-                          color: _panel2,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: i == _selected ? _orange : Colors.white12, width: i == _selected ? 2 : 1),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Stack(fit: StackFit.expand, children: [
-                          if (!item.isVideo) Image.file(File(item.file.path), fit: BoxFit.cover),
-                          if (item.isVideo) const Center(child: Icon(Icons.movie_outlined, color: Colors.white70, size: 28)),
-                          Positioned(left: 6, bottom: 6, child: Icon(item.isVideo ? Icons.videocam : Icons.image, size: 14, color: Colors.white)),
-                          if (i == _selected) const Positioned(right: 5, top: 5, child: Icon(Icons.check_circle, color: _orange, size: 17)),
-                        ]),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          color: _bg,
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 14),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _BottomTool(icon: Icons.content_cut, label: 'Trim'),
-              _BottomTool(icon: Icons.speed, label: 'Speed'),
-              _BottomTool(icon: Icons.auto_awesome, label: 'Effects'),
-              _BottomTool(icon: Icons.title, label: 'Text'),
-              _BottomTool(icon: Icons.graphic_eq, label: 'Audio'),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showInfo(String title, String message) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: _panel,
-        title: Text(title),
-        content: Text(message, style: const TextStyle(color: Colors.white70)),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: _orange)))],
-      ),
-    );
-  }
-}
-
-class _ToolTile extends StatelessWidget {
-  const _ToolTile({required this.icon, required this.title, required this.subtitle});
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(icon, color: _orange, size: 23),
-          const SizedBox(height: 13),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+        backgroundColor: bg,
+        leading: IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back_rounded)),
+        title: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('AURIX EDITOR', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+          Text('Untitled project', style: TextStyle(fontSize: 10, color: Colors.white45)),
         ]),
-      );
+        actions: [
+          Container(margin: const EdgeInsets.only(right: 12, top: 10, bottom: 10), child: OutlinedButton(
+            onPressed: null,
+            style: OutlinedButton.styleFrom(disabledForegroundColor: Colors.white38, side: const BorderSide(color: Colors.white12), padding: const EdgeInsets.symmetric(horizontal: 13)),
+            child: const Text('EXPORT'),
+          )),
+        ],
+      ),
+      body: SafeArea(child: Column(children: [
+        Expanded(flex: 5, child: Container(
+          margin: const EdgeInsets.fromLTRB(14, 2, 14, 8),
+          width: double.infinity,
+          decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(alignment: Alignment.center, children: [
+            Positioned(top: 10, left: 12, child: _PreviewTag(text: current.isVideo ? 'VIDEO PREVIEW' : 'IMAGE PREVIEW')),
+            if (loading) const CircularProgressIndicator(color: orange)
+            else if (current.isVideo && controller != null && controller.value.isInitialized)
+              Center(child: AspectRatio(aspectRatio: controller.value.aspectRatio, child: VideoPlayer(controller)))
+            else if (!current.isVideo)
+              Center(child: Image.file(File(current.file.path), fit: BoxFit.contain))
+            else
+              const Center(child: Text('Preview unavailable', style: TextStyle(color: Colors.white54))),
+            if (current.isVideo && controller != null && controller.value.isInitialized)
+              IconButton.filled(
+                onPressed: () async { if (controller.value.isPlaying) { await controller.pause(); } else { await controller.play(); } setState(() {}); },
+                style: IconButton.styleFrom(backgroundColor: Colors.black.withOpacity(.6), foregroundColor: Colors.white, fixedSize: const Size(58, 58)),
+                icon: Icon(controller.value.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 30),
+              ),
+            Positioned(bottom: 12, left: 14, right: 14, child: Row(children: [
+              Text(controller?.value.isInitialized == true ? _time(controller!.value.position) : '00:00', style: const TextStyle(fontSize: 10, color: Colors.white70)),
+              const Spacer(),
+              Text(controller?.value.isInitialized == true ? _time(controller!.value.duration) : '--:--', style: const TextStyle(fontSize: 10, color: Colors.white70)),
+            ])),
+          ]),
+        )),
+        if (controller != null && controller.value.isInitialized)
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 18), child: VideoProgressIndicator(controller, allowScrubbing: true, colors: const VideoProgressColors(playedColor: orange, bufferedColor: Colors.white24, backgroundColor: Colors.white12))),
+        Container(
+          height: 196,
+          margin: const EdgeInsets.fromLTRB(12, 9, 12, 0),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 9),
+          decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white10)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Text('TIMELINE', style: TextStyle(fontSize: 10, color: Colors.white60, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+              const Spacer(),
+              IconButton(onPressed: _addVideo, icon: const Icon(Icons.video_call_outlined, size: 20)),
+              IconButton(onPressed: _addPhoto, icon: const Icon(Icons.add_photo_alternate_outlined, size: 19)),
+              IconButton(onPressed: _remove, icon: const Icon(Icons.delete_outline_rounded, size: 19)),
+            ]),
+            const SizedBox(height: 4),
+            Expanded(child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: clips.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 7),
+              itemBuilder: (context, index) {
+                final item = clips[index];
+                return GestureDetector(
+                  onTap: () async { setState(() { selected = index; speed = 1; volume = 1; }); await _loadSelected(); },
+                  child: Container(
+                    width: 108,
+                    decoration: BoxDecoration(color: surface2, borderRadius: BorderRadius.circular(10), border: Border.all(color: selected == index ? orange : Colors.white12, width: selected == index ? 2 : 1)),
+                    clipBehavior: Clip.antiAlias,
+                    child: Stack(fit: StackFit.expand, children: [
+                      if (!item.isVideo) Image.file(File(item.file.path), fit: BoxFit.cover),
+                      if (item.isVideo) const Center(child: Icon(Icons.movie_outlined, size: 26, color: Colors.white70)),
+                      Positioned(left: 6, bottom: 6, child: Text(item.isVideo ? 'VIDEO ${index + 1}' : 'PHOTO ${index + 1}', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold))),
+                      if (selected == index) const Positioned(right: 5, top: 5, child: Icon(Icons.check_circle, color: orange, size: 16)),
+                    ]),
+                  ),
+                );
+              },
+            )),
+          ]),
+        ),
+        Container(
+          margin: const EdgeInsets.fromLTRB(12, 9, 12, 0),
+          padding: const EdgeInsets.fromLTRB(13, 12, 13, 13),
+          decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white10)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              _PanelTab(label: 'Speed', selected: activePanel == 'Speed', onTap: () => setState(() => activePanel = 'Speed')),
+              _PanelTab(label: 'Volume', selected: activePanel == 'Volume', onTap: () => setState(() => activePanel = 'Volume')),
+              const Spacer(),
+              Text(activePanel == 'Speed' ? '${speed.toStringAsFixed(2)}×' : '${(volume * 100).round()}%', style: const TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 12)),
+            ]),
+            const SizedBox(height: 8),
+            if (activePanel == 'Speed')
+              Slider(value: speed, min: .25, max: 2, divisions: 35, onChanged: controller == null ? null : (v) async { setState(() => speed = v); await controller.setPlaybackSpeed(v); })
+            else
+              Slider(value: volume, min: 0, max: 1, divisions: 20, onChanged: controller == null ? null : (v) async { setState(() => volume = v); await controller.setVolume(v); }),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text(activePanel == 'Speed' ? '0.25×' : 'Mute', style: const TextStyle(color: Colors.white38, fontSize: 9)),
+              Text(activePanel == 'Speed' ? '2.00×' : '100%', style: const TextStyle(color: Colors.white38, fontSize: 9)),
+            ]),
+          ]),
+        ),
+        Container(
+          height: 70,
+          padding: const EdgeInsets.fromLTRB(8, 9, 8, 8),
+          child: const Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+            _ComingTool(icon: Icons.content_cut_rounded, label: 'Trim'),
+            _ComingTool(icon: Icons.auto_awesome_rounded, label: 'Effects'),
+            _ComingTool(icon: Icons.title_rounded, label: 'Text'),
+            _ComingTool(icon: Icons.graphic_eq_rounded, label: 'Audio'),
+            _ComingTool(icon: Icons.palette_outlined, label: 'Color'),
+          ]),
+        ),
+      ])),
+    );
+  }
 }
 
-class _BottomTool extends StatelessWidget {
-  const _BottomTool({required this.icon, required this.label});
+class _PreviewTag extends StatelessWidget {
+  const _PreviewTag({required this.text});
+  final String text;
+  @override
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)), child: Text(text, style: const TextStyle(fontSize: 8, color: Colors.white70, letterSpacing: 1)));
+}
+
+class _PanelTab extends StatelessWidget {
+  const _PanelTab({required this.label, required this.selected, required this.onTap});
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(right: 7), child: TextButton(
+    onPressed: onTap,
+    style: TextButton.styleFrom(backgroundColor: selected ? orange.withOpacity(.16) : Colors.transparent, foregroundColor: selected ? orange : Colors.white54, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7), minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+    child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+  ));
+}
+
+class _ComingTool extends StatelessWidget {
+  const _ComingTool({required this.icon, required this.label});
   final IconData icon;
   final String label;
-
   @override
-  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: Colors.white70, size: 22),
-        const SizedBox(height: 5),
-        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 10)),
-      ]);
+  Widget build(BuildContext context) => Opacity(opacity: .55, child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+    Icon(icon, size: 20, color: Colors.white70),
+    const SizedBox(height: 5),
+    Text(label, style: const TextStyle(fontSize: 9, color: Colors.white60)),
+  ]));
 }

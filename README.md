@@ -1,44 +1,43 @@
-# VELORA EDITOR
+# AURIX — Create Beyond Limits
 
-Create Beyond Limits.
+AURIX is an independent mobile video-editing application for Android and iOS. The supplied 360 Editor video is used as workflow inspiration; AURIX does not copy its proprietary source code, artwork, or branding.
 
-VELORA is being developed as an independent mobile video editor for Android and iOS, inspired by the workflow and feature categories of professional mobile editors such as 360 Editor. It does not copy proprietary code, assets, or artwork.
+## Current functional foundation
 
-## Phase 1 foundation currently in the repository
-
-- Premium dark editor shell with orange accents.
-- New project entry point.
-- Import a video or photo from the device library.
-- Video playback preview using the platform video player.
-- Basic media clip strip with clip selection and removal.
-- Android and iOS display name changed to VELORA EDITOR.
-- Existing application ID and iOS bundle identifier are retained so this rebrand does not silently create a different store app identity.
+- AURIX dark cinematic home and editor UI.
+- Import a video or image from the device library.
+- Native video playback preview.
+- Multiple imported clips in a selectable timeline strip.
+- Remove the selected clip.
+- Real-time preview playback speed control (0.25×–2×).
+- Real-time preview volume control.
+- Android target API 36 and NDK r28 toolchain for the 16 KB page-size release requirement.
+- Legacy Marketplace Flutter modules, Go backend, Marketplace assets, and related deployment workflows removed from this repository.
 
 ## Not implemented yet
 
-This is not yet a complete nonlinear editor. Trimming, splitting, multi-track compositing, speed curves, tracking, masks, effects, color grading, audio mixing, and final export are later engineering phases. The UI must not claim those operations work until their media engine is connected.
+Timeline trimming/splitting and rendering, multi-track compositing, audio-track mixing, speed-ramp curves, keyframes, tracking, cut-out, masks, effects, color grading, captions, and final export are not implemented in this foundation. They must be connected to a real native media engine before being advertised as available.
 
-## Planned phases
+## Engineering roadmap
 
-1. Project architecture, editor shell, media import and preview.
-2. Timeline model, clip operations, playback synchronization and autosave.
-3. Trim, split, audio tracks and native media pipeline.
-4. Speed ramp curves, keyframes and frame interpolation.
+1. Editor foundation, media import and preview.
+2. Persistent project model, clip timeline, trim and split.
+3. Native media render/export pipeline and audio tracks.
+4. Speed ramp curves and keyframe engine.
 5. Effects, masks and color grading.
-6. Motion/object tracking and background segmentation.
-7. Export pipeline with hardware encoding and verified output.
-8. Optional on-device AI tools.
-9. Device compatibility, memory/performance tests and store release validation.
-
-## Native media engine
-
-Use native Android/iOS codecs and GPU APIs where practical. Select a maintained FFmpeg integration only after checking licensing, ABI support, 16 KB page compatibility, and maintenance status. Review codec distribution obligations before release.
+6. Motion tracking and segmentation.
+7. Hardware-accelerated export and 16 KB compatibility verification.
+8. AI features only when backed by real models/services.
+9. Device QA, memory profiling and Play/App Store release checks.
 
 ## Build
 
 ```bash
 flutter pub get
+dart run flutter_launcher_icons
 flutter analyze
 flutter test
-flutter run
+flutter build appbundle --release
 ```
+
+The existing Android application ID and iOS bundle identifier are intentionally preserved for continuity with the existing store listing. Change them only if AURIX is to be published as a separate new app.

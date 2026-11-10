@@ -1,41 +1,17 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.google.gms:google-services:4.4.1'
-    }
-}
-
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
 }
-
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-// Keep all Android plugin modules on API 36 so native dependencies can compile
-// consistently with the app's target SDK.
-subprojects {
     afterEvaluate { project ->
         if (project.hasProperty("android")) {
-            project.android {
-                compileSdk = 36
-            }
+            project.android { compileSdk = 36 }
         }
     }
-}
-
-subprojects {
     project.evaluationDependsOn(":app")
 }
-
-
-tasks.register("clean", Delete) {
-    delete rootProject.buildDir
-}
+tasks.register("clean", Delete) { delete rootProject.buildDir }
