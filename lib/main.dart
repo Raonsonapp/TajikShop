@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const bg = Color(0xFF080808);
 const surface = Color(0xFF151515);
@@ -37,6 +39,45 @@ class AurixApp extends StatelessWidget {
     ),
     home: const HomeScreen(),
   );
+}
+
+class SavedProject {
+  const SavedProject({required this.path, required this.isVideo, required this.createdAt});
+  final String path;
+  final bool isVideo;
+  final String createdAt;
+  Map<String, dynamic> toJson() => {'path': path, 'isVideo': isVideo, 'createdAt': createdAt};
+  factory SavedProject.fromJson(Map<String, dynamic> json) => SavedProject(
+    path: json['path'] as String,
+    isVideo: json['isVideo'] as bool? ?? true,
+    createdAt: json['createdAt'] as String? ?? '',
+  );
+}
+
+class ProjectHistory {
+  static const _key = 'aurix_recent_projects_v1';
+  static Future<List<SavedProject>> read() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_key);
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final values = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
+      return values.map(SavedProject.fromJson).take(3).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+  static Future<void> add(XFile file, bool isVideo) async {
+    final prefs = await SharedPreferences.getInstance();
+    final items = await read();
+    items.removeWhere((item) => item.path == file.path);
+    items.insert(0, SavedProject(path: file.path, isVideo: isVideo, createdAt: DateTime.now().toIso8601String()));
+    await prefs.setString(_key, jsonEncode(items.take(3).map((item) => item.toJson()).toList()));
+  }
+  static Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+  }
 }
 
 class ProjectMedia {
@@ -111,18 +152,47 @@ class _TemplateTile extends StatelessWidget {
   );
 }
 
-class _LibraryTab extends StatelessWidget {
+class _LibraryTab extends StatefulWidget {
   const _LibraryTab();
   @override
+  State<_LibraryTab> createState() => _LibraryTabState();
+}
+class _LibraryTabState extends State<_LibraryTab> {
+  List<SavedProject> projects = [];
+  @override
+  void initState() { super.initState(); _load(); }
+  Future<void> _load() async {
+    final items = await ProjectHistory.read();
+    if (mounted) setState(() => projects = items);
+  }
+  Future<void> _clear() async {
+    await ProjectHistory.clear();
+    if (mounted) setState(() => projects = []);
+  }
+  @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Library', style: TextStyle(fontWeight: FontWeight.w800))),
-    body: const Center(child: Padding(padding: EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Icon(Icons.video_library_outlined, size: 48, color: Colors.white30),
-      SizedBox(height: 14),
-      Text('Your projects', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      SizedBox(height: 6),
-      Text('Saved project persistence is not connected yet. Imported media currently opens directly in the editor.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
-    ]))),
+    appBar: AppBar(title: const Text('Library', style: TextStyle(fontWeight: FontWeight.w800)), actions: [
+      if (projects.isNotEmpty) IconButton(tooltip: 'Clear history', onPressed: _clear, icon: const Icon(Icons.delete_outline)),
+    ]),
+    body: projects.isEmpty
+      ? const Center(child: Padding(padding: EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.video_library_outlined, size: 48, color: Colors.white30),
+          SizedBox(height: 14),
+          Text('Your projects', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 6),
+          Text('Your three latest imported projects will appear here.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
+        ])))
+      : ListView.builder(padding: const EdgeInsets.all(16), itemCount: projects.length, itemBuilder: (context, index) {
+          final item = projects[index];
+          final exists = File(item.path).existsSync();
+          return Card(color: surface, child: ListTile(
+            leading: Icon(item.isVideo ? Icons.movie_outlined : Icons.image_outlined, color: orange),
+            title: Text(item.path.split(Platform.pathSeparator).last, maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: Text(exists ? (item.isVideo ? 'Video project' : 'Photo project') : 'Original media is no longer available'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: !exists ? null : () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => EditorScreen(initialMedia: [ProjectMedia(XFile(item.path), item.isVideo)]))),
+          ));
+        }),
   );
 }
 
@@ -194,13 +264,13 @@ class _HomeContentState extends State<HomeContent> {
   Future<void> importVideo() async {
     final file = await picker.pickVideo(source: ImageSource.gallery);
     if (file == null || !mounted) return;
-    openEditor([ProjectMedia(file, true)]);
+    await ProjectHistory.add(file, true);\n    if (!mounted) return;\n    openEditor([ProjectMedia(file, true)]);
   }
 
   Future<void> importPhoto() async {
     final file = await picker.pickImage(source: ImageSource.gallery);
     if (file == null || !mounted) return;
-    openEditor([ProjectMedia(file, false)]);
+    await ProjectHistory.add(file, false);\n    if (!mounted) return;\n    openEditor([ProjectMedia(file, false)]);
   }
 
   void openEditor(List<ProjectMedia> media) {
