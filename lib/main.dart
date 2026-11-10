@@ -304,8 +304,7 @@ class _HomeContentState extends State<HomeContent> {
     body: SafeArea(child: ListView(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
       children: [
-        const Text('Your next edit.
-Your vision.', style: TextStyle(fontSize: 34, height: 1.05, fontWeight: FontWeight.w900, letterSpacing: -.8)),
+        const Text('Your next edit.\\nYour vision.', style: TextStyle(fontSize: 34, height: 1.05, fontWeight: FontWeight.w900, letterSpacing: -.8)),
         const SizedBox(height: 10),
         const Text('A focused workspace for cinematic video creation.', style: TextStyle(color: Colors.white60, fontSize: 14)),
         const SizedBox(height: 24),
