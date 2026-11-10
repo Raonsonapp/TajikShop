@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 
 const bg = Color(0xFF080808);
 const surface = Color(0xFF151515);
@@ -84,6 +85,21 @@ class ProjectMedia {
   ProjectMedia(this.file, this.isVideo);
   final XFile file;
   final bool isVideo;
+}
+
+class MediaStorage {
+  static Future<XFile> persist(XFile source) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final mediaDirectory = Directory('${directory.path}/aurix_media');
+    if (!await mediaDirectory.exists()) {
+      await mediaDirectory.create(recursive: true);
+    }
+    final originalName = source.path.split(Platform.pathSeparator).last;
+    final safeName = originalName.isEmpty ? 'media' : originalName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+    final destination = File('${mediaDirectory.path}/${DateTime.now().microsecondsSinceEpoch}_$safeName');
+    final saved = await File(source.path).copy(destination.path);
+    return XFile(saved.path);
+  }
 }
 
 
@@ -264,17 +280,19 @@ class _HomeContentState extends State<HomeContent> {
   Future<void> importVideo() async {
     final file = await picker.pickVideo(source: ImageSource.gallery);
     if (file == null || !mounted) return;
-    await ProjectHistory.add(file, true);
+    final saved = await MediaStorage.persist(file);
+    await ProjectHistory.add(saved, true);
     if (!mounted) return;
-    openEditor([ProjectMedia(file, true)]);
+    openEditor([ProjectMedia(saved, true)]);
   }
 
   Future<void> importPhoto() async {
     final file = await picker.pickImage(source: ImageSource.gallery);
     if (file == null || !mounted) return;
-    await ProjectHistory.add(file, false);
+    final saved = await MediaStorage.persist(file);
+    await ProjectHistory.add(saved, false);
     if (!mounted) return;
-    openEditor([ProjectMedia(file, false)]);
+    openEditor([ProjectMedia(saved, false)]);
   }
 
   void openEditor(List<ProjectMedia> media) {
@@ -472,14 +490,20 @@ class _EditorScreenState extends State<EditorScreen> {
   Future<void> _addVideo() async {
     final file = await picker.pickVideo(source: ImageSource.gallery);
     if (file == null || !mounted) return;
-    setState(() { clips.add(ProjectMedia(file, true)); selected = clips.length - 1; });
+    final saved = await MediaStorage.persist(file);
+    if (!mounted) return;
+    await ProjectHistory.add(saved, true);
+    setState(() { clips.add(ProjectMedia(saved, true)); selected = clips.length - 1; });
     await _loadSelected();
   }
 
   Future<void> _addPhoto() async {
     final file = await picker.pickImage(source: ImageSource.gallery);
     if (file == null || !mounted) return;
-    setState(() { clips.add(ProjectMedia(file, false)); selected = clips.length - 1; });
+    final saved = await MediaStorage.persist(file);
+    if (!mounted) return;
+    await ProjectHistory.add(saved, false);
+    setState(() { clips.add(ProjectMedia(saved, false)); selected = clips.length - 1; });
     await _loadSelected();
   }
 
