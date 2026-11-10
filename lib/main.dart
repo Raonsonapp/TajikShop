@@ -1,192 +1,411 @@
-import 'dart:async';
-import 'dart:ui';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'core/theme/app_theme.dart';
-import 'core/api/api_client.dart';
-import 'core/app_l10n.dart';
-import 'core/l10n/fallback_localizations.dart';
-import 'core/services/network_service.dart'; // ← ИЛОВА КУНЕД
-import 'core/services/push_service.dart';
-import 'core/services/sso_authorize.dart';
-import 'core/services/sso_link_service.dart';
-import 'core/services/user_session.dart';
-import 'core/storage/token_storage.dart';
-import 'shared/widgets/sso_consent_sheet.dart';
-import 'core/ads/ad_service.dart';
-import 'providers/auth_provider.dart';
-import 'providers/theme_provider.dart';
-import 'providers/locale_provider.dart';
-import 'routes/app_router.dart';
-import 'routes/route_names.dart';
-import 'shared/widgets/offline_banner.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:video_player/video_player.dart';
+
+const _bg = Color(0xFF090909);
+const _panel = Color(0xFF171717);
+const _panel2 = Color(0xFF222222);
+const _orange = Color(0xFFFF6A00);
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // ✅ Хатогиҳои Flutter-ро дошта гиред
-  FlutterError.onError = (details) {
-    FlutterError.presentError(details);
-    debugPrint('🔴 FLUTTER ERROR: ${details.exceptionAsString()}');
-    debugPrint('📍 STACK: ${details.stack}');
-  };
-
-  // ✅ Хатогиҳои async-ро дошта гиред
-  PlatformDispatcher.instance.onError = (error, stack) {
-    debugPrint('🔴 ASYNC ERROR: $error');
-    debugPrint('📍 STACK: $stack');
-    return true;
-  };
-
-  // ✅ NetworkService-ро инициализатсия кунед!
-  NetworkService.instance.init();
-
-  // ✅ Push notifications (Firebase) — дар мобайл; web-ро рад мекунад
-  PushService.instance.init();
-
-  // ✅ Реклама (Yandex Mobile Ads) — ҳозир бо ID-и демо фаъол
-  AdService.instance.init();
-
-  SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light));
-
-  runApp(const ProviderScope(child: TajikShopApp()));
+    statusBarColor: _bg,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: _bg,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
+  runApp(const VeloraApp());
 }
 
-class TajikShopApp extends ConsumerWidget {
-  const TajikShopApp({super.key});
+class VeloraApp extends StatelessWidget {
+  const VeloraApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
-    final themeMode = ref.watch(themeProvider);
-    final locale = ref.watch(localeProvider);
+  Widget build(BuildContext context) => MaterialApp(
+        title: 'VELORA EDITOR',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: _bg,
+          colorScheme: const ColorScheme.dark(
+            primary: _orange,
+            secondary: _orange,
+            surface: _panel,
+          ),
+          fontFamily: 'Roboto',
+          useMaterial3: true,
+        ),
+        home: const EditorHome(),
+      );
+}
 
-    // Агар навсозии токен кӯмак накунад, сессияро пок карда, корбарро ба
-    // экрани вуруд мебарорем — вагарна ӯ дар ҳар экран «мӯҳлати сессия
-    // гузашт» мебинад ва намедонад, ки чӣ бояд кард.
-    ApiClient.onSessionExpired = () async {
-      await ref.read(authProvider.notifier).logout();
-      router.go(RouteNames.login);
-    };
+class MediaClip {
+  MediaClip(this.file, this.isVideo);
+  final XFile file;
+  final bool isVideo;
+}
 
-    // SSO: Raonson моро бо `tajikshop://sso?code=…` мекушояд — корбар бе
-    // парол ворид мешавад ва фавран ба саҳифаи асосӣ меравад.
-    SsoLinkService.instance.onSignedIn = () async {
-      await ref.read(authProvider.notifier).checkAuth();
-      router.go(RouteNames.home);
-    };
-    // «Бо TajikShop ворид шавед»: Raonson моро бо
-    // `tajikshop://sso/authorize?app=raonson&state=…` мекушояд. Ворид бошад —
-    // розигӣ мепурсем; набошад — аввал вуруд, баъд идома.
-    SsoLinkService.instance.onAuthorize =
-        (req) => _handleSsoAuthorize(ref, router, req);
-    ref.listen<AuthState>(authProvider, (prev, next) {
-      if (next.isAuthenticated && !(prev?.isAuthenticated ?? false)) {
-        final pending = SsoLinkService.instance.takePendingAuthorize();
-        if (pending != null) _handleSsoAuthorize(ref, router, pending);
-      }
+class EditorHome extends StatefulWidget {
+  const EditorHome({super.key});
+
+  @override
+  State<EditorHome> createState() => _EditorHomeState();
+}
+
+class _EditorHomeState extends State<EditorHome> {
+  final _picker = ImagePicker();
+  final List<MediaClip> _clips = [];
+  VideoPlayerController? _video;
+  int _selected = 0;
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _video?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickVideo() async {
+    final file = await _picker.pickVideo(source: ImageSource.gallery);
+    if (file != null) await _addClip(MediaClip(file, true));
+  }
+
+  Future<void> _pickPhoto() async {
+    final file = await _picker.pickImage(source: ImageSource.gallery);
+    if (file != null) await _addClip(MediaClip(file, false));
+  }
+
+  Future<void> _addClip(MediaClip clip) async {
+    setState(() {
+      _clips.add(clip);
+      _selected = _clips.length - 1;
     });
-    SsoLinkService.instance.init();
+    await _loadPreview();
+  }
 
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'TajikShop',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
-      locale: locale,
-      routerConfig: router,
-      localizationsDelegates: const [
-        _AppLocalizationsDelegate(),
-        // ⚠️ Пеш аз Global-ҳо: тоҷикӣ дар Flutter нест, бе ин сатрҳо
-        // `MaterialLocalizations` бор намешавад ва тугмаи бозгашт,
-        // bottom sheet-ҳо ва RefreshIndicator мешикананд.
-        fallbackMaterialDelegate,
-        fallbackCupertinoDelegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+  Future<void> _loadPreview() async {
+    final clip = _clips[_selected];
+    final old = _video;
+    _video = null;
+    await old?.dispose();
+    if (!clip.isVideo) {
+      if (mounted) setState(() {});
+      return;
+    }
+    setState(() => _busy = true);
+    final controller = VideoPlayerController.file(File(clip.file.path));
+    try {
+      await controller.initialize();
+      await controller.setLooping(true);
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _video = controller;
+        _busy = false;
+      });
+    } catch (_) {
+      await controller.dispose();
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _removeSelected() async {
+    if (_clips.isEmpty) return;
+    final old = _video;
+    _video = null;
+    await old?.dispose();
+    setState(() {
+      _clips.removeAt(_selected);
+      _selected = _clips.isEmpty ? 0 : (_selected.clamp(0, _clips.length - 1));
+    });
+    if (_clips.isNotEmpty) await _loadPreview();
+  }
+
+  String _durationLabel(Duration d) {
+    final mm = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final ss = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$mm:$ss';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasMedia = _clips.isNotEmpty;
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: _bg,
+        titleSpacing: 18,
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('VELORA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            Text('EDITOR', style: TextStyle(fontSize: 10, color: _orange, letterSpacing: 4, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Settings',
+            onPressed: () => _showInfo('Settings', 'Project settings and export presets will be added in the next development phase.'),
+            icon: const Icon(Icons.tune_rounded),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: SafeArea(
+        child: hasMedia ? _editorBody() : _dashboard(),
+      ),
+    );
+  }
+
+  Widget _dashboard() => ListView(
+        padding: const EdgeInsets.fromLTRB(18, 22, 18, 28),
+        children: [
+          const Text('Create beyond limits.', style: TextStyle(fontSize: 29, height: 1.1, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 9),
+          const Text('Your creative studio, right in your pocket.', style: TextStyle(color: Colors.white60, fontSize: 14)),
+          const SizedBox(height: 28),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF3A1908), Color(0xFF17100C), Color(0xFF171717)],
+              ),
+              border: Border.all(color: _orange.withOpacity(.35)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.movie_creation_outlined, color: _orange, size: 34),
+                const SizedBox(height: 22),
+                const Text('Start a new project', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 7),
+                const Text('Import a video or photo to begin editing.', style: TextStyle(color: Colors.white70)),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: _orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: _pickVideo,
+                    icon: const Icon(Icons.add),
+                    label: const Text('New video project', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white24),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: _pickPhoto,
+                    icon: const Icon(Icons.image_outlined),
+                    label: const Text('Import photo'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
+          const Text('TOOLS', style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 2, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 14),
+          const Row(
+            children: [
+              Expanded(child: _ToolTile(icon: Icons.speed_rounded, title: 'Speed ramp', subtitle: 'Coming next')),
+              SizedBox(width: 10),
+              Expanded(child: _ToolTile(icon: Icons.auto_awesome, title: 'Effects', subtitle: 'Coming next')),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Row(
+            children: [
+              Expanded(child: _ToolTile(icon: Icons.color_lens_outlined, title: 'Color grade', subtitle: 'Coming next')),
+              SizedBox(width: 10),
+              Expanded(child: _ToolTile(icon: Icons.graphic_eq, title: 'Audio', subtitle: 'Coming next')),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Text('RECENT PROJECTS', style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 2, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          const Text('Your projects will appear here.', style: TextStyle(color: Colors.white38)),
+        ],
+      );
+
+  Widget _editorBody() {
+    final clip = _clips[_selected];
+    final controller = _video;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+          child: Row(
+            children: [
+              IconButton(onPressed: () => setState(() { _clips.clear(); _video?.dispose(); _video = null; }), icon: const Icon(Icons.arrow_back)),
+              const Expanded(child: Text('Untitled project', style: TextStyle(fontWeight: FontWeight.bold))),
+              TextButton(onPressed: () => _showInfo('Export', 'Export rendering is being implemented. No video has been exported yet.'), child: const Text('Export', style: TextStyle(color: _orange, fontWeight: FontWeight.bold))),
+            ],
+          ),
+        ),
+        Expanded(
+          flex: 5,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            width: double.infinity,
+            decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(16)),
+            clipBehavior: Clip.antiAlias,
+            child: Center(
+              child: _busy
+                  ? const CircularProgressIndicator(color: _orange)
+                  : clip.isVideo
+                      ? (controller != null && controller.value.isInitialized
+                          ? AspectRatio(
+                              aspectRatio: controller.value.aspectRatio,
+                              child: Stack(alignment: Alignment.center, children: [
+                                VideoPlayer(controller),
+                                IconButton.filled(
+                                  style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                                  onPressed: () => setState(() => controller.value.isPlaying ? controller.pause() : controller.play()),
+                                  icon: Icon(controller.value.isPlaying ? Icons.pause : Icons.play_arrow, size: 34),
+                                ),
+                              ]),
+                            )
+                          : const Text('Could not load this video', style: TextStyle(color: Colors.white70)))
+                      : Image.file(File(clip.file.path), fit: BoxFit.contain),
+            ),
+          ),
+        ),
+        if (controller != null && controller.value.isInitialized)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 10, 18, 2),
+            child: Row(
+              children: [
+                Text(_durationLabel(controller.value.position), style: const TextStyle(fontFeatures: [])),
+                Expanded(child: VideoProgressIndicator(controller, allowScrubbing: true, colors: const VideoProgressColors(playedColor: _orange, bufferedColor: Colors.white24, backgroundColor: Colors.white12))),
+                Text(_durationLabel(controller.value.duration)),
+              ],
+            ),
+          ),
+        const SizedBox(height: 10),
+        Container(
+          height: 178,
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+          decoration: const BoxDecoration(color: _panel, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const Text('TIMELINE', style: TextStyle(fontSize: 11, color: Colors.white60, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+                const Spacer(),
+                IconButton(onPressed: _pickVideo, icon: const Icon(Icons.video_library_outlined, size: 20)),
+                IconButton(onPressed: _pickPhoto, icon: const Icon(Icons.add_photo_alternate_outlined, size: 20)),
+                IconButton(onPressed: _removeSelected, icon: const Icon(Icons.delete_outline, size: 20, color: Colors.white70)),
+              ]),
+              Expanded(
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _clips.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, i) {
+                    final item = _clips[i];
+                    return GestureDetector(
+                      onTap: () async { setState(() => _selected = i); await _loadPreview(); },
+                      child: Container(
+                        width: 112,
+                        decoration: BoxDecoration(
+                          color: _panel2,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: i == _selected ? _orange : Colors.white12, width: i == _selected ? 2 : 1),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(fit: StackFit.expand, children: [
+                          if (!item.isVideo) Image.file(File(item.file.path), fit: BoxFit.cover),
+                          if (item.isVideo) const Center(child: Icon(Icons.movie_outlined, color: Colors.white70, size: 28)),
+                          Positioned(left: 6, bottom: 6, child: Icon(item.isVideo ? Icons.videocam : Icons.image, size: 14, color: Colors.white)),
+                          if (i == _selected) const Positioned(right: 5, top: 5, child: Icon(Icons.check_circle, color: _orange, size: 17)),
+                        ]),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          color: _bg,
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 14),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _BottomTool(icon: Icons.content_cut, label: 'Trim'),
+              _BottomTool(icon: Icons.speed, label: 'Speed'),
+              _BottomTool(icon: Icons.auto_awesome, label: 'Effects'),
+              _BottomTool(icon: Icons.title, label: 'Text'),
+              _BottomTool(icon: Icons.graphic_eq, label: 'Audio'),
+            ],
+          ),
+        ),
       ],
-      supportedLocales: LocaleNotifier.supported,
-      builder: (context, child) => OfflineBanner(child: child ?? const SizedBox()),
+    );
+  }
+
+  void _showInfo(String title, String message) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: _panel,
+        title: Text(title),
+        content: Text(message, style: const TextStyle(color: Colors.white70)),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK', style: TextStyle(color: _orange)))],
+      ),
     );
   }
 }
 
-/// Экранҳое, ки дар онҳо розигиро нишон додан маъно надорад: аз онҳо
-/// барнома худаш ба ҷои дигар мегузарад ва sheet-ро пӯшида мемонад.
-const _transientRoutes = {
-  RouteNames.splash,
-  RouteNames.login,
-  RouteNames.register,
-  RouteNames.phoneAuth,
-  RouteNames.phoneOtp,
-};
+class _ToolTile extends StatelessWidget {
+  const _ToolTile({required this.icon, required this.title, required this.subtitle});
+  final IconData icon;
+  final String title;
+  final String subtitle;
 
-/// То он даме ки барнома аз splash/вуруд ба экрани доимӣ гузарад, интизор
-/// мешавад (то 60 с). Вагарна `router.go(home)`-и splash sheet-ро мепӯшад.
-Future<BuildContext?> _settledContext(GoRouter router) async {
-  final deadline = DateTime.now().add(const Duration(seconds: 60));
-  while (DateTime.now().isBefore(deadline)) {
-    final path = router.routerDelegate.currentConfiguration.uri.path;
-    final ctx = router.routerDelegate.navigatorKey.currentContext;
-    if (ctx != null && !_transientRoutes.contains(path)) {
-      // Як кадр барои анҷоми гузариш.
-      await Future<void>.delayed(const Duration(milliseconds: 350));
-      return router.routerDelegate.navigatorKey.currentContext;
-    }
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-  }
-  return null;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(color: _panel, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: _orange, size: 23),
+          const SizedBox(height: 13),
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+        ]),
+      );
 }
 
-bool _ssoAuthorizeBusy = false;
-
-Future<void> _handleSsoAuthorize(
-    WidgetRef ref, GoRouter router, SsoAuthorizeRequest req) async {
-  final token = await TokenStorage.getAccessToken();
-  if (token == null || token.isEmpty) {
-    // Ворид нест: дархостро нигоҳ медорем ва пас аз вуруд идома медиҳем.
-    SsoLinkService.instance.setPendingAuthorize(req);
-    router.go(RouteNames.login);
-    return;
-  }
-  if (_ssoAuthorizeBusy) return;
-  _ssoAuthorizeBusy = true;
-  try {
-    final ctx = await _settledContext(router);
-    if (ctx == null || !ctx.mounted) return;
-    final user = ref.read(authProvider).user;
-    final name = (user?.fullName.isNotEmpty ?? false)
-        ? user!.fullName
-        : (UserSession.fullName ?? '');
-    final outcome = await SsoAuthorizeFlow.run(ctx, req, userName: name);
-    if (outcome == SsoAuthorizeOutcome.needsLogin) {
-      SsoLinkService.instance.setPendingAuthorize(req);
-      await ref.read(authProvider.notifier).logout();
-      router.go(RouteNames.login);
-    }
-  } finally {
-    _ssoAuthorizeBusy = false;
-  }
-}
-
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppL10n> {
-  const _AppLocalizationsDelegate();
+class _BottomTool extends StatelessWidget {
+  const _BottomTool({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
 
   @override
-  bool isSupported(Locale l) => ['tg', 'ru', 'en'].contains(l.languageCode);
-
-  @override
-  Future<AppL10n> load(Locale l) async => AppL10n(l.languageCode);
-
-  @override
-  bool shouldReload(_) => false;
+  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: Colors.white70, size: 22),
+        const SizedBox(height: 5),
+        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 10)),
+      ]);
 }
