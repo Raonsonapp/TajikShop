@@ -1,4 +1,3 @@
-import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter/material.dart';
 // `MissingPluginException` дар `services.dart` аст, на дар `material.dart`.
 import 'package:flutter/services.dart';
@@ -308,7 +307,7 @@ void main() {
 
     await step('огоҳиҳо', () async {
       await tapNav(tester, 0);
-      if (await tapIfPresent(tester, find.byIcon(FeatherIcons.bell))) {
+      if (await tapIfPresent(tester, find.byIcon(Icons.notifications_outlined))) {
         expectClean(tester, 'огоҳиҳо');
         await backToRoot(tester);
       }
