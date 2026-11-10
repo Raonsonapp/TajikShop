@@ -45,6 +45,7 @@ class ProjectMedia {
   final bool isVideo;
 }
 
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   @override
@@ -52,6 +53,141 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int selectedTab = 0;
+  @override
+  Widget build(BuildContext context) {
+    final pages = const [_HomeTab(), _TemplatesTab(), _LibraryTab(), _ProfileTab()];
+    return Scaffold(
+      body: IndexedStack(index: selectedTab, children: pages),
+      bottomNavigationBar: NavigationBar(
+        height: 68,
+        backgroundColor: const Color(0xFF111111),
+        indicatorColor: const Color(0x33FF6A00),
+        selectedIndex: selectedTab,
+        onDestinationSelected: (index) => setState(() => selectedTab = index),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.dashboard_customize_outlined), selectedIcon: Icon(Icons.dashboard_customize_rounded), label: 'Templates'),
+          NavigationDestination(icon: Icon(Icons.video_library_outlined), selectedIcon: Icon(Icons.video_library_rounded), label: 'Library'),
+          NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Profile'),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeTab extends StatelessWidget {
+  const _HomeTab();
+  @override
+  Widget build(BuildContext context) => const HomeContent();
+}
+
+class _TemplatesTab extends StatelessWidget {
+  const _TemplatesTab();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Templates', style: TextStyle(fontWeight: FontWeight.w800))),
+    body: ListView(padding: const EdgeInsets.all(18), children: const [
+      Text('CREATIVE STARTING POINTS', style: TextStyle(color: orange, fontSize: 10, letterSpacing: 1.6, fontWeight: FontWeight.bold)),
+      SizedBox(height: 12),
+      _TemplateTile(icon: Icons.movie_filter_outlined, title: 'Cinematic', subtitle: 'Create a film-inspired project'),
+      _TemplateTile(icon: Icons.sports_soccer_rounded, title: 'Sports edit', subtitle: 'A layout for match highlights'),
+      _TemplateTile(icon: Icons.music_video_rounded, title: 'Music edit', subtitle: 'Build an edit around your soundtrack'),
+      _TemplateTile(icon: Icons.smartphone_rounded, title: 'Reels & Shorts', subtitle: 'Vertical 9:16 project format'),
+      SizedBox(height: 12),
+      Text('These are project starters. Editable template packs will be added after the timeline and render engine are connected.', style: TextStyle(color: Colors.white54, fontSize: 12)),
+    ]),
+  );
+}
+
+class _TemplateTile extends StatelessWidget {
+  const _TemplateTile({required this.icon, required this.title, required this.subtitle});
+  final IconData icon; final String title; final String subtitle;
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+    child: Row(children: [Icon(icon, color: orange, size: 25), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 11))])), const Icon(Icons.chevron_right, color: Colors.white38)]),
+  );
+}
+
+class _LibraryTab extends StatelessWidget {
+  const _LibraryTab();
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Library', style: TextStyle(fontWeight: FontWeight.w800))),
+    body: const Center(child: Padding(padding: EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Icon(Icons.video_library_outlined, size: 48, color: Colors.white30),
+      SizedBox(height: 14),
+      Text('Your projects', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      SizedBox(height: 6),
+      Text('Saved project persistence is not connected yet. Imported media currently opens directly in the editor.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
+    ]))),
+  );
+}
+
+class _ProfileTab extends StatefulWidget {
+  const _ProfileTab();
+  @override
+  State<_ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<_ProfileTab> {
+  String language = 'Тоҷикӣ';
+  String displayName = 'AURIX Creator';
+
+  void _message(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  Future<void> _chooseLanguage() async {
+    final choice = await showModalBottomSheet<String>(context: context, backgroundColor: surface, builder: (context) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      const ListTile(title: Text('App language', style: TextStyle(fontWeight: FontWeight.bold))),
+      for (final item in ['Тоҷикӣ', 'Русский', 'English']) ListTile(title: Text(item), trailing: language == item ? const Icon(Icons.check, color: orange) : null, onTap: () => Navigator.pop(context, item)),
+    ])));
+    if (choice != null) setState(() => language = choice);
+    if (choice != null && choice != 'Тоҷикӣ') _message('Language selection is saved for this session; full localization is still in progress.');
+  }
+  Future<void> _editName() async {
+    final controller = TextEditingController(text: displayName);
+    final value = await showDialog<String>(context: context, builder: (context) => AlertDialog(
+      title: const Text('Edit profile'),
+      content: TextField(controller: controller, autofocus: true, decoration: const InputDecoration(labelText: 'Display name')),
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Save'))],
+    ));
+    if (value != null && value.isNotEmpty) setState(() => displayName = value);
+  }
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Profile & Settings', style: TextStyle(fontWeight: FontWeight.w800))),
+    body: ListView(padding: const EdgeInsets.all(18), children: [
+      Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF321707), surface]), borderRadius: BorderRadius.circular(18), border: Border.all(color: orange.withOpacity(.25))), child: Row(children: [
+        const CircleAvatar(radius: 28, backgroundColor: orange, child: Icon(Icons.person, color: Colors.white, size: 30)),
+        const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), const Text('Local profile · Sign-in not connected', style: TextStyle(color: Colors.white60, fontSize: 11))])),
+        IconButton(onPressed: _editName, icon: const Icon(Icons.edit_outlined, color: orange)),
+      ])),
+      const SizedBox(height: 22),
+      const Text('ACCOUNT', style: TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.5)),
+      ListTile(leading: const Icon(Icons.person_outline), title: const Text('Edit profile'), onTap: _editName),
+      ListTile(leading: const Icon(Icons.login_rounded), title: const Text('Continue with Google'), subtitle: const Text('Firebase Authentication setup required'), onTap: () => _message('Google sign-in is not active: Firebase project configuration and OAuth client IDs are missing.')),
+      ListTile(leading: const Icon(Icons.notifications_none), title: const Text('Notifications'), onTap: () => _message('Notifications are not connected yet.')),
+      ListTile(leading: const Icon(Icons.history), title: const Text('Editing history'), onTap: () => _message('Project history storage is not connected yet.')),
+      const Divider(height: 26),
+      const Text('APP SETTINGS', style: TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.5)),
+      ListTile(leading: const Icon(Icons.language), title: const Text('Language'), subtitle: Text(language), onTap: _chooseLanguage),
+      ListTile(leading: const Icon(Icons.storage_outlined), title: const Text('Storage & cache'), subtitle: const Text('Cache manager not connected'), onTap: () => _message('There is no persistent media cache manager to clear yet.')),
+      ListTile(leading: const Icon(Icons.share_outlined), title: const Text('Share AURIX'), onTap: () => _message('Share link will be available after the public app listing is created.')),
+      ListTile(leading: const Icon(Icons.info_outline), title: const Text('About AURIX'), subtitle: const Text('Create beyond limits · Version 1.0.6')),
+      const Divider(height: 26),
+      ListTile(leading: const Icon(Icons.delete_outline, color: Colors.redAccent), title: const Text('Delete account', style: TextStyle(color: Colors.redAccent)), onTap: () => _message('Account deletion is unavailable until account registration and backend storage are implemented.')),
+    ]),
+  );
+}
+
+class HomeContent extends StatefulWidget {
+  const HomeContent({super.key});
+  @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
   final picker = ImagePicker();
   final List<ProjectMedia> recent = [];
 
