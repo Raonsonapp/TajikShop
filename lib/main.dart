@@ -507,6 +507,20 @@ class _EditorScreenState extends State<EditorScreen> {
     await _loadSelected();
   }
 
+  Future<void> _duplicateSelected() async {
+    if (clips.isEmpty) return;
+    final source = clips[selected];
+    final copy = await MediaStorage.persist(source.file);
+    if (!mounted) return;
+    setState(() {
+      clips.insert(selected + 1, ProjectMedia(copy, source.isVideo));
+      selected += 1;
+    });
+    await ProjectHistory.add(copy, source.isVideo);
+    await _loadSelected();
+    _message('Clip duplicated.');
+  }
+
   Future<void> _remove() async {
     if (clips.isEmpty) return;
     final old = video; video = null; await old?.dispose();
@@ -604,29 +618,48 @@ class _EditorScreenState extends State<EditorScreen> {
             Row(children: [
               const Text('TIMELINE', style: TextStyle(fontSize: 10, color: Colors.white60, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
               const Spacer(),
-              IconButton(onPressed: _addVideo, icon: const Icon(Icons.video_call_outlined, size: 20)),
-              IconButton(onPressed: _addPhoto, icon: const Icon(Icons.add_photo_alternate_outlined, size: 19)),
-              IconButton(onPressed: _remove, icon: const Icon(Icons.delete_outline_rounded, size: 19)),
+              IconButton(tooltip: 'Duplicate clip', onPressed: _duplicateSelected, icon: const Icon(Icons.copy_rounded, size: 18)),
+              IconButton(tooltip: 'Add video', onPressed: _addVideo, icon: const Icon(Icons.video_call_outlined, size: 20)),
+              IconButton(tooltip: 'Add photo', onPressed: _addPhoto, icon: const Icon(Icons.add_photo_alternate_outlined, size: 19)),
+              IconButton(tooltip: 'Delete clip', onPressed: _remove, icon: const Icon(Icons.delete_outline_rounded, size: 19)),
             ]),
             const SizedBox(height: 4),
-            Expanded(child: ListView.separated(
+            Expanded(child: ReorderableListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: clips.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 7),
+              onReorder: (oldIndex, newIndex) {
+                setState(() {
+                  if (newIndex > oldIndex) newIndex -= 1;
+                  final item = clips.removeAt(oldIndex);
+                  clips.insert(newIndex, item);
+                  if (selected == oldIndex) {
+                    selected = newIndex;
+                  } else if (oldIndex < selected && newIndex >= selected) {
+                    selected -= 1;
+                  } else if (oldIndex > selected && newIndex <= selected) {
+                    selected += 1;
+                  }
+                });
+              },
               itemBuilder: (context, index) {
                 final item = clips[index];
-                return GestureDetector(
-                  onTap: () async { setState(() { selected = index; speed = 1; volume = 1; }); await _loadSelected(); },
-                  child: Container(
-                    width: 108,
-                    decoration: BoxDecoration(color: surface2, borderRadius: BorderRadius.circular(10), border: Border.all(color: selected == index ? orange : Colors.white12, width: selected == index ? 2 : 1)),
-                    clipBehavior: Clip.antiAlias,
-                    child: Stack(fit: StackFit.expand, children: [
-                      if (!item.isVideo) Image.file(File(item.file.path), fit: BoxFit.cover),
-                      if (item.isVideo) const Center(child: Icon(Icons.movie_outlined, size: 26, color: Colors.white70)),
-                      Positioned(left: 6, bottom: 6, child: Text(item.isVideo ? 'VIDEO ${index + 1}' : 'PHOTO ${index + 1}', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold))),
-                      if (selected == index) const Positioned(right: 5, top: 5, child: Icon(Icons.check_circle, color: orange, size: 16)),
-                    ]),
+                return Container(
+                  key: ValueKey('${item.file.path}_$index'),
+                  width: 108,
+                  margin: const EdgeInsets.only(right: 7),
+                  child: GestureDetector(
+                    onTap: () async { setState(() { selected = index; speed = 1; volume = 1; }); await _loadSelected(); },
+                    child: Container(
+                      decoration: BoxDecoration(color: surface2, borderRadius: BorderRadius.circular(10), border: Border.all(color: selected == index ? orange : Colors.white12, width: selected == index ? 2 : 1)),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(fit: StackFit.expand, children: [
+                        if (!item.isVideo) Image.file(File(item.file.path), fit: BoxFit.cover),
+                        if (item.isVideo) const Center(child: Icon(Icons.movie_outlined, size: 26, color: Colors.white70)),
+                        Positioned(left: 6, bottom: 6, child: Text(item.isVideo ? 'VIDEO ${index + 1}' : 'PHOTO ${index + 1}', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold))),
+                        if (selected == index) const Positioned(right: 5, top: 5, child: Icon(Icons.check_circle, color: orange, size: 16)),
+                        const Positioned(right: 5, bottom: 5, child: Icon(Icons.drag_indicator, size: 14, color: Colors.white54)),
+                      ]),
+                    ),
                   ),
                 );
               },
