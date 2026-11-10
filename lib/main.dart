@@ -155,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('No projects yet', style: TextStyle(fontWeight: FontWeight.w700)),
               SizedBox(height: 3),
-              Text('Your saved editing projects will appear here.', style: TextStyle(color: Colors.white45, fontSize: 12)),
+              Text('Your saved editing projects will appear here.', style: TextStyle(color: Colors.white38, fontSize: 12)),
             ])),
           ]),
         ),
@@ -281,7 +281,7 @@ class _EditorScreenState extends State<EditorScreen> {
         leading: IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back_rounded)),
         title: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('AURIX EDITOR', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-          Text('Untitled project', style: TextStyle(fontSize: 10, color: Colors.white45)),
+          Text('Untitled project', style: TextStyle(fontSize: 10, color: Colors.white38)),
         ]),
         actions: [
           Container(margin: const EdgeInsets.only(right: 12, top: 10, bottom: 10), child: OutlinedButton(
