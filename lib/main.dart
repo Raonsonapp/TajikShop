@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: bg,
       titleSpacing: 18,
       title: Row(children: [
-        ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('assets/brand/aurix_logo.jpg', width: 42, height: 42, fit: BoxFit.cover)),
+        ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png', width: 42, height: 42, fit: BoxFit.cover)),
         const SizedBox(width: 11),
         const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('AURIX', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2.4)),
