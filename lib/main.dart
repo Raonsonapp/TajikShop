@@ -425,6 +425,12 @@ class _ToolCard extends StatelessWidget {
   );
 }
 
+class EditorSnapshot {
+  EditorSnapshot(this.clips, this.selected);
+  final List<ProjectMedia> clips;
+  final int selected;
+}
+
 class EditorScreen extends StatefulWidget {
   const EditorScreen({super.key, required this.initialMedia});
   final List<ProjectMedia> initialMedia;
@@ -434,7 +440,9 @@ class EditorScreen extends StatefulWidget {
 
 class _EditorScreenState extends State<EditorScreen> {
   final picker = ImagePicker();
-  late final List<ProjectMedia> clips;
+  late List<ProjectMedia> clips;
+  final List<EditorSnapshot> undoStack = [];
+  final List<EditorSnapshot> redoStack = [];
   VideoPlayerController? video;
   int selected = 0;
   bool loading = false;
@@ -452,6 +460,40 @@ class _EditorScreenState extends State<EditorScreen> {
     [0.9,0,0,0,0, 0,0.95,0,0,0, 0,0,1.2,0,0, 0,0,0,1,0],
     [0.3,0,0,0,0, 0,0.3,0,0,0, 0,0,0.3,0,0, 0,0,0,1,0],
   ];
+
+  void _recordUndo() {
+    undoStack.add(EditorSnapshot(List<ProjectMedia>.from(clips), selected));
+    if (undoStack.length > 40) undoStack.removeAt(0);
+    redoStack.clear();
+  }
+
+  Future<void> _restoreSnapshot(EditorSnapshot snapshot) async {
+    final old = video;
+    video = null;
+    await old?.dispose();
+    if (!mounted) return;
+    setState(() {
+      clips = List<ProjectMedia>.from(snapshot.clips);
+      selected = clips.isEmpty ? 0 : snapshot.selected.clamp(0, clips.length - 1).toInt();
+      speed = 1;
+      volume = 1;
+    });
+    if (clips.isNotEmpty) await _loadSelected();
+  }
+
+  Future<void> _undo() async {
+    if (undoStack.isEmpty) return;
+    redoStack.add(EditorSnapshot(List<ProjectMedia>.from(clips), selected));
+    final snapshot = undoStack.removeLast();
+    await _restoreSnapshot(snapshot);
+  }
+
+  Future<void> _redo() async {
+    if (redoStack.isEmpty) return;
+    undoStack.add(EditorSnapshot(List<ProjectMedia>.from(clips), selected));
+    final snapshot = redoStack.removeLast();
+    await _restoreSnapshot(snapshot);
+  }
 
   @override
   void initState() {
@@ -492,6 +534,7 @@ class _EditorScreenState extends State<EditorScreen> {
     if (file == null || !mounted) return;
     final saved = await MediaStorage.persist(file);
     if (!mounted) return;
+    _recordUndo();
     await ProjectHistory.add(saved, true);
     setState(() { clips.add(ProjectMedia(saved, true)); selected = clips.length - 1; });
     await _loadSelected();
@@ -502,6 +545,7 @@ class _EditorScreenState extends State<EditorScreen> {
     if (file == null || !mounted) return;
     final saved = await MediaStorage.persist(file);
     if (!mounted) return;
+    _recordUndo();
     await ProjectHistory.add(saved, false);
     setState(() { clips.add(ProjectMedia(saved, false)); selected = clips.length - 1; });
     await _loadSelected();
@@ -512,6 +556,7 @@ class _EditorScreenState extends State<EditorScreen> {
     final source = clips[selected];
     final copy = await MediaStorage.persist(source.file);
     if (!mounted) return;
+    _recordUndo();
     setState(() {
       clips.insert(selected + 1, ProjectMedia(copy, source.isVideo));
       selected += 1;
@@ -523,6 +568,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
   Future<void> _remove() async {
     if (clips.isEmpty) return;
+    _recordUndo();
     final old = video; video = null; await old?.dispose();
     setState(() { clips.removeAt(selected); selected = clips.isEmpty ? 0 : selected.clamp(0, clips.length - 1).toInt(); });
     if (clips.isNotEmpty) await _loadSelected();
@@ -618,6 +664,8 @@ class _EditorScreenState extends State<EditorScreen> {
             Row(children: [
               const Text('TIMELINE', style: TextStyle(fontSize: 10, color: Colors.white60, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
               const Spacer(),
+              IconButton(tooltip: 'Undo', onPressed: undoStack.isEmpty ? null : _undo, icon: const Icon(Icons.undo_rounded, size: 19)),
+              IconButton(tooltip: 'Redo', onPressed: redoStack.isEmpty ? null : _redo, icon: const Icon(Icons.redo_rounded, size: 19)),
               IconButton(tooltip: 'Duplicate clip', onPressed: _duplicateSelected, icon: const Icon(Icons.copy_rounded, size: 18)),
               IconButton(tooltip: 'Add video', onPressed: _addVideo, icon: const Icon(Icons.video_call_outlined, size: 20)),
               IconButton(tooltip: 'Add photo', onPressed: _addPhoto, icon: const Icon(Icons.add_photo_alternate_outlined, size: 19)),
@@ -628,6 +676,7 @@ class _EditorScreenState extends State<EditorScreen> {
               scrollDirection: Axis.horizontal,
               itemCount: clips.length,
               onReorder: (oldIndex, newIndex) {
+                _recordUndo();
                 setState(() {
                   if (newIndex > oldIndex) newIndex -= 1;
                   final item = clips.removeAt(oldIndex);
