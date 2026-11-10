@@ -143,8 +143,8 @@ class _EditorHomeState extends State<EditorHome> {
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('VELORA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2)),
-            Text('EDITOR', style: TextStyle(fontSize: 10, color: _orange, letterSpacing: 4, fontWeight: FontWeight.bold)),
+            Text('AURIX', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2)),
+            Text('VIDEO EDITOR', style: TextStyle(fontSize: 10, color: _orange, letterSpacing: 4, fontWeight: FontWeight.bold)),
           ],
         ),
         actions: [
@@ -165,7 +165,7 @@ class _EditorHomeState extends State<EditorHome> {
   Widget _dashboard() => ListView(
         padding: const EdgeInsets.fromLTRB(18, 22, 18, 28),
         children: [
-          const Text('Create beyond limits.', style: TextStyle(fontSize: 29, height: 1.1, fontWeight: FontWeight.w900)),
+          const Text('Edit beyond limits.', style: TextStyle(fontSize: 29, height: 1.1, fontWeight: FontWeight.w900)),
           const SizedBox(height: 9),
           const Text('Your creative studio, right in your pocket.', style: TextStyle(color: Colors.white60, fontSize: 14)),
           const SizedBox(height: 28),
