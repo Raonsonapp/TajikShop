@@ -6,12 +6,29 @@ import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 const bg = Color(0xFF080808);
 const surface = Color(0xFF151515);
 const surface2 = Color(0xFF202020);
 const orange = Color(0xFFFF6A00);
 const amber = Color(0xFFFFB800);
+const muted = Color(0xFF96918D);
+
+class AurixMark extends StatelessWidget {
+  const AurixMark({super.key, this.size = 42});
+  final double size;
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size, height: size,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(size * .27),
+      gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFFC45C), Color(0xFFFF6A00), Color(0xFFB83B00)]),
+      boxShadow: [BoxShadow(color: orange.withOpacity(.24), blurRadius: 18, offset: const Offset(0, 5))],
+    ),
+    child: Icon(LucideIcons.aperture, color: const Color(0xFF17100A), size: size * .62),
+  );
+}
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -123,10 +140,10 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedIndex: selectedTab,
         onDestinationSelected: (index) => setState(() => selectedTab = index),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.dashboard_customize_outlined), selectedIcon: Icon(Icons.dashboard_customize_rounded), label: 'Templates'),
-          NavigationDestination(icon: Icon(Icons.video_library_outlined), selectedIcon: Icon(Icons.video_library_rounded), label: 'Library'),
-          NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Profile'),
+          NavigationDestination(icon: Icon(LucideIcons.house), selectedIcon: Icon(LucideIcons.house), label: 'Home'),
+          NavigationDestination(icon: Icon(LucideIcons.layoutGrid), selectedIcon: Icon(LucideIcons.layoutGrid), label: 'Templates'),
+          NavigationDestination(icon: Icon(LucideIcons.library), selectedIcon: Icon(LucideIcons.library), label: 'Library'),
+          NavigationDestination(icon: Icon(LucideIcons.userRound), selectedIcon: Icon(LucideIcons.userRound), label: 'Profile'),
         ],
       ),
     );
@@ -307,7 +324,7 @@ class _HomeContentState extends State<HomeContent> {
       backgroundColor: bg,
       titleSpacing: 18,
       title: Row(children: [
-        ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.asset('ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png', width: 42, height: 42, fit: BoxFit.cover)),
+        const AurixMark(size: 44),
         const SizedBox(width: 11),
         const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('AURIX', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2.4)),
@@ -322,9 +339,9 @@ class _HomeContentState extends State<HomeContent> {
     body: SafeArea(child: ListView(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
       children: [
-        const Text('Your next edit.\\nYour vision.', style: TextStyle(fontSize: 34, height: 1.05, fontWeight: FontWeight.w900, letterSpacing: -.8)),
+        const Text('Make every\\nframe matter.', style: TextStyle(fontSize: 34, height: 1.05, fontWeight: FontWeight.w900, letterSpacing: -.8)),
         const SizedBox(height: 10),
-        const Text('A focused workspace for cinematic video creation.', style: TextStyle(color: Colors.white60, fontSize: 14)),
+        const Text('AURIX STUDIO  /  MOBILE VIDEO EDITOR', style: TextStyle(color: Colors.white60, fontSize: 14)),
         const SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(20),
@@ -335,7 +352,7 @@ class _HomeContentState extends State<HomeContent> {
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Container(width: 42, height: 42, decoration: BoxDecoration(color: orange.withOpacity(.15), borderRadius: BorderRadius.circular(13)), child: const Icon(Icons.movie_creation_outlined, color: orange)),
+              const AurixMark(size: 46),
               const Spacer(),
               const Text('CREATE  •  EDIT  •  EXPORT', style: TextStyle(color: Colors.white54, fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
             ]),
@@ -347,13 +364,13 @@ class _HomeContentState extends State<HomeContent> {
             SizedBox(width: double.infinity, child: FilledButton.icon(
               onPressed: importVideo,
               style: FilledButton.styleFrom(backgroundColor: orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-              icon: const Icon(Icons.add_rounded), label: const Text('New video project', style: TextStyle(fontWeight: FontWeight.bold)),
+              icon: const Icon(LucideIcons.plus), label: const Text('New video project', style: TextStyle(fontWeight: FontWeight.bold)),
             )),
             const SizedBox(height: 9),
             SizedBox(width: double.infinity, child: OutlinedButton.icon(
               onPressed: importPhoto,
               style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white24), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-              icon: const Icon(Icons.image_outlined), label: const Text('Start with a photo'),
+              icon: const Icon(LucideIcons.image), label: const Text('Start with a photo'),
             )),
           ]),
         ),
@@ -432,8 +449,9 @@ class EditorSnapshot {
 }
 
 class EditorScreen extends StatefulWidget {
-  const EditorScreen({super.key, required this.initialMedia});
+  const EditorScreen({super.key, required this.initialMedia, this.initialPanel = 'Speed'});
   final List<ProjectMedia> initialMedia;
+  final String initialPanel;
   @override
   State<EditorScreen> createState() => _EditorScreenState();
 }
@@ -499,6 +517,7 @@ class _EditorScreenState extends State<EditorScreen> {
   void initState() {
     super.initState();
     clips = [...widget.initialMedia];
+    activePanel = widget.initialPanel;
     _loadSelected();
   }
 
