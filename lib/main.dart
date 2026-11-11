@@ -294,27 +294,27 @@ class _HomeContentState extends State<HomeContent> {
   final picker = ImagePicker();
   final List<ProjectMedia> recent = [];
 
-  Future<void> importVideo() async {
+  Future<void> importVideo({String panel = 'Speed'}) async {
     final file = await picker.pickVideo(source: ImageSource.gallery);
     if (file == null || !mounted) return;
     final saved = await MediaStorage.persist(file);
     await ProjectHistory.add(saved, true);
     if (!mounted) return;
-    openEditor([ProjectMedia(saved, true)]);
+    openEditor([ProjectMedia(saved, true)], panel: panel);
   }
 
-  Future<void> importPhoto() async {
+  Future<void> importPhoto({String panel = 'Text'}) async {
     final file = await picker.pickImage(source: ImageSource.gallery);
     if (file == null || !mounted) return;
     final saved = await MediaStorage.persist(file);
     await ProjectHistory.add(saved, false);
     if (!mounted) return;
-    openEditor([ProjectMedia(saved, false)]);
+    openEditor([ProjectMedia(saved, false)], panel: panel);
   }
 
-  void openEditor(List<ProjectMedia> media) {
+  void openEditor(List<ProjectMedia> media, {String panel = 'Speed'}) {
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => EditorScreen(initialMedia: media),
+      builder: (_) => EditorScreen(initialMedia: media, initialPanel: panel),
     ));
   }
 
@@ -377,16 +377,16 @@ class _HomeContentState extends State<HomeContent> {
         const SizedBox(height: 29),
         const _SectionHeading('YOUR CREATIVE TOOLS', '01 / WORKSPACE'),
         const SizedBox(height: 13),
-        const Row(children: [
-          Expanded(child: _ToolCard(icon: Icons.speed_rounded, name: 'Speed control', detail: 'Smooth playback speed')),
-          SizedBox(width: 10),
-          Expanded(child: _ToolCard(icon: Icons.graphic_eq_rounded, name: 'Audio tools', detail: 'Volume and sound')),
+        Row(children: [
+          Expanded(child: _ToolCard(icon: LucideIcons.gauge, name: 'Speed control', detail: 'Playback speed', onTap: () => importVideo(panel: 'Speed'))),
+          const SizedBox(width: 10),
+          Expanded(child: _ToolCard(icon: LucideIcons.audioLines, name: 'Audio tools', detail: 'Volume controls', onTap: () => importVideo(panel: 'Audio'))),
         ]),
         const SizedBox(height: 10),
-        const Row(children: [
-          Expanded(child: _ToolCard(icon: Icons.auto_awesome_rounded, name: 'Visual effects', detail: 'Effects engine planned')),
-          SizedBox(width: 10),
-          Expanded(child: _ToolCard(icon: Icons.tune_rounded, name: 'Color studio', detail: 'Color tools planned')),
+        Row(children: [
+          Expanded(child: _ToolCard(icon: LucideIcons.sparkles, name: 'Visual effects', detail: 'Preview filters', onTap: () => importVideo(panel: 'Effects'))),
+          const SizedBox(width: 10),
+          Expanded(child: _ToolCard(icon: LucideIcons.slidersHorizontal, name: 'Color studio', detail: 'Color preview', onTap: () => importVideo(panel: 'Color'))),
         ]),
         const SizedBox(height: 27),
         const _SectionHeading('RECENT PROJECTS', '02 / LIBRARY'),
@@ -424,21 +424,32 @@ class _SectionHeading extends StatelessWidget {
 }
 
 class _ToolCard extends StatelessWidget {
-  const _ToolCard({required this.icon, required this.name, required this.detail});
+  const _ToolCard({required this.icon, required this.name, required this.detail, required this.onTap});
   final IconData icon;
   final String name;
   final String detail;
+  final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(15),
-    decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(17), border: Border.all(color: Colors.white10)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Icon(icon, color: orange, size: 22),
-      const SizedBox(height: 13),
-      Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 4),
-      Text(detail, style: const TextStyle(fontSize: 10, color: Colors.white38)),
-    ]),
+  Widget build(BuildContext context) => Material(
+    color: surface,
+    borderRadius: BorderRadius.circular(17),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(17),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(17), border: Border.all(color: Colors.white10)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: orange, size: 22),
+          const SizedBox(height: 13),
+          Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(detail, style: const TextStyle(fontSize: 10, color: Colors.white38)),
+          const SizedBox(height: 9),
+          const Align(alignment: Alignment.centerRight, child: Icon(LucideIcons.arrowUpRight, size: 15, color: Colors.white38)),
+        ]),
+      ),
+    ),
   );
 }
 
