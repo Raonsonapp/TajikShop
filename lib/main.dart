@@ -530,7 +530,7 @@ class _EditorScreenState extends State<EditorScreen> {
   void initState() {
     super.initState();
     clips = [...widget.initialMedia];
-    activePanel = widget.initialPanel;
+    activePanel = widget.initialPanel == 'Audio' ? 'Volume' : widget.initialPanel;
     _loadSelected();
   }
 
@@ -753,23 +753,49 @@ class _EditorScreenState extends State<EditorScreen> {
           decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white10)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              _PanelTab(label: 'Speed', selected: activePanel == 'Speed', onTap: () => setState(() => activePanel = 'Speed')),
-              _PanelTab(label: 'Volume', selected: activePanel == 'Volume', onTap: () => setState(() => activePanel = 'Volume')),
-              _PanelTab(label: 'Trim', selected: activePanel == 'Trim', onTap: () => setState(() => activePanel = 'Trim')),
-              const Spacer(),
-              Text(activePanel == 'Speed' ? '${speed.toStringAsFixed(2)}×' : activePanel == 'Volume' ? '${(volume * 100).round()}%' : 'IN / OUT', style: const TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 12)),
+              Expanded(child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
+                _PanelTab(label: 'Speed', selected: activePanel == 'Speed', onTap: () => setState(() => activePanel = 'Speed')),
+                _PanelTab(label: 'Volume', selected: activePanel == 'Volume', onTap: () => setState(() => activePanel = 'Volume')),
+                _PanelTab(label: 'Trim', selected: activePanel == 'Trim', onTap: () => setState(() => activePanel = 'Trim')),
+                _PanelTab(label: 'Effects', selected: activePanel == 'Effects', onTap: () => setState(() => activePanel = 'Effects')),
+                _PanelTab(label: 'Color', selected: activePanel == 'Color', onTap: () => setState(() => activePanel = 'Color')),
+                _PanelTab(label: 'Text', selected: activePanel == 'Text', onTap: _addText),
+              ]))),
+              const SizedBox(width: 4),
+              Text(activePanel == 'Speed' ? '${speed.toStringAsFixed(2)}×' : activePanel == 'Volume' ? '${(volume * 100).round()}%' : activePanel == 'Trim' ? 'IN / OUT' : activePanel == 'Text' ? 'LAYER' : ['Original', 'Cinematic', 'Warm', 'Cool', 'Mono'][filterIndex], style: const TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 11)),
             ]),
             const SizedBox(height: 8),
             if (activePanel == 'Speed')
               Slider(value: speed, min: .25, max: 2, divisions: 35, onChanged: controller == null ? null : (v) async { setState(() => speed = v); await controller.setPlaybackSpeed(v); })
             else if (activePanel == 'Volume')
               Slider(value: volume, min: 0, max: 1, divisions: 20, onChanged: controller == null ? null : (v) async { setState(() => volume = v); await controller.setVolume(v); })
-            else
+            else if (activePanel == 'Trim')
               Column(children: [
                 RangeSlider(values: RangeValues(trimStart, trimEnd), min: 0, max: 1, divisions: 100, labels: RangeLabels('${(trimStart * 100).round()}%', '${(trimEnd * 100).round()}%'), onChanged: controller == null ? null : (v) => setState(() { trimStart = v.start; trimEnd = v.end; })),
-                SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: controller == null ? null : () async { final d = controller.value.duration; await controller.seekTo(Duration(milliseconds: (d.inMilliseconds * trimStart).round())); _message('Trim points selected for preview. Export rendering is not connected yet.'); }, icon: const Icon(Icons.play_arrow), label: const Text('Preview from IN point'))),
+                SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: controller == null ? null : () async { final d = controller.value.duration; await controller.seekTo(Duration(milliseconds: (d.inMilliseconds * trimStart).round())); _message('IN point previewed. Export trimming is not connected yet.'); }, icon: const Icon(LucideIcons.play), label: const Text('Preview from IN point'))),
+              ])
+            else if (activePanel == 'Effects' || activePanel == 'Color')
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(activePanel == 'Effects' ? 'PREVIEW EFFECTS' : 'COLOR LOOKS', style: const TextStyle(fontSize: 9, color: Colors.white54, letterSpacing: 1)),
+                const SizedBox(height: 8),
+                Wrap(spacing: 6, runSpacing: 2, children: List.generate(5, (i) => ChoiceChip(
+                  label: Text(['Original', 'Cinema', 'Warm', 'Cool', 'Mono'][i], style: const TextStyle(fontSize: 10)),
+                  selected: filterIndex == i,
+                  onSelected: (_) => setState(() => filterIndex = i),
+                  selectedColor: orange.withOpacity(.2),
+                  backgroundColor: surface2,
+                  labelStyle: TextStyle(color: filterIndex == i ? orange : Colors.white70),
+                  side: BorderSide(color: filterIndex == i ? orange : Colors.white12),
+                  visualDensity: VisualDensity.compact,
+                ))),
+              ])
+            else
+              Row(children: [
+                Expanded(child: Text(overlayText.isEmpty ? 'No text layer added' : overlayText, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                TextButton.icon(onPressed: _addText, icon: const Icon(LucideIcons.type, size: 16), label: Text(overlayText.isEmpty ? 'Add text' : 'Edit text')),
+                if (overlayText.isNotEmpty) IconButton(onPressed: () => setState(() => overlayText = ''), icon: const Icon(LucideIcons.trash2, size: 17)),
               ]),
-            if (activePanel != 'Trim') Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            if (activePanel == 'Speed' || activePanel == 'Volume') Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text(activePanel == 'Speed' ? '0.25×' : 'Mute', style: const TextStyle(color: Colors.white38, fontSize: 9)),
               Text(activePanel == 'Speed' ? '2.00×' : '100%', style: const TextStyle(color: Colors.white38, fontSize: 9)),
             ]),
@@ -779,11 +805,11 @@ class _EditorScreenState extends State<EditorScreen> {
           height: 76,
           padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-            _EditorAction(icon: Icons.content_cut_rounded, label: 'Trim', onTap: () => setState(() => activePanel = 'Trim')),
-            _EditorAction(icon: Icons.auto_awesome_rounded, label: 'Effects', onTap: _cycleFilter),
-            _EditorAction(icon: Icons.title_rounded, label: 'Text', onTap: _addText),
-            _EditorAction(icon: Icons.graphic_eq_rounded, label: 'Audio', onTap: () => setState(() => activePanel = 'Volume')),
-            _EditorAction(icon: Icons.palette_outlined, label: 'Color', onTap: _cycleFilter),
+            _EditorAction(icon: LucideIcons.scissors, label: 'Trim', onTap: () => setState(() => activePanel = 'Trim')),
+            _EditorAction(icon: LucideIcons.sparkles, label: 'Effects', onTap: () => setState(() => activePanel = 'Effects')),
+            _EditorAction(icon: LucideIcons.type, label: 'Text', onTap: _addText),
+            _EditorAction(icon: LucideIcons.audioLines, label: 'Audio', onTap: () => setState(() => activePanel = 'Volume')),
+            _EditorAction(icon: LucideIcons.palette, label: 'Color', onTap: () => setState(() => activePanel = 'Color')),
           ]),
         ),
       ])),
