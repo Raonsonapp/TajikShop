@@ -22,11 +22,13 @@ class AurixMark extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: size, height: size,
     decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(size * .27),
-      gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFFC45C), Color(0xFFFF6A00), Color(0xFFB83B00)]),
-      boxShadow: [BoxShadow(color: orange.withOpacity(.24), blurRadius: 18, offset: const Offset(0, 5))],
+      color: const Color(0xFF080808),
+      borderRadius: BorderRadius.circular(size * .22),
+      border: Border.all(color: orange.withOpacity(.42), width: 1),
+      boxShadow: [BoxShadow(color: orange.withOpacity(.20), blurRadius: 18, offset: const Offset(0, 5))],
     ),
-    child: Icon(LucideIcons.aperture, color: const Color(0xFF17100A), size: size * .62),
+    clipBehavior: Clip.antiAlias,
+    child: Image.asset('assets/brand/aurix_logo.jpg', width: size, height: size, fit: BoxFit.cover),
   );
 }
 
