@@ -1,4 +1,4 @@
-name: AURIX Android Build
+name: Football Live Android Build
 
 on:
   push:
@@ -24,8 +24,6 @@ jobs:
           cache: true
       - name: Install packages
         run: flutter pub get
-      - name: Generate launcher icons
-        run: dart run flutter_launcher_icons
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Test
@@ -38,9 +36,9 @@ jobs:
         run: test -s build/app/outputs/bundle/release/app-release.aab
       - uses: actions/upload-artifact@v4
         with:
-          name: AURIX-APK
+          name: Football-Live-APK
           path: build/app/outputs/flutter-apk/app-release.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: AURIX-AAB
+          name: Football-Live-AAB
           path: build/app/outputs/bundle/release/app-release.aab
