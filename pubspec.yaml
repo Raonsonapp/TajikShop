@@ -1,20 +1,17 @@
-name: aurix_editor
-description: AURIX — Professional mobile video editor.
+name: football_live_tj
+description: Football Live — live scores, fixtures and authorized match player.
 publish_to: "none"
-version: 1.0.5+6
+version: 1.0.0+1
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
-  shared_preferences: ^2.3.2
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  image_picker: ^1.2.1
-  video_player: ^2.9.2
-  path_provider: ^2.1.5
-  lucide_icons_flutter: ^3.1.25
+  http: ^1.2.2
+  webview_flutter: ^4.10.0
 
 dev_dependencies:
   flutter_test:
@@ -24,14 +21,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png
-
-flutter_launcher_icons:
-  android: true
-  ios: true
-  image_path: ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png
-  adaptive_icon_background: '#080808'
-  adaptive_icon_foreground: ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png
-  min_sdk_android: 24
-  remove_alpha_ios: true
