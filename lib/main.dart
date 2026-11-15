@@ -1,855 +1,380 @@
-import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:video_player/video_player.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:http/http.dart' as http;
+import 'package:webview_flutter/webview_flutter.dart';
 
-const bg = Color(0xFF080808);
-const surface = Color(0xFF151515);
-const surface2 = Color(0xFF202020);
-const orange = Color(0xFFFF6A00);
-const amber = Color(0xFFFFB800);
-const muted = Color(0xFF96918D);
-
-class AurixMark extends StatelessWidget {
-  const AurixMark({super.key, this.size = 42});
-  final double size;
-  @override
-  Widget build(BuildContext context) => Container(
-    width: size, height: size,
-    decoration: BoxDecoration(
-      color: const Color(0xFF080808),
-      borderRadius: BorderRadius.circular(size * .22),
-      border: Border.all(color: orange.withOpacity(.42), width: 1),
-      boxShadow: [BoxShadow(color: orange.withOpacity(.20), blurRadius: 18, offset: const Offset(0, 5))],
-    ),
-    clipBehavior: Clip.antiAlias,
-    child: Image.asset('ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png', width: size, height: size, fit: BoxFit.cover),
-  );
-}
+const bg = Color(0xFF080D12);
+const panel = Color(0xFF111B24);
+const panel2 = Color(0xFF17232E);
+const accent = Color(0xFF35D07F);
+const blue = Color(0xFF39A9FF);
+const muted = Color(0xFF91A0AD);
+const api = 'https://matchora.to/api/v1';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations(const [DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: bg,
     statusBarIconBrightness: Brightness.light,
     systemNavigationBarColor: bg,
     systemNavigationBarIconBrightness: Brightness.light,
   ));
-  runApp(const AurixApp());
+  runApp(const FootballApp());
 }
 
-class AurixApp extends StatelessWidget {
-  const AurixApp({super.key});
+class FootballApp extends StatelessWidget {
+  const FootballApp({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'AURIX',
+    title: 'Football Live',
     debugShowCheckedModeBanner: false,
     theme: ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: bg,
-      colorScheme: const ColorScheme.dark(primary: orange, secondary: amber, surface: surface),
+      colorScheme: const ColorScheme.dark(primary: accent, secondary: blue, surface: panel),
       useMaterial3: true,
-      sliderTheme: const SliderThemeData(activeTrackColor: orange, thumbColor: orange, inactiveTrackColor: Colors.white12),
+      appBarTheme: const AppBarTheme(backgroundColor: bg, surfaceTintColor: Colors.transparent),
     ),
-    home: const HomeScreen(),
+    home: const FootballHome(),
   );
 }
 
-class SavedProject {
-  const SavedProject({required this.path, required this.isVideo, required this.createdAt});
-  final String path;
-  final bool isVideo;
-  final String createdAt;
-  Map<String, dynamic> toJson() => {'path': path, 'isVideo': isVideo, 'createdAt': createdAt};
-  factory SavedProject.fromJson(Map<String, dynamic> json) => SavedProject(
-    path: json['path'] as String,
-    isVideo: json['isVideo'] as bool? ?? true,
-    createdAt: json['createdAt'] as String? ?? '',
-  );
-}
-
-class ProjectHistory {
-  static const _key = 'aurix_recent_projects_v1';
-  static Future<List<SavedProject>> read() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    if (raw == null || raw.isEmpty) return [];
-    try {
-      final values = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
-      return values.map(SavedProject.fromJson).take(3).toList();
-    } catch (_) {
-      return [];
+class MatchoraApi {
+  static Future<dynamic> get(String path) async {
+    final response = await http.get(Uri.parse('$api$path'), headers: {
+      'Accept': 'application/json',
+      'User-Agent': 'FootballLive/1.0',
+    }).timeout(const Duration(seconds: 18));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('API error: ${response.statusCode}');
     }
+    return jsonDecode(utf8.decode(response.bodyBytes));
   }
-  static Future<void> add(XFile file, bool isVideo) async {
-    final prefs = await SharedPreferences.getInstance();
-    final items = await read();
-    items.removeWhere((item) => item.path == file.path);
-    items.insert(0, SavedProject(path: file.path, isVideo: isVideo, createdAt: DateTime.now().toIso8601String()));
-    await prefs.setString(_key, jsonEncode(items.take(3).map((item) => item.toJson()).toList()));
-  }
-  static Future<void> clear() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
-  }
-}
 
-class ProjectMedia {
-  ProjectMedia(this.file, this.isVideo);
-  final XFile file;
-  final bool isVideo;
-}
-
-class MediaStorage {
-  static Future<XFile> persist(XFile source) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final mediaDirectory = Directory('${directory.path}/aurix_media');
-    if (!await mediaDirectory.exists()) {
-      await mediaDirectory.create(recursive: true);
+  static List<Map<String, dynamic>> listFrom(dynamic json, [String key = 'events']) {
+    dynamic value = json;
+    if (json is Map) {
+      value = json[key] ?? json['data'] ?? json['results'] ?? json['channels'] ?? [];
+      if (value is Map) value = value[key] ?? value['items'] ?? [];
     }
-    final originalName = source.path.split(Platform.pathSeparator).last;
-    final safeName = originalName.isEmpty ? 'media' : originalName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
-    final destination = File('${mediaDirectory.path}/${DateTime.now().microsecondsSinceEpoch}_$safeName');
-    final saved = await File(source.path).copy(destination.path);
-    return XFile(saved.path);
+    if (value is! List) return [];
+    return value.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
   }
 }
 
+String field(Map<String, dynamic> m, List<String> keys, [String fallback = '']) {
+  for (final k in keys) {
+    final v = m[k];
+    if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+  }
+  return fallback;
+}
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+String eventTitle(Map<String, dynamic> e) =>
+  '${field(e, ['home', 'home_team', 'homeTeam'], 'Home')}  vs  ${field(e, ['away', 'away_team', 'awayTeam'], 'Away')}';
+
+String eventEmbed(Map<String, dynamic> e) {
+  final direct = field(e, ['embed_url', 'embedUrl']);
+  if (direct.isNotEmpty) return direct;
+  final id = field(e, ['id', 'event_id']);
+  return id.isEmpty ? '' : 'https://matchora.to/embed/match/$id';
+}
+
+class FootballHome extends StatefulWidget {
+  const FootballHome({super.key});
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<FootballHome> createState() => _FootballHomeState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  int selectedTab = 0;
+class _FootballHomeState extends State<FootballHome> {
+  int tab = 0;
+  final pages = const ['Live', 'Бозиҳо', 'Каналҳо'];
   @override
   Widget build(BuildContext context) {
-    final pages = const [_HomeTab(), _TemplatesTab(), _LibraryTab(), _ProfileTab()];
     return Scaffold(
-      body: IndexedStack(index: selectedTab, children: pages),
+      body: SafeArea(child: IndexedStack(index: tab, children: const [
+        MatchListPage(liveOnly: true),
+        MatchListPage(liveOnly: false),
+        ChannelsPage(),
+      ])),
       bottomNavigationBar: NavigationBar(
-        height: 68,
-        backgroundColor: const Color(0xFF111111),
-        indicatorColor: const Color(0x33FF6A00),
-        selectedIndex: selectedTab,
-        onDestinationSelected: (index) => setState(() => selectedTab = index),
+        backgroundColor: panel,
+        indicatorColor: accent.withOpacity(.15),
+        selectedIndex: tab,
+        onDestinationSelected: (v) => setState(() => tab = v),
         destinations: const [
-          NavigationDestination(icon: Icon(LucideIcons.house), selectedIcon: Icon(LucideIcons.house), label: 'Home'),
-          NavigationDestination(icon: Icon(LucideIcons.layoutGrid), selectedIcon: Icon(LucideIcons.layoutGrid), label: 'Templates'),
-          NavigationDestination(icon: Icon(LucideIcons.library), selectedIcon: Icon(LucideIcons.library), label: 'Library'),
-          NavigationDestination(icon: Icon(LucideIcons.userRound), selectedIcon: Icon(LucideIcons.userRound), label: 'Profile'),
+          NavigationDestination(icon: Icon(Icons.sensors_outlined), selectedIcon: Icon(Icons.sensors), label: 'Live'),
+          NavigationDestination(icon: Icon(Icons.calendar_month_outlined), selectedIcon: Icon(Icons.calendar_month), label: 'Бозиҳо'),
+          NavigationDestination(icon: Icon(Icons.live_tv_outlined), selectedIcon: Icon(Icons.live_tv), label: 'Каналҳо'),
         ],
       ),
     );
   }
 }
 
-class _HomeTab extends StatelessWidget {
-  const _HomeTab();
+class MatchListPage extends StatefulWidget {
+  const MatchListPage({super.key, required this.liveOnly});
+  final bool liveOnly;
   @override
-  Widget build(BuildContext context) => const HomeContent();
+  State<MatchListPage> createState() => _MatchListPageState();
 }
 
-class _TemplatesTab extends StatelessWidget {
-  const _TemplatesTab();
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Templates', style: TextStyle(fontWeight: FontWeight.w800))),
-    body: ListView(padding: const EdgeInsets.all(18), children: const [
-      Text('CREATIVE STARTING POINTS', style: TextStyle(color: orange, fontSize: 10, letterSpacing: 1.6, fontWeight: FontWeight.bold)),
-      SizedBox(height: 12),
-      _TemplateTile(icon: Icons.movie_filter_outlined, title: 'Cinematic', subtitle: 'Create a film-inspired project'),
-      _TemplateTile(icon: Icons.sports_soccer_rounded, title: 'Sports edit', subtitle: 'A layout for match highlights'),
-      _TemplateTile(icon: Icons.music_video_rounded, title: 'Music edit', subtitle: 'Build an edit around your soundtrack'),
-      _TemplateTile(icon: Icons.smartphone_rounded, title: 'Reels & Shorts', subtitle: 'Vertical 9:16 project format'),
-      SizedBox(height: 12),
-      Text('These are project starters. Editable template packs will be added after the timeline and render engine are connected.', style: TextStyle(color: Colors.white54, fontSize: 12)),
-    ]),
-  );
-}
-
-class _TemplateTile extends StatelessWidget {
-  const _TemplateTile({required this.icon, required this.title, required this.subtitle});
-  final IconData icon; final String title; final String subtitle;
-  @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
-    child: Row(children: [Icon(icon, color: orange, size: 25), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 11))])), const Icon(Icons.chevron_right, color: Colors.white38)]),
-  );
-}
-
-class _LibraryTab extends StatefulWidget {
-  const _LibraryTab();
-  @override
-  State<_LibraryTab> createState() => _LibraryTabState();
-}
-class _LibraryTabState extends State<_LibraryTab> {
-  List<SavedProject> projects = [];
-  @override
-  void initState() { super.initState(); _load(); }
-  Future<void> _load() async {
-    final items = await ProjectHistory.read();
-    if (mounted) setState(() => projects = items);
-  }
-  Future<void> _clear() async {
-    await ProjectHistory.clear();
-    if (mounted) setState(() => projects = []);
-  }
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Library', style: TextStyle(fontWeight: FontWeight.w800)), actions: [
-      if (projects.isNotEmpty) IconButton(tooltip: 'Clear history', onPressed: _clear, icon: const Icon(Icons.delete_outline)),
-    ]),
-    body: projects.isEmpty
-      ? const Center(child: Padding(padding: EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.video_library_outlined, size: 48, color: Colors.white30),
-          SizedBox(height: 14),
-          Text('Your projects', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 6),
-          Text('Your three latest imported projects will appear here.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
-        ])))
-      : ListView.builder(padding: const EdgeInsets.all(16), itemCount: projects.length, itemBuilder: (context, index) {
-          final item = projects[index];
-          final exists = File(item.path).existsSync();
-          return Card(color: surface, child: ListTile(
-            leading: Icon(item.isVideo ? Icons.movie_outlined : Icons.image_outlined, color: orange),
-            title: Text(item.path.split(Platform.pathSeparator).last, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Text(exists ? (item.isVideo ? 'Video project' : 'Photo project') : 'Original media is no longer available'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: !exists ? null : () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => EditorScreen(initialMedia: [ProjectMedia(XFile(item.path), item.isVideo)]))),
-          ));
-        }),
-  );
-}
-
-class _ProfileTab extends StatefulWidget {
-  const _ProfileTab();
-  @override
-  State<_ProfileTab> createState() => _ProfileTabState();
-}
-
-class _ProfileTabState extends State<_ProfileTab> {
-  String language = 'Тоҷикӣ';
-  String displayName = 'AURIX Creator';
-
-  void _message(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-  Future<void> _chooseLanguage() async {
-    final choice = await showModalBottomSheet<String>(context: context, backgroundColor: surface, builder: (context) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const ListTile(title: Text('App language', style: TextStyle(fontWeight: FontWeight.bold))),
-      for (final item in ['Тоҷикӣ', 'Русский', 'English']) ListTile(title: Text(item), trailing: language == item ? const Icon(Icons.check, color: orange) : null, onTap: () => Navigator.pop(context, item)),
-    ])));
-    if (choice != null) setState(() => language = choice);
-    if (choice != null && choice != 'Тоҷикӣ') _message('Language selection is saved for this session; full localization is still in progress.');
-  }
-  Future<void> _editName() async {
-    final controller = TextEditingController(text: displayName);
-    final value = await showDialog<String>(context: context, builder: (context) => AlertDialog(
-      title: const Text('Edit profile'),
-      content: TextField(controller: controller, autofocus: true, decoration: const InputDecoration(labelText: 'Display name')),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')), FilledButton(onPressed: () => Navigator.pop(context, controller.text.trim()), child: const Text('Save'))],
-    ));
-    if (value != null && value.isNotEmpty) setState(() => displayName = value);
-  }
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Profile & Settings', style: TextStyle(fontWeight: FontWeight.w800))),
-    body: ListView(padding: const EdgeInsets.all(18), children: [
-      Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF321707), surface]), borderRadius: BorderRadius.circular(18), border: Border.all(color: orange.withOpacity(.25))), child: Row(children: [
-        const CircleAvatar(radius: 28, backgroundColor: orange, child: Icon(Icons.person, color: Colors.white, size: 30)),
-        const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), const Text('Local profile · Sign-in not connected', style: TextStyle(color: Colors.white60, fontSize: 11))])),
-        IconButton(onPressed: _editName, icon: const Icon(Icons.edit_outlined, color: orange)),
-      ])),
-      const SizedBox(height: 22),
-      const Text('ACCOUNT', style: TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.5)),
-      ListTile(leading: const Icon(Icons.person_outline), title: const Text('Edit profile'), onTap: _editName),
-      ListTile(leading: const Icon(Icons.login_rounded), title: const Text('Continue with Google'), subtitle: const Text('Firebase Authentication setup required'), onTap: () => _message('Google sign-in is not active: Firebase project configuration and OAuth client IDs are missing.')),
-      ListTile(leading: const Icon(Icons.notifications_none), title: const Text('Notifications'), onTap: () => _message('Notifications are not connected yet.')),
-      ListTile(leading: const Icon(Icons.history), title: const Text('Editing history'), onTap: () => _message('Project history storage is not connected yet.')),
-      const Divider(height: 26),
-      const Text('APP SETTINGS', style: TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.5)),
-      ListTile(leading: const Icon(Icons.language), title: const Text('Language'), subtitle: Text(language), onTap: _chooseLanguage),
-      ListTile(leading: const Icon(Icons.storage_outlined), title: const Text('Storage & cache'), subtitle: const Text('Cache manager not connected'), onTap: () => _message('There is no persistent media cache manager to clear yet.')),
-      ListTile(leading: const Icon(Icons.share_outlined), title: const Text('Share AURIX'), onTap: () => _message('Share link will be available after the public app listing is created.')),
-      ListTile(leading: const Icon(Icons.info_outline), title: const Text('About AURIX'), subtitle: const Text('Create beyond limits · Version 1.0.6')),
-      const Divider(height: 26),
-      ListTile(leading: const Icon(Icons.delete_outline, color: Colors.redAccent), title: const Text('Delete account', style: TextStyle(color: Colors.redAccent)), onTap: () => _message('Account deletion is unavailable until account registration and backend storage are implemented.')),
-    ]),
-  );
-}
-
-class HomeContent extends StatefulWidget {
-  const HomeContent({super.key});
-  @override
-  State<HomeContent> createState() => _HomeContentState();
-}
-
-class _HomeContentState extends State<HomeContent> {
-  final picker = ImagePicker();
-  final List<ProjectMedia> recent = [];
-
-  Future<void> importVideo({String panel = 'Speed'}) async {
-    final file = await picker.pickVideo(source: ImageSource.gallery);
-    if (file == null || !mounted) return;
-    final saved = await MediaStorage.persist(file);
-    await ProjectHistory.add(saved, true);
-    if (!mounted) return;
-    openEditor([ProjectMedia(saved, true)], panel: panel);
-  }
-
-  Future<void> importPhoto({String panel = 'Text'}) async {
-    final file = await picker.pickImage(source: ImageSource.gallery);
-    if (file == null || !mounted) return;
-    final saved = await MediaStorage.persist(file);
-    await ProjectHistory.add(saved, false);
-    if (!mounted) return;
-    openEditor([ProjectMedia(saved, false)], panel: panel);
-  }
-
-  void openEditor(List<ProjectMedia> media, {String panel = 'Speed'}) {
-    Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => EditorScreen(initialMedia: media, initialPanel: panel),
-    ));
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      backgroundColor: bg,
-      titleSpacing: 18,
-      title: Row(children: [
-        const AurixMark(size: 44),
-        const SizedBox(width: 11),
-        const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('AURIX', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2.4)),
-          Text('VIDEO STUDIO', style: TextStyle(fontSize: 9, color: orange, letterSpacing: 2.7, fontWeight: FontWeight.bold)),
-        ]),
-      ]),
-      actions: [
-        IconButton(onPressed: () => showAboutDialog(context: context, applicationName: 'AURIX', applicationVersion: '1.0.4', applicationLegalese: 'Create beyond limits.'), icon: const Icon(Icons.info_outline_rounded)),
-        const SizedBox(width: 6),
-      ],
-    ),
-    body: SafeArea(child: ListView(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
-      children: [
-        const Text('Make every\\nframe matter.', style: TextStyle(fontSize: 34, height: 1.05, fontWeight: FontWeight.w900, letterSpacing: -.8)),
-        const SizedBox(height: 10),
-        const Text('AURIX STUDIO  /  MOBILE VIDEO EDITOR', style: TextStyle(color: Colors.white60, fontSize: 14)),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: orange.withOpacity(.32)),
-            gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF351707), Color(0xFF1B100A), Color(0xFF151515)]),
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const AurixMark(size: 46),
-              const Spacer(),
-              const Text('CREATE  •  EDIT  •  EXPORT', style: TextStyle(color: Colors.white54, fontSize: 9, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
-            ]),
-            const SizedBox(height: 23),
-            const Text('Start a new project', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 6),
-            const Text('Bring your footage into the AURIX timeline.', style: TextStyle(color: Colors.white70, fontSize: 13)),
-            const SizedBox(height: 19),
-            SizedBox(width: double.infinity, child: FilledButton.icon(
-              onPressed: importVideo,
-              style: FilledButton.styleFrom(backgroundColor: orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-              icon: const Icon(LucideIcons.plus), label: const Text('New video project', style: TextStyle(fontWeight: FontWeight.bold)),
-            )),
-            const SizedBox(height: 9),
-            SizedBox(width: double.infinity, child: OutlinedButton.icon(
-              onPressed: importPhoto,
-              style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white24), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
-              icon: const Icon(LucideIcons.image), label: const Text('Start with a photo'),
-            )),
-          ]),
-        ),
-        const SizedBox(height: 29),
-        const _SectionHeading('YOUR CREATIVE TOOLS', '01 / WORKSPACE'),
-        const SizedBox(height: 13),
-        Row(children: [
-          Expanded(child: _ToolCard(icon: LucideIcons.gauge, name: 'Speed control', detail: 'Playback speed', onTap: () => importVideo(panel: 'Speed'))),
-          const SizedBox(width: 10),
-          Expanded(child: _ToolCard(icon: LucideIcons.audioLines, name: 'Audio tools', detail: 'Volume controls', onTap: () => importVideo(panel: 'Audio'))),
-        ]),
-        const SizedBox(height: 10),
-        Row(children: [
-          Expanded(child: _ToolCard(icon: LucideIcons.sparkles, name: 'Visual effects', detail: 'Preview filters', onTap: () => importVideo(panel: 'Effects'))),
-          const SizedBox(width: 10),
-          Expanded(child: _ToolCard(icon: LucideIcons.slidersHorizontal, name: 'Color studio', detail: 'Color preview', onTap: () => importVideo(panel: 'Color'))),
-        ]),
-        const SizedBox(height: 27),
-        const _SectionHeading('RECENT PROJECTS', '02 / LIBRARY'),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white10)),
-          child: const Row(children: [
-            Icon(Icons.video_library_outlined, color: Colors.white38, size: 25),
-            SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('No projects yet', style: TextStyle(fontWeight: FontWeight.w700)),
-              SizedBox(height: 3),
-              Text('Your saved editing projects will appear here.', style: TextStyle(color: Colors.white38, fontSize: 12)),
-            ])),
-          ]),
-        ),
-        const SizedBox(height: 20),
-        const Center(child: Text('AURIX  •  CREATE BEYOND LIMITS', style: TextStyle(color: Colors.white24, fontSize: 9, letterSpacing: 2))),
-      ],
-    )),
-  );
-}
-
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading(this.title, this.kicker);
-  final String title;
-  final String kicker;
-  @override
-  Widget build(BuildContext context) => Row(children: [
-    Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.3)),
-    const Spacer(),
-    Text(kicker, style: const TextStyle(color: Colors.white30, fontSize: 9, letterSpacing: 1)),
-  ]);
-}
-
-class _ToolCard extends StatelessWidget {
-  const _ToolCard({required this.icon, required this.name, required this.detail, required this.onTap});
-  final IconData icon;
-  final String name;
-  final String detail;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => Material(
-    color: surface,
-    borderRadius: BorderRadius.circular(17),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(17),
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(17), border: Border.all(color: Colors.white10)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(icon, color: orange, size: 22),
-          const SizedBox(height: 13),
-          Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(detail, style: const TextStyle(fontSize: 10, color: Colors.white38)),
-          const SizedBox(height: 9),
-          const Align(alignment: Alignment.centerRight, child: Icon(LucideIcons.arrowUpRight, size: 15, color: Colors.white38)),
-        ]),
-      ),
-    ),
-  );
-}
-
-class EditorSnapshot {
-  EditorSnapshot(this.clips, this.selected);
-  final List<ProjectMedia> clips;
-  final int selected;
-}
-
-class EditorScreen extends StatefulWidget {
-  const EditorScreen({super.key, required this.initialMedia, this.initialPanel = 'Speed'});
-  final List<ProjectMedia> initialMedia;
-  final String initialPanel;
-  @override
-  State<EditorScreen> createState() => _EditorScreenState();
-}
-
-class _EditorScreenState extends State<EditorScreen> {
-  final picker = ImagePicker();
-  late List<ProjectMedia> clips;
-  final List<EditorSnapshot> undoStack = [];
-  final List<EditorSnapshot> redoStack = [];
-  VideoPlayerController? video;
-  int selected = 0;
-  bool loading = false;
-  double speed = 1;
-  double volume = 1;
-  String activePanel = 'Speed';
-  String overlayText = '';
-  int filterIndex = 0;
-  double trimStart = 0;
-  double trimEnd = 1;
-  static const List<List<double>> _filters = [
-    [1,0,0,0,0, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0],
-    [1.15,0,0,0,8, 0,1.05,0,0,4, 0,0,0.9,0,0, 0,0,0,1,0],
-    [0.75,0,0,0,22, 0,0.82,0,0,18, 0,0,0.95,0,10, 0,0,0,1,0],
-    [0.9,0,0,0,0, 0,0.95,0,0,0, 0,0,1.2,0,0, 0,0,0,1,0],
-    [0.3,0,0,0,0, 0,0.3,0,0,0, 0,0,0.3,0,0, 0,0,0,1,0],
-  ];
-
-  void _recordUndo() {
-    undoStack.add(EditorSnapshot(List<ProjectMedia>.from(clips), selected));
-    if (undoStack.length > 40) undoStack.removeAt(0);
-    redoStack.clear();
-  }
-
-  Future<void> _restoreSnapshot(EditorSnapshot snapshot) async {
-    final old = video;
-    video = null;
-    await old?.dispose();
-    if (!mounted) return;
-    setState(() {
-      clips = List<ProjectMedia>.from(snapshot.clips);
-      selected = clips.isEmpty ? 0 : snapshot.selected.clamp(0, clips.length - 1).toInt();
-      speed = 1;
-      volume = 1;
-    });
-    if (clips.isNotEmpty) await _loadSelected();
-  }
-
-  Future<void> _undo() async {
-    if (undoStack.isEmpty) return;
-    redoStack.add(EditorSnapshot(List<ProjectMedia>.from(clips), selected));
-    final snapshot = undoStack.removeLast();
-    await _restoreSnapshot(snapshot);
-  }
-
-  Future<void> _redo() async {
-    if (redoStack.isEmpty) return;
-    undoStack.add(EditorSnapshot(List<ProjectMedia>.from(clips), selected));
-    final snapshot = redoStack.removeLast();
-    await _restoreSnapshot(snapshot);
-  }
-
+class _MatchListPageState extends State<MatchListPage> {
+  late Future<List<Map<String, dynamic>>> future;
+  Timer? timer;
   @override
   void initState() {
     super.initState();
-    clips = [...widget.initialMedia];
-    activePanel = widget.initialPanel == 'Audio' ? 'Volume' : widget.initialPanel;
-    _loadSelected();
-  }
-
-  @override
-  void dispose() {
-    video?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadSelected() async {
-    if (clips.isEmpty) return;
-    final old = video;
-    video = null;
-    await old?.dispose();
-    if (!clips[selected].isVideo) { if (mounted) setState(() {}); return; }
-    setState(() => loading = true);
-    final next = VideoPlayerController.file(File(clips[selected].file.path));
-    try {
-      await next.initialize();
-      await next.setLooping(true);
-      await next.setPlaybackSpeed(speed);
-      await next.setVolume(volume);
-      if (!mounted) { await next.dispose(); return; }
-      setState(() { video = next; loading = false; });
-    } catch (_) {
-      await next.dispose();
-      if (mounted) setState(() => loading = false);
+    future = load();
+    if (widget.liveOnly) {
+      timer = Timer.periodic(const Duration(seconds: 35), (_) {
+        if (mounted) setState(() => future = load());
+      });
     }
   }
+  @override
+  void dispose() { timer?.cancel(); super.dispose(); }
 
-  Future<void> _addVideo() async {
-    final file = await picker.pickVideo(source: ImageSource.gallery);
-    if (file == null || !mounted) return;
-    final saved = await MediaStorage.persist(file);
-    if (!mounted) return;
-    _recordUndo();
-    await ProjectHistory.add(saved, true);
-    setState(() { clips.add(ProjectMedia(saved, true)); selected = clips.length - 1; });
-    await _loadSelected();
+  Future<List<Map<String, dynamic>>> load() async {
+    final data = await MatchoraApi.get(widget.liveOnly ? '/live' : '/schedule?watchable=1');
+    return MatchoraApi.listFrom(data);
   }
 
-  Future<void> _addPhoto() async {
-    final file = await picker.pickImage(source: ImageSource.gallery);
-    if (file == null || !mounted) return;
-    final saved = await MediaStorage.persist(file);
-    if (!mounted) return;
-    _recordUndo();
-    await ProjectHistory.add(saved, false);
-    setState(() { clips.add(ProjectMedia(saved, false)); selected = clips.length - 1; });
-    await _loadSelected();
-  }
-
-  Future<void> _duplicateSelected() async {
-    if (clips.isEmpty) return;
-    final source = clips[selected];
-    final copy = await MediaStorage.persist(source.file);
-    if (!mounted) return;
-    _recordUndo();
-    setState(() {
-      clips.insert(selected + 1, ProjectMedia(copy, source.isVideo));
-      selected += 1;
-    });
-    await ProjectHistory.add(copy, source.isVideo);
-    await _loadSelected();
-    _message('Clip duplicated.');
-  }
-
-  Future<void> _remove() async {
-    if (clips.isEmpty) return;
-    _recordUndo();
-    final old = video; video = null; await old?.dispose();
-    setState(() { clips.removeAt(selected); selected = clips.isEmpty ? 0 : selected.clamp(0, clips.length - 1).toInt(); });
-    if (clips.isNotEmpty) await _loadSelected();
-  }
-
-  void _message(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  void _cycleFilter() {
-    setState(() => filterIndex = (filterIndex + 1) % _filters.length);
-    _message(['Original', 'Cinematic', 'Warm', 'Cool', 'Mono'][filterIndex] + ' preview filter selected.');
-  }
-
-  Future<void> _addText() async {
-    final input = TextEditingController(text: overlayText);
-    final value = await showDialog<String>(context: context, builder: (context) => AlertDialog(
-      title: const Text('Add text layer'),
-      content: TextField(controller: input, autofocus: true, maxLines: 3, decoration: const InputDecoration(hintText: 'Write your title or caption')),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        TextButton(onPressed: () => Navigator.pop(context, ''), child: const Text('Remove')),
-        FilledButton(onPressed: () => Navigator.pop(context, input.text.trim()), child: const Text('Apply')),
-      ],
-    ));
-    if (value != null && mounted) setState(() => overlayText = value);
-  }
-
-  String _time(Duration d) => '${d.inMinutes.remainder(60).toString().padLeft(2, '0')}:${d.inSeconds.remainder(60).toString().padLeft(2, '0')}';
+  Future<void> refresh() async { setState(() => future = load()); await future; }
 
   @override
   Widget build(BuildContext context) {
-    final current = clips[selected];
-    final controller = video;
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: bg,
-        leading: IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back_rounded)),
-        title: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('AURIX EDITOR', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-          Text('Untitled project', style: TextStyle(fontSize: 10, color: Colors.white38)),
+    final live = widget.liveOnly;
+    return Column(children: [
+      _TopHeader(title: live ? 'Бозиҳои зинда' : 'Бозиҳои дорои пахш',
+        subtitle: live ? 'Ҳисобҳои зинда • навсозии автоматӣ' : 'Ҷадвали бозиҳои дастрас',
+        icon: live ? Icons.sensors_outlined : Icons.calendar_month_outlined),
+      Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+        future: future,
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: accent));
+          }
+          if (snap.hasError) return _ErrorView(message: 'Маълумот бор нашуд', onRetry: refresh);
+          final events = snap.data ?? [];
+          if (events.isEmpty) return _EmptyView(title: live ? 'Ҳоло бозии зинда нест' : 'Бозӣ ёфт нашуд',
+            subtitle: 'Баъдтар дубора санҷед', onRefresh: refresh);
+          return RefreshIndicator(
+            color: accent, onRefresh: refresh,
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+              itemCount: events.length,
+              itemBuilder: (_, i) => MatchCard(event: events[i]),
+            ),
+          );
+        },
+      )),
+    ]);
+  }
+}
+
+class MatchCard extends StatelessWidget {
+  const MatchCard({super.key, required this.event});
+  final Map<String, dynamic> event;
+  @override
+  Widget build(BuildContext context) {
+    final isLive = event['live'] == true || field(event, ['status']).toUpperCase().contains('H');
+    final score = field(event, ['score'], '—');
+    final minute = field(event, ['minute']);
+    final league = field(event, ['league', 'competition'], 'Футбол');
+    final channels = field(event, ['channel_count'], '0');
+    final embed = eventEmbed(event);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withOpacity(.055))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: Text(league, maxLines: 1, overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: muted, fontSize: 12, fontWeight: FontWeight.w600))),
+          if (isLive) Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+            decoration: BoxDecoration(color: const Color(0xFFED4545).withOpacity(.15), borderRadius: BorderRadius.circular(20)),
+            child: Row(children: [
+              Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFFFF5555), shape: BoxShape.circle)),
+              const SizedBox(width: 5),
+              Text(minute.isEmpty ? 'LIVE' : '$minute′', style: const TextStyle(color: Color(0xFFFF7777), fontSize: 11, fontWeight: FontWeight.bold)),
+            ]),
+          ) else Text(field(event, ['status'], 'Дар пеш'), style: const TextStyle(color: muted, fontSize: 11)),
         ]),
-        actions: [
-          Container(margin: const EdgeInsets.only(right: 12, top: 10, bottom: 10), child: OutlinedButton(
-            onPressed: null,
-            style: OutlinedButton.styleFrom(disabledForegroundColor: Colors.white38, side: const BorderSide(color: Colors.white12), padding: const EdgeInsets.symmetric(horizontal: 13)),
-            child: const Text('EXPORT'),
-          )),
-        ],
-      ),
-      body: SafeArea(child: Column(children: [
-        Expanded(flex: 5, child: Container(
-          margin: const EdgeInsets.fromLTRB(14, 2, 14, 8),
-          width: double.infinity,
-          decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(alignment: Alignment.center, children: [
-            Positioned(top: 10, left: 12, child: _PreviewTag(text: current.isVideo ? 'VIDEO PREVIEW' : 'IMAGE PREVIEW')),
-            if (loading) const CircularProgressIndicator(color: orange)
-            else if (current.isVideo && controller != null && controller.value.isInitialized)
-              Center(child: ColorFiltered(
-                colorFilter: ColorFilter.matrix(_filters[filterIndex]),
-                child: AspectRatio(aspectRatio: controller.value.aspectRatio, child: VideoPlayer(controller)),
-              ))
-            else if (!current.isVideo)
-              Center(child: ColorFiltered(colorFilter: ColorFilter.matrix(_filters[filterIndex]), child: Image.file(File(current.file.path), fit: BoxFit.contain)))
-            else
-              const Center(child: Text('Preview unavailable', style: TextStyle(color: Colors.white54))),
-            if (overlayText.isNotEmpty)
-              Positioned(left: 20, right: 20, top: 0, bottom: 0, child: Center(child: Text(overlayText, textAlign: TextAlign.center, style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900, color: Colors.white, shadows: [Shadow(color: Colors.black, blurRadius: 12, offset: Offset(1, 2))])))),
-            if (current.isVideo && controller != null && controller.value.isInitialized)
-              IconButton.filled(
-                onPressed: () async { if (controller.value.isPlaying) { await controller.pause(); } else { await controller.play(); } setState(() {}); },
-                style: IconButton.styleFrom(backgroundColor: Colors.black.withOpacity(.6), foregroundColor: Colors.white, fixedSize: const Size(58, 58)),
-                icon: Icon(controller.value.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 30),
-              ),
-            Positioned(bottom: 12, left: 14, right: 14, child: Row(children: [
-              Text(controller?.value.isInitialized == true ? _time(controller!.value.position) : '00:00', style: const TextStyle(fontSize: 10, color: Colors.white70)),
-              const Spacer(),
-              Text(controller?.value.isInitialized == true ? _time(controller!.value.duration) : '--:--', style: const TextStyle(fontSize: 10, color: Colors.white70)),
-            ])),
-          ]),
-        )),
-        if (controller != null && controller.value.isInitialized)
-          Padding(padding: const EdgeInsets.symmetric(horizontal: 18), child: VideoProgressIndicator(controller, allowScrubbing: true, colors: const VideoProgressColors(playedColor: orange, bufferedColor: Colors.white24, backgroundColor: Colors.white12))),
-        Container(
-          height: 196,
-          margin: const EdgeInsets.fromLTRB(12, 9, 12, 0),
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 9),
-          decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white10)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Text('TIMELINE', style: TextStyle(fontSize: 10, color: Colors.white60, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-              const Spacer(),
-              IconButton(tooltip: 'Undo', onPressed: undoStack.isEmpty ? null : _undo, icon: const Icon(Icons.undo_rounded, size: 19)),
-              IconButton(tooltip: 'Redo', onPressed: redoStack.isEmpty ? null : _redo, icon: const Icon(Icons.redo_rounded, size: 19)),
-              IconButton(tooltip: 'Duplicate clip', onPressed: _duplicateSelected, icon: const Icon(Icons.copy_rounded, size: 18)),
-              IconButton(tooltip: 'Add video', onPressed: _addVideo, icon: const Icon(Icons.video_call_outlined, size: 20)),
-              IconButton(tooltip: 'Add photo', onPressed: _addPhoto, icon: const Icon(Icons.add_photo_alternate_outlined, size: 19)),
-              IconButton(tooltip: 'Delete clip', onPressed: _remove, icon: const Icon(Icons.delete_outline_rounded, size: 19)),
-            ]),
-            const SizedBox(height: 4),
-            Expanded(child: ReorderableListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: clips.length,
-              onReorder: (oldIndex, newIndex) {
-                _recordUndo();
-                setState(() {
-                  if (newIndex > oldIndex) newIndex -= 1;
-                  final item = clips.removeAt(oldIndex);
-                  clips.insert(newIndex, item);
-                  if (selected == oldIndex) {
-                    selected = newIndex;
-                  } else if (oldIndex < selected && newIndex >= selected) {
-                    selected -= 1;
-                  } else if (oldIndex > selected && newIndex <= selected) {
-                    selected += 1;
-                  }
-                });
-              },
-              itemBuilder: (context, index) {
-                final item = clips[index];
-                return Container(
-                  key: ValueKey('${item.file.path}_$index'),
-                  width: 108,
-                  margin: const EdgeInsets.only(right: 7),
-                  child: GestureDetector(
-                    onTap: () async { setState(() { selected = index; speed = 1; volume = 1; }); await _loadSelected(); },
-                    child: Container(
-                      decoration: BoxDecoration(color: surface2, borderRadius: BorderRadius.circular(10), border: Border.all(color: selected == index ? orange : Colors.white12, width: selected == index ? 2 : 1)),
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(fit: StackFit.expand, children: [
-                        if (!item.isVideo) Image.file(File(item.file.path), fit: BoxFit.cover),
-                        if (item.isVideo) const Center(child: Icon(Icons.movie_outlined, size: 26, color: Colors.white70)),
-                        Positioned(left: 6, bottom: 6, child: Text(item.isVideo ? 'VIDEO ${index + 1}' : 'PHOTO ${index + 1}', style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold))),
-                        if (selected == index) const Positioned(right: 5, top: 5, child: Icon(Icons.check_circle, color: orange, size: 16)),
-                        const Positioned(right: 5, bottom: 5, child: Icon(Icons.drag_indicator, size: 14, color: Colors.white54)),
-                      ]),
-                    ),
-                  ),
-                );
-              },
-            )),
-          ]),
-        ),
-        Container(
-          margin: const EdgeInsets.fromLTRB(12, 9, 12, 0),
-          padding: const EdgeInsets.fromLTRB(13, 12, 13, 13),
-          decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white10)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(child: SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
-                _PanelTab(label: 'Speed', selected: activePanel == 'Speed', onTap: () => setState(() => activePanel = 'Speed')),
-                _PanelTab(label: 'Volume', selected: activePanel == 'Volume', onTap: () => setState(() => activePanel = 'Volume')),
-                _PanelTab(label: 'Trim', selected: activePanel == 'Trim', onTap: () => setState(() => activePanel = 'Trim')),
-                _PanelTab(label: 'Effects', selected: activePanel == 'Effects', onTap: () => setState(() => activePanel = 'Effects')),
-                _PanelTab(label: 'Color', selected: activePanel == 'Color', onTap: () => setState(() => activePanel = 'Color')),
-                _PanelTab(label: 'Text', selected: activePanel == 'Text', onTap: _addText),
-              ]))),
-              const SizedBox(width: 4),
-              Text(activePanel == 'Speed' ? '${speed.toStringAsFixed(2)}×' : activePanel == 'Volume' ? '${(volume * 100).round()}%' : activePanel == 'Trim' ? 'IN / OUT' : activePanel == 'Text' ? 'LAYER' : ['Original', 'Cinematic', 'Warm', 'Cool', 'Mono'][filterIndex], style: const TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 11)),
-            ]),
-            const SizedBox(height: 8),
-            if (activePanel == 'Speed')
-              Slider(value: speed, min: .25, max: 2, divisions: 35, onChanged: controller == null ? null : (v) async { setState(() => speed = v); await controller.setPlaybackSpeed(v); })
-            else if (activePanel == 'Volume')
-              Slider(value: volume, min: 0, max: 1, divisions: 20, onChanged: controller == null ? null : (v) async { setState(() => volume = v); await controller.setVolume(v); })
-            else if (activePanel == 'Trim')
-              Column(children: [
-                RangeSlider(values: RangeValues(trimStart, trimEnd), min: 0, max: 1, divisions: 100, labels: RangeLabels('${(trimStart * 100).round()}%', '${(trimEnd * 100).round()}%'), onChanged: controller == null ? null : (v) => setState(() { trimStart = v.start; trimEnd = v.end; })),
-                SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: controller == null ? null : () async { final d = controller.value.duration; await controller.seekTo(Duration(milliseconds: (d.inMilliseconds * trimStart).round())); _message('IN point previewed. Export trimming is not connected yet.'); }, icon: const Icon(LucideIcons.play), label: const Text('Preview from IN point'))),
-              ])
-            else if (activePanel == 'Effects' || activePanel == 'Color')
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(activePanel == 'Effects' ? 'PREVIEW EFFECTS' : 'COLOR LOOKS', style: const TextStyle(fontSize: 9, color: Colors.white54, letterSpacing: 1)),
-                const SizedBox(height: 8),
-                Wrap(spacing: 6, runSpacing: 2, children: List.generate(5, (i) => ChoiceChip(
-                  label: Text(['Original', 'Cinema', 'Warm', 'Cool', 'Mono'][i], style: const TextStyle(fontSize: 10)),
-                  selected: filterIndex == i,
-                  onSelected: (_) => setState(() => filterIndex = i),
-                  selectedColor: orange.withOpacity(.2),
-                  backgroundColor: surface2,
-                  labelStyle: TextStyle(color: filterIndex == i ? orange : Colors.white70),
-                  side: BorderSide(color: filterIndex == i ? orange : Colors.white12),
-                  visualDensity: VisualDensity.compact,
-                ))),
-              ])
-            else
-              Row(children: [
-                Expanded(child: Text(overlayText.isEmpty ? 'No text layer added' : overlayText, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                TextButton.icon(onPressed: _addText, icon: const Icon(LucideIcons.type, size: 16), label: Text(overlayText.isEmpty ? 'Add text' : 'Edit text')),
-                if (overlayText.isNotEmpty) IconButton(onPressed: () => setState(() => overlayText = ''), icon: const Icon(LucideIcons.trash2, size: 17)),
-              ]),
-            if (activePanel == 'Speed' || activePanel == 'Volume') Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text(activePanel == 'Speed' ? '0.25×' : 'Mute', style: const TextStyle(color: Colors.white38, fontSize: 9)),
-              Text(activePanel == 'Speed' ? '2.00×' : '100%', style: const TextStyle(color: Colors.white38, fontSize: 9)),
-            ]),
-          ]),
-        ),
-        Container(
-          height: 76,
-          padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-            _EditorAction(icon: LucideIcons.scissors, label: 'Trim', onTap: () => setState(() => activePanel = 'Trim')),
-            _EditorAction(icon: LucideIcons.sparkles, label: 'Effects', onTap: () => setState(() => activePanel = 'Effects')),
-            _EditorAction(icon: LucideIcons.type, label: 'Text', onTap: _addText),
-            _EditorAction(icon: LucideIcons.audioLines, label: 'Audio', onTap: () => setState(() => activePanel = 'Volume')),
-            _EditorAction(icon: LucideIcons.palette, label: 'Color', onTap: () => setState(() => activePanel = 'Color')),
-          ]),
-        ),
-      ])),
+        const SizedBox(height: 15),
+        Row(children: [
+          Expanded(child: Text(field(event, ['home', 'home_team', 'homeTeam'], 'Home'),
+            maxLines: 2, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+            decoration: BoxDecoration(color: panel2, borderRadius: BorderRadius.circular(10)),
+            child: Text(score, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, fontFeatures: [FontFeature.tabularFigures()])),
+          ),
+          Expanded(child: Text(field(event, ['away', 'away_team', 'awayTeam'], 'Away'),
+            textAlign: TextAlign.end, maxLines: 2, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
+        ]),
+        const SizedBox(height: 14),
+        Row(children: [
+          Icon(Icons.tv_outlined, size: 16, color: accent.withOpacity(.9)),
+          const SizedBox(width: 6),
+          Text('$channels канал', style: const TextStyle(color: muted, fontSize: 12)),
+          const Spacer(),
+          if (embed.isNotEmpty) FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: accent, foregroundColor: bg,
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9)),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(
+              builder: (_) => MatchPlayerPage(title: eventTitle(event), url: embed))),
+            icon: const Icon(Icons.play_arrow_rounded, size: 19),
+            label: const Text('Тамошо', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ]),
+      ]),
     );
   }
 }
 
-class _PreviewTag extends StatelessWidget {
-  const _PreviewTag({required this.text});
-  final String text;
+class ChannelsPage extends StatefulWidget {
+  const ChannelsPage({super.key});
   @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5), decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)), child: Text(text, style: const TextStyle(fontSize: 8, color: Colors.white70, letterSpacing: 1)));
+  State<ChannelsPage> createState() => _ChannelsPageState();
+}
+class _ChannelsPageState extends State<ChannelsPage> {
+  late Future<List<Map<String, dynamic>>> future;
+  @override
+  void initState() { super.initState(); future = load(); }
+  Future<List<Map<String, dynamic>>> load() async =>
+    MatchoraApi.listFrom(await MatchoraApi.get('/channels'), 'channels');
+  Future<void> refresh() async { setState(() => future = load()); await future; }
+  @override
+  Widget build(BuildContext context) => Column(children: [
+    const _TopHeader(title: 'Каналҳо', subtitle: 'Рӯйхати каналҳои API', icon: Icons.live_tv_outlined),
+    Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
+      future: future,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: accent));
+        if (snap.hasError) return _ErrorView(message: 'Каналҳо бор нашуданд', onRetry: refresh);
+        final items = snap.data ?? [];
+        if (items.isEmpty) return _EmptyView(title: 'Канал дастрас нест', subtitle: 'Баъдтар санҷед', onRefresh: refresh);
+        return RefreshIndicator(color: accent, onRefresh: refresh, child: ListView.builder(
+          padding: const EdgeInsets.all(16), itemCount: items.length,
+          itemBuilder: (_, i) {
+            final c = items[i];
+            final name = field(c, ['name', 'title', 'channel', 'label'], 'Канали ${i + 1}');
+            final id = field(c, ['id', 'channel_id']);
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(15)),
+              child: ListTile(
+                leading: Container(width: 42, height: 42,
+                  decoration: BoxDecoration(color: blue.withOpacity(.12), borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.live_tv_outlined, color: blue)),
+                title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: Text(field(c, ['country', 'language', 'category'], 'Пахши варзишӣ'),
+                  style: const TextStyle(color: muted, fontSize: 12)),
+                trailing: const Icon(Icons.chevron_right_rounded, color: muted),
+                onTap: id.isEmpty ? null : () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => MatchPlayerPage(title: name, url: 'https://matchora.to/embed/channel/$id'))),
+              ),
+            );
+          },
+        ));
+      },
+    )),
+  ]);
 }
 
-class _PanelTab extends StatelessWidget {
-  const _PanelTab({required this.label, required this.selected, required this.onTap});
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+class MatchPlayerPage extends StatefulWidget {
+  const MatchPlayerPage({super.key, required this.title, required this.url});
+  final String title;
+  final String url;
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(right: 7), child: TextButton(
-    onPressed: onTap,
-    style: TextButton.styleFrom(backgroundColor: selected ? orange.withOpacity(.16) : Colors.transparent, foregroundColor: selected ? orange : Colors.white54, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7), minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
-    child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-  ));
+  State<MatchPlayerPage> createState() => _MatchPlayerPageState();
 }
-
-class _EditorAction extends StatelessWidget {
-  const _EditorAction({required this.icon, required this.label, required this.onTap});
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
+class _MatchPlayerPageState extends State<MatchPlayerPage> {
+  late final WebViewController controller;
+  bool loading = true;
   @override
-  Widget build(BuildContext context) => InkWell(
-    borderRadius: BorderRadius.circular(12),
-    onTap: onTap,
-    child: Padding(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(icon, size: 21, color: orange),
-      const SizedBox(height: 5),
-      Text(label, style: const TextStyle(fontSize: 9, color: Colors.white70)),
-    ])),
+  void initState() {
+    super.initState();
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setMediaPlaybackRequiresUserGesture(false)
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageStarted: (_) { if (mounted) setState(() => loading = true); },
+        onPageFinished: (_) { if (mounted) setState(() => loading = false); },
+        onWebResourceError: (_) { if (mounted) setState(() => loading = false); },
+      ))
+      ..loadRequest(Uri.parse(widget.url));
+  }
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded), onPressed: () => Navigator.pop(context))),
+    body: Column(children: [
+      Expanded(child: Stack(children: [
+        WebViewWidget(controller: controller),
+        if (loading) const Align(alignment: Alignment.topCenter,
+          child: LinearProgressIndicator(color: accent, backgroundColor: panel, minHeight: 2)),
+      ])),
+      Container(width: double.infinity, padding: const EdgeInsets.all(10), color: panel,
+        child: const Text('Пахш дар плеери Matchora • рекламаи дохилии плеер нигоҳ дошта мешавад',
+          textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 11))),
+    ]),
   );
+}
+
+class _TopHeader extends StatelessWidget {
+  const _TopHeader({required this.title, required this.subtitle, required this.icon});
+  final String title, subtitle;
+  final IconData icon;
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+    child: Row(children: [
+      Container(width: 46, height: 46, decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [accent, blue], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(15)),
+        child: Icon(icon, color: bg, size: 25)),
+      const SizedBox(width: 12),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, letterSpacing: -.4)),
+        const SizedBox(height: 3),
+        Text(subtitle, style: const TextStyle(color: muted, fontSize: 11)),
+      ])),
+      IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none_rounded, color: muted)),
+    ]),
+  );
+}
+
+class _EmptyView extends StatelessWidget {
+  const _EmptyView({required this.title, required this.subtitle, required this.onRefresh});
+  final String title, subtitle;
+  final Future<void> Function() onRefresh;
+  @override
+  Widget build(BuildContext context) => RefreshIndicator(color: accent, onRefresh: onRefresh,
+    child: ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
+      const SizedBox(height: 130), const Icon(Icons.sports_soccer_outlined, size: 54, color: muted),
+      const SizedBox(height: 16), Center(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17))),
+      const SizedBox(height: 6), Center(child: Text(subtitle, style: const TextStyle(color: muted, fontSize: 12))),
+    ]));
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+  final String message;
+  final Future<void> Function() onRetry;
+  @override
+  Widget build(BuildContext context) => Center(child: Padding(
+    padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
+      const Icon(Icons.cloud_off_outlined, size: 46, color: muted),
+      const SizedBox(height: 12), Text(message, style: const TextStyle(fontWeight: FontWeight.bold)),
+      const SizedBox(height: 6), const Text('Пайвасти интернет ё API-ро санҷед', style: TextStyle(color: muted, fontSize: 12)),
+      const SizedBox(height: 14), OutlinedButton.icon(onPressed: onRetry,
+        icon: const Icon(Icons.refresh_rounded), label: const Text('Аз нав кӯшиш кун')),
+    ]),
+  ));
 }
