@@ -1,10 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:aurix_editor/main.dart';
+import 'package:football_live_tj/main.dart';
 
 void main() {
-  testWidgets('AURIX home screen renders its identity', (tester) async {
-    await tester.pumpWidget(const AurixApp());
-    expect(find.text('AURIX'), findsOneWidget);
-    expect(find.text('Start a new project'), findsOneWidget);
+  testWidgets('Football Live home screen renders', (tester) async {
+    await tester.pumpWidget(const FootballApp());
+    await tester.pump();
+    expect(find.text('Бозиҳои зинда'), findsOneWidget);
+    expect(find.text('Бозиҳо'), findsWidgets);
   });
 }
