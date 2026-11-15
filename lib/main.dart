@@ -28,7 +28,7 @@ class AurixMark extends StatelessWidget {
       boxShadow: [BoxShadow(color: orange.withOpacity(.20), blurRadius: 18, offset: const Offset(0, 5))],
     ),
     clipBehavior: Clip.antiAlias,
-    child: Image.asset('assets/brand/aurix_logo.jpg', width: size, height: size, fit: BoxFit.cover),
+    child: Image.asset('ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png', width: size, height: size, fit: BoxFit.cover),
   );
 }
 
