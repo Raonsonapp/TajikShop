@@ -130,7 +130,7 @@ class _MatchListPageState extends State<MatchListPage> {
     future = load();
     if (widget.liveOnly) {
       timer = Timer.periodic(const Duration(seconds: 35), (_) {
-        if (mounted) setState(() => future = load());
+        if (mounted) { setState(() => future = load()); }
       });
     }
   }
@@ -302,7 +302,6 @@ class _MatchPlayerPageState extends State<MatchPlayerPage> {
     super.initState();
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setMediaPlaybackRequiresUserGesture(false)
       ..setNavigationDelegate(NavigationDelegate(
         onPageStarted: (_) { if (mounted) setState(() => loading = true); },
         onPageFinished: (_) { if (mounted) setState(() => loading = false); },
