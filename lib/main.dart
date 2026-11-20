@@ -1,379 +1,57 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:xml/xml.dart';
 
-const bg = Color(0xFF080D12);
-const panel = Color(0xFF111B24);
-const panel2 = Color(0xFF17232E);
-const accent = Color(0xFF35D07F);
-const blue = Color(0xFF39A9FF);
-const muted = Color(0xFF91A0AD);
-const api = 'https://matchora.to/api/v1';
-
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: bg,
-    statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: bg,
-    systemNavigationBarIconBrightness: Brightness.light,
-  ));
-  runApp(const FootballApp());
+const bg=Color(0xFF050B08), panel=Color(0xFF0B1710), panel2=Color(0xFF102319), green=Color(0xFF39FF72), muted=Color(0xFF91A69A);
+const api='https://matchora.to/api/v1';
+void main(){WidgetsFlutterBinding.ensureInitialized();SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor:bg,statusBarIconBrightness:Brightness.light,systemNavigationBarColor:bg,systemNavigationBarIconBrightness:Brightness.light));runApp(const TmsApp());}
+class TmsApp extends StatelessWidget{const TmsApp({super.key});@override Widget build(BuildContext c)=>MaterialApp(title:'TM SCORE',debugShowCheckedModeBanner:false,theme:ThemeData(brightness:Brightness.dark,scaffoldBackgroundColor:bg,colorScheme:const ColorScheme.dark(primary:green,secondary:Color(0xFF176BFF),surface:panel),useMaterial3:true),home:const Home());}
+class Item{
+ final String title,url,source,date,category;
+ const Item(this.title,this.url,this.source,this.date,this.category);
+ Map<String,dynamic> json()=>{'title':title,'url':url,'source':source,'date':date,'category':category};
+ factory Item.from(Map j)=>Item('${j['title']??''}','${j['url']??''}','${j['source']??'Манбаъ'}','${j['date']??''}','${j['category']??'Ахбор'}');
 }
-
-class FootballApp extends StatelessWidget {
-  const FootballApp({super.key});
-  @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'Football Live',
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: bg,
-      colorScheme: const ColorScheme.dark(primary: accent, secondary: blue, surface: panel),
-      useMaterial3: true,
-      appBarTheme: const AppBarTheme(backgroundColor: bg, surfaceTintColor: Colors.transparent),
-    ),
-    home: const FootballHome(),
-  );
+class News{
+ static const cats=<String,String>{'Ҳама':'football latest news transfer','Трансфер':'football transfer Fabrizio Romano Here We Go','Реал Мадрид':'Real Madrid latest news transfer','Барселона':'FC Barcelona latest news transfer','Ман Сити':'Manchester City latest news transfer','Арсенал':'Arsenal FC latest news transfer','Бавария':'Bayern Munich latest news transfer','Бозингарон':'Mbappe Lamine Yamal Michael Olise Harry Kane Ronaldo Messi news','Рӯзноманигорон':'Fabrizio Romano David Ornstein Florian Plettenberg football'};
+ static Future<String> tg(String s)async{try{final u=Uri.https('translate.googleapis.com','/translate_a/single',{'client':'gtx','sl':'auto','tl':'tg','dt':'t','q':s});final r=await http.get(u).timeout(const Duration(seconds:8));if(r.statusCode==200){final a=jsonDecode(r.body)[0] as List;return a.map((x)=>x[0]?.toString()??'').join().trim();}}catch(_){}return s;}
+ static Future<List<Item>> fetch(String cat)async{
+  final u=Uri.https('news.google.com','/rss/search',{'q':cats[cat]??cats['Ҳама']!,'hl':'en-US','gl':'US','ceid':'US:en'});
+  final r=await http.get(u,headers:{'User-Agent':'TMSCORE/1.0'}).timeout(const Duration(seconds:18));if(r.statusCode!=200)throw Exception('RSS error');
+  final doc=XmlDocument.parse(utf8.decode(r.bodyBytes));final out=<Item>[];
+  for(final x in doc.findAllElements('item').take(35)){final title=x.getElement('title')?.innerText.trim()??'';final url=x.getElement('link')?.innerText.trim()??'';if(title.isEmpty||url.isEmpty)continue;final source=x.findElements('source').firstOrNull?.innerText.trim()??'Google News';final date=x.getElement('pubDate')?.innerText.trim()??'';out.add(Item(await tg(title),url,source,date,cat));}
+  return out;
+ }
+ static Future<List<Item>> cache(String cat)async{final p=await SharedPreferences.getInstance();final s=p.getString('tms_'+cat);if(s==null)return[];try{return(jsonDecode(s) as List).map((e)=>Item.from(Map.from(e))).toList();}catch(_){return[];}}
+ static Future<void> save(String cat,List<Item> a)async{final p=await SharedPreferences.getInstance();await p.setString('tms_'+cat,jsonEncode(a.map((e)=>e.json()).toList()));await p.setString('tms_time_'+cat,DateTime.now().toIso8601String());}
+ static Future<String> time(String cat)async{final p=await SharedPreferences.getInstance();final d=DateTime.tryParse(p.getString('tms_time_'+cat)??'')?.toLocal();return d==null?'': 'Навсозӣ: ${d.hour.toString().padLeft(2,'0')}:${d.minute.toString().padLeft(2,'0')}';}
 }
-
-class MatchoraApi {
-  static Future<dynamic> get(String path) async {
-    final response = await http.get(Uri.parse('$api$path'), headers: {
-      'Accept': 'application/json',
-      'User-Agent': 'FootballLive/1.0',
-    }).timeout(const Duration(seconds: 18));
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('API error: ${response.statusCode}');
-    }
-    return jsonDecode(utf8.decode(response.bodyBytes));
-  }
-
-  static List<Map<String, dynamic>> listFrom(dynamic json, [String key = 'events']) {
-    dynamic value = json;
-    if (json is Map) {
-      value = json[key] ?? json['data'] ?? json['results'] ?? json['channels'] ?? [];
-      if (value is Map) value = value[key] ?? value['items'] ?? [];
-    }
-    if (value is! List) return [];
-    return value.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
-  }
+class MatchApi{
+ static Future<dynamic> get(String path)async{final r=await http.get(Uri.parse('$api$path'),headers:{'Accept':'application/json'}).timeout(const Duration(seconds:18));if(r.statusCode<200||r.statusCode>299)throw Exception('API ${r.statusCode}');return jsonDecode(utf8.decode(r.bodyBytes));}
+ static List<Map<String,dynamic>> list(dynamic j,[String key='events']){dynamic v=j;if(j is Map){v=j[key]??j['data']??j['results']??j['channels']??[];if(v is Map)v=v[key]??v['items']??[];}if(v is! List)return[];return v.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();}
 }
-
-String field(Map<String, dynamic> m, List<String> keys, [String fallback = '']) {
-  for (final k in keys) {
-    final v = m[k];
-    if (v != null && v.toString().trim().isNotEmpty) return v.toString();
-  }
-  return fallback;
-}
-
-String eventTitle(Map<String, dynamic> e) =>
-  '${field(e, ['home', 'home_team', 'homeTeam'], 'Home')}  vs  ${field(e, ['away', 'away_team', 'awayTeam'], 'Away')}';
-
-String eventEmbed(Map<String, dynamic> e) {
-  final direct = field(e, ['embed_url', 'embedUrl']);
-  if (direct.isNotEmpty) return direct;
-  final id = field(e, ['id', 'event_id']);
-  return id.isEmpty ? '' : 'https://matchora.to/embed/match/$id';
-}
-
-class FootballHome extends StatefulWidget {
-  const FootballHome({super.key});
-  @override
-  State<FootballHome> createState() => _FootballHomeState();
-}
-
-class _FootballHomeState extends State<FootballHome> {
-  int tab = 0;
-  final pages = const ['Live', 'Бозиҳо', 'Каналҳо'];
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(child: IndexedStack(index: tab, children: const [
-        MatchListPage(liveOnly: true),
-        MatchListPage(liveOnly: false),
-        ChannelsPage(),
-      ])),
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: panel,
-        indicatorColor: accent.withOpacity(.15),
-        selectedIndex: tab,
-        onDestinationSelected: (v) => setState(() => tab = v),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.sensors_outlined), selectedIcon: Icon(Icons.sensors), label: 'Live'),
-          NavigationDestination(icon: Icon(Icons.calendar_month_outlined), selectedIcon: Icon(Icons.calendar_month), label: 'Бозиҳо'),
-          NavigationDestination(icon: Icon(Icons.live_tv_outlined), selectedIcon: Icon(Icons.live_tv), label: 'Каналҳо'),
-        ],
-      ),
-    );
-  }
-}
-
-class MatchListPage extends StatefulWidget {
-  const MatchListPage({super.key, required this.liveOnly});
-  final bool liveOnly;
-  @override
-  State<MatchListPage> createState() => _MatchListPageState();
-}
-
-class _MatchListPageState extends State<MatchListPage> {
-  late Future<List<Map<String, dynamic>>> future;
-  Timer? timer;
-  @override
-  void initState() {
-    super.initState();
-    future = load();
-    if (widget.liveOnly) {
-      timer = Timer.periodic(const Duration(seconds: 35), (_) {
-        if (mounted) { setState(() => future = load()); }
-      });
-    }
-  }
-  @override
-  void dispose() { timer?.cancel(); super.dispose(); }
-
-  Future<List<Map<String, dynamic>>> load() async {
-    final data = await MatchoraApi.get(widget.liveOnly ? '/live' : '/schedule?watchable=1');
-    return MatchoraApi.listFrom(data);
-  }
-
-  Future<void> refresh() async { setState(() => future = load()); await future; }
-
-  @override
-  Widget build(BuildContext context) {
-    final live = widget.liveOnly;
-    return Column(children: [
-      _TopHeader(title: live ? 'Бозиҳои зинда' : 'Бозиҳои дорои пахш',
-        subtitle: live ? 'Ҳисобҳои зинда • навсозии автоматӣ' : 'Ҷадвали бозиҳои дастрас',
-        icon: live ? Icons.sensors_outlined : Icons.calendar_month_outlined),
-      Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
-        future: future,
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: accent));
-          }
-          if (snap.hasError) return _ErrorView(message: 'Маълумот бор нашуд', onRetry: refresh);
-          final events = snap.data ?? [];
-          if (events.isEmpty) return _EmptyView(title: live ? 'Ҳоло бозии зинда нест' : 'Бозӣ ёфт нашуд',
-            subtitle: 'Баъдтар дубора санҷед', onRefresh: refresh);
-          return RefreshIndicator(
-            color: accent, onRefresh: refresh,
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-              itemCount: events.length,
-              itemBuilder: (_, i) => MatchCard(event: events[i]),
-            ),
-          );
-        },
-      )),
-    ]);
-  }
-}
-
-class MatchCard extends StatelessWidget {
-  const MatchCard({super.key, required this.event});
-  final Map<String, dynamic> event;
-  @override
-  Widget build(BuildContext context) {
-    final isLive = event['live'] == true || field(event, ['status']).toUpperCase().contains('H');
-    final score = field(event, ['score'], '—');
-    final minute = field(event, ['minute']);
-    final league = field(event, ['league', 'competition'], 'Футбол');
-    final channels = field(event, ['channel_count'], '0');
-    final embed = eventEmbed(event);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(.055))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Expanded(child: Text(league, maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: muted, fontSize: 12, fontWeight: FontWeight.w600))),
-          if (isLive) Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-            decoration: BoxDecoration(color: const Color(0xFFED4545).withOpacity(.15), borderRadius: BorderRadius.circular(20)),
-            child: Row(children: [
-              Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFFFF5555), shape: BoxShape.circle)),
-              const SizedBox(width: 5),
-              Text(minute.isEmpty ? 'LIVE' : '$minute′', style: const TextStyle(color: Color(0xFFFF7777), fontSize: 11, fontWeight: FontWeight.bold)),
-            ]),
-          ) else Text(field(event, ['status'], 'Дар пеш'), style: const TextStyle(color: muted, fontSize: 11)),
-        ]),
-        const SizedBox(height: 15),
-        Row(children: [
-          Expanded(child: Text(field(event, ['home', 'home_team', 'homeTeam'], 'Home'),
-            maxLines: 2, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-            decoration: BoxDecoration(color: panel2, borderRadius: BorderRadius.circular(10)),
-            child: Text(score, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, fontFeatures: [FontFeature.tabularFigures()])),
-          ),
-          Expanded(child: Text(field(event, ['away', 'away_team', 'awayTeam'], 'Away'),
-            textAlign: TextAlign.end, maxLines: 2, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
-        ]),
-        const SizedBox(height: 14),
-        Row(children: [
-          Icon(Icons.tv_outlined, size: 16, color: accent.withOpacity(.9)),
-          const SizedBox(width: 6),
-          Text('$channels канал', style: const TextStyle(color: muted, fontSize: 12)),
-          const Spacer(),
-          if (embed.isNotEmpty) FilledButton.icon(
-            style: FilledButton.styleFrom(backgroundColor: accent, foregroundColor: bg,
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9)),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(
-              builder: (_) => MatchPlayerPage(title: eventTitle(event), url: embed))),
-            icon: const Icon(Icons.play_arrow_rounded, size: 19),
-            label: const Text('Тамошо', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ]),
-      ]),
-    );
-  }
-}
-
-class ChannelsPage extends StatefulWidget {
-  const ChannelsPage({super.key});
-  @override
-  State<ChannelsPage> createState() => _ChannelsPageState();
-}
-class _ChannelsPageState extends State<ChannelsPage> {
-  late Future<List<Map<String, dynamic>>> future;
-  @override
-  void initState() { super.initState(); future = load(); }
-  Future<List<Map<String, dynamic>>> load() async =>
-    MatchoraApi.listFrom(await MatchoraApi.get('/channels'), 'channels');
-  Future<void> refresh() async { setState(() => future = load()); await future; }
-  @override
-  Widget build(BuildContext context) => Column(children: [
-    const _TopHeader(title: 'Каналҳо', subtitle: 'Рӯйхати каналҳои API', icon: Icons.live_tv_outlined),
-    Expanded(child: FutureBuilder<List<Map<String, dynamic>>>(
-      future: future,
-      builder: (context, snap) {
-        if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: accent));
-        if (snap.hasError) return _ErrorView(message: 'Каналҳо бор нашуданд', onRetry: refresh);
-        final items = snap.data ?? [];
-        if (items.isEmpty) return _EmptyView(title: 'Канал дастрас нест', subtitle: 'Баъдтар санҷед', onRefresh: refresh);
-        return RefreshIndicator(color: accent, onRefresh: refresh, child: ListView.builder(
-          padding: const EdgeInsets.all(16), itemCount: items.length,
-          itemBuilder: (_, i) {
-            final c = items[i];
-            final name = field(c, ['name', 'title', 'channel', 'label'], 'Канали ${i + 1}');
-            final id = field(c, ['id', 'channel_id']);
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              decoration: BoxDecoration(color: panel, borderRadius: BorderRadius.circular(15)),
-              child: ListTile(
-                leading: Container(width: 42, height: 42,
-                  decoration: BoxDecoration(color: blue.withOpacity(.12), borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.live_tv_outlined, color: blue)),
-                title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text(field(c, ['country', 'language', 'category'], 'Пахши варзишӣ'),
-                  style: const TextStyle(color: muted, fontSize: 12)),
-                trailing: const Icon(Icons.chevron_right_rounded, color: muted),
-                onTap: id.isEmpty ? null : () => Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => MatchPlayerPage(title: name, url: 'https://matchora.to/embed/channel/$id'))),
-              ),
-            );
-          },
-        ));
-      },
-    )),
-  ]);
-}
-
-class MatchPlayerPage extends StatefulWidget {
-  const MatchPlayerPage({super.key, required this.title, required this.url});
-  final String title;
-  final String url;
-  @override
-  State<MatchPlayerPage> createState() => _MatchPlayerPageState();
-}
-class _MatchPlayerPageState extends State<MatchPlayerPage> {
-  late final WebViewController controller;
-  bool loading = true;
-  @override
-  void initState() {
-    super.initState();
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageStarted: (_) { if (mounted) setState(() => loading = true); },
-        onPageFinished: (_) { if (mounted) setState(() => loading = false); },
-        onWebResourceError: (_) { if (mounted) setState(() => loading = false); },
-      ))
-      ..loadRequest(Uri.parse(widget.url));
-  }
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded), onPressed: () => Navigator.pop(context))),
-    body: Column(children: [
-      Expanded(child: Stack(children: [
-        WebViewWidget(controller: controller),
-        if (loading) const Align(alignment: Alignment.topCenter,
-          child: LinearProgressIndicator(color: accent, backgroundColor: panel, minHeight: 2)),
-      ])),
-      Container(width: double.infinity, padding: const EdgeInsets.all(10), color: panel,
-        child: const Text('Пахш дар плеери Matchora • рекламаи дохилии плеер нигоҳ дошта мешавад',
-          textAlign: TextAlign.center, style: TextStyle(color: muted, fontSize: 11))),
-    ]),
-  );
-}
-
-class _TopHeader extends StatelessWidget {
-  const _TopHeader({required this.title, required this.subtitle, required this.icon});
-  final String title, subtitle;
-  final IconData icon;
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
-    child: Row(children: [
-      Container(width: 46, height: 46, decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [accent, blue], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(15)),
-        child: Icon(icon, color: bg, size: 25)),
-      const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, letterSpacing: -.4)),
-        const SizedBox(height: 3),
-        Text(subtitle, style: const TextStyle(color: muted, fontSize: 11)),
-      ])),
-      IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none_rounded, color: muted)),
-    ]),
-  );
-}
-
-class _EmptyView extends StatelessWidget {
-  const _EmptyView({required this.title, required this.subtitle, required this.onRefresh});
-  final String title, subtitle;
-  final Future<void> Function() onRefresh;
-  @override
-  Widget build(BuildContext context) => RefreshIndicator(color: accent, onRefresh: onRefresh,
-    child: ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
-      const SizedBox(height: 130), const Icon(Icons.sports_soccer_outlined, size: 54, color: muted),
-      const SizedBox(height: 16), Center(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17))),
-      const SizedBox(height: 6), Center(child: Text(subtitle, style: const TextStyle(color: muted, fontSize: 12))),
-    ]));
-}
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message, required this.onRetry});
-  final String message;
-  final Future<void> Function() onRetry;
-  @override
-  Widget build(BuildContext context) => Center(child: Padding(
-    padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Icon(Icons.cloud_off_outlined, size: 46, color: muted),
-      const SizedBox(height: 12), Text(message, style: const TextStyle(fontWeight: FontWeight.bold)),
-      const SizedBox(height: 6), const Text('Пайвасти интернет ё API-ро санҷед', style: TextStyle(color: muted, fontSize: 12)),
-      const SizedBox(height: 14), OutlinedButton.icon(onPressed: onRetry,
-        icon: const Icon(Icons.refresh_rounded), label: const Text('Аз нав кӯшиш кун')),
-    ]),
-  ));
-}
+String val(Map m,List<String> keys,[String d='']){for(final k in keys){final v=m[k];if(v!=null&&v.toString().trim().isNotEmpty)return v.toString();}return d;}
+String embed(Map e){final u=val(e,['embed_url','embedUrl']);if(u.isNotEmpty)return u;final id=val(e,['id','event_id']);return id.isEmpty?'':'https://matchora.to/embed/match/$id';}
+class Home extends StatefulWidget{const Home({super.key});@override State<Home> createState()=>_HomeState();}
+class _HomeState extends State<Home>{int tab=0;@override Widget build(BuildContext c)=>Scaffold(body:SafeArea(child:IndexedStack(index:tab,children:const[NewsPage(),Matches(live:true),Matches(live:false),Clubs()])),bottomNavigationBar:NavigationBar(backgroundColor:panel,indicatorColor:green.withOpacity(.14),selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.newspaper_outlined),selectedIcon:Icon(Icons.newspaper),label:'Ахбор'),NavigationDestination(icon:Icon(Icons.sensors_outlined),selectedIcon:Icon(Icons.sensors),label:'LIVE'),NavigationDestination(icon:Icon(Icons.calendar_month_outlined),selectedIcon:Icon(Icons.calendar_month),label:'Бозиҳо'),NavigationDestination(icon:Icon(Icons.shield_outlined),selectedIcon:Icon(Icons.shield),label:'Клубҳо') ]));}
+class Header extends StatelessWidget{final String title,sub;const Header(this.title,this.sub,{super.key});@override Widget build(BuildContext c)=>Container(padding:const EdgeInsets.fromLTRB(17,13,17,15),decoration:const BoxDecoration(border:Border(bottom:BorderSide(color:Color(0x3339FF72)))),child:Row(children:[Container(width:48,height:48,decoration:BoxDecoration(color:green.withOpacity(.13),borderRadius:BorderRadius.circular(13),border:Border.all(color:green.withOpacity(.4))),child:const Center(child:Text('TMS',style:TextStyle(fontWeight:FontWeight.w900,color:Colors.white,fontSize:17)))),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontSize:19,fontWeight:FontWeight.w900,letterSpacing:1.1)),Text(sub,style:const TextStyle(color:muted,fontSize:10))])),const Icon(Icons.notifications_none,color:green)]));}
+class NewsPage extends StatefulWidget{const NewsPage({super.key});@override State<NewsPage> createState()=>_NewsPageState();}
+class _NewsPageState extends State<NewsPage>{String cat='Ҳама',updated='';List<Item> items=[];bool loading=true;Timer? timer;final cats=News.cats.keys.toList();@override void initState(){super.initState();load();timer=Timer.periodic(const Duration(minutes:3),(_)=>load(silent:true));}@override void dispose(){timer?.cancel();super.dispose();}
+ Future<void> load({bool silent=false})async{if(!silent&&mounted)setState(()=>loading=true);final old=await News.cache(cat);if(mounted&&items.isEmpty&&old.isNotEmpty)setState(()=>items=old);try{final fresh=await News.fetch(cat);await News.save(cat,fresh);if(mounted)setState((){items=fresh;loading=false;});}catch(_){if(mounted)setState(()=>loading=false);}final t=await News.time(cat);if(mounted)setState(()=>updated=t);}
+ @override Widget build(BuildContext c)=>Column(children:[const Header('TM SCORE','АХБОРИ ФУТБОЛИ ҶАҲОН • БА ЗАБОНИ ТОҶИКӢ'),SizedBox(height:48,child:ListView.separated(scrollDirection:Axis.horizontal,padding:const EdgeInsets.symmetric(horizontal:13,vertical:7),itemCount:cats.length,separatorBuilder:(_,__)=>const SizedBox(width:6),itemBuilder:(_,i){final x=cats[i],sel=x==cat;return ChoiceChip(label:Text(x),selected:sel,onSelected:(_){setState((){cat=x;items=[];loading=true;});load();},selectedColor:green.withOpacity(.18),backgroundColor:panel,side:BorderSide(color:sel?green:Colors.white12),labelStyle:TextStyle(color:sel?green:Colors.white70,fontSize:11,fontWeight:FontWeight.bold));})),Padding(padding:const EdgeInsets.fromLTRB(15,0,10,6),child:Row(children:[const Icon(Icons.bolt,color:green,size:17),const SizedBox(width:5),const Text('ОХИРИН ХАБАРҲО',style:TextStyle(fontWeight:FontWeight.w900,fontSize:10,letterSpacing:1)),const Spacer(),Text(updated,style:const TextStyle(color:muted,fontSize:10)),IconButton(onPressed:()=>load(),icon:const Icon(Icons.refresh,color:green,size:19))])),Expanded(child:loading&&items.isEmpty?const Center(child:CircularProgressIndicator(color:green)):items.isEmpty?Center(child:Column(mainAxisSize:MainAxisSize.min,children:[const Text('Ахбор ҳоло дастрас нест',style:TextStyle(color:muted)),TextButton(onPressed:()=>load(),child:const Text('Аз нав санҷ'))])):RefreshIndicator(color:green,onRefresh:load,child:ListView.builder(padding:const EdgeInsets.fromLTRB(13,0,13,18),itemCount:items.length,itemBuilder:(_,i)=>NewsCard(items[i]))))]);}
+class NewsCard extends StatelessWidget{final Item item;const NewsCard(this.item,{super.key});@override Widget build(BuildContext c)=>InkWell(onTap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>NewsDetail(item))),borderRadius:BorderRadius.circular(16),child:Container(margin:const EdgeInsets.only(bottom:10),padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:panel,borderRadius:BorderRadius.circular(16),border:Border.all(color:Colors.white.withOpacity(.06))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Row(children:[const Icon(Icons.circle,size:7,color:green),const SizedBox(width:7),Expanded(child:Text(item.source,style:const TextStyle(color:green,fontSize:11,fontWeight:FontWeight.bold))),Text(item.category.toUpperCase(),style:const TextStyle(color:muted,fontSize:9))]),const SizedBox(height:9),Text(item.title,style:const TextStyle(fontSize:15,fontWeight:FontWeight.w800,height:1.35)),const SizedBox(height:9),Row(children:[const Icon(Icons.schedule,size:13,color:muted),const SizedBox(width:5),Expanded(child:Text(item.date,style:const TextStyle(color:muted,fontSize:10),maxLines:1,overflow:TextOverflow.ellipsis)),const Text('ТАФСИЛОТ  ›',style:TextStyle(color:green,fontWeight:FontWeight.bold,fontSize:10))])])));}
+class NewsDetail extends StatelessWidget{final Item item;const NewsDetail(this.item,{super.key});@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:const Text('TM SCORE • NEWS')),body:Padding(padding:const EdgeInsets.all(20),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(item.source,style:const TextStyle(color:green,fontWeight:FontWeight.bold)),const SizedBox(height:13),Text(item.title,style:const TextStyle(fontSize:23,fontWeight:FontWeight.w900,height:1.3)),const SizedBox(height:12),Text('Нашр: ${item.date}',style:const TextStyle(color:muted,fontSize:12)),const SizedBox(height:18),const Text('Сарлавҳа ба тоҷикӣ тарҷума шудааст. Барои хондани матни пурра ва санҷидани ҷузъиёт манбаи аслиро кушоед.',style:TextStyle(color:Colors.white70,height:1.5)),const Spacer(),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>Browser(item.source,item.url))),icon:const Icon(Icons.open_in_new),label:const Text('Хондани манбаи аслӣ'),style:FilledButton.styleFrom(backgroundColor:green,foregroundColor:bg,padding:const EdgeInsets.all(15))))])));}
+class Matches extends StatefulWidget{final bool live;const Matches({super.key,required this.live});@override State<Matches> createState()=>_MatchesState();}
+class _MatchesState extends State<Matches>{late Future<List<Map<String,dynamic>>> future;Timer? timer;@override void initState(){super.initState();future=load();if(widget.live)timer=Timer.periodic(const Duration(seconds:35),(_){if(mounted)setState(()=>future=load());});}@override void dispose(){timer?.cancel();super.dispose();}Future<List<Map<String,dynamic>>> load()async=>MatchApi.list(await MatchApi.get(widget.live?'/live':'/schedule?watchable=1'));Future<void> refresh()async{setState(()=>future=load());await future;}@override Widget build(BuildContext c)=>Column(children:[Header(widget.live?'Бозиҳои зинда':'ҶАДВАЛИ БОЗИҲО','НАТИҶАҲО • ҲИСОБҲО • ПАХШ'),Expanded(child:FutureBuilder<List<Map<String,dynamic>>>(future:future,builder:(c,s){if(s.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator(color:green));if(s.hasError)return Center(child:TextButton(onPressed:refresh,child:const Text('Хато • Аз нав санҷ')));final a=s.data??[];if(a.isEmpty)return const Center(child:Text('Ҳоло бозӣ нест',style:TextStyle(color:muted)));return RefreshIndicator(color:green,onRefresh:refresh,child:ListView.builder(padding:const EdgeInsets.all(13),itemCount:a.length,itemBuilder:(_,i)=>MatchCard(a[i])));} ))]);}
+class MatchCard extends StatelessWidget{final Map<String,dynamic> e;const MatchCard(this.e,{super.key});@override Widget build(BuildContext c){final live=e['live']==true||val(e,['status']).toUpperCase().contains('H')||val(e,['status']).toUpperCase()=='LIVE';final u=embed(e);return Container(margin:const EdgeInsets.only(bottom:10),padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:panel,borderRadius:BorderRadius.circular(15)),child:Column(children:[Row(children:[Expanded(child:Text(val(e,['league','competition'],'Футбол'),style:const TextStyle(color:muted,fontSize:11))),Text(live?'● LIVE':val(e,['status'],'Дар пеш'),style:TextStyle(color:live?Colors.redAccent:muted,fontSize:11))]),const SizedBox(height:13),Row(children:[Expanded(child:Text(val(e,['home','home_team','homeTeam'],'Мизбон'),style:const TextStyle(fontWeight:FontWeight.bold))),Text(val(e,['score'],'—'),style:const TextStyle(fontSize:18,fontWeight:FontWeight.w900,fontFeatures:[FontFeature.tabularFigures()])),Expanded(child:Text(val(e,['away','away_team','awayTeam'],'Меҳмон'),textAlign:TextAlign.end,style:const TextStyle(fontWeight:FontWeight.bold)))]),if(u.isNotEmpty)Align(alignment:Alignment.centerRight,child:TextButton.icon(onPressed:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>Browser('Пахши бозӣ',u))),icon:const Icon(Icons.play_circle_outline),label:const Text('Тамошо')))]));}}
+class Clubs extends StatelessWidget{const Clubs({super.key});static const clubs=['Реал Мадрид','Барселона','Манчестер Сити','Арсенал','Бавария','Ливерпул','ПСЖ','Манчестер Юнайтед','Ювентус','Интер'];static const players=['Килиан Мбаппе','Ламин Ямал','Майкл Олисе','Ҳарри Кейн','Криштиану Роналду','Лионел Месси'];@override Widget build(BuildContext c)=>Column(children:[const Header('КЛУБҲО ВА СИТОРАҲО','ПАЙГИРИИ ХАБАРҲОИ ОНҲО'),Expanded(child:ListView(padding:const EdgeInsets.all(15),children:[const Text('КЛУБҲО',style:TextStyle(color:green,fontWeight:FontWeight.w900)),...clubs.map((x)=>Tile(x,'shield',x=='Манчестер Сити'?'Ман Сити':x)),const SizedBox(height:16),const Text('БОЗИНГАРОНИ МАШҲУР',style:TextStyle(color:green,fontWeight:FontWeight.w900)),...players.map((x)=>Tile(x,'person','Бозингарон')),const SizedBox(height:16),const Text('РӮЗНОМАНИГОРОН',style:TextStyle(color:green,fontWeight:FontWeight.w900)),Tile('Fabrizio Romano • David Ornstein • Florian Plettenberg','campaign','Рӯзноманигорон'),const Text('Ин бахш хабарҳои дар RSS пайдошударо нишон медиҳад, на нусхаи тасдиқшудаи аккаунтҳои шахсии рӯзноманигорон.',style:TextStyle(color:muted,fontSize:11))]))]);}
+class Tile extends StatelessWidget{final String name,icon,cat;const Tile(this.name,this.icon,this.cat,{super.key});@override Widget build(BuildContext c)=>Container(margin:const EdgeInsets.only(top:7),decoration:BoxDecoration(color:panel,borderRadius:BorderRadius.circular(12)),child:ListTile(dense:true,leading:Icon(icon=='person'?Icons.person_outline:icon=='campaign'?Icons.campaign_outlined:Icons.shield_outlined,color:green),title:Text(name,style:const TextStyle(fontWeight:FontWeight.w700,fontSize:13)),trailing:const Icon(Icons.chevron_right,color:muted),onTap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>CategoryPage(name,cat))));}
+class CategoryPage extends StatelessWidget{final String title,cat;const CategoryPage(this.title,this.cat,{super.key});@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:Text(title)),body:FutureBuilder<List<Item>>(future:News.fetch(cat),builder:(c,s){if(s.connectionState==ConnectionState.waiting)return const Center(child:CircularProgressIndicator(color:green));if(s.hasError)return const Center(child:Text('Хабар дастрас нест'));final a=s.data??[];return ListView.builder(padding:const EdgeInsets.all(13),itemCount:a.length,itemBuilder:(_,i)=>NewsCard(a[i]));}));}
+class Browser extends StatefulWidget{final String title,url;const Browser(this.title,this.url,{super.key});@override State<Browser> createState()=>_BrowserState();}
+class _BrowserState extends State<Browser>{late final WebViewController ctl;@override void initState(){super.initState();ctl=WebViewController()..setJavaScriptMode(JavaScriptMode.unrestricted)..loadRequest(Uri.parse(widget.url));}@override Widget build(BuildContext c)=>Scaffold(appBar:AppBar(title:Text(widget.title)),body:WebViewWidget(controller:ctl));}
