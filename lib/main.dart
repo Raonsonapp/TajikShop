@@ -25,7 +25,7 @@ class News{
   final u=Uri.https('news.google.com','/rss/search',{'q':cats[cat]??cats['Ҳама']!,'hl':'en-US','gl':'US','ceid':'US:en'});
   final r=await http.get(u,headers:{'User-Agent':'TMSCORE/1.0'}).timeout(const Duration(seconds:18));if(r.statusCode!=200)throw Exception('RSS error');
   final doc=XmlDocument.parse(utf8.decode(r.bodyBytes));final out=<Item>[];
-  for(final x in doc.findAllElements('item').take(35)){final title=x.getElement('title')?.innerText.trim()??'';final url=x.getElement('link')?.innerText.trim()??'';if(title.isEmpty||url.isEmpty)continue;final source=x.findElements('source').firstOrNull?.innerText.trim()??'Google News';final date=x.getElement('pubDate')?.innerText.trim()??'';out.add(Item(await tg(title),url,source,date,cat));}
+  for(final x in doc.findAllElements('item').take(35)){final title=x.getElement('title')?.innerText.trim()??'';final url=x.getElement('link')?.innerText.trim()??'';if(title.isEmpty||url.isEmpty)continue;final source=(x.findElements('source').isEmpty?'Google News':x.findElements('source').first.innerText.trim());final date=x.getElement('pubDate')?.innerText.trim()??'';out.add(Item(await tg(title),url,source,date,cat));}
   return out;
  }
  static Future<List<Item>> cache(String cat)async{final p=await SharedPreferences.getInstance();final s=p.getString('tms_'+cat);if(s==null)return[];try{return(jsonDecode(s) as List).map((e)=>Item.from(Map.from(e))).toList();}catch(_){return[];}}
