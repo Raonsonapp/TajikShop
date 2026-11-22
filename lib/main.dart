@@ -6,9 +6,19 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/almaz_api.dart';
 
-const bg=Color(0xFF050907), surface=Color(0xFF0C1710), card=Color(0xFF101F16), green=Color(0xFF39FF72), lime=Color(0xFFB6FF38), muted=Color(0xFF91A69A), gold=Color(0xFFFFD65A);
-void main(){WidgetsFlutterBinding.ensureInitialized();SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor:bg,statusBarIconBrightness:Brightness.light,systemNavigationBarColor:bg,systemNavigationBarIconBrightness:Brightness.light));runApp(const AlmazApp());}
+const bg=Color(0xFF050907), surface=Color(0xFF0C1710), green=Color(0xFF39FF72), lime=Color(0xFFB6FF38), muted=Color(0xFF91A69A), gold=Color(0xFFFFD65A);
 final ValueNotifier<bool> almazLightMode = ValueNotifier<bool>(false);
+final ValueNotifier<String> almazLanguage = ValueNotifier<String>('tg');
+Color get card => almazLightMode.value ? const Color(0xFFFFFFFF) : const Color(0xFF101F16);
+String tr(String key) {
+  const words = <String, Map<String, String>>{
+    'Дӯкон': {'ru':'Магазин','en':'Store'}, 'Бозиҳо': {'ru':'Игры','en':'Games'}, 'Сабад': {'ru':'Корзина','en':'Cart'}, 'Фармоиш': {'ru':'Заказы','en':'Orders'}, 'Ҳамён': {'ru':'Кошелёк','en':'Wallet'}, 'Профил': {'ru':'Профиль','en':'Profile'},
+    'Баланс': {'ru':'Баланс','en':'Balance'}, 'Забон': {'ru':'Язык','en':'Language'}, 'Мавзӯи равшан': {'ru':'Светлая тема','en':'Light theme'}, 'Мавзӯи торик': {'ru':'Тёмная тема','en':'Dark theme'}, 'Огоҳиномаҳо': {'ru':'Уведомления','en':'Notifications'},
+  };
+  if (almazLanguage.value == 'tg') return key;
+  return words[key]?[almazLanguage.value] ?? key;
+}
+void main(){WidgetsFlutterBinding.ensureInitialized();SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor:bg,statusBarIconBrightness:Brightness.light,systemNavigationBarColor:bg,systemNavigationBarIconBrightness:Brightness.light));runApp(const AlmazApp());}
 class AlmazApp extends StatelessWidget {
   const AlmazApp({super.key});
   @override
@@ -135,7 +145,7 @@ class GlassBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const labels = ['Дӯкон', 'Бозиҳо', 'Сабад', 'Фармоиш', 'Ҳамён', 'Профил'];
+    final labels = ['Дӯкон', 'Бозиҳо', 'Сабад', 'Фармоиш', 'Ҳамён', 'Профил'].map(tr).toList();
     const icons = [
       Icons.home_outlined,
       Icons.sports_esports_outlined,
@@ -372,7 +382,7 @@ class GameLogo extends StatelessWidget {
     height: size,
     padding: const EdgeInsets.all(5),
     decoration: BoxDecoration(
-      color: const Color(0xFF080D0A),
+      color: almazLightMode.value ? const Color(0xFFF1F6F2) : const Color(0xFF080D0A),
       borderRadius: BorderRadius.circular(size * .25),
       border: Border.all(color: game.color.withOpacity(.7), width: 1.3),
       boxShadow: [BoxShadow(color: game.color.withOpacity(.18), blurRadius: 16)],
@@ -788,6 +798,7 @@ class _ProfilePageState extends State<ProfilePage> {
       displayName = p.getString('almaz_display_name') ?? 'Меҳмон';
       notifications = p.getBool('almaz_notifications') ?? true;
       almazLightMode.value = p.getBool('almaz_light_mode') ?? false;
+      almazLanguage.value = p.getString('almaz_language') ?? 'tg';
     });
   }
   Future<void> _editName() async {
@@ -812,6 +823,21 @@ class _ProfilePageState extends State<ProfilePage> {
     await p.setBool('almaz_light_mode', next);
     if (mounted) setState(() {});
   }
+  Future<void> _chooseLanguage() async {
+    final selected = await showDialog<String>(context: context, builder: (ctx) => AlertDialog(
+      title: Text(tr('Забон')),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        ListTile(title: const Text('Тоҷикӣ'), trailing: almazLanguage.value == 'tg' ? const Icon(Icons.check,color:green) : null, onTap: () => Navigator.pop(ctx,'tg')),
+        ListTile(title: const Text('Русский'), trailing: almazLanguage.value == 'ru' ? const Icon(Icons.check,color:green) : null, onTap: () => Navigator.pop(ctx,'ru')),
+        ListTile(title: const Text('English'), trailing: almazLanguage.value == 'en' ? const Icon(Icons.check,color:green) : null, onTap: () => Navigator.pop(ctx,'en')),
+      ]),
+    ));
+    if (selected == null) return;
+    final p = await SharedPreferences.getInstance();
+    await p.setString('almaz_language', selected);
+    almazLanguage.value = selected;
+    if (mounted) setState(() {});
+  }
   Future<void> _toggleNotifications(bool value) async {
     final p = await SharedPreferences.getInstance();
     await p.setBool('almaz_notifications', value);
@@ -823,7 +849,7 @@ class _ProfilePageState extends State<ProfilePage> {
   ));
   @override
   Widget build(BuildContext context) => PageShell(
-    title: 'Профил', subtitle: 'Ҳисоб ва танзимот',
+    title: tr('Профил'), subtitle: 'Ҳисоб ва танзимот',
     child: ListView(padding: const EdgeInsets.all(16), children: [
       Container(
         padding: const EdgeInsets.all(18),
@@ -852,13 +878,14 @@ class _ProfilePageState extends State<ProfilePage> {
       const SizedBox(height: 12),
       const SectionTitle('ТАНЗИМОТ', ''),
       const SizedBox(height: 8),
-      ProfileRow(icon: almazLightMode.value ? Icons.light_mode_outlined : Icons.dark_mode_outlined, title: almazLightMode.value ? 'Гузариш ба мавзӯи торик' : 'Гузариш ба мавзӯи равшан', onTap: _toggleTheme),
+      ProfileRow(icon: almazLightMode.value ? Icons.light_mode_outlined : Icons.dark_mode_outlined, title: almazLightMode.value ? tr('Мавзӯи торик') : tr('Мавзӯи равшан'), onTap: _toggleTheme),
+      ProfileRow(icon: Icons.language_rounded, title: '${tr('Забон')}: ${almazLanguage.value.toUpperCase()}', onTap: _chooseLanguage),
       Container(
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(14)),
         child: SwitchListTile(
           secondary: const Icon(Icons.notifications_active_outlined, color: green),
-          title: const Text('Огоҳиномаҳо', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+          title: Text(tr('Огоҳиномаҳо'), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
           value: notifications, activeColor: green, onChanged: _toggleNotifications,
         ),
       ),
