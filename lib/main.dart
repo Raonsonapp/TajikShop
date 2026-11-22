@@ -561,137 +561,195 @@ class _GameDetailState extends State<GameDetail> {
   }
 }
 
-class OrdersPage extends StatelessWidget {
+class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
-  Future<List<Map<String, dynamic>>> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final decoded = jsonDecode(prefs.getString('almaz_orders') ?? '[]') as List;
-    return decoded.map((item) => Map<String, dynamic>.from(item)).toList();
-  }
-
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const BrandHeader(),
-        const Padding(
-          padding: EdgeInsets.fromLTRB(18, 0, 18, 14),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text('Фармоишҳои ман', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-          ),
-        ),
-        Expanded(
-          child: FutureBuilder<List<Map<String, dynamic>>>(
-            future: load(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: green));
-              final items = snapshot.data!;
-              if (items.isEmpty) {
-                return const EmptyState(icon: Icons.receipt_long, title: 'Ҳоло фармоиш нест', sub: 'Фармоишҳои ту дар ин ҷо пайдо мешаванд.');
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.all(15),
-                itemCount: items.length,
-                itemBuilder: (context, index) {
-                  final order = items[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16), border: Border.all(color: green.withOpacity(.2))),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          Expanded(child: Text(order['game'] ?? '', style: const TextStyle(fontWeight: FontWeight.w900))),
-                          Text(order['status'] ?? '', style: const TextStyle(color: gold, fontSize: 10, fontWeight: FontWeight.bold)),
-                        ]),
-                        const SizedBox(height: 7),
-                        Text(order['pack'] ?? '', style: const TextStyle(color: muted, fontSize: 12)),
-                        Text('ID: ${order['player'] ?? ''}', style: const TextStyle(color: muted, fontSize: 11)),
-                        Text('#${order['id'] ?? ''} • ${order['date'] ?? ''}', style: const TextStyle(color: green, fontSize: 10)),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
+  State<OrdersPage> createState() => _OrdersPageState();
+}
+class _OrdersPageState extends State<OrdersPage> {
+  late Future<dynamic> _ordersFuture;
+  List<Map<String, dynamic>> _localOrders = [];
+  @override
+  void initState() { super.initState(); _ordersFuture = _load(); }
+  Future<dynamic> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final decoded = jsonDecode(prefs.getString('almaz_orders') ?? '[]');
+    _localOrders = decoded is List ? decoded.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList() : <Map<String, dynamic>>[];
+    if (!await AlmazApi.instance.hasAccessToken()) return null;
+    return AlmazApi.instance.getMyOrders();
+  }
+  void _refresh() => setState(() => _ordersFuture = _load());
+  List<Map<String, dynamic>> _rows(dynamic value) {
+    dynamic raw = value;
+    if (raw is Map) {
+      raw = raw['items'] ?? raw['orders'] ?? raw['data'] ?? raw['results'] ?? [];
+      if (raw is Map) raw = raw['items'] ?? raw['orders'] ?? raw['results'] ?? [];
+    }
+    if (raw is! List) return [];
+    return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+  String _value(Map<String, dynamic> item, List<String> keys, [String fallback = '—']) {
+    for (final key in keys) {
+      final v = item[key];
+      if (v != null && v.toString().trim().isNotEmpty) return v.toString();
+    }
+    return fallback;
+  }
+  Widget _orderCard(Map<String, dynamic> order, {bool local = false}) {
+    final title = _value(order, ['game', 'game_name', 'product_name', 'title'], 'Фармоиш');
+    final pack = _value(order, ['pack', 'package', 'product', 'variant_name']);
+    final status = _value(order, ['status', 'payment_status', 'order_status'], 'Дар коркард');
+    final player = _value(order, ['player', 'player_id', 'game_id', 'user_game_id']);
+    final id = _value(order, ['id', 'order_id', 'order_number']);
+    final date = _value(order, ['date', 'created_at', 'createdAt']);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16), border: Border.all(color: green.withOpacity(.2))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w900))),
+          Text(status, style: const TextStyle(color: gold, fontSize: 10, fontWeight: FontWeight.bold))]),
+        const SizedBox(height: 7),
+        Text(pack, style: const TextStyle(color: muted, fontSize: 12)),
+        Text('ID: $player', style: const TextStyle(color: muted, fontSize: 11)),
+        Text('#$id • $date', style: const TextStyle(color: green, fontSize: 10)),
+        if (local) const Padding(padding: EdgeInsets.only(top: 7),
+          child: Text('Танҳо дар ин дастгоҳ сабт шудааст • аз сервер тасдиқ нашудааст', style: TextStyle(color: gold, fontSize: 9))),
+      ]),
     );
   }
+  @override
+  Widget build(BuildContext context) => Column(children: [
+    const BrandHeader(),
+    Padding(padding: const EdgeInsets.fromLTRB(18, 0, 18, 12), child: Row(children: [
+      const Expanded(child: Text('Фармоишҳои ман', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900))),
+      IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh, color: green)),
+    ])),
+    Expanded(child: FutureBuilder<dynamic>(
+      future: _ordersFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting && _localOrders.isEmpty) return const Center(child: CircularProgressIndicator(color: green));
+        final serverOrders = snapshot.hasData ? _rows(snapshot.data) : <Map<String, dynamic>>[];
+        final hasToken = snapshot.hasData;
+        if (!snapshot.hasData && snapshot.hasError && _localOrders.isEmpty) return const EmptyState(icon: Icons.cloud_off_outlined, title: 'Сервер дастрас нест', sub: 'Пайвастшавиро санҷ ва тугмаи навсозиро пахш кун.');
+        if (serverOrders.isEmpty && _localOrders.isEmpty) return EmptyState(icon: Icons.receipt_long, title: 'Ҳоло фармоиш нест',
+          sub: hasToken ? 'Фармоишҳои сервер дар ин ҷо пайдо мешаванд.' : 'Барои дидани фармоишҳои сервер аввал ба ҳисоб ворид шудан лозим аст.');
+        return ListView(padding: const EdgeInsets.all(15), children: [
+          if (serverOrders.isNotEmpty) ...[const SectionTitle('ФАРМОИШҲОИ СЕРВЕР', 'LIVE'), const SizedBox(height: 9), ...serverOrders.map((o) => _orderCard(o))],
+          if (_localOrders.isNotEmpty) ...[const SizedBox(height: 8), const SectionTitle('САБТҲОИ МАҲАЛЛӢ', ''), const SizedBox(height: 9), ..._localOrders.map((o) => _orderCard(o, local: true))],
+          if (!hasToken) const Padding(padding: EdgeInsets.only(top: 10), child: Text('Барои ҳамоҳангсозии фармоишҳо воридшавии ҳисоби корбар лозим аст.', style: TextStyle(color: muted, fontSize: 11))),
+          if (snapshot.hasError) const Padding(padding: EdgeInsets.only(top: 10), child: Text('Фармоишҳои сервер нав нашуданд. Маълумоти маҳаллӣ ҷудо нигоҳ дошта шуд.', style: TextStyle(color: gold, fontSize: 10))),
+        ]);
+      },
+    )),
+  ]);
 }
-
-class WalletPage extends StatelessWidget {
+class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
   @override
-  Widget build(BuildContext context) {
-    const methods = ['Алиф', 'Душанбе Сити', 'Эсхата', 'Ориёнбонк', 'Бонкҳои дигар'];
-    return Column(
-      children: [
-        const BrandHeader(),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(17),
-            children: [
-              const Text('Баланс', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 15),
-              Container(
-                height: 160,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                  gradient: const LinearGradient(colors: [Color(0xFF063F23), Color(0xFF122C1B), Color(0xFF25452B)]),
-                  border: Border.all(color: green.withOpacity(.6)),
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('БАЛАНСИ ШУМО', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-                    Spacer(),
-                    Text('0.00 с', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900)),
-                    Spacer(),
-                    Text('ALMAZ TJ • WALLET', style: TextStyle(color: green, fontWeight: FontWeight.w900, fontSize: 10)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Тарзи пур кардани баланс', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-                    const SizedBox(height: 8),
-                    ...methods.map((method) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.account_balance, color: green),
-                      title: Text(method),
-                      trailing: const Icon(Icons.lock_outline, color: muted),
-                      onTap: () => showDialog<void>(
-                        context: context,
-                        builder: (dialogContext) => AlertDialog(
-                          title: Text(method),
-                          content: const Text('Пайвасти пардохти расмӣ ҳоло танзим нашудааст. Пардохтро берун аз барнома анҷом надиҳед.'),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Фаҳмо')),
-                          ],
-                        ),
-                      ),
-                    )),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 15),
-              const EmptyState(icon: Icons.history, title: 'Амалиёт нест', sub: 'Таърихи пуркунӣ ва хароҷот дар ин ҷо намоиш дода мешавад.'),
-            ],
-          ),
-        ),
-      ],
-    );
+  State<WalletPage> createState() => _WalletPageState();
+}
+class _WalletPageState extends State<WalletPage> {
+  late Future<dynamic> _walletFuture;
+  @override
+  void initState() { super.initState(); _walletFuture = _loadWallet(); }
+  Future<dynamic> _loadWallet() async {
+    if (!await AlmazApi.instance.hasAccessToken()) return null;
+    return AlmazApi.instance.getWallet();
   }
+  void _refresh() => setState(() => _walletFuture = _loadWallet());
+  Map<String, dynamic> _walletMap(dynamic value) {
+    if (value is! Map) return {};
+    var map = Map<String, dynamic>.from(value);
+    for (final key in ['wallet', 'data', 'account', 'result']) {
+      if (map[key] is Map) { map = Map<String, dynamic>.from(map[key] as Map); break; }
+    }
+    return map;
+  }
+  String _first(Map<String, dynamic> map, List<String> keys, [String fallback = '—']) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value != null && value.toString().trim().isNotEmpty) return value.toString();
+    }
+    return fallback;
+  }
+  List<Map<String, dynamic>> _transactions(Map<String, dynamic> map) {
+    dynamic rows = map['transactions'] ?? map['history'] ?? map['operations'] ?? map['items'];
+    if (rows is Map) rows = rows['items'] ?? rows['data'] ?? [];
+    if (rows is! List) return [];
+    return rows.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+  @override
+  Widget build(BuildContext context) => Column(children: [
+    const BrandHeader(),
+    Expanded(child: FutureBuilder<dynamic>(
+      future: _walletFuture,
+      builder: (context, snapshot) {
+        final data = snapshot.hasData ? _walletMap(snapshot.data) : <String, dynamic>{};
+        final balance = _first(data, ['balance', 'available_balance', 'amount', 'current_balance']);
+        final currency = _first(data, ['currency', 'currency_code'], 'с');
+        final transactions = _transactions(data);
+        final loading = snapshot.connectionState == ConnectionState.waiting;
+        final noToken = snapshot.hasData && snapshot.data == null;
+        return ListView(padding: const EdgeInsets.all(17), children: [
+          Row(children: [const Expanded(child: Text('Баланс', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900))),
+            IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh, color: green))]),
+          const SizedBox(height: 15),
+          Container(height: 160, padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(22),
+              gradient: const LinearGradient(colors: [Color(0xFF063F23), Color(0xFF122C1B), Color(0xFF25452B)]),
+              border: Border.all(color: green.withOpacity(.6))),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('БАЛАНСИ ШУМО', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              Text(loading ? '…' : '$balance $currency', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900)),
+              const Spacer(),
+              const Text('ALMAZ TJ • WALLET', style: TextStyle(color: green, fontWeight: FontWeight.w900, fontSize: 10)),
+            ])),
+          const SizedBox(height: 12),
+          if (noToken) const Text('Барои дидани баланси воқеӣ ба ҳисоби худ ворид шав.', style: TextStyle(color: gold, fontSize: 11))
+          else if (snapshot.hasError) Text('Баланс аз сервер гирифта нашуд: ' + snapshot.error.toString(), style: const TextStyle(color: gold, fontSize: 11))
+          else if (!loading && balance == '—') const Text('Сервер ҷавоб дод, аммо майдони баланс дар ҷавоб муайян нашуд.', style: TextStyle(color: muted, fontSize: 10)),
+          const SizedBox(height: 17),
+          Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Пур кардани баланс', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+              const SizedBox(height: 8),
+              const Text('Пардохти онлайн то фаъол шудани провайдери пардохт дар сервер дастрас нест.', style: TextStyle(color: muted, fontSize: 11, height: 1.5)),
+              const SizedBox(height: 9),
+              ...['Алиф', 'Душанбе Сити', 'Эсхата', 'Ориёнбонк'].map((method) => ListTile(
+                contentPadding: EdgeInsets.zero, leading: const Icon(Icons.account_balance_outlined, color: green),
+                title: Text(method), trailing: const Icon(Icons.lock_outline, color: muted),
+                onTap: () => showDialog<void>(context: context, builder: (ctx) => AlertDialog(
+                  title: Text(method), content: const Text('Ин усули пардохт ҳоло аз ҷониби сервер фаъол карда нашудааст. Ҳоло маблағ нагузаронед.'),
+                  actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Фаҳмо'))],
+                )),
+              )),
+            ])),
+          const SizedBox(height: 17),
+          const SectionTitle('ТАЪРИХИ АМАЛИЁТ', ''),
+          const SizedBox(height: 9),
+          if (loading) const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(color: green, strokeWidth: 2)))
+          else if (noToken) const EmptyState(icon: Icons.lock_outline, title: 'Воридшавӣ лозим аст', sub: 'Пас аз ворид шудан таърихи амалиёт нишон дода мешавад.')
+          else if (transactions.isEmpty) const EmptyState(icon: Icons.history, title: 'Амалиёт нест', sub: 'Таърихи пуркунӣ ва хароҷот дар ин ҷо намоиш дода мешавад.')
+          else ...transactions.map((tx) {
+            final title = _first(tx, ['title', 'description', 'type', 'method'], 'Амалиёт');
+            final amount = _first(tx, ['amount', 'value', 'total']);
+            final status = _first(tx, ['status', 'state'], '');
+            final date = _first(tx, ['created_at', 'date', 'createdAt'], '');
+            return Container(margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(13)),
+              child: Row(children: [const Icon(Icons.swap_horiz_rounded, color: green), const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                  Text('$status $date', style: const TextStyle(color: muted, fontSize: 9)),
+                ])),
+                Text('$amount $currency', style: const TextStyle(color: green, fontWeight: FontWeight.w900, fontSize: 11)),
+              ]));
+          }),
+        ]);
+      },
+    )),
+  ]);
 }
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
