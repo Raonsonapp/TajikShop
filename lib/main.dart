@@ -7,7 +7,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const bg=Color(0xFF050907), surface=Color(0xFF0C1710), card=Color(0xFF101F16), green=Color(0xFF39FF72), lime=Color(0xFFB6FF38), muted=Color(0xFF91A69A), gold=Color(0xFFFFD65A);
 void main(){WidgetsFlutterBinding.ensureInitialized();SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor:bg,statusBarIconBrightness:Brightness.light,systemNavigationBarColor:bg,systemNavigationBarIconBrightness:Brightness.light));runApp(const AlmazApp());}
-class AlmazApp extends StatelessWidget{const AlmazApp({super.key});@override Widget build(BuildContext c)=>MaterialApp(title:'Almaz TJ',debugShowCheckedModeBanner:false,theme:ThemeData(brightness:Brightness.dark,scaffoldBackgroundColor:bg,colorScheme:const ColorScheme.dark(primary:green,surface:surface),useMaterial3:true,fontFamily:'Roboto'),home:const AlmazSplash());}
+final ValueNotifier<bool> almazLightMode = ValueNotifier<bool>(false);
+class AlmazApp extends StatelessWidget {
+  const AlmazApp({super.key});
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+    valueListenable: almazLightMode,
+    builder: (context, light, _) => MaterialApp(
+      title: 'Almaz TJ',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: light ? Brightness.light : Brightness.dark,
+        scaffoldBackgroundColor: light ? const Color(0xFFF3F7F4) : bg,
+        colorScheme: light
+          ? ColorScheme.fromSeed(seedColor: const Color(0xFF087A3B), brightness: Brightness.light)
+          : const ColorScheme.dark(primary: green, surface: surface),
+        useMaterial3: true,
+        fontFamily: 'Roboto',
+      ),
+      home: const AlmazSplash(),
+    ),
+  );
+}
 class AlmazSplash extends StatefulWidget {
   const AlmazSplash({super.key});
   @override
@@ -560,6 +581,115 @@ class WalletPage extends StatelessWidget {
     );
   }
 }
-class ProfilePage extends StatelessWidget{const ProfilePage({super.key});@override Widget build(BuildContext c)=>PageShell(title:'Профил',subtitle:'Ҳисоб ва танзимот',child:ListView(padding:const EdgeInsets.all(16),children:[Container(padding:const EdgeInsets.all(18),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(18)),child:const Row(children:[AlmazMark(size:58),SizedBox(width:13),Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Меҳмон',style:TextStyle(fontWeight:FontWeight.w900,fontSize:17)),Text('Ба ҳисоб ворид нашудаӣ',style:TextStyle(color:muted,fontSize:11))])])),const SizedBox(height:12),const ProfileRow(icon:Icons.person_outline,title:'Маълумоти шахсӣ'),const ProfileRow(icon:Icons.history,title:'Таърихи фаъолият'),const ProfileRow(icon:Icons.help_outline,title:'Маркази кӯмак'),const ProfileRow(icon:Icons.settings_outlined,title:'Танзимот') ]));}
-class ProfileRow extends StatelessWidget{final IconData icon;final String title;const ProfileRow({super.key,required this.icon,required this.title});@override Widget build(BuildContext c)=>Container(margin:const EdgeInsets.only(bottom:8),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(13)),child:ListTile(leading:Icon(icon,color:green),title:Text(title,style:const TextStyle(fontSize:13,fontWeight:FontWeight.w700)),trailing:const Icon(Icons.chevron_right,color:muted)));}
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+class _ProfilePageState extends State<ProfilePage> {
+  String displayName = 'Меҳмон';
+  bool notifications = true;
+  @override
+  void initState() { super.initState(); _load(); }
+  Future<void> _load() async {
+    final p = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      displayName = p.getString('almaz_display_name') ?? 'Меҳмон';
+      notifications = p.getBool('almaz_notifications') ?? true;
+      almazLightMode.value = p.getBool('almaz_light_mode') ?? false;
+    });
+  }
+  Future<void> _editName() async {
+    final controller = TextEditingController(text: displayName == 'Меҳмон' ? '' : displayName);
+    final value = await showDialog<String>(context: context, builder: (ctx) => AlertDialog(
+      title: const Text('Маълумоти шахсӣ'),
+      content: TextField(controller: controller, autofocus: true, maxLength: 40, decoration: const InputDecoration(labelText: 'Номи шумо')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Бекор')),
+        FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Нигоҳ доштан')),
+      ],
+    ));
+    if (value == null || value.isEmpty) return;
+    final p = await SharedPreferences.getInstance();
+    await p.setString('almaz_display_name', value);
+    if (mounted) setState(() => displayName = value);
+  }
+  Future<void> _toggleTheme() async {
+    final next = !almazLightMode.value;
+    almazLightMode.value = next;
+    final p = await SharedPreferences.getInstance();
+    await p.setBool('almaz_light_mode', next);
+    if (mounted) setState(() {});
+  }
+  Future<void> _toggleNotifications(bool value) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setBool('almaz_notifications', value);
+    if (mounted) setState(() => notifications = value);
+  }
+  void _info(String title, String body) => showDialog<void>(context: context, builder: (ctx) => AlertDialog(
+    title: Text(title), content: Text(body),
+    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Фаҳмо'))],
+  ));
+  @override
+  Widget build(BuildContext context) => PageShell(
+    title: 'Профил', subtitle: 'Ҳисоб ва танзимот',
+    child: ListView(padding: const EdgeInsets.all(16), children: [
+      Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [Color(0xFF103B23), Color(0xFF102017)]),
+          borderRadius: BorderRadius.circular(19),
+          border: Border.all(color: green.withOpacity(.35)),
+        ),
+        child: Row(children: [
+          const AlmazMark(size: 58), const SizedBox(width: 13),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(displayName, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+            const Text('Профили Almaz TJ', style: TextStyle(color: Colors.white70, fontSize: 11)),
+          ])),
+          IconButton(onPressed: _editName, icon: const Icon(Icons.edit_outlined, color: green)),
+        ]),
+      ),
+      const SizedBox(height: 16),
+      const SectionTitle('ҲИСОБ', ''),
+      const SizedBox(height: 8),
+      ProfileRow(icon: Icons.person_outline, title: 'Маълумоти шахсӣ', onTap: _editName),
+      ProfileRow(icon: Icons.receipt_long_outlined, title: 'Таърихи фармоишҳо', onTap: () => _info('Фармоишҳо', 'Қисми «Фармоиш» аз менюи поён дастрас аст.')),
+      const SizedBox(height: 12),
+      const SectionTitle('ТАНЗИМОТ', ''),
+      const SizedBox(height: 8),
+      ProfileRow(icon: almazLightMode.value ? Icons.light_mode_outlined : Icons.dark_mode_outlined, title: almazLightMode.value ? 'Гузариш ба мавзӯи торик' : 'Гузариш ба мавзӯи равшан', onTap: _toggleTheme),
+      Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(14)),
+        child: SwitchListTile(
+          secondary: const Icon(Icons.notifications_active_outlined, color: green),
+          title: const Text('Огоҳиномаҳо', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+          value: notifications, activeColor: green, onChanged: _toggleNotifications,
+        ),
+      ),
+      const SizedBox(height: 12),
+      const SectionTitle('ДАСТГИРӢ', ''),
+      const SizedBox(height: 8),
+      ProfileRow(icon: Icons.support_agent, title: 'Маркази кӯмак', onTap: () => _info('Дастгирӣ', 'Барои гирифтани кӯмак ба масъули Almaz TJ муроҷиат намо.')),
+      ProfileRow(icon: Icons.privacy_tip_outlined, title: 'Махфият', onTap: () => _info('Махфият', 'Сиёсати махфият аз сервер дастрас мешавад.')),
+      ProfileRow(icon: Icons.info_outline, title: 'Дар бораи Almaz TJ', onTap: () => _info('Almaz TJ', 'Платформаи хизматрасониҳои рақамии бозӣ.')),
+    ]),
+  );
+}
+class ProfileRow extends StatelessWidget {
+  final IconData icon; final String title; final VoidCallback onTap;
+  const ProfileRow({super.key, required this.icon, required this.title, required this.onTap});
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: 8),
+    decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white10)),
+    child: ListTile(
+      onTap: onTap, leading: Icon(icon, color: green),
+      title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+      trailing: const Icon(Icons.chevron_right, color: muted),
+    ),
+  );
+}
 class EmptyState extends StatelessWidget{final IconData icon;final String title,sub;const EmptyState({super.key,required this.icon,required this.title,required this.sub});@override Widget build(BuildContext c)=>Center(child:Padding(padding:const EdgeInsets.all(30),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(icon,size:55,color:green.withOpacity(.6)),const SizedBox(height:15),Text(title,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:17)),const SizedBox(height:7),Text(sub,textAlign:TextAlign.center,style:const TextStyle(color:muted,fontSize:12,height:1.5))])));}
