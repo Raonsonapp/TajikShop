@@ -1,0 +1,45 @@
+name: Keep Almaz TJ Hugging Face Space Awake
+
+on:
+  schedule:
+    # Periodic traffic helps wake a sleeping Space and keep it responsive.
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: huggingface-space-keepalive
+  cancel-in-progress: true
+
+jobs:
+  ping-space:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake and check Hugging Face Space
+        env:
+          SPACE_URL: https://mahmadmurodov-tajikshop.hf.space
+        run: |
+          set -euo pipefail
+          echo "Checking Hugging Face Space: ${SPACE_URL}"
+          for attempt in 1 2 3 4 5; do
+            code="$(curl --location --silent --show-error \
+              --output /tmp/space-response.txt \
+              --write-out "%{http_code}" \
+              --max-time 60 "${SPACE_URL}/" || true)"
+            echo "Attempt ${attempt}: HTTP ${code:-000}"
+            if [[ "${code}" =~ ^2[0-9][0-9]$ || "${code}" =~ ^3[0-9][0-9]$ ]]; then
+              echo "Space responded successfully."
+              exit 0
+            fi
+            if [[ "${attempt}" -lt 5 ]]; then
+              sleep 15
+            fi
+          done
+          echo "::error::Hugging Face Space did not return a successful HTTP response after 5 attempts."
+          if [[ -s /tmp/space-response.txt ]]; then
+            head -c 2000 /tmp/space-response.txt
+          fi
+          exit 1
