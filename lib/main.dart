@@ -726,14 +726,14 @@ class _WalletPageState extends State<WalletPage> {
           const SizedBox(height: 15),
           Container(height: 160, padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(22),
-              gradient: const LinearGradient(colors: [Color(0xFF063F23), Color(0xFF122C1B), Color(0xFF25452B)]),
+              gradient: almazLightMode.value ? const LinearGradient(colors: [Color(0xFFDDF3E4), Color(0xFFC8E8D2), Color(0xFFB5DCC2)]) : const LinearGradient(colors: [Color(0xFF063F23), Color(0xFF122C1B), Color(0xFF25452B)]),
               border: Border.all(color: green.withOpacity(.6))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('БАЛАНСИ ШУМО', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+              Text('БАЛАНСИ ШУМО', style: TextStyle(color: almazLightMode.value ? const Color(0xFF315B40) : Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
               const Spacer(),
-              Text(loading ? '…' : '$balance $currency', style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900)),
+              Text(loading ? '…' : '$balance $currency', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: almazLightMode.value ? const Color(0xFF102017) : Colors.white)),
               const Spacer(),
-              const Text('ALMAZ TJ • WALLET', style: TextStyle(color: green, fontWeight: FontWeight.w900, fontSize: 10)),
+              Text('ALMAZ TJ • WALLET', style: const TextStyle(color: Color(0xFF00A94F), fontWeight: FontWeight.w900, fontSize: 10)),
             ])),
           const SizedBox(height: 12),
           if (noToken) const Text('Барои дидани баланси воқеӣ ба ҳисоби худ ворид шав.', style: TextStyle(color: gold, fontSize: 11))
@@ -854,7 +854,7 @@ class _ProfilePageState extends State<ProfilePage> {
       Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFF103B23), Color(0xFF102017)]),
+          gradient: almazLightMode.value ? const LinearGradient(colors: [Color(0xFFE4F3E9), Color(0xFFD4E9DA)]) : const LinearGradient(colors: [Color(0xFF103B23), Color(0xFF102017)]),
           borderRadius: BorderRadius.circular(19),
           border: Border.all(color: green.withOpacity(.35)),
         ),
