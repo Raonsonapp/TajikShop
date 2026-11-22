@@ -365,7 +365,7 @@ class GameLogo extends StatelessWidget {
             color: game.color,
             fontSize: game.logoText.length > 5 ? 19 : 25,
             height: .92,
-            fontWeight: FontWeight.w1000,
+            fontWeight: FontWeight.w900,
             letterSpacing: game.logoText == 'PUBG' ? -1.8 : .3,
             shadows: [Shadow(color: game.color.withOpacity(.55), blurRadius: 12)],
           ),
@@ -482,7 +482,7 @@ class _GameDetailState extends State<GameDetail> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(game.icon, color: game.color, size: 52),
+                  GameLogo(game: game, size: 104),
                   Text(game.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 19)),
                 ],
               ),
