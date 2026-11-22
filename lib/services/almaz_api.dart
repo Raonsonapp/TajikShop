@@ -68,6 +68,11 @@ class AlmazApi {
     return _decode(response);
   }
 
+  Future<bool> hasAccessToken() async {
+    final token = await _token();
+    return token != null && token.isNotEmpty;
+  }
+
   Future<void> saveAccessToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
