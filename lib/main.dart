@@ -751,416 +751,6 @@ class _WalletPageState extends State<WalletPage> {
     )),
   ]);
 }
-class AuthPage extends StatefulWidget {
-  const AuthPage({super.key});
-  @override
-  State<AuthPage> createState() => _AuthPageState();
-}
-class _AuthPageState extends State<AuthPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _email = TextEditingController();
-  final _password = TextEditingController();
-  bool _register = false;
-  bool _busy = false;
-  bool _hidePassword = true;
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _email.dispose();
-    _password.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _busy = true);
-    try {
-      final result = _register
-          ? await AlmazApi.instance.register(name: _name.text, email: _email.text, password: _password.text)
-          : await AlmazApi.instance.login(email: _email.text, password: _password.text);
-      final hasToken = await AlmazApi.instance.hasAccessToken();
-      if (_register && !hasToken) {
-        _message('Сабти ном фиристода шуд. Агар сервер тасдиқи почтаро талаб кунад, почтаи худро санҷ.');
-      } else if (hasToken) {
-        final prefs = await SharedPreferences.getInstance();
-        if (_name.text.trim().isNotEmpty) await prefs.setString('almaz_display_name', _name.text.trim());
-        if (!mounted) return;
-        Navigator.pop(context, true);
-      } else {
-        _message('Сервер ҷавоб дод, аммо токени воридшавӣ нагирифтем. Формати ҷавоби API бояд санҷида шавад.');
-      }
-      debugPrint('Almaz auth response: $result');
-    } on AlmazApiException catch (e) {
-      _message(e.message);
-    } catch (e) {
-      _message('Пайвастшавӣ ё ҷавоби сервер нодуруст аст: $e');
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  void _message(String text) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(_register ? 'Сабти ном' : 'Воридшавӣ')),
-    body: SafeArea(child: Center(child: SingleChildScrollView(
-      padding: const EdgeInsets.all(22),
-      child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 440), child: Form(
-        key: _formKey,
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Center(child: AlmazMark(size: 86)),
-          const SizedBox(height: 18),
-          Text(_register ? 'Ҳисоби нав соз' : 'Ба Almaz TJ ворид шав',
-            textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 7),
-          const Text('Маълумоти худро ворид намо', textAlign: TextAlign.center,
-            style: TextStyle(color: muted, fontSize: 12)),
-          const SizedBox(height: 25),
-          if (_register) ...[
-            TextFormField(controller: _name, textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(labelText: 'Номи шумо', prefixIcon: Icon(Icons.person_outline)),
-              validator: (v) => (v == null || v.trim().length < 2) ? 'Номро дуруст ворид кун' : null),
-            const SizedBox(height: 12),
-          ],
-          TextFormField(controller: _email, keyboardType: TextInputType.emailAddress,
-            autofillHints: const [AutofillHints.email],
-            decoration: const InputDecoration(labelText: 'Почтаи электронӣ', prefixIcon: Icon(Icons.email_outlined)),
-            validator: (v) => (v == null || !RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+
-  const ProfilePage({super.key});
-  @override
-  State<ProfilePage> createState() => _ProfilePageState();
-}
-class _ProfilePageState extends State<ProfilePage> {
-  String displayName = 'Меҳмон';
-  bool notifications = true;
-  @override
-  void initState() { super.initState(); _load(); }
-  Future<void> _load() async {
-    final p = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      displayName = p.getString('almaz_display_name') ?? 'Меҳмон';
-      notifications = p.getBool('almaz_notifications') ?? true;
-      almazLightMode.value = p.getBool('almaz_light_mode') ?? false;
-    });
-  }
-  Future<void> _editName() async {
-    final controller = TextEditingController(text: displayName == 'Меҳмон' ? '' : displayName);
-    final value = await showDialog<String>(context: context, builder: (ctx) => AlertDialog(
-      title: const Text('Маълумоти шахсӣ'),
-      content: TextField(controller: controller, autofocus: true, maxLength: 40, decoration: const InputDecoration(labelText: 'Номи шумо')),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Бекор')),
-        FilledButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Нигоҳ доштан')),
-      ],
-    ));
-    if (value == null || value.isEmpty) return;
-    final p = await SharedPreferences.getInstance();
-    await p.setString('almaz_display_name', value);
-    if (mounted) setState(() => displayName = value);
-  }
-  Future<void> _toggleTheme() async {
-    final next = !almazLightMode.value;
-    almazLightMode.value = next;
-    final p = await SharedPreferences.getInstance();
-    await p.setBool('almaz_light_mode', next);
-    if (mounted) setState(() {});
-  }
-  Future<void> _toggleNotifications(bool value) async {
-    final p = await SharedPreferences.getInstance();
-    await p.setBool('almaz_notifications', value);
-    if (mounted) setState(() => notifications = value);
-  }
-  void _info(String title, String body) => showDialog<void>(context: context, builder: (ctx) => AlertDialog(
-    title: Text(title), content: Text(body),
-    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Фаҳмо'))],
-  ));
-  @override
-  Widget build(BuildContext context) => PageShell(
-    title: 'Профил', subtitle: 'Ҳисоб ва танзимот',
-    child: ListView(padding: const EdgeInsets.all(16), children: [
-      Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFF103B23), Color(0xFF102017)]),
-          borderRadius: BorderRadius.circular(19),
-          border: Border.all(color: green.withOpacity(.35)),
-        ),
-        child: Row(children: [
-          const AlmazMark(size: 58), const SizedBox(width: 13),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(displayName, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
-            const Text('Профили Almaz TJ', style: TextStyle(color: Colors.white70, fontSize: 11)),
-          ])),
-          IconButton(onPressed: _editName, icon: const Icon(Icons.edit_outlined, color: green)),
-        ]),
-      ),
-      const SizedBox(height: 16),
-      const SectionTitle('ҲИСОБ', ''),
-      const SizedBox(height: 8),
-      ProfileRow(icon: Icons.person_outline, title: 'Маълумоти шахсӣ', onTap: _editName),
-      FutureBuilder<bool>(
-        future: AlmazApi.instance.hasAccessToken(),
-        builder: (context, snapshot) {
-          final loggedIn = snapshot.data == true;
-          return ProfileRow(
-            icon: loggedIn ? Icons.verified_user_outlined : Icons.login_rounded,
-            title: loggedIn ? 'Ҳисоб пайваст аст • Баромадан' : 'Воридшавӣ / Сабти ном',
-            onTap: () async {
-              if (!loggedIn) {
-                await Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage()));
-                if (mounted) setState(() {});
-              } else {
-                try {
-                  await AlmazApi.instance.logout();
-                  if (mounted) setState(() {});
-                  _info('Баромад', 'Шумо аз ҳисоб баромадед.');
-                } catch (e) {
-                  _info('Хато', e.toString());
-                }
-              }
-            },
-          );
-        },
-      ),
-
-      ProfileRow(icon: Icons.receipt_long_outlined, title: 'Таърихи фармоишҳо', onTap: () => _info('Фармоишҳо', 'Қисми «Фармоиш» аз менюи поён дастрас аст.')),
-      const SizedBox(height: 12),
-      const SectionTitle('ТАНЗИМОТ', ''),
-      const SizedBox(height: 8),
-      ProfileRow(icon: almazLightMode.value ? Icons.light_mode_outlined : Icons.dark_mode_outlined, title: almazLightMode.value ? 'Гузариш ба мавзӯи торик' : 'Гузариш ба мавзӯи равшан', onTap: _toggleTheme),
-      Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(14)),
-        child: SwitchListTile(
-          secondary: const Icon(Icons.notifications_active_outlined, color: green),
-          title: const Text('Огоҳиномаҳо', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-          value: notifications, activeColor: green, onChanged: _toggleNotifications,
-        ),
-      ),
-      const SizedBox(height: 12),
-      const SectionTitle('ДАСТГИРӢ', ''),
-      const SizedBox(height: 8),
-      ProfileRow(icon: Icons.support_agent, title: 'Маркази кӯмак', onTap: () => _info('Дастгирӣ', 'Барои гирифтани кӯмак ба масъули Almaz TJ муроҷиат намо.')),
-      ProfileRow(icon: Icons.privacy_tip_outlined, title: 'Махфият', onTap: () => _info('Махфият', 'Сиёсати махфият аз сервер дастрас мешавад.')),
-      ProfileRow(icon: Icons.info_outline, title: 'Дар бораи Almaz TJ', onTap: () => _info('Almaz TJ', 'Платформаи хизматрасониҳои рақамии бозӣ.')),
-    ]),
-  );
-}
-class ProfileRow extends StatelessWidget {
-  final IconData icon; final String title; final VoidCallback onTap;
-  const ProfileRow({super.key, required this.icon, required this.title, required this.onTap});
-  @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(bottom: 8),
-    decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white10)),
-    child: ListTile(
-      onTap: onTap, leading: Icon(icon, color: green),
-      title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-      trailing: const Icon(Icons.chevron_right, color: muted),
-    ),
-  );
-}
-class EmptyState extends StatelessWidget{final IconData icon;final String title,sub;const EmptyState({super.key,required this.icon,required this.title,required this.sub});@override Widget build(BuildContext c)=>Center(child:Padding(padding:const EdgeInsets.all(30),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(icon,size:55,color:green.withOpacity(.6)),const SizedBox(height:15),Text(title,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:17)),const SizedBox(height:7),Text(sub,textAlign:TextAlign.center,style:const TextStyle(color:muted,fontSize:12,height:1.5))])));}
-
-
-class ApiStatusCard extends StatefulWidget {
-  const ApiStatusCard({super.key});
-  @override
-  State<ApiStatusCard> createState() => _ApiStatusCardState();
-}
-
-class _ApiStatusCardState extends State<ApiStatusCard> {
-  late Future<Map<String, dynamic>> _health;
-  @override
-  void initState() {
-    super.initState();
-    _health = AlmazApi.instance.health();
-  }
-
-  void _retry() => setState(() => _health = AlmazApi.instance.health());
-
-  @override
-  Widget build(BuildContext context) => FutureBuilder<Map<String, dynamic>>(
-    future: _health,
-    builder: (context, snapshot) {
-      final online = snapshot.hasData && snapshot.data?['status'] == 'ok';
-      final waiting = snapshot.connectionState == ConnectionState.waiting;
-      final color = online ? green : (waiting ? gold : Colors.redAccent);
-      final label = online ? 'Сервер фаъол аст' : (waiting ? 'Пайвастшавӣ...' : 'Сервер дастнорас');
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(.35)),
-        ),
-        child: Row(children: [
-          Icon(Icons.cloud_done_outlined, color: color, size: 23),
-          const SizedBox(width: 11),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 12)),
-            const Text('Almaz TJ • API', style: TextStyle(color: muted, fontSize: 10)),
-          ])),
-          IconButton(
-            tooltip: 'Аз нав санҷидан',
-            onPressed: waiting ? null : _retry,
-            icon: const Icon(Icons.refresh_rounded, color: muted),
-          ),
-        ]),
-      );
-    },
-  );
-}
-
-
-class LiveProductsSection extends StatefulWidget {
-  const LiveProductsSection({super.key});
-  @override
-  State<LiveProductsSection> createState() => _LiveProductsSectionState();
-}
-
-class _LiveProductsSectionState extends State<LiveProductsSection> {
-  late Future<dynamic> _future;
-  @override
-  void initState() {
-    super.initState();
-    _future = AlmazApi.instance.getProducts(limit: 8);
-  }
-
-  List<Map<String, dynamic>> _items(dynamic value) {
-    dynamic raw = value;
-    if (raw is Map) {
-      raw = raw['items'] ?? raw['products'] ?? raw['data'] ?? raw['results'] ?? [];
-      if (raw is Map) raw = raw['items'] ?? raw['products'] ?? raw['results'] ?? [];
-    }
-    if (raw is! List) return [];
-    return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
-  }
-
-  String _text(Map<String, dynamic> item, List<String> keys, String fallback) {
-    for (final key in keys) {
-      final value = item[key];
-      if (value != null && value.toString().trim().isNotEmpty) return value.toString();
-    }
-    return fallback;
-  }
-
-  @override
-  Widget build(BuildContext context) => FutureBuilder<dynamic>(
-    future: _future,
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: Padding(
-          padding: EdgeInsets.all(12),
-          child: CircularProgressIndicator(color: green, strokeWidth: 2),
-        ));
-      }
-      if (snapshot.hasError) {
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(15)),
-          child: const Row(children: [
-            Icon(Icons.cloud_off_outlined, color: muted),
-            SizedBox(width: 9),
-            Expanded(child: Text('Каталоги сервер ҳоло дастрас нест. Баъдтар аз нав санҷ.', style: TextStyle(color: muted, fontSize: 11))),
-          ]),
-        );
-      }
-      final products = _items(snapshot.data);
-      if (products.isEmpty) {
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(15)),
-          child: const Text('Дар сервер ҳоло маҳсулот нашр нашудааст.', style: TextStyle(color: muted, fontSize: 11)),
-        );
-      }
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SectionTitle('Маҳсулоти сервер', 'LIVE'),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 154,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: products.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (context, index) {
-                final item = products[index];
-                final name = _text(item, ['name', 'title', 'product_name'], 'Маҳсулот');
-                final price = _text(item, ['price', 'display_price', 'sale_price'], 'Нарх дастрас нест');
-                final currency = _text(item, ['currency'], 'с');
-                final image = _text(item, ['image_url', 'image', 'thumbnail'], '');
-                return Container(
-                  width: 142,
-                  padding: const EdgeInsets.all(11),
-                  decoration: BoxDecoration(
-                    color: card,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: green.withOpacity(.22)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Center(
-                          child: image.startsWith('http')
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.network(image, fit: BoxFit.cover, width: 92, height: 72,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.inventory_2_outlined, color: green, size: 34)),
-                              )
-                            : const Icon(Icons.inventory_2_outlined, color: green, size: 34),
-                        ),
-                      ),
-                      Text(name, maxLines: 2, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 4),
-                      Text('$price $currency', maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: green, fontSize: 10, fontWeight: FontWeight.w900)),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      );
-    },
-  );
-}
-).hasMatch(v.trim()))
-              ? 'Почтаи электрониро дуруст ворид кун' : null),
-          const SizedBox(height: 12),
-          TextFormField(controller: _password, obscureText: _hidePassword,
-            autofillHints: _register ? const [AutofillHints.newPassword] : const [AutofillHints.password],
-            decoration: InputDecoration(labelText: 'Рамз', prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(onPressed: () => setState(() => _hidePassword = !_hidePassword),
-                icon: Icon(_hidePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined))),
-            validator: (v) => (v == null || v.length < 8) ? 'Рамз бояд камаш 8 аломат бошад' : null),
-          const SizedBox(height: 20),
-          SizedBox(height: 52, child: FilledButton(
-            onPressed: _busy ? null : _submit,
-            style: FilledButton.styleFrom(backgroundColor: green, foregroundColor: bg),
-            child: _busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: bg))
-              : Text(_register ? 'Сабти ном' : 'Ворид шудан', style: const TextStyle(fontWeight: FontWeight.w900)),
-          )),
-          const SizedBox(height: 12),
-          TextButton(onPressed: _busy ? null : () => setState(() => _register = !_register),
-            child: Text(_register ? 'Аллакай ҳисоб дорӣ? Ворид шав' : 'Ҳисоб надорӣ? Сабти ном кун')),
-        ]),
-      )),
-    ))),
-  );
-}
-
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
   @override
@@ -1235,6 +825,9 @@ class _ProfilePageState extends State<ProfilePage> {
       const SectionTitle('ҲИСОБ', ''),
       const SizedBox(height: 8),
       ProfileRow(icon: Icons.person_outline, title: 'Маълумоти шахсӣ', onTap: _editName),
+      ProfileRow(icon: Icons.login_rounded, title: 'Воридшавӣ / Сабти ном', onTap: () async {
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => const AuthPage()));
+      }),
       ProfileRow(icon: Icons.receipt_long_outlined, title: 'Таърихи фармоишҳо', onTap: () => _info('Фармоишҳо', 'Қисми «Фармоиш» аз менюи поён дастрас аст.')),
       const SizedBox(height: 12),
       const SectionTitle('ТАНЗИМОТ', ''),
@@ -1439,5 +1032,60 @@ class _LiveProductsSectionState extends State<LiveProductsSection> {
         ],
       );
     },
+  );
+}
+
+
+class AuthPage extends StatefulWidget {
+  const AuthPage({super.key});
+  @override
+  State<AuthPage> createState() => _AuthPageState();
+}
+class _AuthPageState extends State<AuthPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  bool _register = false, _busy = false, _hidePassword = true;
+  String? _error;
+  @override
+  void dispose() { _name.dispose(); _email.dispose(); _password.dispose(); super.dispose(); }
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() { _busy = true; _error = null; });
+    try {
+      if (_register) {
+        await AlmazApi.instance.register(name: _name.text, email: _email.text, password: _password.text);
+      } else {
+        await AlmazApi.instance.login(email: _email.text, password: _password.text);
+      }
+      if (!mounted) return;
+      if (await AlmazApi.instance.hasAccessToken()) { Navigator.pop(context, true); }
+      else { setState(() => _error = 'Сервер токени воридшавиро нафиристод.'); }
+    } catch (e) { if (mounted) setState(() => _error = e.toString()); }
+    finally { if (mounted) setState(() => _busy = false); }
+  }
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: Text(_register ? 'Сабти ном' : 'Воридшавӣ')),
+    body: SafeArea(child: Center(child: SingleChildScrollView(
+      padding: const EdgeInsets.all(22),
+      child: Form(key: _formKey, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const AlmazMark(size: 76), const SizedBox(height: 18),
+        Text(_register ? 'Ҳисоби нав соз' : 'Ба Almaz TJ ворид шав', textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 22),
+        if (_register) ...[
+          TextFormField(controller: _name, decoration: const InputDecoration(labelText: 'Ном', prefixIcon: Icon(Icons.person_outline)), validator: (v) => (v == null || v.trim().isEmpty) ? 'Номро ворид кун' : null),
+          const SizedBox(height: 12),
+        ],
+        TextFormField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Почтаи электронӣ', prefixIcon: Icon(Icons.email_outlined)), validator: (v) => (v == null || !v.contains('@') || !v.contains('.')) ? 'Почтаи электрониро дуруст ворид кун' : null),
+        const SizedBox(height: 12),
+        TextFormField(controller: _password, obscureText: _hidePassword, decoration: InputDecoration(labelText: 'Рамз', prefixIcon: const Icon(Icons.lock_outline), suffixIcon: IconButton(onPressed: () => setState(() => _hidePassword = !_hidePassword), icon: Icon(_hidePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined))), validator: (v) => (v == null || v.length < 8) ? 'Рамз бояд камаш 8 аломат бошад' : null),
+        if (_error != null) ...[const SizedBox(height: 12), Text(_error!, style: const TextStyle(color: Colors.redAccent))],
+        const SizedBox(height: 20),
+        SizedBox(height: 50, child: FilledButton(onPressed: _busy ? null : _submit, style: FilledButton.styleFrom(backgroundColor: green, foregroundColor: bg), child: _busy ? const CircularProgressIndicator(color: bg) : Text(_register ? 'Сабти ном' : 'Ворид шудан'))),
+        TextButton(onPressed: _busy ? null : () => setState(() { _register = !_register; _error = null; }), child: Text(_register ? 'Аллакай ҳисоб дорӣ? Ворид шав' : 'Ҳисоб надорӣ? Сабти ном кун')),
+      ])),
+    ))),
   );
 }
