@@ -740,11 +740,17 @@ class _WalletPageState extends State<WalletPage> {
               const SizedBox(height: 8),
               const Text('Пардохти онлайн то фаъол шудани провайдери пардохт дар сервер дастрас нест.', style: TextStyle(color: muted, fontSize: 11, height: 1.5)),
               const SizedBox(height: 9),
-              ...['Алиф', 'Душанбе Сити', 'Эсхата', 'Ориёнбонк'].map((method) => ListTile(
-                contentPadding: EdgeInsets.zero, leading: const Icon(Icons.account_balance_outlined, color: green),
-                title: Text(method), trailing: const Icon(Icons.lock_outline, color: muted),
+              ...[
+                {'name':'Алиф','domain':'alif.tj'},
+                {'name':'Душанбе Сити','domain':'dc.tj'},
+                {'name':'Эсхата','domain':'eskhata.com'},
+                {'name':'Ориёнбонк','domain':'orienbank.tj'},
+              ].map((bank) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(width:42,height:42,padding:const EdgeInsets.all(7),decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(11)),child:Image.network('https://www.google.com/s2/favicons?domain=${bank['domain']}&sz=128',fit:BoxFit.contain,errorBuilder:(_,__,___)=>const Icon(Icons.account_balance_outlined,color:green))),
+                title: Text(bank['name']!), trailing: const Icon(Icons.lock_outline, color: muted),
                 onTap: () => showDialog<void>(context: context, builder: (ctx) => AlertDialog(
-                  title: Text(method), content: const Text('Ин усули пардохт ҳоло аз ҷониби сервер фаъол карда нашудааст. Ҳоло маблағ нагузаронед.'),
+                  title: Text(bank['name']!), content: const Text('Ин усули пардохт ҳоло аз ҷониби сервер фаъол карда нашудааст. Ҳоло маблағ нагузаронед.'),
                   actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Фаҳмо'))],
                 )),
               )),
