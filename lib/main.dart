@@ -375,8 +375,8 @@ class OrdersPage extends StatelessWidget {
                         ]),
                         const SizedBox(height: 7),
                         Text(order['pack'] ?? '', style: const TextStyle(color: muted, fontSize: 12)),
-                        Text('ID: \${order['player'] ?? ''}', style: const TextStyle(color: muted, fontSize: 11)),
-                        Text('#\${order['id'] ?? ''} • \${order['date'] ?? ''}', style: const TextStyle(color: green, fontSize: 10)),
+                        Text('ID: ${order['player'] ?? ''}', style: const TextStyle(color: muted, fontSize: 11)),
+                        Text('#${order['id'] ?? ''} • ${order['date'] ?? ''}', style: const TextStyle(color: green, fontSize: 10)),
                       ],
                     ),
                   );
