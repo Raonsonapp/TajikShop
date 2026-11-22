@@ -194,11 +194,30 @@ class GlassBottomNavigation extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            icons[i],
-                            size: 23,
-                            color: index == i ? green : Colors.white,
-                          ),
+                          if (i == 2)
+                            ValueListenableBuilder<int>(
+                              valueListenable: AlmazCartStore.count,
+                              builder: (context, total, _) => Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Icon(icons[i], size: 23, color: index == i ? green : Colors.white),
+                                  if (total > 0)
+                                    Positioned(
+                                      right: -9, top: -7,
+                                      child: Container(
+                                        constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                                        decoration: const BoxDecoration(color: green, shape: BoxShape.circle),
+                                        child: Text(total > 99 ? '99+' : '$total',
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(color: bg, fontSize: 8, fontWeight: FontWeight.w900)),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            )
+                          else
+                            Icon(icons[i], size: 23, color: index == i ? green : Colors.white),
                           const SizedBox(height: 3),
                           Text(
                             labels[i],
@@ -921,15 +940,22 @@ class _ApiStatusCardState extends State<ApiStatusCard> {
 
 class AlmazCartStore {
   static const _key = 'almaz_cart_v1';
+  static final ValueNotifier<int> count = ValueNotifier<int>(0);
   static Future<List<Map<String, dynamic>>> load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = jsonDecode(prefs.getString(_key) ?? '[]');
-    if (raw is! List) return [];
-    return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    if (raw is! List) {
+      count.value = 0;
+      return [];
+    }
+    final items = raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    count.value = items.fold<int>(0, (sum, item) => sum + ((item['quantity'] as num?)?.toInt() ?? 1));
+    return items;
   }
   static Future<void> _save(List<Map<String, dynamic>> items) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, jsonEncode(items));
+    count.value = items.fold<int>(0, (sum, item) => sum + ((item['quantity'] as num?)?.toInt() ?? 1));
   }
   static Future<void> add(Map<String, dynamic> product) async {
     final id = (product['id'] ?? product['product_id'] ?? '').toString();
@@ -997,7 +1023,20 @@ class _CartPageState extends State<CartPage> {
               margin: const EdgeInsets.only(bottom: 10), padding: const EdgeInsets.all(13),
               decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16), border: Border.all(color: green.withOpacity(.2))),
               child: Row(children: [
-                Container(width: 52, height: 52, decoration: BoxDecoration(color: green.withOpacity(.1), borderRadius: BorderRadius.circular(13)), child: const Icon(Icons.inventory_2_outlined, color: green)),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(13),
+                  child: Container(
+                    width: 58, height: 58,
+                    color: green.withOpacity(.1),
+                    child: ((item['image_url'] ?? item['image'] ?? item['thumbnail'])?.toString().startsWith('http') ?? false)
+                      ? Image.network(
+                          (item['image_url'] ?? item['image'] ?? item['thumbnail']).toString(),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.inventory_2_outlined, color: green),
+                        )
+                      : const Icon(Icons.inventory_2_outlined, color: green),
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
