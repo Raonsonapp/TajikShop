@@ -1,9 +1,101 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 const bg=Color(0xFF050907), surface=Color(0xFF0C1710), card=Color(0xFF101F16), green=Color(0xFF39FF72), lime=Color(0xFFB6FF38), muted=Color(0xFF91A69A), gold=Color(0xFFFFD65A);
 void main(){WidgetsFlutterBinding.ensureInitialized();SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor:bg,statusBarIconBrightness:Brightness.light,systemNavigationBarColor:bg,systemNavigationBarIconBrightness:Brightness.light));runApp(const AlmazApp());}
-class AlmazApp extends StatelessWidget{const AlmazApp({super.key});@override Widget build(BuildContext c)=>MaterialApp(title:'Almaz TJ | Алмаз ТҶ',debugShowCheckedModeBanner:false,theme:ThemeData(brightness:Brightness.dark,scaffoldBackgroundColor:bg,colorScheme:const ColorScheme.dark(primary:green,surface:surface),useMaterial3:true,fontFamily:'Roboto'),home:const AlmazHome());}
+class AlmazApp extends StatelessWidget{const AlmazApp({super.key});@override Widget build(BuildContext c)=>MaterialApp(title:'Almaz TJ',debugShowCheckedModeBanner:false,theme:ThemeData(brightness:Brightness.dark,scaffoldBackgroundColor:bg,colorScheme:const ColorScheme.dark(primary:green,surface:surface),useMaterial3:true,fontFamily:'Roboto'),home:const AlmazSplash());}
+class AlmazSplash extends StatefulWidget {
+  const AlmazSplash({super.key});
+  @override
+  State<AlmazSplash> createState() => _AlmazSplashState();
+}
+
+class _AlmazSplashState extends State<AlmazSplash> {
+  Timer? _timer;
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer(const Duration(milliseconds: 1700), () {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => const AlmazHome(),
+          transitionDuration: const Duration(milliseconds: 350),
+          transitionsBuilder: (_, animation, __, child) =>
+              FadeTransition(opacity: animation, child: child),
+        ),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: bg,
+        body: Stack(
+          children: [
+            Positioned(
+              top: -110,
+              left: -100,
+              child: Container(
+                width: 280,
+                height: 280,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: green.withOpacity(.12), blurRadius: 90, spreadRadius: 25)],
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -130,
+              right: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: green.withOpacity(.10), blurRadius: 100, spreadRadius: 25)],
+                ),
+              ),
+            ),
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AlmazMark(size: 174),
+                  const SizedBox(height: 27),
+                  const Text(
+                    'Almaz TJ',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 34,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 38),
+                  SizedBox(
+                    width: 25,
+                    height: 25,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(green.withOpacity(.9)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
 class AlmazHome extends StatefulWidget{const AlmazHome({super.key});@override State<AlmazHome> createState()=>_AlmazHomeState();}
 class _AlmazHomeState extends State<AlmazHome>{int tab=0;final pages=const[HomePage(),GamesPage(),OrdersPage(),WalletPage(),ProfilePage()];@override Widget build(BuildContext c)=>Scaffold(body:SafeArea(child:IndexedStack(index:tab,children:pages)),bottomNavigationBar:Container(decoration:BoxDecoration(color:surface,border:Border(top:BorderSide(color:green.withOpacity(.18))),boxShadow:[BoxShadow(color:green.withOpacity(.06),blurRadius:22)]),child:NavigationBar(height:68,backgroundColor:surface,indicatorColor:green.withOpacity(.14),labelBehavior:NavigationDestinationLabelBehavior.alwaysShow,selectedIndex:tab,onDestinationSelected:(v)=>setState(()=>tab=v),destinations:const[NavigationDestination(icon:Icon(Icons.home_outlined),selectedIcon:Icon(Icons.home_rounded),label:'Асосӣ'),NavigationDestination(icon:Icon(Icons.sports_esports_outlined),selectedIcon:Icon(Icons.sports_esports),label:'Бозиҳо'),NavigationDestination(icon:Icon(Icons.receipt_long_outlined),selectedIcon:Icon(Icons.receipt_long),label:'Фармоиш'),NavigationDestination(icon:Icon(Icons.account_balance_wallet_outlined),selectedIcon:Icon(Icons.account_balance_wallet),label:'Ҳамён'),NavigationDestination(icon:Icon(Icons.person_outline),selectedIcon:Icon(Icons.person),label:'Профил')])));}
 class BrandHeader extends StatelessWidget{final bool showActions;const BrandHeader({super.key,this.showActions=true});@override Widget build(BuildContext c)=>Padding(padding:const EdgeInsets.fromLTRB(17,13,17,12),child:Row(children:[const AlmazMark(size:48),const SizedBox(width:11),const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Almaz TJ',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900,letterSpacing:.4)),Text('МАРКАЗИ ДОНОТИ БОЗИҲО',style:TextStyle(fontSize:9,color:muted,letterSpacing:1.3,fontWeight:FontWeight.bold))])),if(showActions)IconButton(onPressed:()=>{},icon:const Icon(Icons.notifications_none,color:green))]));}
