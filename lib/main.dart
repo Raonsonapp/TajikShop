@@ -322,9 +322,116 @@ class HomePage extends StatelessWidget {
   }
 }
 class SectionTitle extends StatelessWidget{final String title,action;const SectionTitle(this.title,this.action,{super.key});@override Widget build(BuildContext c)=>Row(children:[Expanded(child:Text(title,style:const TextStyle(fontSize:16,fontWeight:FontWeight.w900))),if(action.isNotEmpty)Text(action,style:const TextStyle(color:green,fontSize:11,fontWeight:FontWeight.bold))]);}
-class Game{final String name,sub;final IconData icon;final Color color;final List<String> packs;const Game(this.name,this.sub,this.icon,this.color,this.packs);}
-const games=[Game('Free Fire','Алмос • Ваучер • Membership',Icons.local_fire_department,Color(0xFFFFA52B),['100 алмос','210 алмос','520 алмос','Ваучери ҳафтаина']),Game('PUBG Mobile','UC • Royale Pass',Icons.military_tech,Color(0xFFFFD15C),['60 UC','325 UC','660 UC','Royale Pass']),Game('Mobile Legends','Diamonds • Pass',Icons.diamond,Color(0xFF5B9BFF),['86 Diamonds','172 Diamonds','Weekly Pass']),Game('Бозиҳои дигар','Хизматрасониҳои иловагӣ',Icons.sports_esports,green,['Фармоиши махсус'])];
-class GameGrid extends StatelessWidget{const GameGrid({super.key});@override Widget build(BuildContext c)=>GridView.builder(shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),itemCount:games.length,gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:2,mainAxisSpacing:10,crossAxisSpacing:10,childAspectRatio:1.35),itemBuilder:(c,i){final g=games[i];return InkWell(onTap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>GameDetail(game:g))),borderRadius:BorderRadius.circular(17),child:Container(padding:const EdgeInsets.all(13),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(17),border:Border.all(color:g.color.withOpacity(.25))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[Icon(g.icon,color:g.color,size:29),Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(g.name,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:14)),Text(g.sub,style:const TextStyle(color:muted,fontSize:10))])])));});}
+
+class Game {
+  final String name, sub, logoText;
+  final Color color;
+  final List<String> packs;
+  const Game(this.name, this.sub, this.logoText, this.color, this.packs);
+}
+
+const games = [
+  Game('Free Fire', 'Алмос • Ваучер • Membership', 'FREE\\nFIRE', Color(0xFFFFA52B), ['100 алмос','210 алмос','520 алмос','Ваучери ҳафтаина']),
+  Game('PUBG Mobile', 'UC • Royale Pass', 'PUBG', Color(0xFFFFD15C), ['60 UC','325 UC','660 UC','Royale Pass']),
+  Game('Mobile Legends', 'Diamonds • Pass', 'MLBB', Color(0xFF5B9BFF), ['86 Diamonds','172 Diamonds','Weekly Pass']),
+  Game('Standoff 2', 'Gold • Бастаҳо', 'S2', Color(0xFFE34B55), ['100 Gold','500 Gold','1000 Gold']),
+  Game('Telegram', 'Premium • Stars', 'TG', Color(0xFF36AEEA), ['Telegram Premium','Stars']),
+  Game('IMO', 'Coins • хизматрасонӣ', 'imo', Color(0xFF2D9BEA), ['Coins','Бастаи махсус']),
+];
+
+class GameLogo extends StatelessWidget {
+  final Game game;
+  final double size;
+  const GameLogo({super.key, required this.game, this.size = 76});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    padding: const EdgeInsets.all(5),
+    decoration: BoxDecoration(
+      color: const Color(0xFF080D0A),
+      borderRadius: BorderRadius.circular(size * .25),
+      border: Border.all(color: game.color.withOpacity(.7), width: 1.3),
+      boxShadow: [BoxShadow(color: game.color.withOpacity(.18), blurRadius: 16)],
+    ),
+    child: Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          game.logoText,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: game.color,
+            fontSize: game.logoText.length > 5 ? 19 : 25,
+            height: .92,
+            fontWeight: FontWeight.w1000,
+            letterSpacing: game.logoText == 'PUBG' ? -1.8 : .3,
+            shadows: [Shadow(color: game.color.withOpacity(.55), blurRadius: 12)],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class GameGrid extends StatelessWidget {
+  const GameGrid({super.key});
+  @override
+  Widget build(BuildContext context) => GridView.builder(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    itemCount: games.length,
+    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      mainAxisSpacing: 11,
+      crossAxisSpacing: 11,
+      childAspectRatio: 1.08,
+    ),
+    itemBuilder: (context, index) {
+      final game = games[index];
+      return InkWell(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GameDetail(game: game))),
+        borderRadius: BorderRadius.circular(21),
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1B211E), Color(0xFF0D1410)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(21),
+            border: Border.all(color: Colors.white.withOpacity(.12)),
+            boxShadow: [BoxShadow(color: game.color.withOpacity(.07), blurRadius: 17, offset: const Offset(0, 5))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                GameLogo(game: game, size: 66),
+                const Spacer(),
+                Icon(Icons.arrow_outward_rounded, size: 17, color: game.color.withOpacity(.8)),
+              ]),
+              const Spacer(),
+              Text(game.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+              const SizedBox(height: 3),
+              Text(game.sub, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: muted, fontSize: 9)),
+              const SizedBox(height: 9),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(color: game.color.withOpacity(.13), borderRadius: BorderRadius.circular(20)),
+                child: Text('Бастаҳо  ›', style: TextStyle(color: game.color, fontSize: 10, fontWeight: FontWeight.w900)),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
 class Benefit extends StatelessWidget{final IconData icon;final String title,sub;const Benefit({super.key,required this.icon,required this.title,required this.sub});@override Widget build(BuildContext c)=>Expanded(child:Container(padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(14),border:Border.all(color:Colors.white10)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Icon(icon,color:green,size:20),const SizedBox(height:7),Text(title,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:12)),Text(sub,style:const TextStyle(color:muted,fontSize:9))])));}
 class GamesPage extends StatelessWidget{const GamesPage({super.key});@override Widget build(BuildContext c)=>PageShell(title:'Бозиҳо',subtitle:'Бозиро интихоб намо ва бастаҳои дастрасро бин',child:ListView(padding:const EdgeInsets.all(16),children:[const GameGrid(),const SizedBox(height:18),Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(14)),child:const Text('Барои фармоиш ID-и бозингарро дуруст ворид намо. Пеш аз пардохт маълумоти фармоишро санҷ.',style:TextStyle(color:muted,fontSize:11,height:1.5)))]));}
 class GameDetail extends StatefulWidget{final Game game;const GameDetail({super.key,required this.game});@override State<GameDetail> createState()=>_GameDetailState();}
