@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'services/almaz_api.dart';
 
 const bg=Color(0xFF050907), surface=Color(0xFF0C1710), card=Color(0xFF101F16), green=Color(0xFF39FF72), lime=Color(0xFFB6FF38), muted=Color(0xFF91A69A), gold=Color(0xFFFFD65A);
 void main(){WidgetsFlutterBinding.ensureInitialized();SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor:bg,statusBarIconBrightness:Brightness.light,systemNavigationBarColor:bg,systemNavigationBarIconBrightness:Brightness.light));runApp(const AlmazApp());}
@@ -295,6 +296,8 @@ class HomePage extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+              const ApiStatusCard(),
               const SizedBox(height: 22),
               const SectionTitle('Бозиҳои маъмул', 'Ҳама'),
               const SizedBox(height: 12),
@@ -693,3 +696,53 @@ class ProfileRow extends StatelessWidget {
   );
 }
 class EmptyState extends StatelessWidget{final IconData icon;final String title,sub;const EmptyState({super.key,required this.icon,required this.title,required this.sub});@override Widget build(BuildContext c)=>Center(child:Padding(padding:const EdgeInsets.all(30),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(icon,size:55,color:green.withOpacity(.6)),const SizedBox(height:15),Text(title,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:17)),const SizedBox(height:7),Text(sub,textAlign:TextAlign.center,style:const TextStyle(color:muted,fontSize:12,height:1.5))])));}
+
+
+class ApiStatusCard extends StatefulWidget {
+  const ApiStatusCard({super.key});
+  @override
+  State<ApiStatusCard> createState() => _ApiStatusCardState();
+}
+
+class _ApiStatusCardState extends State<ApiStatusCard> {
+  late Future<Map<String, dynamic>> _health;
+  @override
+  void initState() {
+    super.initState();
+    _health = AlmazApi.instance.health();
+  }
+
+  void _retry() => setState(() => _health = AlmazApi.instance.health());
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<Map<String, dynamic>>(
+    future: _health,
+    builder: (context, snapshot) {
+      final online = snapshot.hasData && snapshot.data?['status'] == 'ok';
+      final waiting = snapshot.connectionState == ConnectionState.waiting;
+      final color = online ? green : (waiting ? gold : Colors.redAccent);
+      final label = online ? 'Сервер фаъол аст' : (waiting ? 'Пайвастшавӣ...' : 'Сервер дастнорас');
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(.35)),
+        ),
+        child: Row(children: [
+          Icon(Icons.cloud_done_outlined, color: color, size: 23),
+          const SizedBox(width: 11),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 12)),
+            const Text('Almaz TJ • API', style: TextStyle(color: muted, fontSize: 10)),
+          ])),
+          IconButton(
+            tooltip: 'Аз нав санҷидан',
+            onPressed: waiting ? null : _retry,
+            icon: const Icon(Icons.refresh_rounded, color: muted),
+          ),
+        ]),
+      );
+    },
+  );
+}
