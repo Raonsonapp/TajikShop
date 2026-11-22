@@ -9,7 +9,100 @@ class _AlmazHomeState extends State<AlmazHome>{int tab=0;final pages=const[HomeP
 class BrandHeader extends StatelessWidget{final bool showActions;const BrandHeader({super.key,this.showActions=true});@override Widget build(BuildContext c)=>Padding(padding:const EdgeInsets.fromLTRB(17,13,17,12),child:Row(children:[const AlmazMark(size:48),const SizedBox(width:11),const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Almaz TJ',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900,letterSpacing:.4)),Text('МАРКАЗИ ДОНОТИ БОЗИҲО',style:TextStyle(fontSize:9,color:muted,letterSpacing:1.3,fontWeight:FontWeight.bold))])),if(showActions)IconButton(onPressed:()=>{},icon:const Icon(Icons.notifications_none,color:green))]));}
 class AlmazMark extends StatelessWidget{final double size;const AlmazMark({super.key,this.size=54});@override Widget build(BuildContext c)=>Container(width:size,height:size,decoration:BoxDecoration(gradient:const LinearGradient(colors:[Color(0xFF1DFF65),Color(0xFF006B35)],begin:Alignment.topLeft,end:Alignment.bottomRight),borderRadius:BorderRadius.circular(size*.25),border:Border.all(color:green.withOpacity(.7)),boxShadow:[BoxShadow(color:green.withOpacity(.22),blurRadius:15)]),child:Stack(alignment:Alignment.center,children:[Icon(Icons.gamepad_rounded,color:Colors.white,size:size*.58),Positioned(top:size*.03,child:Icon(Icons.workspace_premium,color:gold,size:size*.27))]));}
 class PageShell extends StatelessWidget{final String title,subtitle;final Widget child;const PageShell({super.key,required this.title,required this.subtitle,required this.child});@override Widget build(BuildContext c)=>Column(children:[BrandHeader(),Padding(padding:const EdgeInsets.fromLTRB(18,4,18,12),child:Row(children:[Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontSize:22,fontWeight:FontWeight.w900)),Text(subtitle,style:const TextStyle(color:muted,fontSize:11))]))])),Expanded(child:child)]);}
-class HomePage extends StatelessWidget{const HomePage({super.key});@override Widget build(BuildContext c)=>Column(children:[BrandHeader(),Expanded(child:ListView(padding:const EdgeInsets.fromLTRB(16,3,16,20),children:[Container(padding:const EdgeInsets.all(18),decoration:BoxDecoration(borderRadius:BorderRadius.circular(23),gradient:const LinearGradient(colors:[Color(0xFF063A1D),Color(0xFF0C1B11),Color(0xFF102919)],begin:Alignment.topLeft,end:Alignment.bottomRight),border:Border.all(color:green.withOpacity(.55)),boxShadow:[BoxShadow(color:green.withOpacity(.10),blurRadius:24)]),child:Stack(children:[Positioned(right:-5,top:2,child:Icon(Icons.diamond,color:green.withOpacity(.16),size:130)),Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:5),decoration:BoxDecoration(color:green.withOpacity(.14),borderRadius:BorderRadius.circular(30)),child:const Text('ALMAZ TJ • OFFICIAL',style:TextStyle(color:green,fontSize:9,fontWeight:FontWeight.w900,letterSpacing:1))),const SizedBox(height:15),const Text('Бозии дӯстдоштаатро\nпурқувват кун!',style:TextStyle(fontSize:25,height:1.15,fontWeight:FontWeight.w900)),const SizedBox(height:8),const Text('Донат ва ваучерҳои бозӣ — зуд, осон ва боэътимод',style:TextStyle(color:Colors.white70,fontSize:11)),const SizedBox(height:17),FilledButton(onPressed:()=>Navigator.of(c).push(MaterialPageRoute(builder:(_)=>const GamesPage())),style:FilledButton.styleFrom(backgroundColor:green,foregroundColor:bg,padding:const EdgeInsets.symmetric(horizontal:18,vertical:12)),child:const Text('Интихоби бозӣ',style:TextStyle(fontWeight:FontWeight.w900)))] )]}),const SizedBox(height:22),const SectionTitle('Бозиҳои маъмул','Ҳама'),const SizedBox(height:12),const GameGrid(),const SizedBox(height:22),const SectionTitle('Чаро Almaz TJ?',''),const SizedBox(height:10),const Row(children:[Benefit(icon:Icons.bolt,title:'Зуд',sub:'Коркарди фармоиш'),SizedBox(width:8),Benefit(icon:Icons.verified_user_outlined,title:'Эътимод',sub:'Дастгирии муштарӣ'),SizedBox(width:8),Benefit(icon:Icons.support_agent,title:'Кӯмак',sub:'Дастгирии онлайн')])]))]);}
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const BrandHeader(),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 3, 16, 20),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(23),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF063A1D), Color(0xFF0C1B11), Color(0xFF102919)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  border: Border.all(color: green.withOpacity(.55)),
+                  boxShadow: [BoxShadow(color: green.withOpacity(.10), blurRadius: 24)],
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -5,
+                      top: 2,
+                      child: Icon(Icons.diamond, color: green.withOpacity(.16), size: 130),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: green.withOpacity(.14),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: const Text(
+                            'ALMAZ TJ • OFFICIAL',
+                            style: TextStyle(color: green, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        const Text(
+                          'Бозии дӯстдоштаатро\\nпурқувват кун!',
+                          style: TextStyle(fontSize: 25, height: 1.15, fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Донат ва ваучерҳои бозӣ — зуд, осон ва боэътимод',
+                          style: TextStyle(color: Colors.white70, fontSize: 11),
+                        ),
+                        const SizedBox(height: 17),
+                        FilledButton(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const GamesPage()),
+                          ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: green,
+                            foregroundColor: bg,
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                          ),
+                          child: const Text('Интихоби бозӣ', style: TextStyle(fontWeight: FontWeight.w900)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              const SectionTitle('Бозиҳои маъмул', 'Ҳама'),
+              const SizedBox(height: 12),
+              const GameGrid(),
+              const SizedBox(height: 22),
+              const SectionTitle('Чаро Almaz TJ?', ''),
+              const SizedBox(height: 10),
+              const Row(
+                children: [
+                  Benefit(icon: Icons.bolt, title: 'Зуд', sub: 'Коркарди фармоиш'),
+                  SizedBox(width: 8),
+                  Benefit(icon: Icons.verified_user_outlined, title: 'Эътимод', sub: 'Дастгирии муштарӣ'),
+                  SizedBox(width: 8),
+                  Benefit(icon: Icons.support_agent, title: 'Кӯмак', sub: 'Дастгирии онлайн'),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
 class SectionTitle extends StatelessWidget{final String title,action;const SectionTitle(this.title,this.action,{super.key});@override Widget build(BuildContext c)=>Row(children:[Expanded(child:Text(title,style:const TextStyle(fontSize:16,fontWeight:FontWeight.w900))),if(action.isNotEmpty)Text(action,style:const TextStyle(color:green,fontSize:11,fontWeight:FontWeight.bold))]);}
 class Game{final String name,sub;final IconData icon;final Color color;const Game(this.name,this.sub,this.icon,this.color);}
 const games=[Game('Free Fire','Алмос ва бастаҳо',Icons.local_fire_department,Color(0xFFFFA52B)),Game('PUBG Mobile','UC ва ваучерҳо',Icons.military_tech,Color(0xFFFFD15C)),Game('Mobile Legends','Diamonds',Icons.diamond,Color(0xFF5B9BFF)),Game('Бозиҳои дигар','Дигар хизматрасониҳо',Icons.sports_esports,green)];
