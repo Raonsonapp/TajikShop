@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="Almaz TJ | Алмаз ТҶ"
+        android:label="Almaz TJ"
         android:name="${applicationName}"
         android:icon="@drawable/ic_almaz_launcher"
         android:allowBackup="false"
