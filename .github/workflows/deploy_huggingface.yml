@@ -1,0 +1,83 @@
+name: Deploy TajikShop API to Hugging Face Space
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy_huggingface.yml'
+      - 'backend/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-tajikshop-api
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_SPACE: mahmadmurodov/tajikshop
+      # Last complete backend revision before the later Flutter-only rebuild
+      # removed backend/ from the current main branch.
+      BACKEND_SOURCE_COMMIT: 85dfe6187e3e3be3a6546854e6ff6bbd62a510f1
+    steps:
+      - name: Checkout repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Hugging Face secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${HF_TOKEN}" ]]; then
+            echo "::error::GitHub Secret HF_TOKEN is missing."
+            exit 1
+          fi
+
+      - name: Prepare backend-only Docker Space
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${BACKEND_SOURCE_COMMIT}"
+          git cat-file -e "${BACKEND_SOURCE_COMMIT}:backend/Dockerfile"
+          rm -rf hf-space
+          mkdir -p hf-space
+          git archive "${BACKEND_SOURCE_COMMIT}" backend | tar -x -C hf-space --strip-components=1
+          test -f hf-space/Dockerfile
+          test -f hf-space/go.mod
+          test -f hf-space/cmd/api/main.go
+          cat > hf-space/README.md <<'EOF'
+          ---
+          title: TajikShop API
+          emoji: 🛒
+          colorFrom: green
+          colorTo: blue
+          sdk: docker
+          app_port: 7860
+          pinned: false
+          ---
+          
+          TajikShop backend API service.
+          EOF
+          echo "Prepared backend files:"
+          find hf-space -maxdepth 2 -type f | sort | head -80
+
+      - name: Deploy backend to Hugging Face Space
+        shell: bash
+        working-directory: hf-space
+        run: |
+          set -euo pipefail
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Deploy TajikShop API from GitHub"
+          git remote add huggingface "https://oauth2:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}"
+          git push --force huggingface HEAD:main
+          echo "Backend source pushed to Hugging Face Space."
