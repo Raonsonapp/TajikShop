@@ -1,0 +1,69 @@
+name: Publish Almaz brand assets to Cloudflare R2
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/deploy-r2-assets.yml'
+      - 'assets/r2-manifest.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check R2 configuration
+        id: config
+        env:
+          ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY_ID }}
+          SECRET_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          BUCKET: ${{ secrets.R2_BUCKET_NAME }}
+          PUBLIC_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+        run: |
+          if [ -z "$ACCOUNT_ID" ] || [ -z "$ACCESS_KEY" ] || [ -z "$SECRET_KEY" ] || [ -z "$BUCKET" ] || [ -z "$PUBLIC_URL" ]; then
+            echo "::warning::R2 upload skipped. Add CLOUDFLARE_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME and R2_PUBLIC_BASE_URL to repository Actions secrets."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.ready == 'true'
+      - name: Install AWS CLI
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
+      - name: Download brand icons and publish to R2
+        if: steps.config.outputs.ready == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BUCKET: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/almaz-assets/games /tmp/almaz-assets/banks
+          fetch_icon() {
+            domain="$1"; output="$2"
+            curl --fail --location --retry 3 --max-time 30 "https://www.google.com/s2/favicons?domain=${domain}&sz=256" -o "$output"
+            file "$output"
+            test -s "$output"
+          }
+          fetch_icon ff.garena.com /tmp/almaz-assets/games/free-fire.png
+          fetch_icon pubgmobile.com /tmp/almaz-assets/games/pubg-mobile.png
+          fetch_icon mobilelegends.com /tmp/almaz-assets/games/mobile-legends.png
+          fetch_icon standoff2.com /tmp/almaz-assets/games/standoff-2.png
+          fetch_icon telegram.org /tmp/almaz-assets/games/telegram.png
+          fetch_icon imo.im /tmp/almaz-assets/games/imo.png
+          fetch_icon alif.tj /tmp/almaz-assets/banks/alif.png
+          fetch_icon dc.tj /tmp/almaz-assets/banks/dushanbe-city.png
+          fetch_icon eskhata.com /tmp/almaz-assets/banks/eskhata.png
+          fetch_icon orienbank.tj /tmp/almaz-assets/banks/orienbank.png
+          endpoint="https://${ACCOUNT_ID}.r2.cloudflarestorage.com"
+          aws --endpoint-url "$endpoint" s3 cp /tmp/almaz-assets/ "s3://${BUCKET}/almaz/" --recursive --cache-control "public,max-age=31536000,immutable"
+          echo "Published 10 brand icon files to Cloudflare R2."
