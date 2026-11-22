@@ -1,0 +1,43 @@
+name: Deploy Almaz TJ to Hugging Face
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-huggingface-space
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout GitHub repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check Hugging Face token
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::GitHub Secret HF_TOKEN is missing."
+            exit 1
+          fi
+
+      - name: Push repository to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add huggingface "https://oauth2:${HF_TOKEN}@huggingface.co/spaces/mahmadmurodov/tajikshop"
+          git push --force huggingface HEAD:main
+          echo "Source pushed to Hugging Face Space."
