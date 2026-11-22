@@ -1,6 +1,10 @@
 name: Keep Almaz TJ Hugging Face Space Awake
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/huggingface_keepalive.yml'
   schedule:
     # Periodic traffic helps wake a sleeping Space and keep it responsive.
     - cron: "*/10 * * * *"
