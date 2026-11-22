@@ -29,11 +29,30 @@ class AlmazApi {
       Uri.parse('$baseUrl$path').replace(queryParameters: query);
 
   dynamic _decode(http.Response response) {
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw AlmazApiException('Дархости сервер иҷро нашуд (${response.statusCode})', statusCode: response.statusCode);
+    dynamic body;
+    if (response.body.isNotEmpty) {
+      try {
+        body = jsonDecode(utf8.decode(response.bodyBytes));
+      } on FormatException {
+        body = utf8.decode(response.bodyBytes);
+      }
+    } else {
+      body = <String, dynamic>{};
     }
-    if (response.body.isEmpty) return <String, dynamic>{};
-    return jsonDecode(utf8.decode(response.bodyBytes));
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      var message = 'Дархости сервер иҷро нашуд';
+      if (body is Map) {
+        final candidate = body['message'] ?? body['error'] ?? body['detail'];
+        if (candidate != null && candidate.toString().trim().isNotEmpty) {
+          message = candidate.toString();
+        }
+      } else if (body is String && body.trim().isNotEmpty) {
+        message = body.trim();
+      }
+      throw AlmazApiException('$message (${response.statusCode})', statusCode: response.statusCode);
+    }
+    return body;
   }
 
   Future<Map<String, dynamic>> health() async {
