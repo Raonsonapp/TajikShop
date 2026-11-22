@@ -204,11 +204,262 @@ class GameGrid extends StatelessWidget{const GameGrid({super.key});@override Wid
 class Benefit extends StatelessWidget{final IconData icon;final String title,sub;const Benefit({super.key,required this.icon,required this.title,required this.sub});@override Widget build(BuildContext c)=>Expanded(child:Container(padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(14),border:Border.all(color:Colors.white10)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Icon(icon,color:green,size:20),const SizedBox(height:7),Text(title,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:12)),Text(sub,style:const TextStyle(color:muted,fontSize:9))])));}
 class GamesPage extends StatelessWidget{const GamesPage({super.key});@override Widget build(BuildContext c)=>PageShell(title:'Бозиҳо',subtitle:'Бозиро интихоб намо ва бастаҳои дастрасро бин',child:ListView(padding:const EdgeInsets.all(16),children:[const GameGrid(),const SizedBox(height:18),Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(14)),child:const Text('Барои фармоиш ID-и бозингарро дуруст ворид намо. Пеш аз пардохт маълумоти фармоишро санҷ.',style:TextStyle(color:muted,fontSize:11,height:1.5)))]));}
 class GameDetail extends StatefulWidget{final Game game;const GameDetail({super.key,required this.game});@override State<GameDetail> createState()=>_GameDetailState();}
-class _GameDetailState extends State<GameDetail>{int selected=-1;final player=TextEditingController();@override void dispose(){player.dispose();super.dispose();}
-Future<void> submit()async{if(selected<0||player.text.trim().isEmpty)return;final p=await SharedPreferences.getInstance();final list=(jsonDecode(p.getString('almaz_orders')??'[]') as List).cast<Map<String,dynamic>>();final g=widget.game;list.insert(0,{'id':'A'+DateTime.now().millisecondsSinceEpoch.toString(),'game':g.name,'pack':g.packs[selected],'player':player.text.trim(),'status':'Дар интизорӣ','date':DateTime.now().toString().substring(0,16)});await p.setString('almaz_orders',jsonEncode(list));if(!mounted)return;ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Фармоиш сабт шуд. Пардохт ҳанӯз тасдиқ нашудааст.')));Navigator.pop(context);}
-@override Widget build(BuildContext c){final g=widget.game;return Scaffold(appBar:AppBar(title:Text(g.name)),body:ListView(padding:const EdgeInsets.all(18),children:[Container(height:145,decoration:BoxDecoration(borderRadius:BorderRadius.circular(22),gradient:LinearGradient(colors:[g.color.withOpacity(.3),card]),border:Border.all(color:g.color.withOpacity(.5))),child:Center(child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(g.icon,color:g.color,size:52),Text(g.name.toUpperCase(),style:const TextStyle(fontWeight:FontWeight.w900,fontSize:19))]))),const SizedBox(height:18),const Text('Баста интихоб кун',style:TextStyle(fontWeight:FontWeight.w900,fontSize:18)),const SizedBox(height:10),...List.generate(g.packs.length,(i)=>InkWell(onTap:()=>setState(()=>selected=i),child:Container(margin:const EdgeInsets.only(bottom:9),padding:const EdgeInsets.all(15),decoration:BoxDecoration(color:selected==i?g.color.withOpacity(.14):card,borderRadius:BorderRadius.circular(15),border:Border.all(color:selected==i?g.color:Colors.white12)),child:Row(children:[Icon(Icons.diamond,color:g.color),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(g.packs[i],style:const TextStyle(fontWeight:FontWeight.w900)),const Text('Нарх баъд аз пайвасти нархнома',style:TextStyle(color:muted,fontSize:10))])),Icon(selected==i?Icons.radio_button_checked:Icons.radio_button_off,color:g.color)]))),const SizedBox(height:12),const Text('ID-и бозингар',style:TextStyle(fontWeight:FontWeight.w900)),const SizedBox(height:8),TextField(controller:player,decoration:InputDecoration(hintText:'ID-ро ворид кун',filled:true,fillColor:card,border:OutlineInputBorder(borderRadius:BorderRadius.circular(13),borderSide:BorderSide.none))),const SizedBox(height:18),FilledButton(onPressed:selected<0||player.text.trim().isEmpty?null:submit,style:FilledButton.styleFrom(backgroundColor:green,foregroundColor:bg,padding:const EdgeInsets.all(15)),child:const Text('Сабти фармоиш',style:TextStyle(fontWeight:FontWeight.w900))),const SizedBox(height:10),const Text('Дархост дар дастгоҳ сабт мешавад. Пардохти воқеӣ ва пуркунии автоматӣ то пайвасти API фаъол нест.',style:TextStyle(color:muted,fontSize:10,height:1.5))]));}}
-class OrdersPage extends StatelessWidget{const OrdersPage({super.key});Future<List<Map<String,dynamic>>> load()async{final p=await SharedPreferences.getInstance();return (jsonDecode(p.getString('almaz_orders')??'[]') as List).map((e)=>Map<String,dynamic>.from(e)).toList();}@override Widget build(BuildContext c)=>Column(children:[BrandHeader(),const Padding(padding:EdgeInsets.fromLTRB(18,0,18,14),child:Align(alignment:Alignment.centerLeft,child:Text('Фармоишҳои ман',style:TextStyle(fontSize:24,fontWeight:FontWeight.w900)))),Expanded(child:FutureBuilder<List<Map<String,dynamic>>>(future:load(),builder:(c,s){if(!s.hasData)return const Center(child:CircularProgressIndicator(color:green));final items=s.data!;if(items.isEmpty)return const EmptyState(icon:Icons.receipt_long,title:'Ҳоло фармоиш нест',sub:'Фармоишҳои ту дар ин ҷо пайдо мешаванд.');return ListView.builder(padding:const EdgeInsets.all(15),itemCount:items.length,itemBuilder:(c,i){final o=items[i];return Container(margin:const EdgeInsets.only(bottom:10),padding:const EdgeInsets.all(15),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(16),border:Border.all(color:green.withOpacity(.2))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Row(children:[Expanded(child:Text(o['game']??'',style:const TextStyle(fontWeight:FontWeight.w900))),Text(o['status']??'',style:const TextStyle(color:gold,fontSize:10,fontWeight:FontWeight.bold))]),const SizedBox(height:7),Text(o['pack']??'',style:const TextStyle(color:muted,fontSize:12)),Text('ID: '+(o['player']??''),style:const TextStyle(color:muted,fontSize:11)),Text('#'+(o['id']??'')+' • '+(o['date']??''),style:const TextStyle(color:green,fontSize:10))]));});}))]);}
-class WalletPage extends StatelessWidget{const WalletPage({super.key});@override Widget build(BuildContext c)=>Column(children:[BrandHeader(),Expanded(child:ListView(padding:const EdgeInsets.all(17),children:[const Text('Баланс',style:TextStyle(fontSize:25,fontWeight:FontWeight.w900)),const SizedBox(height:15),Container(height:160,padding:const EdgeInsets.all(20),decoration:BoxDecoration(borderRadius:BorderRadius.circular(22),gradient:const LinearGradient(colors:[Color(0xFF063F23),Color(0xFF122C1B),Color(0xFF25452B)]),border:Border.all(color:green.withOpacity(.6))),child:const Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('БАЛАНСИ ШУМО',style:TextStyle(color:Colors.white70,fontSize:11,fontWeight:FontWeight.bold)),Spacer(),Text('0.00 с',style:TextStyle(fontSize:36,fontWeight:FontWeight.w900)),Spacer(),Text('ALMAZ TJ • WALLET',style:TextStyle(color:green,fontWeight:FontWeight.w900,fontSize:10))])),const SizedBox(height:16),Container(padding:const EdgeInsets.all(16),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(16)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('Тарзи пур кардани баланс',style:TextStyle(fontWeight:FontWeight.w900,fontSize:16)),const SizedBox(height:8),...['Алиф','Душанбе Сити','Эсхата','Ориёнбонк','Бонкҳои дигар'].map((v)=>ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.account_balance,color:green),title:Text(v),trailing:const Icon(Icons.lock_outline,color:muted),onTap:()=>showDialog(context:c,builder:(d)=>AlertDialog(title:Text(v),content:const Text('Пайвасти пардохти расмӣ ҳоло танзим нашудааст. Пардохтро берун аз барнома анҷом надиҳед.'),actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('Фаҳмо'))])))])),const SizedBox(height:15),const EmptyState(icon:Icons.history,title:'Амалиёт нест',sub:'Таърихи пуркунӣ ва хароҷот дар ин ҷо намоиш дода мешавад.')]))]);}
+class _GameDetailState extends State<GameDetail> {
+  int selected = -1;
+  final player = TextEditingController();
+  @override
+  void dispose() { player.dispose(); super.dispose(); }
+
+  Future<void> submit() async {
+    if (selected < 0 || player.text.trim().isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final decoded = jsonDecode(prefs.getString('almaz_orders') ?? '[]') as List;
+    final orders = decoded.map((item) => Map<String, dynamic>.from(item)).toList();
+    final game = widget.game;
+    orders.insert(0, {
+      'id': 'A\${DateTime.now().millisecondsSinceEpoch}',
+      'game': game.name,
+      'pack': game.packs[selected],
+      'player': player.text.trim(),
+      'status': 'Дар интизорӣ',
+      'date': DateTime.now().toString().substring(0, 16),
+    });
+    await prefs.setString('almaz_orders', jsonEncode(orders));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Фармоиш сабт шуд. Пардохт ҳанӯз тасдиқ нашудааст.')),
+    );
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final game = widget.game;
+    return Scaffold(
+      appBar: AppBar(title: Text(game.name)),
+      body: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+          Container(
+            height: 145,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              gradient: LinearGradient(colors: [game.color.withOpacity(.3), card]),
+              border: Border.all(color: game.color.withOpacity(.5)),
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(game.icon, color: game.color, size: 52),
+                  Text(game.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 19)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          const Text('Баста интихоб кун', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+          const SizedBox(height: 10),
+          ...List.generate(game.packs.length, (index) {
+            final isSelected = selected == index;
+            return InkWell(
+              onTap: () => setState(() => selected = index),
+              borderRadius: BorderRadius.circular(15),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 9),
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: isSelected ? game.color.withOpacity(.14) : card,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: isSelected ? game.color : Colors.white12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.diamond, color: game.color),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(game.packs[index], style: const TextStyle(fontWeight: FontWeight.w900)),
+                          const Text('Нарх баъд аз пайвасти нархнома', style: TextStyle(color: muted, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                    Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_off, color: game.color),
+                  ],
+                ),
+              ),
+            );
+          }),
+          const SizedBox(height: 12),
+          const Text('ID-и бозингар', style: TextStyle(fontWeight: FontWeight.w900)),
+          const SizedBox(height: 8),
+          TextField(
+            controller: player,
+            decoration: InputDecoration(
+              hintText: 'ID-ро ворид кун',
+              filled: true,
+              fillColor: card,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(13),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          FilledButton(
+            onPressed: selected < 0 || player.text.trim().isEmpty ? null : submit,
+            style: FilledButton.styleFrom(
+              backgroundColor: green,
+              foregroundColor: bg,
+              padding: const EdgeInsets.all(15),
+            ),
+            child: const Text('Сабти фармоиш', style: TextStyle(fontWeight: FontWeight.w900)),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Дархост дар дастгоҳ сабт мешавад. Пардохти воқеӣ ва пуркунии автоматӣ то пайвасти API фаъол нест.',
+            style: TextStyle(color: muted, fontSize: 10, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class OrdersPage extends StatelessWidget {
+  const OrdersPage({super.key});
+  Future<List<Map<String, dynamic>>> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final decoded = jsonDecode(prefs.getString('almaz_orders') ?? '[]') as List;
+    return decoded.map((item) => Map<String, dynamic>.from(item)).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const BrandHeader(),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(18, 0, 18, 14),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Фармоишҳои ман', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+          ),
+        ),
+        Expanded(
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: load(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: green));
+              final items = snapshot.data!;
+              if (items.isEmpty) {
+                return const EmptyState(icon: Icons.receipt_long, title: 'Ҳоло фармоиш нест', sub: 'Фармоишҳои ту дар ин ҷо пайдо мешаванд.');
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.all(15),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final order = items[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(15),
+                    decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16), border: Border.all(color: green.withOpacity(.2))),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Expanded(child: Text(order['game'] ?? '', style: const TextStyle(fontWeight: FontWeight.w900))),
+                          Text(order['status'] ?? '', style: const TextStyle(color: gold, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ]),
+                        const SizedBox(height: 7),
+                        Text(order['pack'] ?? '', style: const TextStyle(color: muted, fontSize: 12)),
+                        Text('ID: \${order['player'] ?? ''}', style: const TextStyle(color: muted, fontSize: 11)),
+                        Text('#\${order['id'] ?? ''} • \${order['date'] ?? ''}', style: const TextStyle(color: green, fontSize: 10)),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class WalletPage extends StatelessWidget {
+  const WalletPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    const methods = ['Алиф', 'Душанбе Сити', 'Эсхата', 'Ориёнбонк', 'Бонкҳои дигар'];
+    return Column(
+      children: [
+        const BrandHeader(),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(17),
+            children: [
+              const Text('Баланс', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 15),
+              Container(
+                height: 160,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  gradient: const LinearGradient(colors: [Color(0xFF063F23), Color(0xFF122C1B), Color(0xFF25452B)]),
+                  border: Border.all(color: green.withOpacity(.6)),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('БАЛАНСИ ШУМО', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+                    Spacer(),
+                    Text('0.00 с', style: TextStyle(fontSize: 36, fontWeight: FontWeight.w900)),
+                    Spacer(),
+                    Text('ALMAZ TJ • WALLET', style: TextStyle(color: green, fontWeight: FontWeight.w900, fontSize: 10)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(16)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Тарзи пур кардани баланс', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                    const SizedBox(height: 8),
+                    ...methods.map((method) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.account_balance, color: green),
+                      title: Text(method),
+                      trailing: const Icon(Icons.lock_outline, color: muted),
+                      onTap: () => showDialog<void>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: Text(method),
+                          content: const Text('Пайвасти пардохти расмӣ ҳоло танзим нашудааст. Пардохтро берун аз барнома анҷом надиҳед.'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Фаҳмо')),
+                          ],
+                        ),
+                      ),
+                    )),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 15),
+              const EmptyState(icon: Icons.history, title: 'Амалиёт нест', sub: 'Таърихи пуркунӣ ва хароҷот дар ин ҷо намоиш дода мешавад.'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
 class ProfilePage extends StatelessWidget{const ProfilePage({super.key});@override Widget build(BuildContext c)=>PageShell(title:'Профил',subtitle:'Ҳисоб ва танзимот',child:ListView(padding:const EdgeInsets.all(16),children:[Container(padding:const EdgeInsets.all(18),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(18)),child:const Row(children:[AlmazMark(size:58),SizedBox(width:13),Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Меҳмон',style:TextStyle(fontWeight:FontWeight.w900,fontSize:17)),Text('Ба ҳисоб ворид нашудаӣ',style:TextStyle(color:muted,fontSize:11))])])),const SizedBox(height:12),const ProfileRow(icon:Icons.person_outline,title:'Маълумоти шахсӣ'),const ProfileRow(icon:Icons.history,title:'Таърихи фаъолият'),const ProfileRow(icon:Icons.help_outline,title:'Маркази кӯмак'),const ProfileRow(icon:Icons.settings_outlined,title:'Танзимот') ]));}
 class ProfileRow extends StatelessWidget{final IconData icon;final String title;const ProfileRow({super.key,required this.icon,required this.title});@override Widget build(BuildContext c)=>Container(margin:const EdgeInsets.only(bottom:8),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(13)),child:ListTile(leading:Icon(icon,color:green),title:Text(title,style:const TextStyle(fontSize:13,fontWeight:FontWeight.w700)),trailing:const Icon(Icons.chevron_right,color:muted)));}
 class EmptyState extends StatelessWidget{final IconData icon;final String title,sub;const EmptyState({super.key,required this.icon,required this.title,required this.sub});@override Widget build(BuildContext c)=>Center(child:Padding(padding:const EdgeInsets.all(30),child:Column(mainAxisSize:MainAxisSize.min,children:[Icon(icon,size:55,color:green.withOpacity(.6)),const SizedBox(height:15),Text(title,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:17)),const SizedBox(height:7),Text(sub,textAlign:TextAlign.center,style:const TextStyle(color:muted,fontSize:12,height:1.5))])));}
