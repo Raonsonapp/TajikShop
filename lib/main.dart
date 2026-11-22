@@ -291,7 +291,7 @@ class HomePage extends StatelessWidget {
                         ),
                         const SizedBox(height: 15),
                         const Text(
-                          'Бозии дӯстдоштаатро\\nпурқувват кун!',
+                          'Бозии дӯстдоштаатро\nпурқувват кун!',
                           style: TextStyle(fontSize: 25, height: 1.15, fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(height: 8),
@@ -353,7 +353,7 @@ class Game {
 }
 
 const games = [
-  Game('Free Fire', 'Алмос • Ваучер • Membership', 'FREE\\nFIRE', Color(0xFFFFA52B), ['100 алмос','210 алмос','520 алмос','Ваучери ҳафтаина']),
+  Game('Free Fire', 'Алмос • Ваучер • Membership', 'FREE\nFIRE', Color(0xFFFFA52B), ['100 алмос','210 алмос','520 алмос','Ваучери ҳафтаина']),
   Game('PUBG Mobile', 'UC • Royale Pass', 'PUBG', Color(0xFFFFD15C), ['60 UC','325 UC','660 UC','Royale Pass']),
   Game('Mobile Legends', 'Diamonds • Pass', 'MLBB', Color(0xFF5B9BFF), ['86 Diamonds','172 Diamonds','Weekly Pass']),
   Game('Standoff 2', 'Gold • Бастаҳо', 'S2', Color(0xFFE34B55), ['100 Gold','500 Gold','1000 Gold']),
@@ -470,7 +470,7 @@ class _GameDetailState extends State<GameDetail> {
     final orders = decoded.map((item) => Map<String, dynamic>.from(item)).toList();
     final game = widget.game;
     orders.insert(0, {
-      'id': 'A\${DateTime.now().millisecondsSinceEpoch}',
+      'id': 'A${DateTime.now().millisecondsSinceEpoch}',
       'game': game.name,
       'pack': game.packs[selected],
       'player': player.text.trim(),
