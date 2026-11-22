@@ -29,9 +29,19 @@ jobs:
       - name: Test
         run: flutter test
       - name: Build release APK
-        run: flutter build apk --release
+        env:
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+        run: |
+          DEFINE=""
+          if [ -n "$R2_PUBLIC_BASE_URL" ]; then DEFINE="--dart-define=ALMAZ_ASSETS_BASE_URL=$R2_PUBLIC_BASE_URL/almaz"; fi
+          flutter build apk --release $DEFINE
       - name: Build release AAB
-        run: flutter build appbundle --release
+        env:
+          R2_PUBLIC_BASE_URL: ${{ secrets.R2_PUBLIC_BASE_URL }}
+        run: |
+          DEFINE=""
+          if [ -n "$R2_PUBLIC_BASE_URL" ]; then DEFINE="--dart-define=ALMAZ_ASSETS_BASE_URL=$R2_PUBLIC_BASE_URL/almaz"; fi
+          flutter build appbundle --release $DEFINE
       - name: Verify AAB
         run: test -s build/app/outputs/bundle/release/app-release.aab
       - uses: actions/upload-artifact@v4
