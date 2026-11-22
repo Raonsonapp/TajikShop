@@ -68,6 +68,71 @@ class AlmazApi {
     return _decode(response);
   }
 
+  /// Server-side cart. Payload keys are passed through unchanged so the
+  /// app does not silently guess the backend's product/variant schema.
+  Future<dynamic> getCart() async {
+    final response = await http.get(
+      _uri('/api/v1/cart'),
+      headers: await _headers(auth: true),
+    ).timeout(timeout);
+    return _decode(response);
+  }
+
+  Future<dynamic> addCartItem(Map<String, dynamic> payload) async {
+    final response = await http.post(
+      _uri('/api/v1/cart'),
+      headers: {...await _headers(auth: true), 'Content-Type': 'application/json'},
+      body: jsonEncode(payload),
+    ).timeout(timeout);
+    return _decode(response);
+  }
+
+  Future<dynamic> updateCartItem(String cartItemId, Map<String, dynamic> payload) async {
+    final response = await http.patch(
+      _uri('/api/v1/cart/${Uri.encodeComponent(cartItemId)}'),
+      headers: {...await _headers(auth: true), 'Content-Type': 'application/json'},
+      body: jsonEncode(payload),
+    ).timeout(timeout);
+    return _decode(response);
+  }
+
+  Future<void> removeCartItem(String cartItemId) async {
+    final response = await http.delete(
+      _uri('/api/v1/cart/${Uri.encodeComponent(cartItemId)}'),
+      headers: await _headers(auth: true),
+    ).timeout(timeout);
+    _decode(response);
+  }
+
+  /// Creates an order using the exact payload supplied by the caller.
+  /// Keep the backend contract explicit at the UI boundary.
+  Future<dynamic> checkout(Map<String, dynamic> payload) async {
+    final response = await http.post(
+      _uri('/api/v1/orders/checkout'),
+      headers: {...await _headers(auth: true), 'Content-Type': 'application/json'},
+      body: jsonEncode(payload),
+    ).timeout(timeout);
+    return _decode(response);
+  }
+
+  Future<dynamic> getOrderDetails(String orderId) async {
+    final response = await http.get(
+      _uri('/api/v1/orders/${Uri.encodeComponent(orderId)}'),
+      headers: await _headers(auth: true),
+    ).timeout(timeout);
+    return _decode(response);
+  }
+
+  /// Sends payment-proof metadata/file reference in the backend-defined shape.
+  Future<dynamic> submitPaymentProof(String orderId, Map<String, dynamic> payload) async {
+    final response = await http.post(
+      _uri('/api/v1/orders/${Uri.encodeComponent(orderId)}/payment-proof'),
+      headers: {...await _headers(auth: true), 'Content-Type': 'application/json'},
+      body: jsonEncode(payload),
+    ).timeout(timeout);
+    return _decode(response);
+  }
+
   Future<dynamic> login({required String email, required String password}) async {
     final response = await http.post(
       _uri('/api/v1/auth/login'),
