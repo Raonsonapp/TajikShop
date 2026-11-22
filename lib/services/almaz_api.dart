@@ -68,6 +68,58 @@ class AlmazApi {
     return _decode(response);
   }
 
+  Future<dynamic> login({required String email, required String password}) async {
+    final response = await http.post(
+      _uri('/api/v1/auth/login'),
+      headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email.trim(), 'password': password}),
+    ).timeout(timeout);
+    final data = _decode(response);
+    final token = _extractToken(data);
+    if (token != null) await saveAccessToken(token);
+    return data;
+  }
+
+  Future<dynamic> register({required String name, required String email, required String password}) async {
+    final response = await http.post(
+      _uri('/api/v1/auth/register'),
+      headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name.trim(), 'email': email.trim(), 'password': password}),
+    ).timeout(timeout);
+    final data = _decode(response);
+    final token = _extractToken(data);
+    if (token != null) await saveAccessToken(token);
+    return data;
+  }
+
+  String? _extractToken(dynamic data) {
+    if (data is! Map) return null;
+    dynamic value = data;
+    for (var i = 0; i < 3 && value is Map; i++) {
+      final map = value as Map;
+      for (final key in ['access_token', 'accessToken', 'token', 'jwt']) {
+        final token = map[key];
+        if (token is String && token.isNotEmpty) return token;
+      }
+      value = map['data'] ?? map['user'] ?? map['result'];
+    }
+    return null;
+  }
+
+  Future<void> logout() async {
+    try {
+      final response = await http.post(
+        _uri('/api/v1/auth/logout'),
+        headers: await _headers(auth: true),
+      ).timeout(timeout);
+      if (response.statusCode >= 500) {
+        throw AlmazApiException('Хатои сервер ҳангоми баромадан', statusCode: response.statusCode);
+      }
+    } finally {
+      await clearAccessToken();
+    }
+  }
+
   Future<bool> hasAccessToken() async {
     final token = await _token();
     return token != null && token.isNotEmpty;
