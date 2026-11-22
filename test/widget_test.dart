@@ -12,7 +12,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 1800));
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Асосӣ'), findsOneWidget);
+    expect(find.text('Дӯкон'), findsOneWidget);
     expect(find.text('Бозиҳо'), findsOneWidget);
     expect(find.text('Фармоиш'), findsOneWidget);
     expect(find.text('Ҳамён'), findsOneWidget);
