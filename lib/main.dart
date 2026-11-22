@@ -379,6 +379,48 @@ const Map<String, String> almazCatalogPrices = {
   'First Purchase Pack':'10.90 с','Prime (1 Month)':'10.90 с','Weekly Deal Pack 1':'10.90 с','60 WOW Coins':'11.40 с','Upgradable Firearm Materials Pack':'30.21 с','Prime (3 Months)':'30.21 с','Weekly Mythic Emblem Value Pack':'30.21 с','Weekly Deal Pack 2':'30.21 с','Mythic Emblem Pack':'49.02 с','325 WOW Coins':'51.99 с','Prime (6 Months)':'58.92 с','Elite Pass LV1-50':'58.92 с','Prime Plus (1 Month)':'97.03 с','660 WOW Coins':'102.97 с','Prime (12 Months)':'116.34 с','Elite Pass LV1-100':'118.81 с','1800 WOW Coins':'256.42 с','Elite Pass Plus LV1-100':'289.09 с','Prime Plus (3 Months)':'289.59 с','3850 WOW Coins':'511.35 с','Prime Plus (6 Months)':'577.68 с','8100 WOW Coins':'1021.69 с','Prime Plus (12 Months)':'1153.86 с',
 };
 
+const String _almazAssetsBase = String.fromEnvironment('ALMAZ_ASSETS_BASE_URL', defaultValue: '');
+
+class _AlmazBrandImage extends StatelessWidget {
+  final Game game;
+  final double size;
+  const _AlmazBrandImage({required this.game, required this.size});
+  @override
+  Widget build(BuildContext context) {
+    final slug = switch (game.name) {
+      'Free Fire' => 'free-fire',
+      'PUBG Mobile' => 'pubg-mobile',
+      'Mobile Legends' => 'mobile-legends',
+      'Standoff 2' => 'standoff-2',
+      'Telegram' => 'telegram',
+      'IMO' => 'imo',
+      _ => 'unknown',
+    };
+    if (_almazAssetsBase.isEmpty) return Center(child: Text(game.logoText, style: TextStyle(color: game.color, fontWeight: FontWeight.w900, fontSize: size * .30)));
+    return Image.network('$_almazAssetsBase/games/$slug.png', width: size, height: size, fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => Center(child: Text(game.logoText, style: TextStyle(color: game.color, fontWeight: FontWeight.w900, fontSize: size * .30))));
+  }
+}
+
+class _AlmazBankImage extends StatelessWidget {
+  final String domain;
+  final double size;
+  const _AlmazBankImage({required this.domain, required this.size});
+  @override
+  Widget build(BuildContext context) {
+    final slug = switch (domain) {
+      'alif.tj' => 'alif',
+      'dc.tj' => 'dushanbe-city',
+      'eskhata.com' => 'eskhata',
+      'orienbank.tj' => 'orienbank',
+      _ => 'bank',
+    };
+    if (_almazAssetsBase.isEmpty) return const Icon(Icons.account_balance_outlined, color: green);
+    return Image.network('$_almazAssetsBase/banks/$slug.png', width: size, height: size, fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => const Icon(Icons.account_balance_outlined, color: green));
+  }
+}
+
 class GameLogo extends StatelessWidget {
   final Game game;
   final double size;
@@ -393,11 +435,7 @@ class GameLogo extends StatelessWidget {
       border: Border.all(color: game.color.withOpacity(.7), width: 1.3),
       boxShadow: [BoxShadow(color: game.color.withOpacity(.18), blurRadius: 16)],
     ),
-    child: Image.network(
-      'https://www.google.com/s2/favicons?domain=${game.domain}&sz=128',
-      fit: BoxFit.contain,
-      errorBuilder: (_, __, ___) => Center(child: Text(game.logoText, style: TextStyle(color: game.color, fontWeight: FontWeight.w900, fontSize: 22))),
-    ),
+    child: _AlmazBrandImage(game: game, size: size - 14),
   );
 }
 
@@ -747,7 +785,7 @@ class _WalletPageState extends State<WalletPage> {
                 {'name':'Ориёнбонк','domain':'orienbank.tj'},
               ].map((bank) => ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Container(width:42,height:42,padding:const EdgeInsets.all(7),decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(11)),child:Image.network('https://www.google.com/s2/favicons?domain=${bank['domain']}&sz=128',fit:BoxFit.contain,errorBuilder:(_,__,___)=>const Icon(Icons.account_balance_outlined,color:green))),
+                leading: Container(width:42,height:42,padding:const EdgeInsets.all(7),decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(11)),child:_AlmazBankImage(domain:bank['domain']!,size:28),
                 title: Text(bank['name']!), trailing: const Icon(Icons.lock_outline, color: muted),
                 onTap: () => showDialog<void>(context: context, builder: (ctx) => AlertDialog(
                   title: Text(bank['name']!), content: const Text('Ин усули пардохт ҳоло аз ҷониби сервер фаъол карда нашудааст. Ҳоло маблағ нагузаронед.'),
