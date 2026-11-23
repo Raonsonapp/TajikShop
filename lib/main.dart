@@ -411,8 +411,11 @@ class _AlmazBrandImage extends StatelessWidget {
       'IMO' => 'imo',
       _ => 'unknown',
     };
-    if (_almazAssetsBase.isEmpty) return Center(child: Text(game.logoText, style: TextStyle(color: game.color, fontWeight: FontWeight.w900, fontSize: size * .30)));
-    return Image.network('$_almazAssetsBase/games/$slug.png', width: size, height: size, fit: BoxFit.contain,
+    final assetUrl = _almazAssetsBase.isNotEmpty
+        ? '$_almazAssetsBase/games/$slug.png'
+        : 'https://www.google.com/s2/favicons?domain=${switch (game.name) { 'Free Fire' => 'ff.garena.com', 'PUBG Mobile' => 'pubgmobile.com', 'Mobile Legends' => 'mobilelegends.com', 'Standoff 2' => 'standoff2.com', 'Telegram' => 'telegram.org', _ => 'imo.im' }}&sz=256';
+    return Image.network(assetUrl, width: size, height: size, fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
       errorBuilder: (_, __, ___) => Center(child: Text(game.logoText, style: TextStyle(color: game.color, fontWeight: FontWeight.w900, fontSize: size * .30))));
   }
 }
@@ -430,8 +433,11 @@ class _AlmazBankImage extends StatelessWidget {
       'orienbank.tj' => 'orienbank',
       _ => 'bank',
     };
-    if (_almazAssetsBase.isEmpty) return const Icon(Icons.account_balance_outlined, color: green);
-    return Image.network('$_almazAssetsBase/banks/$slug.png', width: size, height: size, fit: BoxFit.contain,
+    final assetUrl = _almazAssetsBase.isNotEmpty
+        ? '$_almazAssetsBase/banks/$slug.png'
+        : 'https://www.google.com/s2/favicons?domain=$domain&sz=256';
+    return Image.network(assetUrl, width: size, height: size, fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
       errorBuilder: (_, __, ___) => const Icon(Icons.account_balance_outlined, color: green));
   }
 }
