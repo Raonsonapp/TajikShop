@@ -18,13 +18,27 @@ String tr(String key) {
   if (almazLanguage.value == 'tg') return key;
   return words[key]?[almazLanguage.value] ?? key;
 }
-void main(){WidgetsFlutterBinding.ensureInitialized();SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(statusBarColor:bg,statusBarIconBrightness:Brightness.light,systemNavigationBarColor:bg,systemNavigationBarIconBrightness:Brightness.light));runApp(const AlmazApp());}
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final preferences = await SharedPreferences.getInstance();
+  almazLightMode.value = preferences.getBool('almaz_light_mode') ?? false;
+  almazLanguage.value = preferences.getString('almaz_language') ?? 'tg';
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    statusBarColor: almazLightMode.value ? const Color(0xFFF3F7F4) : bg,
+    statusBarIconBrightness: almazLightMode.value ? Brightness.dark : Brightness.light,
+    systemNavigationBarColor: almazLightMode.value ? const Color(0xFFF3F7F4) : bg,
+    systemNavigationBarIconBrightness: almazLightMode.value ? Brightness.dark : Brightness.light,
+  ));
+  runApp(const AlmazApp());
+}
 class AlmazApp extends StatelessWidget {
   const AlmazApp({super.key});
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
     valueListenable: almazLightMode,
-    builder: (context, light, _) => MaterialApp(
+    builder: (context, light, _) => ValueListenableBuilder<String>(
+      valueListenable: almazLanguage,
+      builder: (context, language, __) => MaterialApp(
       title: 'Almaz TJ',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -37,6 +51,7 @@ class AlmazApp extends StatelessWidget {
         fontFamily: 'Roboto',
       ),
       home: const AlmazSplash(),
+      ),
     ),
   );
 }
