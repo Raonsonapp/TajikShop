@@ -27,7 +27,7 @@ jobs:
           SPACE_URL: https://mahmadmurodov-tajikshop.hf.space
         run: |
           set -euo pipefail
-          echo "Checking Hugging Face Space: ${SPACE_URL}"
+          echo "Checking Hugging Face health endpoint: ${SPACE_URL}/health"
           for attempt in 1 2 3 4 5; do
             code="$(curl --location --silent --show-error \
               --output /tmp/space-response.txt \
