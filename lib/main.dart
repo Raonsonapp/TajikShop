@@ -373,7 +373,7 @@ const games = [
 
 const Map<String, String> almazCatalogPrices = {
   '110 алмаз':'8.71 с','341 алмаз':'26.95 с','572 алмаз':'40.70 с','1166 алмаз':'81.58 с','2398 алмаз':'155.90 с','6160 алмаз':'449.00 с',
-  'Ваучер Lite 90 алмаз':'4.50 с','Ваучери ҳафтагӣ 450 алмаз':'15.95 с','Ваучери моҳона 2600 алмаз':'59.90 с',
+  'Ваучер Lite 90 алмаз':'4.44 с','Ваучери ҳафтагӣ 450 алмаз':'15.95 с','Ваучери моҳона 2600 алмаз':'59.90 с',
   'Level Up Package 6':'5.95 с','Level Up Package 10':'8.92 с','Level Up Package 15':'8.92 с','Level Up Package 20':'8.92 с','Level Up Package 25':'8.92 с','Level Up Package 30':'10.90 с',
   '60 UC':'9.71 с','325 UC':'45.45 с','660 UC':'90.64 с','1800 UC':'223.55 с','3850 UC':'424.23 с','8100 UC':'872.20 с',
   'First Purchase Pack':'10.90 с','Prime (1 Month)':'10.90 с','Weekly Deal Pack 1':'10.90 с','60 WOW Coins':'11.40 с','Upgradable Firearm Materials Pack':'30.21 с','Prime (3 Months)':'30.21 с','Weekly Mythic Emblem Value Pack':'30.21 с','Weekly Deal Pack 2':'30.21 с','Mythic Emblem Pack':'49.02 с','325 WOW Coins':'51.99 с','Prime (6 Months)':'58.92 с','Elite Pass LV1-50':'58.92 с','Prime Plus (1 Month)':'97.03 с','660 WOW Coins':'102.97 с','Prime (12 Months)':'116.34 с','Elite Pass LV1-100':'118.81 с','1800 WOW Coins':'256.42 с','Elite Pass Plus LV1-100':'289.09 с','Prime Plus (3 Months)':'289.59 с','3850 WOW Coins':'511.35 с','Prime Plus (6 Months)':'577.68 с','8100 WOW Coins':'1021.69 с','Prime Plus (12 Months)':'1153.86 с',
@@ -460,13 +460,11 @@ class GameGrid extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1B211E), Color(0xFF0D1410)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            gradient: almazLightMode.value
+              ? const LinearGradient(colors: [Color(0xFFFFFFFF), Color(0xFFEAF3ED)], begin: Alignment.topLeft, end: Alignment.bottomRight)
+              : const LinearGradient(colors: [Color(0xFF1B211E), Color(0xFF0D1410)], begin: Alignment.topLeft, end: Alignment.bottomRight),
             borderRadius: BorderRadius.circular(21),
-            border: Border.all(color: Colors.white.withOpacity(.12)),
+            border: Border.all(color: almazLightMode.value ? const Color(0xFFD3E2D8) : Colors.white.withOpacity(.12)),
             boxShadow: [BoxShadow(color: game.color.withOpacity(.07), blurRadius: 17, offset: const Offset(0, 5))],
           ),
           child: Column(
@@ -785,7 +783,7 @@ class _WalletPageState extends State<WalletPage> {
                 {'name':'Ориёнбонк','domain':'orienbank.tj'},
               ].map((bank) => ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Container(width:42,height:42,padding:const EdgeInsets.all(7),decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(11)),child:_AlmazBankImage(domain:bank['domain']!,size:28),
+                leading: Container(width:42,height:42,padding:const EdgeInsets.all(7),decoration:BoxDecoration(color:almazLightMode.value ? const Color(0xFFEAF3ED) : Colors.white,borderRadius:BorderRadius.circular(11)),child:_AlmazBankImage(domain:bank['domain']!,size:28)),
                 title: Text(bank['name']!), trailing: const Icon(Icons.lock_outline, color: muted),
                 onTap: () => showDialog<void>(context: context, builder: (ctx) => AlertDialog(
                   title: Text(bank['name']!), content: const Text('Ин усули пардохт ҳоло аз ҷониби сервер фаъол карда нашудааст. Ҳоло маблағ нагузаронед.'),
