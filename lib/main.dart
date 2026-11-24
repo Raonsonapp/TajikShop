@@ -6,10 +6,10 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/almaz_api.dart';
 
-const bg=Color(0xFF050505), surface=Color(0xFF111111), green=Color(0xFF39FF14), lime=Color(0xFFB6FF38), muted=Color(0xFF9A9A9A), gold=Color(0xFFB6FF38);
+const bg=Color(0xFF111315), surface=Color(0xFF191C1F), green=Color(0xFF39FF72), lime=Color(0xFFB8FFCB), muted=Color(0xFFA1A1AA), gold=Color(0xFF39FF72);
 final ValueNotifier<bool> almazLightMode = ValueNotifier<bool>(false);
 final ValueNotifier<String> almazLanguage = ValueNotifier<String>('tg');
-Color get card => almazLightMode.value ? const Color(0xFFFFFFFF) : const Color(0xFF171717);
+Color get card => almazLightMode.value ? const Color(0xFFFFFFFF) : const Color(0xFF1B1E21);
 String tr(String key) {
   const words = <String, Map<String, String>>{
     'Дӯкон': {'ru':'Магазин','uz':'Do‘kon'},
@@ -160,91 +160,87 @@ class _AlmazSplashState extends State<AlmazSplash> {
 class AlmazHome extends StatefulWidget{const AlmazHome({super.key});@override State<AlmazHome> createState()=>_AlmazHomeState();}
 class _AlmazHomeState extends State<AlmazHome>{
   int tab=0;
-  final pages=const[HomePage(),WalletPage(),GamesPage(),OrdersPage(),ProfilePage()];
-  @override
-  Widget build(BuildContext c)=>Scaffold(
+  late final List<Widget> pages=[const HomePage(),const WalletPage(),const CartPage(),const OrdersPage(),const ProfilePage()];
+  @override Widget build(BuildContext c)=>Scaffold(
     body:SafeArea(child:IndexedStack(index:tab,children:pages)),
     bottomNavigationBar:GlassBottomNavigation(index:tab,onChanged:(v)=>setState(()=>tab=v)),
   );
 }
 class GlassBottomNavigation extends StatelessWidget {
-  final int index;
-  final ValueChanged<int> onChanged;
+  final int index; final ValueChanged<int> onChanged;
   const GlassBottomNavigation({super.key,required this.index,required this.onChanged});
-  @override
-  Widget build(BuildContext context) {
-    final labels=['Дӯкон','Баланс','Мағоза','Фармоишҳо','Профил'].map(tr).toList();
-    const icons=[Icons.home_rounded,Icons.account_balance_wallet_rounded,Icons.sports_esports_rounded,Icons.receipt_long_rounded,Icons.person_rounded];
-    return Padding(
-      padding:const EdgeInsets.fromLTRB(12,5,12,10),
-      child:ClipRRect(
-        borderRadius:BorderRadius.circular(28),
-        child:BackdropFilter(
-          filter:ImageFilter.blur(sigmaX:24,sigmaY:24),
-          child:Container(
-            height:76,
-            decoration:BoxDecoration(
-              color:const Color(0xFF252525).withOpacity(.82),
-              borderRadius:BorderRadius.circular(28),
-              border:Border.all(color:Colors.white.withOpacity(.30),width:1.2),
-              boxShadow:[BoxShadow(color:green.withOpacity(.08),blurRadius:24),BoxShadow(color:Colors.black.withOpacity(.35),blurRadius:18,offset:const Offset(0,7))],
-            ),
-            child:Row(children:List.generate(labels.length,(i)=>Expanded(
-              child:InkWell(
-                borderRadius:BorderRadius.circular(24),
-                onTap:()=>onChanged(i),
-                child:AnimatedContainer(
-                  duration:const Duration(milliseconds:260),
-                  curve:Curves.easeOutCubic,
-                  margin:const EdgeInsets.all(5),
-                  decoration:BoxDecoration(
-                    color:index==i?green.withOpacity(.16):Colors.transparent,
-                    borderRadius:BorderRadius.circular(22),
-                    border:index==i?Border.all(color:green.withOpacity(.48)):null,
-                    boxShadow:index==i?[BoxShadow(color:green.withOpacity(.13),blurRadius:14)]:[],
-                  ),
-                  child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
-                    AnimatedScale(scale:index==i?1.12:1,duration:const Duration(milliseconds:220),child:Icon(icons[i],size:22,color:index==i?green:Colors.white70)),
-                    const SizedBox(height:4),
-                    Text(labels[i],maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:9,fontWeight:FontWeight.w800,color:index==i?green:Colors.white70)),
-                  ]),
-                ),
-              ),
-            ))),
+  @override Widget build(BuildContext context) {
+    final labels=['Дӯкон','Баланс','Сабад','Фармоишҳо','Профил'].map(tr).toList();
+    const icons=[Icons.storefront_rounded,Icons.account_balance_wallet_rounded,Icons.shopping_bag_rounded,Icons.receipt_long_rounded,Icons.person_rounded];
+    return Padding(padding:const EdgeInsets.fromLTRB(12,5,12,10),child:ClipRRect(
+      borderRadius:BorderRadius.circular(26),
+      child:BackdropFilter(filter:ImageFilter.blur(sigmaX:28,sigmaY:28),child:Container(
+        height:74,
+        decoration:BoxDecoration(color:const Color(0xFF25292C).withOpacity(.92),borderRadius:BorderRadius.circular(26),border:Border.all(color:Colors.white.withOpacity(.18)),boxShadow:[BoxShadow(color:green.withOpacity(.09),blurRadius:28),BoxShadow(color:Colors.black.withOpacity(.38),blurRadius:20,offset:const Offset(0,7))]),
+        child:Row(children:List.generate(labels.length,(i)=>Expanded(child:InkWell(
+          borderRadius:BorderRadius.circular(22),onTap:()=>onChanged(i),
+          child:AnimatedContainer(duration:const Duration(milliseconds:240),curve:Curves.easeOutCubic,margin:const EdgeInsets.all(5),
+            decoration:BoxDecoration(color:index==i?green.withOpacity(.13):Colors.transparent,borderRadius:BorderRadius.circular(20),border:index==i?Border.all(color:green.withOpacity(.38)):null,boxShadow:index==i?[BoxShadow(color:green.withOpacity(.12),blurRadius:16)]:[]),
+            child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
+              AnimatedScale(scale:index==i?1.10:1,duration:const Duration(milliseconds:220),child:Icon(icons[i],size:21,color:index==i?green:Colors.white70)),
+              const SizedBox(height:4),Text(labels[i],maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:9,fontWeight:FontWeight.w800,color:index==i?green:Colors.white70)),
+            ]),
           ),
-        ),
-      ),
-    );
+        )))),
+      )),
+    ));
   }
 }
 class BrandHeader extends StatelessWidget {
   final bool showActions;
   const BrandHeader({super.key,this.showActions=true});
-  @override
-  Widget build(BuildContext c)=>Padding(
-    padding:const EdgeInsets.fromLTRB(17,13,17,12),
+  Future<void> _toggleTheme() async {
+    almazLightMode.value=!almazLightMode.value;
+    final p=await SharedPreferences.getInstance(); await p.setBool('almaz_light_mode',almazLightMode.value);
+  }
+  void _menu(BuildContext context)=>showModalBottomSheet<void>(
+    context:context,backgroundColor:const Color(0xFF202326),showDragHandle:true,
+    builder:(sheet)=>SafeArea(child:Column(mainAxisSize:MainAxisSize.min,children:[
+      const ListTile(title:Text('TAJ DONATE',style:TextStyle(fontWeight:FontWeight.w900,letterSpacing:1))),
+      ListTile(leading:const Icon(Icons.sports_esports_rounded,color:green),title:const Text('Ҳамаи бозиҳо'),onTap:(){Navigator.pop(sheet);Navigator.push(context,MaterialPageRoute(builder:(_)=>const GamesPage()));}),
+      ListTile(leading:const Icon(Icons.receipt_long_rounded,color:green),title:const Text('Фармоишҳо'),onTap:(){Navigator.pop(sheet);Navigator.push(context,MaterialPageRoute(builder:(_)=>const OrdersPage()));}),
+      ListTile(leading:const Icon(Icons.support_agent_rounded,color:green),title:const Text('Дастгирӣ'),onTap:(){Navigator.pop(sheet);Navigator.push(context,MaterialPageRoute(builder:(_)=>const ProfilePage()));}),
+      const SizedBox(height:8),
+    ])),
+  );
+  void _favorites(BuildContext context)=>showModalBottomSheet<void>(
+    context:context,backgroundColor:const Color(0xFF202326),showDragHandle:true,
+    builder:(_)=>const SafeArea(child:Padding(padding:EdgeInsets.fromLTRB(24,12,24,34),child:Column(mainAxisSize:MainAxisSize.min,children:[
+      Icon(Icons.favorite_border_rounded,color:green,size:34),SizedBox(height:12),
+      Text('Маҳсулоти писандида',style:TextStyle(fontSize:18,fontWeight:FontWeight.w900)),SizedBox(height:7),
+      Text('Маҳсулоти дӯстдоштаат дар ин қисмат нишон дода мешавад.',textAlign:TextAlign.center,style:TextStyle(color:muted,height:1.5)),
+    ]))),
+  );
+  @override Widget build(BuildContext c)=>Padding(
+    padding:const EdgeInsets.fromLTRB(16,10,12,12),
     child:Row(children:[
-      const AlmazMark(size:46),
-      const SizedBox(width:11),
-      const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        Text('TAJ DONATE',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900,letterSpacing:.5)),
-        Text('GAME TOP-UP • TAJIKISTAN',style:TextStyle(fontSize:8,color:muted,letterSpacing:1.15,fontWeight:FontWeight.bold)),
-      ])),
-      if(showActions) ValueListenableBuilder<int>(
-        valueListenable:AlmazCartStore.count,
-        builder:(context,total,_)=>Stack(clipBehavior:Clip.none,children:[
-          _GlassActionButton(icon:Icons.shopping_bag_outlined,onTap:()=>Navigator.of(c).push(MaterialPageRoute(builder:(_)=>const CartPage()))),
-          if(total>0)Positioned(right:-2,top:-3,child:Container(padding:const EdgeInsets.all(4),decoration:const BoxDecoration(color:green,shape:BoxShape.circle),child:Text(total>9?'9+':'$total',style:const TextStyle(color:bg,fontSize:8,fontWeight:FontWeight.w900)))),
-        ]),
-      ),
+      const AlmazMark(size:38),const SizedBox(width:10),
+      const Expanded(child:Text('TAJ DONATE',maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,letterSpacing:-.3))),
+      if(showActions)...[
+        _NexaHeaderIcon(icon:Icons.qr_code_scanner_rounded,tooltip:'Пайгирии фармоиш',onTap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>const OrdersPage()))),
+        _NexaHeaderIcon(icon:Icons.favorite_border_rounded,tooltip:'Писандидаҳо',onTap:()=>_favorites(c)),
+        ValueListenableBuilder<int>(valueListenable:AlmazCartStore.count,builder:(context,total,_)=>Stack(clipBehavior:Clip.none,children:[
+          _NexaHeaderIcon(icon:Icons.shopping_cart_outlined,tooltip:'Сабад',onTap:()=>Navigator.push(c,MaterialPageRoute(builder:(_)=>const CartPage()))),
+          if(total>0)Positioned(right:0,top:0,child:Container(width:15,height:15,alignment:Alignment.center,decoration:const BoxDecoration(color:green,shape:BoxShape.circle),child:Text(total>9?'9+':'$total',style:const TextStyle(color:bg,fontSize:8,fontWeight:FontWeight.w900)))),
+        ])),
+        ValueListenableBuilder<bool>(valueListenable:almazLightMode,builder:(context,light,_)=>_NexaHeaderIcon(icon:light?Icons.dark_mode_outlined:Icons.light_mode_outlined,tooltip:'Тағйири мавзӯъ',onTap:_toggleTheme)),
+        _NexaHeaderIcon(icon:Icons.menu_rounded,tooltip:'Меню',onTap:()=>_menu(c)),
+      ],
     ]),
   );
 }
-class _GlassActionButton extends StatelessWidget {
-  final IconData icon;final VoidCallback onTap;
-  const _GlassActionButton({required this.icon,required this.onTap});
-  @override
-  Widget build(BuildContext context)=>ClipOval(child:Material(color:Colors.white.withOpacity(.10),child:InkWell(onTap:onTap,child:Container(width:42,height:42,decoration:BoxDecoration(shape:BoxShape.circle,border:Border.all(color:Colors.white.withOpacity(.24))),child:Icon(icon,color:green,size:21)))));
+class _NexaHeaderIcon extends StatelessWidget {
+  final IconData icon; final String tooltip; final VoidCallback onTap;
+  const _NexaHeaderIcon({required this.icon,required this.tooltip,required this.onTap});
+  @override Widget build(BuildContext context)=>SizedBox(width:34,height:38,child:IconButton(
+    tooltip:tooltip,padding:EdgeInsets.zero,visualDensity:VisualDensity.compact,onPressed:onTap,
+    icon:Icon(icon,size:19,color:Colors.white.withOpacity(.88)),
+  ));
 }
 class AlmazMark extends StatelessWidget {
   final double size;
@@ -258,103 +254,92 @@ class AlmazMark extends StatelessWidget {
   );
 }
 class PageShell extends StatelessWidget{final String title,subtitle;final Widget child;const PageShell({super.key,required this.title,required this.subtitle,required this.child});@override Widget build(BuildContext c)=>Column(children:[BrandHeader(),Padding(padding:const EdgeInsets.fromLTRB(18,4,18,12),child:Row(children:[Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontSize:22,fontWeight:FontWeight.w900)),Text(subtitle,style:const TextStyle(color:muted,fontSize:11))]))])),Expanded(child:child)]);}
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const BrandHeader(),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 3, 16, 20),
-            children: [
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(23),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF063A1D), Color(0xFF0C1B11), Color(0xFF102919)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: green.withOpacity(.55)),
-                  boxShadow: [BoxShadow(color: green.withOpacity(.10), blurRadius: 24)],
-                ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: -5,
-                      top: 2,
-                      child: Icon(Icons.diamond, color: green.withOpacity(.16), size: 130),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: green.withOpacity(.14),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: const Text(
-                            'TAJ DONATE • OFFICIAL',
-                            style: TextStyle(color: green, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        const Text(
-                          'Бозии дӯстдоштаатро\nпурқувват кун!',
-                          style: TextStyle(fontSize: 25, height: 1.15, fontWeight: FontWeight.w900),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Донат ва ваучерҳои бозӣ — зуд, осон ва боэътимод',
-                          style: TextStyle(color: Colors.white70, fontSize: 11),
-                        ),
-                        const SizedBox(height: 17),
-                        FilledButton(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const GamesPage()),
-                          ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: green,
-                            foregroundColor: bg,
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          ),
-                          child: const Text('Интихоби бозӣ', style: TextStyle(fontWeight: FontWeight.w900)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              const ApiStatusCard(),
-              const SizedBox(height: 14),
-              const LiveProductsSection(),
-              const SizedBox(height: 22),
-              const SectionTitle('Бозиҳои маъмул', 'Ҳама'),
-              const SizedBox(height: 12),
-              const GameGrid(),
-              const SizedBox(height: 22),
-              const SectionTitle('Чаро TAJ DONATE?', ''),
-              const SizedBox(height: 10),
-              const Row(
-                children: [
-                  Benefit(icon: Icons.bolt, title: 'Зуд', sub: 'Коркарди фармоиш'),
-                  SizedBox(width: 8),
-                  Benefit(icon: Icons.verified_user_outlined, title: 'Эътимод', sub: 'Дастгирии муштарӣ'),
-                  SizedBox(width: 8),
-                  Benefit(icon: Icons.support_agent, title: 'Кӯмак', sub: 'Дастгирии онлайн'),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
+  @override State<HomePage> createState()=>_HomePageState();
+}
+class _HomePageState extends State<HomePage> {
+  final searchController=TextEditingController(); String query='';
+  @override void dispose(){searchController.dispose();super.dispose();}
+  @override Widget build(BuildContext context) {
+    final filtered=games.where((g)=>g.name.toLowerCase().contains(query.toLowerCase())).toList();
+    return Column(children:[
+      const BrandHeader(),
+      Expanded(child:ListView(padding:const EdgeInsets.fromLTRB(18,4,18,26),children:[
+        Container(padding:const EdgeInsets.fromLTRB(18,18,18,17),decoration:BoxDecoration(
+          color:const Color(0xFF1B1E21),borderRadius:BorderRadius.circular(20),
+          border:Border.all(color:Colors.white.withOpacity(.09)),
+          boxShadow:[BoxShadow(color:Colors.black.withOpacity(.22),blurRadius:24,offset:const Offset(0,10))],
+        ),child:Stack(children:[
+          Positioned(right:-12,top:-18,child:Container(width:150,height:150,decoration:BoxDecoration(shape:BoxShape.circle,gradient:RadialGradient(colors:[green.withOpacity(.15),Colors.transparent])))),
+          Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:6),decoration:BoxDecoration(color:green.withOpacity(.11),borderRadius:BorderRadius.circular(30),border:Border.all(color:green.withOpacity(.22))),child:const Text('GAME TOP-UP • TAJIKISTAN',style:TextStyle(color:green,fontSize:9,fontWeight:FontWeight.w800,letterSpacing:1))),
+            const SizedBox(height:15),const Text('Top up game,\nосон ва зуд.',style:TextStyle(fontSize:27,height:1.08,fontWeight:FontWeight.w800,letterSpacing:-.7)),
+            const SizedBox(height:8),const Text('Бозиро интихоб кун, номиналро ёб ва фармоишатро дар чанд қадам сабт намо.',style:TextStyle(color:muted,fontSize:12,height:1.55)),
+            const SizedBox(height:17),Row(children:[
+              FilledButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const GamesPage())),icon:const Icon(Icons.sports_esports_rounded,size:17),label:const Text('Ҳамаи бозиҳо'),style:FilledButton.styleFrom(backgroundColor:green,foregroundColor:bg,padding:const EdgeInsets.symmetric(horizontal:15,vertical:12),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(12)))),
+              const SizedBox(width:10),const Row(children:[Icon(Icons.verified_rounded,color:green,size:16),SizedBox(width:5),Text('TAJ DONATE',style:TextStyle(color:muted,fontSize:10,fontWeight:FontWeight.w700))]),
+            ]),
+          ]),
+        ])),
+        const SizedBox(height:20),
+        TextField(controller:searchController,onChanged:(v)=>setState(()=>query=v),style:const TextStyle(fontSize:13),decoration:InputDecoration(
+          hintText:'Бозӣ ё маҳсулотро ҷустуҷӯ кун…',hintStyle:const TextStyle(color:muted,fontSize:12),
+          prefixIcon:const Icon(Icons.search_rounded,color:muted,size:20),filled:true,fillColor:const Color(0xFF1B1E21),
+          contentPadding:const EdgeInsets.symmetric(vertical:13),
+          border:OutlineInputBorder(borderRadius:BorderRadius.circular(14),borderSide:BorderSide(color:Colors.white.withOpacity(.08))),
+          enabledBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(14),borderSide:BorderSide(color:Colors.white.withOpacity(.08))),
+          focusedBorder:OutlineInputBorder(borderRadius:BorderRadius.circular(14),borderSide:const BorderSide(color:green)),
+          suffixIcon:query.isEmpty?null:IconButton(onPressed:(){searchController.clear();setState(()=>query='');},icon:const Icon(Icons.close_rounded,color:muted,size:18)),
+        )),
+        const SizedBox(height:23),
+        Row(children:[const Expanded(child:Text('Бозиҳои интихобшуда',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,letterSpacing:-.3))),Text('${filtered.length}',style:const TextStyle(color:muted,fontSize:11,fontWeight:FontWeight.w700))]),
+        const SizedBox(height:12),
+        if(filtered.isEmpty) const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Center(child:Text('Бозӣ ёфт нашуд',style:TextStyle(color:muted))))
+        else SizedBox(height:154,child:ListView.separated(scrollDirection:Axis.horizontal,itemCount:filtered.length,separatorBuilder:(_,__)=>const SizedBox(width:10),itemBuilder:(context,index){
+          final game=filtered[index];
+          return InkWell(onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GameDetail(game:game))),borderRadius:BorderRadius.circular(15),
+            child:Container(width:132,padding:const EdgeInsets.all(13),decoration:BoxDecoration(color:const Color(0xFF1B1E21),borderRadius:BorderRadius.circular(15),border:Border.all(color:Colors.white.withOpacity(.09))),
+              child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[GameLogo(game:game,size:62),const Spacer(),Text(game.name,maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:12,fontWeight:FontWeight.w800)),const SizedBox(height:3),Text(game.sub,maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(color:muted,fontSize:9))]),
+            ),
+          );
+        })),
+        const SizedBox(height:23),const LiveProductsSection(),
+        const SizedBox(height:24),const Text('Чӣ тавр фармоиш додан?',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,letterSpacing:-.3)),
+        const SizedBox(height:11),
+        const _NexaStep(number:'01',title:'Бозиро интихоб кун',description:'Бозии лозимаро кушо ва номинали мувофиқро интихоб намо.'),
+        const _NexaStep(number:'02',title:'Маълумоти аккаунтро ворид кун',description:'ID-и бозингарро ворид карда, маълумотро санҷ.'),
+        const _NexaStep(number:'03',title:'Фармоишро тасдиқ кун',description:'Фармоишро сабт намо ва ҳолати онро дар қисмати фармоишҳо бин.'),
+        const SizedBox(height:22),const Text('Саволҳои маъмул',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,letterSpacing:-.3)),
+        const SizedBox(height:8),
+        const _NexaFaq(question:'Оё сабти ном лозим аст?',answer:'Барои баъзе хизматрасониҳо воридшавӣ лозим мешавад. Агар фармоиш ба ҳисоб пайваст бошад, аз профил ворид шав.'),
+        const _NexaFaq(question:'Фармоишро аз куҷо мебинам?',answer:'Ҳамаи фармоишҳои дастрас дар қисми «Фармоишҳо» нишон дода мешаванд.'),
+        const _NexaFaq(question:'Чӣ тавр бо дастгирӣ тамос гирам?',answer:'Аз профил қисмати дастгирии Telegram-ро кушо.'),
+        const SizedBox(height:14),const ApiStatusCard(),
+      ])),
+    ]);
   }
+}
+class _NexaStep extends StatelessWidget {
+  final String number,title,description;
+  const _NexaStep({required this.number,required this.title,required this.description});
+  @override Widget build(BuildContext context)=>Container(margin:const EdgeInsets.only(bottom:8),padding:const EdgeInsets.all(14),
+    decoration:BoxDecoration(color:const Color(0xFF1B1E21),borderRadius:BorderRadius.circular(14),border:Border.all(color:Colors.white.withOpacity(.08))),
+    child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(number,style:const TextStyle(color:green,fontSize:11,fontWeight:FontWeight.w800)),const SizedBox(width:13),
+      Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontSize:12,fontWeight:FontWeight.w800)),const SizedBox(height:5),Text(description,style:const TextStyle(color:muted,fontSize:11,height:1.45))])),
+    ]),
+  );
+}
+class _NexaFaq extends StatelessWidget {
+  final String question,answer;
+  const _NexaFaq({required this.question,required this.answer});
+  @override Widget build(BuildContext context)=>Theme(
+    data:Theme.of(context).copyWith(dividerColor:Colors.white.withOpacity(.08),colorScheme:Theme.of(context).colorScheme.copyWith(primary:green)),
+    child:ExpansionTile(tilePadding:const EdgeInsets.symmetric(horizontal:2),childrenPadding:const EdgeInsets.fromLTRB(12,0,12,14),
+      title:Text(question,style:const TextStyle(fontSize:12,fontWeight:FontWeight.w700)),iconColor:green,collapsedIconColor:muted,
+      children:[Align(alignment:Alignment.centerLeft,child:Text(answer,style:const TextStyle(color:muted,fontSize:11,height:1.55)))],
+    ),
+  );
 }
 class SectionTitle extends StatelessWidget{final String title,action;const SectionTitle(this.title,this.action,{super.key});@override Widget build(BuildContext c)=>Row(children:[Expanded(child:Text(title,style:const TextStyle(fontSize:16,fontWeight:FontWeight.w900))),if(action.isNotEmpty)Text(action,style:const TextStyle(color:green,fontSize:11,fontWeight:FontWeight.bold))]);}
 
