@@ -437,51 +437,38 @@ class GameGrid extends StatelessWidget {
   const GameGrid({super.key});
   @override
   Widget build(BuildContext context) => GridView.builder(
-    shrinkWrap: true,
-    physics: const NeverScrollableScrollPhysics(),
-    itemCount: games.length,
-    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 2,
-      mainAxisSpacing: 11,
-      crossAxisSpacing: 11,
-      childAspectRatio: 1.08,
+    shrinkWrap:true,
+    physics:const NeverScrollableScrollPhysics(),
+    itemCount:games.length,
+    gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount:2,mainAxisSpacing:12,crossAxisSpacing:12,childAspectRatio:1.12,
     ),
-    itemBuilder: (context, index) {
-      final game = games[index];
-      return InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GameDetail(game: game))),
-        borderRadius: BorderRadius.circular(21),
-        child: Container(
-          padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(
-            gradient: almazLightMode.value
-              ? const LinearGradient(colors: [Color(0xFFFFFFFF), Color(0xFFEAF3ED)], begin: Alignment.topLeft, end: Alignment.bottomRight)
-              : const LinearGradient(colors: [Color(0xFF1B211E), Color(0xFF0D1410)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-            borderRadius: BorderRadius.circular(21),
-            border: Border.all(color: almazLightMode.value ? const Color(0xFFD3E2D8) : Colors.white.withOpacity(.12)),
-            boxShadow: [BoxShadow(color: game.color.withOpacity(.07), blurRadius: 17, offset: const Offset(0, 5))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                GameLogo(game: game, size: 66),
-                const Spacer(),
-                Icon(Icons.arrow_outward_rounded, size: 17, color: game.color.withOpacity(.8)),
-              ]),
+    itemBuilder:(context,index){
+      final game=games[index];
+      return Material(
+        color:Colors.transparent,
+        child:InkWell(
+          onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>GameDetail(game:game))),
+          borderRadius:BorderRadius.circular(16),
+          child:Container(
+            padding:const EdgeInsets.all(14),
+            decoration:BoxDecoration(
+              color:const Color(0xFF1B1E21),
+              borderRadius:BorderRadius.circular(16),
+              border:Border.all(color:Colors.white.withOpacity(.09)),
+              boxShadow:[BoxShadow(color:Colors.black.withOpacity(.18),blurRadius:18,offset:const Offset(0,6))],
+            ),
+            child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+              Row(children:[GameLogo(game:game,size:58),const Spacer(),Icon(Icons.arrow_outward_rounded,size:16,color:muted.withOpacity(.8))]),
               const Spacer(),
-              Text(game.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
-              const SizedBox(height: 3),
-              Text(game.sub, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: muted, fontSize: 9)),
-              const SizedBox(height: 9),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                decoration: BoxDecoration(color: game.color.withOpacity(.13), borderRadius: BorderRadius.circular(20)),
-                child: Text('Бастаҳо  ›', style: TextStyle(color: game.color, fontSize: 10, fontWeight: FontWeight.w900)),
+              Text(game.name,maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:13)),
+              const SizedBox(height:4),
+              Text(game.sub,maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(color:muted,fontSize:9)),
+              const SizedBox(height:10),
+              Container(padding:const EdgeInsets.symmetric(horizontal:9,vertical:5),decoration:BoxDecoration(color:green.withOpacity(.10),borderRadius:BorderRadius.circular(20)),
+                child:const Text('Бастаҳо',style:TextStyle(color:green,fontSize:10,fontWeight:FontWeight.w700)),
               ),
-            ],
+            ]),
           ),
         ),
       );
@@ -750,8 +737,8 @@ class _WalletPageState extends State<WalletPage> {
           const SizedBox(height: 15),
           Container(height: 160, padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(22),
-              gradient: almazLightMode.value ? const LinearGradient(colors: [Color(0xFFDDF3E4), Color(0xFFC8E8D2), Color(0xFFB5DCC2)]) : const LinearGradient(colors: [Color(0xFF063F23), Color(0xFF122C1B), Color(0xFF25452B)]),
-              border: Border.all(color: green.withOpacity(.6))),
+              gradient: almazLightMode.value ? const LinearGradient(colors: [Color(0xFFE9F1EC), Color(0xFFDCE7E0)]) : const LinearGradient(colors: [Color(0xFF1B1E21), Color(0xFF252A2E)]),
+              border: Border.all(color: green.withOpacity(.24))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('БАЛАНСИ ШУМО', style: TextStyle(color: almazLightMode.value ? const Color(0xFF315B40) : Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
               const Spacer(),
@@ -911,7 +898,7 @@ class _ProfilePageState extends State<ProfilePage> {
       Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          gradient: almazLightMode.value ? const LinearGradient(colors: [Color(0xFFE4F3E9), Color(0xFFD4E9DA)]) : const LinearGradient(colors: [Color(0xFF103B23), Color(0xFF102017)]),
+          gradient: almazLightMode.value ? const LinearGradient(colors: [Color(0xFFF0F4F1), Color(0xFFE1E9E4)]) : const LinearGradient(colors: [Color(0xFF1B1E21), Color(0xFF252A2E)]),
           borderRadius: BorderRadius.circular(19),
           border: Border.all(color: green.withOpacity(.35)),
         ),
@@ -1232,7 +1219,7 @@ class _LiveProductsSectionState extends State<LiveProductsSection> {
                   decoration: BoxDecoration(
                     color: card,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: green.withOpacity(.22)),
+                    border: Border.all(color: Colors.white.withOpacity(.08)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
