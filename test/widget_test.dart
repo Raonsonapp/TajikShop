@@ -16,7 +16,7 @@ void main() {
     // Keep these labels aligned with the current five-tab navigation.
     expect(find.text('Дӯкон'), findsOneWidget);
     expect(find.text('Баланс'), findsOneWidget);
-    expect(find.text('Мағоза'), findsOneWidget);
+    expect(find.text('Сабад'), findsOneWidget);
     expect(find.text('Фармоишҳо'), findsOneWidget);
     expect(find.text('Профил'), findsOneWidget);
   });
