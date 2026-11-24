@@ -4,7 +4,7 @@
     <application
         android:label="TAJ DONATE"
         android:name="${applicationName}"
-        android:icon="@drawable/ic_almaz_launcher"
+        android:icon="@drawable/ic_taj_donate"
         android:allowBackup="false"
         android:fullBackupContent="false">
         <activity
