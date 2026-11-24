@@ -6,14 +6,25 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/almaz_api.dart';
 
-const bg=Color(0xFF050907), surface=Color(0xFF0C1710), green=Color(0xFF39FF72), lime=Color(0xFFB6FF38), muted=Color(0xFF91A69A), gold=Color(0xFFFFD65A);
+const bg=Color(0xFF050505), surface=Color(0xFF111111), green=Color(0xFF39FF14), lime=Color(0xFFB6FF38), muted=Color(0xFF9A9A9A), gold=Color(0xFFB6FF38);
 final ValueNotifier<bool> almazLightMode = ValueNotifier<bool>(false);
 final ValueNotifier<String> almazLanguage = ValueNotifier<String>('tg');
-Color get card => almazLightMode.value ? const Color(0xFFFFFFFF) : const Color(0xFF101F16);
+Color get card => almazLightMode.value ? const Color(0xFFFFFFFF) : const Color(0xFF171717);
 String tr(String key) {
   const words = <String, Map<String, String>>{
-    'Дӯкон': {'ru':'Магазин','en':'Store'}, 'Бозиҳо': {'ru':'Игры','en':'Games'}, 'Сабад': {'ru':'Корзина','en':'Cart'}, 'Фармоиш': {'ru':'Заказы','en':'Orders'}, 'Ҳамён': {'ru':'Кошелёк','en':'Wallet'}, 'Профил': {'ru':'Профиль','en':'Profile'},
-    'Баланс': {'ru':'Баланс','en':'Balance'}, 'Забон': {'ru':'Язык','en':'Language'}, 'Мавзӯи равшан': {'ru':'Светлая тема','en':'Light theme'}, 'Мавзӯи торик': {'ru':'Тёмная тема','en':'Dark theme'}, 'Огоҳиномаҳо': {'ru':'Уведомления','en':'Notifications'},
+    'Дӯкон': {'ru':'Магазин','uz':'Do‘kon'},
+    'Бозиҳо': {'ru':'Игры','uz':'O‘yinlar'},
+    'Мағоза': {'ru':'Магазин','uz':'Do‘kon'},
+    'Сабад': {'ru':'Корзина','uz':'Savat'},
+    'Фармоиш': {'ru':'Заказы','uz':'Buyurtmalar'},
+    'Фармоишҳо': {'ru':'Заказы','uz':'Buyurtmalar'},
+    'Ҳамён': {'ru':'Кошелёк','uz':'Hamyon'},
+    'Профил': {'ru':'Профиль','uz':'Profil'},
+    'Баланс': {'ru':'Баланс','uz':'Balans'},
+    'Забон': {'ru':'Язык','uz':'Til'},
+    'Мавзӯи равшан': {'ru':'Светлая тема','uz':'Yorug‘ mavzu'},
+    'Мавзӯи торик': {'ru':'Тёмная тема','uz':'Qorong‘i mavzu'},
+    'Огоҳиномаҳо': {'ru':'Уведомления','uz':'Bildirishnomalar'},
   };
   if (almazLanguage.value == 'tg') return key;
   return words[key]?[almazLanguage.value] ?? key;
@@ -39,7 +50,7 @@ class AlmazApp extends StatelessWidget {
     builder: (context, light, _) => ValueListenableBuilder<String>(
       valueListenable: almazLanguage,
       builder: (context, language, __) => MaterialApp(
-      title: 'Almaz TJ',
+      title: 'TAJ DONATE',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: light ? Brightness.light : Brightness.dark,
@@ -121,7 +132,7 @@ class _AlmazSplashState extends State<AlmazSplash> {
                   const AlmazMark(size: 174),
                   const SizedBox(height: 27),
                   const Text(
-                    'Almaz TJ',
+                    'TAJ DONATE',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 34,
@@ -147,128 +158,105 @@ class _AlmazSplashState extends State<AlmazSplash> {
 }
 
 class AlmazHome extends StatefulWidget{const AlmazHome({super.key});@override State<AlmazHome> createState()=>_AlmazHomeState();}
-class _AlmazHomeState extends State<AlmazHome>{int tab=0;final pages=const[HomePage(),GamesPage(),CartPage(),OrdersPage(),WalletPage(),ProfilePage()];@override Widget build(BuildContext c)=>Scaffold(body:SafeArea(child:IndexedStack(index:tab,children:pages)),bottomNavigationBar:GlassBottomNavigation(index:tab,onChanged:(v)=>setState(()=>tab=v)));}
+class _AlmazHomeState extends State<AlmazHome>{
+  int tab=0;
+  final pages=const[HomePage(),WalletPage(),GamesPage(),OrdersPage(),ProfilePage()];
+  @override
+  Widget build(BuildContext c)=>Scaffold(
+    body:SafeArea(child:IndexedStack(index:tab,children:pages)),
+    bottomNavigationBar:GlassBottomNavigation(index:tab,onChanged:(v)=>setState(()=>tab=v)),
+  );
+}
 class GlassBottomNavigation extends StatelessWidget {
   final int index;
   final ValueChanged<int> onChanged;
-
-  const GlassBottomNavigation({
-    super.key,
-    required this.index,
-    required this.onChanged,
-  });
-
+  const GlassBottomNavigation({super.key,required this.index,required this.onChanged});
   @override
   Widget build(BuildContext context) {
-    final labels = ['Дӯкон', 'Бозиҳо', 'Сабад', 'Фармоиш', 'Ҳамён', 'Профил'].map(tr).toList();
-    const icons = [
-      Icons.home_outlined,
-      Icons.sports_esports_outlined,
-      Icons.shopping_bag_outlined,
-      Icons.receipt_long_outlined,
-      Icons.account_balance_wallet_outlined,
-      Icons.person_outline_rounded,
-    ];
-
+    final labels=['Дӯкон','Баланс','Мағоза','Фармоишҳо','Профил'].map(tr).toList();
+    const icons=[Icons.home_rounded,Icons.account_balance_wallet_rounded,Icons.sports_esports_rounded,Icons.receipt_long_rounded,Icons.person_rounded];
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 5, 12, 10),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-          child: Container(
-            height: 75,
-            decoration: BoxDecoration(
-              color: const Color(0xFFB8C4BC).withOpacity(.13),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: Colors.white.withOpacity(.34),
-                width: 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.white.withOpacity(.09),
-                  blurRadius: 20,
-                  spreadRadius: 1,
-                ),
-                BoxShadow(
-                  color: Colors.black.withOpacity(.28),
-                  blurRadius: 18,
-                  offset: const Offset(0, 7),
-                ),
-              ],
+      padding:const EdgeInsets.fromLTRB(12,5,12,10),
+      child:ClipRRect(
+        borderRadius:BorderRadius.circular(28),
+        child:BackdropFilter(
+          filter:ImageFilter.blur(sigmaX:24,sigmaY:24),
+          child:Container(
+            height:76,
+            decoration:BoxDecoration(
+              color:const Color(0xFF252525).withOpacity(.82),
+              borderRadius:BorderRadius.circular(28),
+              border:Border.all(color:Colors.white.withOpacity(.30),width:1.2),
+              boxShadow:[BoxShadow(color:green.withOpacity(.08),blurRadius:24),BoxShadow(color:Colors.black.withOpacity(.35),blurRadius:18,offset:const Offset(0,7))],
             ),
-            child: Row(
-              children: List.generate(
-                labels.length,
-                (i) => Expanded(
-                  child: InkWell(
-                    onTap: () => onChanged(i),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      margin: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        color: index == i
-                            ? green.withOpacity(.17)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(25),
-                        border: index == i
-                            ? Border.all(color: green.withOpacity(.3))
-                            : null,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (i == 2)
-                            ValueListenableBuilder<int>(
-                              valueListenable: AlmazCartStore.count,
-                              builder: (context, total, _) => Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  Icon(icons[i], size: 23, color: index == i ? green : Colors.white),
-                                  if (total > 0)
-                                    Positioned(
-                                      right: -9, top: -7,
-                                      child: Container(
-                                        constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
-                                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                                        decoration: const BoxDecoration(color: green, shape: BoxShape.circle),
-                                        child: Text(total > 99 ? '99+' : '$total',
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(color: bg, fontSize: 8, fontWeight: FontWeight.w900)),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            )
-                          else
-                            Icon(icons[i], size: 23, color: index == i ? green : Colors.white),
-                          const SizedBox(height: 3),
-                          Text(
-                            labels[i],
-                            maxLines: 1,
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: index == i ? green : Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+            child:Row(children:List.generate(labels.length,(i)=>Expanded(
+              child:InkWell(
+                borderRadius:BorderRadius.circular(24),
+                onTap:()=>onChanged(i),
+                child:AnimatedContainer(
+                  duration:const Duration(milliseconds:260),
+                  curve:Curves.easeOutCubic,
+                  margin:const EdgeInsets.all(5),
+                  decoration:BoxDecoration(
+                    color:index==i?green.withOpacity(.16):Colors.transparent,
+                    borderRadius:BorderRadius.circular(22),
+                    border:index==i?Border.all(color:green.withOpacity(.48)):null,
+                    boxShadow:index==i?[BoxShadow(color:green.withOpacity(.13),blurRadius:14)]:[],
                   ),
+                  child:Column(mainAxisAlignment:MainAxisAlignment.center,children:[
+                    AnimatedScale(scale:index==i?1.12:1,duration:const Duration(milliseconds:220),child:Icon(icons[i],size:22,color:index==i?green:Colors.white70)),
+                    const SizedBox(height:4),
+                    Text(labels[i],maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(fontSize:9,fontWeight:FontWeight.w800,color:index==i?green:Colors.white70)),
+                  ]),
                 ),
               ),
-            ),
+            ))),
           ),
         ),
       ),
     );
   }
 }
-
-class BrandHeader extends StatelessWidget{final bool showActions;const BrandHeader({super.key,this.showActions=true});@override Widget build(BuildContext c)=>Padding(padding:const EdgeInsets.fromLTRB(17,13,17,12),child:Row(children:[const AlmazMark(size:48),const SizedBox(width:11),const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Almaz TJ',style:TextStyle(fontSize:20,fontWeight:FontWeight.w900,letterSpacing:.4)),Text('МАРКАЗИ ДОНОТИ БОЗИҲО',style:TextStyle(fontSize:9,color:muted,letterSpacing:1.3,fontWeight:FontWeight.bold))])),if(showActions)IconButton(onPressed:()=>{},icon:const Icon(Icons.notifications_none,color:green))]));}
-class AlmazMark extends StatelessWidget{final double size;const AlmazMark({super.key,this.size=54});@override Widget build(BuildContext c)=>Container(width:size,height:size,decoration:BoxDecoration(gradient:const LinearGradient(colors:[Color(0xFF1DFF65),Color(0xFF006B35)],begin:Alignment.topLeft,end:Alignment.bottomRight),borderRadius:BorderRadius.circular(size*.25),border:Border.all(color:green.withOpacity(.7)),boxShadow:[BoxShadow(color:green.withOpacity(.22),blurRadius:15)]),child:Stack(alignment:Alignment.center,children:[Icon(Icons.gamepad_rounded,color:Colors.white,size:size*.58),Positioned(top:size*.03,child:Icon(Icons.workspace_premium,color:gold,size:size*.27))]));}
+class BrandHeader extends StatelessWidget {
+  final bool showActions;
+  const BrandHeader({super.key,this.showActions=true});
+  @override
+  Widget build(BuildContext c)=>Padding(
+    padding:const EdgeInsets.fromLTRB(17,13,17,12),
+    child:Row(children:[
+      const AlmazMark(size:46),
+      const SizedBox(width:11),
+      const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text('TAJ DONATE',style:TextStyle(fontSize:19,fontWeight:FontWeight.w900,letterSpacing:.5)),
+        Text('GAME TOP-UP • TAJIKISTAN',style:TextStyle(fontSize:8,color:muted,letterSpacing:1.15,fontWeight:FontWeight.bold)),
+      ])),
+      if(showActions) ValueListenableBuilder<int>(
+        valueListenable:AlmazCartStore.count,
+        builder:(context,total,_)=>Stack(clipBehavior:Clip.none,children:[
+          _GlassActionButton(icon:Icons.shopping_bag_outlined,onTap:()=>Navigator.of(c).push(MaterialPageRoute(builder:(_)=>const CartPage()))),
+          if(total>0)Positioned(right:-2,top:-3,child:Container(padding:const EdgeInsets.all(4),decoration:const BoxDecoration(color:green,shape:BoxShape.circle),child:Text(total>9?'9+':'$total',style:const TextStyle(color:bg,fontSize:8,fontWeight:FontWeight.w900)))),
+        ]),
+      ),
+    ]),
+  );
+}
+class _GlassActionButton extends StatelessWidget {
+  final IconData icon;final VoidCallback onTap;
+  const _GlassActionButton({required this.icon,required this.onTap});
+  @override
+  Widget build(BuildContext context)=>ClipOval(child:Material(color:Colors.white.withOpacity(.10),child:InkWell(onTap:onTap,child:Container(width:42,height:42,decoration:BoxDecoration(shape:BoxShape.circle,border:Border.all(color:Colors.white.withOpacity(.24))),child:Icon(icon,color:green,size:21)))));
+}
+class AlmazMark extends StatelessWidget {
+  final double size;
+  const AlmazMark({super.key,this.size=54});
+  @override
+  Widget build(BuildContext c)=>Container(
+    width:size,height:size,
+    decoration:BoxDecoration(color:Colors.black,borderRadius:BorderRadius.circular(size*.23),border:Border.all(color:green.withOpacity(.8)),boxShadow:[BoxShadow(color:green.withOpacity(.18),blurRadius:15)]),
+    clipBehavior:Clip.antiAlias,
+    child:Image.asset('assets/brand/taj_donate_logo.webp',fit:BoxFit.cover,errorBuilder:(_,__,___)=>Center(child:Text('TD',style:TextStyle(color:green,fontSize:size*.35,fontWeight:FontWeight.w900)))),
+  );
+}
 class PageShell extends StatelessWidget{final String title,subtitle;final Widget child;const PageShell({super.key,required this.title,required this.subtitle,required this.child});@override Widget build(BuildContext c)=>Column(children:[BrandHeader(),Padding(padding:const EdgeInsets.fromLTRB(18,4,18,12),child:Row(children:[Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontSize:22,fontWeight:FontWeight.w900)),Text(subtitle,style:const TextStyle(color:muted,fontSize:11))]))])),Expanded(child:child)]);}
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -310,7 +298,7 @@ class HomePage extends StatelessWidget {
                             borderRadius: BorderRadius.circular(30),
                           ),
                           child: const Text(
-                            'ALMAZ TJ • OFFICIAL',
+                            'TAJ DONATE • OFFICIAL',
                             style: TextStyle(color: green, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
                           ),
                         ),
@@ -350,7 +338,7 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 12),
               const GameGrid(),
               const SizedBox(height: 22),
-              const SectionTitle('Чаро Almaz TJ?', ''),
+              const SectionTitle('Чаро TAJ DONATE?', ''),
               const SizedBox(height: 10),
               const Row(
                 children: [
@@ -784,7 +772,7 @@ class _WalletPageState extends State<WalletPage> {
               const Spacer(),
               Text(loading ? '…' : '$balance $currency', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: almazLightMode.value ? const Color(0xFF102017) : Colors.white)),
               const Spacer(),
-              Text('ALMAZ TJ • WALLET', style: const TextStyle(color: Color(0xFF00A94F), fontWeight: FontWeight.w900, fontSize: 10)),
+              Text('TAJ DONATE • WALLET', style: const TextStyle(color: Color(0xFF00A94F), fontWeight: FontWeight.w900, fontSize: 10)),
             ])),
           const SizedBox(height: 12),
           if (noToken) const Text('Барои дидани баланси воқеӣ ба ҳисоби худ ворид шав.', style: TextStyle(color: gold, fontSize: 11))
@@ -886,7 +874,7 @@ class _ProfilePageState extends State<ProfilePage> {
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(title: const Text('Тоҷикӣ'), trailing: almazLanguage.value == 'tg' ? const Icon(Icons.check,color:green) : null, onTap: () => Navigator.pop(ctx,'tg')),
         ListTile(title: const Text('Русский'), trailing: almazLanguage.value == 'ru' ? const Icon(Icons.check,color:green) : null, onTap: () => Navigator.pop(ctx,'ru')),
-        ListTile(title: const Text('English'), trailing: almazLanguage.value == 'en' ? const Icon(Icons.check,color:green) : null, onTap: () => Navigator.pop(ctx,'en')),
+        ListTile(title: const Text('O‘zbekcha'), trailing: almazLanguage.value == 'uz' ? const Icon(Icons.check,color:green) : null, onTap: () => Navigator.pop(ctx,'uz')),
       ]),
     ));
     if (selected == null) return;
@@ -894,6 +882,33 @@ class _ProfilePageState extends State<ProfilePage> {
     await p.setString('almaz_language', selected);
     almazLanguage.value = selected;
     if (mounted) setState(() {});
+  }
+  Future<void> _leaveReview() async {
+    final controller=TextEditingController();
+    int rating=5;
+    final result=await showDialog<bool>(context:context,builder:(ctx)=>StatefulBuilder(builder:(ctx,setDialog)=>AlertDialog(
+      title:const Text('Отзив гузоштан'),
+      content:Column(mainAxisSize:MainAxisSize.min,children:[
+        const Text('Ба TAJ DONATE чанд ситора медиҳӣ?'),
+        const SizedBox(height:10),
+        Row(mainAxisAlignment:MainAxisAlignment.center,children:List.generate(5,(i)=>IconButton(
+          onPressed:()=>setDialog(()=>rating=i+1),
+          icon:Icon(i<rating?Icons.star_rounded:Icons.star_outline_rounded,color:green,size:28),
+        ))),
+        TextField(controller:controller,maxLines:3,maxLength:500,decoration:const InputDecoration(hintText:'Назари худро нависед...',border:OutlineInputBorder())),
+      ]),
+      actions:[
+        TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Бекор')),
+        FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Нигоҳ доштан')),
+      ],
+    )));
+    if(result!=true||controller.text.trim().isEmpty){controller.dispose();return;}
+    final prefs=await SharedPreferences.getInstance();
+    final list=prefs.getStringList('taj_donate_reviews')??<String>[];
+    list.insert(0,jsonEncode({'rating':rating,'text':controller.text.trim(),'created_at':DateTime.now().toIso8601String()}));
+    await prefs.setStringList('taj_donate_reviews',list);
+    controller.dispose();
+    if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Отзив дар телефон нигоҳ дошта шуд. Барои фиристодан ба сервер API лозим аст.')));
   }
   Future<void> _toggleNotifications(bool value) async {
     final p = await SharedPreferences.getInstance();
@@ -919,7 +934,7 @@ class _ProfilePageState extends State<ProfilePage> {
           const AlmazMark(size: 58), const SizedBox(width: 13),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(displayName, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
-            const Text('Профили Almaz TJ', style: TextStyle(color: Colors.white70, fontSize: 11)),
+            const Text('Профили TAJ DONATE', style: TextStyle(color: Colors.white70, fontSize: 11)),
           ])),
           IconButton(onPressed: _editName, icon: const Icon(Icons.edit_outlined, color: green)),
         ]),
@@ -949,9 +964,10 @@ class _ProfilePageState extends State<ProfilePage> {
       const SizedBox(height: 12),
       const SectionTitle('ДАСТГИРӢ', ''),
       const SizedBox(height: 8),
-      ProfileRow(icon: Icons.support_agent, title: 'Маркази кӯмак', onTap: () => _info('Дастгирӣ', 'Барои гирифтани кӯмак ба масъули Almaz TJ муроҷиат намо.')),
+      ProfileRow(icon: Icons.support_agent, title: 'Дастгирии Telegram', onTap: () => _info('Telegram дастгирӣ', 'Линки расмии Telegram-и дастгириро илова кардан лозим аст.')),
+      ProfileRow(icon: Icons.star_outline_rounded, title: 'Отзив гузоштан', onTap: _leaveReview),
       ProfileRow(icon: Icons.privacy_tip_outlined, title: 'Махфият', onTap: () => _info('Махфият', 'Сиёсати махфият аз сервер дастрас мешавад.')),
-      ProfileRow(icon: Icons.info_outline, title: 'Дар бораи Almaz TJ', onTap: () => _info('Almaz TJ', 'Платформаи хизматрасониҳои рақамии бозӣ.')),
+      ProfileRow(icon: Icons.info_outline, title: 'Дар бораи TAJ DONATE', onTap: () => _info('TAJ DONATE', 'Платформаи хизматрасониҳои рақамии бозӣ.')),
     ]),
   );
 }
@@ -1008,7 +1024,7 @@ class _ApiStatusCardState extends State<ApiStatusCard> {
           const SizedBox(width: 11),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 12)),
-            const Text('Almaz TJ • API', style: TextStyle(color: muted, fontSize: 10)),
+            const Text('TAJ DONATE • API', style: TextStyle(color: muted, fontSize: 10)),
           ])),
           IconButton(
             tooltip: 'Аз нав санҷидан',
@@ -1318,7 +1334,7 @@ class _AuthPageState extends State<AuthPage> {
       padding: const EdgeInsets.all(22),
       child: Form(key: _formKey, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const AlmazMark(size: 76), const SizedBox(height: 18),
-        Text(_register ? 'Ҳисоби нав соз' : 'Ба Almaz TJ ворид шав', textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+        Text(_register ? 'Ҳисоби нав соз' : 'Ба TAJ DONATE ворид шав', textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
         const SizedBox(height: 22),
         if (_register) ...[
           TextFormField(controller: _name, decoration: const InputDecoration(labelText: 'Ном', prefixIcon: Icon(Icons.person_outline)), validator: (v) => (v == null || v.trim().isEmpty) ? 'Номро ворид кун' : null),
