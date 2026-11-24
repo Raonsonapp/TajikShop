@@ -1,0 +1,3 @@
+part of '../../main.dart';
+
+class GamesPage extends StatelessWidget{const GamesPage({super.key});@override Widget build(BuildContext c)=>PageShell(title:'Бозиҳо',subtitle:'Бозиро интихоб намо ва бастаҳои дастрасро бин',child:ListView(padding:const EdgeInsets.all(16),children:[const GameGrid(),const SizedBox(height:18),Container(padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:card,borderRadius:BorderRadius.circular(14)),child:const Text('Барои фармоиш ID-и бозингарро дуруст ворид намо. Пеш аз пардохт маълумоти фармоишро санҷ.',style:TextStyle(color:muted,fontSize:11,height:1.5)))]));}
