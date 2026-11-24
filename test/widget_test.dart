@@ -2,20 +2,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:almaz_tj/main.dart';
 
 void main() {
-  testWidgets('Almaz TJ splash and five-tab home render', (tester) async {
+  testWidgets('TAJ DONATE splash and five-tab navigation render', (tester) async {
     await tester.pumpWidget(const AlmazApp());
-    expect(find.text('Almaz TJ'), findsOneWidget);
+
+    // The splash screen was rebranded from Almaz TJ to TAJ DONATE.
+    expect(find.text('TAJ DONATE'), findsOneWidget);
 
     // Advance past the splash timer and finish the route transition.
-    // Do not use pumpAndSettle: the app contains an indeterminate loader
-    // and other animations that are intentionally never fully idle.
+    // Do not use pumpAndSettle: the app contains animations that may remain active.
     await tester.pump(const Duration(milliseconds: 1800));
     await tester.pump(const Duration(milliseconds: 400));
 
+    // Keep these labels aligned with the current five-tab navigation.
     expect(find.text('Дӯкон'), findsOneWidget);
-    expect(find.text('Бозиҳо'), findsOneWidget);
-    expect(find.text('Фармоиш'), findsOneWidget);
-    expect(find.text('Ҳамён'), findsOneWidget);
+    expect(find.text('Баланс'), findsOneWidget);
+    expect(find.text('Мағоза'), findsOneWidget);
+    expect(find.text('Фармоишҳо'), findsOneWidget);
     expect(find.text('Профил'), findsOneWidget);
   });
 }
