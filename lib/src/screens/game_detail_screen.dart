@@ -84,7 +84,7 @@ class _GameDetailState extends State<GameDetail> {
                         ],
                       ),
                     ),
-                    Icon(isSelected ? HeroiconsOutline.checkCircle : HeroiconsOutline.circle, color: green),
+                    Icon(isSelected ? HeroiconsOutline.checkCircle : HeroiconsOutline.minusCircle, color: green),
                   ],
                 ),
               ),
