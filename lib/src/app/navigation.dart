@@ -21,7 +21,7 @@ class GlassBottomNavigation extends StatelessWidget {
       borderRadius:BorderRadius.circular(26),
       child:BackdropFilter(filter:ImageFilter.blur(sigmaX:28,sigmaY:28),child:Container(
         height:74,
-        decoration:BoxDecoration(color:const Color(0xFF25292C).withOpacity(.92),borderRadius:BorderRadius.circular(26),border:Border.all(color:Colors.white.withOpacity(.18)),boxShadow:[BoxShadow(color:green.withOpacity(.09),blurRadius:28),BoxShadow(color:Colors.black.withOpacity(.38),blurRadius:20,offset:const Offset(0,7))]),
+        decoration:BoxDecoration(color:const Color(0xFF0B2B26).withOpacity(.90),borderRadius:BorderRadius.circular(26),border:Border.all(color:Colors.white.withOpacity(.18)),boxShadow:[BoxShadow(color:green.withOpacity(.09),blurRadius:28),BoxShadow(color:Colors.black.withOpacity(.38),blurRadius:20,offset:const Offset(0,7))]),
         child:Row(children:List.generate(labels.length,(i)=>Expanded(child:InkWell(
           borderRadius:BorderRadius.circular(22),onTap:()=>onChanged(i),
           child:AnimatedContainer(duration:const Duration(milliseconds:240),curve:Curves.easeOutCubic,margin:const EdgeInsets.all(5),
