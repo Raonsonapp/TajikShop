@@ -147,7 +147,7 @@ class _HomePageState extends State<HomePage> {
                     const Spacer(),
                     Row(children: [
                       Expanded(child: Text(price, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900))),
-                      Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFF4D9B7C), shape: BoxShape.circle), child: const Icon(HeroiconsOutline.shoppingCart, size: 18, color: Colors.white)),
+                      Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFF4D9B7C), shape: BoxShape.circle), child: const Icon(HeroiconsOutline.shoppingBag, size: 18, color: Colors.white)),
                     ]),
                   ]),
                 ),
