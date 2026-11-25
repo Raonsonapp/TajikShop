@@ -1,10 +1,18 @@
 part of '../../main.dart';
 
-class GameDetail extends StatefulWidget{final Game game;const GameDetail({super.key,required this.game});@override State<GameDetail> createState()=>_GameDetailState();}
+class GameDetail extends StatefulWidget{final Game game;final int initialPackIndex;const GameDetail({super.key,required this.game,this.initialPackIndex=-1});@override State<GameDetail> createState()=>_GameDetailState();}
 
 class _GameDetailState extends State<GameDetail> {
   int selected = -1;
   final player = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialPackIndex >= 0 && widget.initialPackIndex < widget.game.packs.length) {
+      selected = widget.initialPackIndex;
+    }
+  }
   @override
   void dispose() { player.dispose(); super.dispose(); }
 

@@ -128,7 +128,7 @@ class _HomePageState extends State<HomePage> {
               final price = almazCatalogPrices[name] ?? 'Нарх дастрас нест';
               final isDiamond = name.contains('алмаз');
               return InkWell(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GameDetail(game: games.first))),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GameDetail(game: games.first, initialPackIndex: games.first.packs.indexOf(name)))),
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding: const EdgeInsets.all(13),
