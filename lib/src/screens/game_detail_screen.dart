@@ -67,13 +67,13 @@ class _GameDetailState extends State<GameDetail> {
                 margin: const EdgeInsets.only(bottom: 9),
                 padding: const EdgeInsets.all(15),
                 decoration: BoxDecoration(
-                  color: isSelected ? game.color.withOpacity(.14) : card,
+                  color: isSelected ? green.withOpacity(.16) : card,
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: isSelected ? game.color : Colors.white12),
+                  border: Border.all(color: isSelected ? green : Colors.white12),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.diamond, color: game.color),
+                    const DiamondGemIcon(size: 27),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -84,7 +84,7 @@ class _GameDetailState extends State<GameDetail> {
                         ],
                       ),
                     ),
-                    Icon(isSelected ? Icons.radio_button_checked : Icons.radio_button_off, color: game.color),
+                    Icon(isSelected ? HeroiconsOutline.checkCircle : HeroiconsOutline.circle, color: green),
                   ],
                 ),
               ),
