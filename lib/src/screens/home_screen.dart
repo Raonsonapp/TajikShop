@@ -37,8 +37,8 @@ class _HomePageState extends State<HomePage> {
             decoration: InputDecoration(
               hintText: 'Бозӣ ё маҳсулотро ҷустуҷӯ кун…',
               hintStyle: const TextStyle(color: muted, fontSize: 12),
-              prefixIcon: const Icon(Icons.search_rounded, color: muted, size: 20),
-              filled: true, fillColor: const Color(0xFF101A16),
+              prefixIcon: const Icon(HeroiconsOutline.magnifyingGlass, color: muted, size: 20),
+              filled: true, fillColor: const Color(0xFF10231E),
               contentPadding: const EdgeInsets.symmetric(vertical: 13),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: Colors.white.withOpacity(.08))),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide(color: Colors.white.withOpacity(.08))),
@@ -75,7 +75,7 @@ class _HomePageState extends State<HomePage> {
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(8, 12, 8, 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF101A16),
+                      color: const Color(0xFF10231E),
                       borderRadius: BorderRadius.circular(19),
                       border: Border.all(color: Colors.white.withOpacity(.10)),
                       boxShadow: [BoxShadow(color: green.withOpacity(.055), blurRadius: 15)],
@@ -86,7 +86,7 @@ class _HomePageState extends State<HomePage> {
                       Text(game.name, maxLines: 2, textAlign: TextAlign.center, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, height: 1.15, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 7),
                       if (firstPrice.isNotEmpty)
-                        Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: const Color(0xFF102D4B), borderRadius: BorderRadius.circular(20)), child: Text('аз $firstPrice', maxLines: 1, style: const TextStyle(color: Color(0xFF55A9FF), fontSize: 9, fontWeight: FontWeight.w900)))
+                        Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: const Color(0xFF1B4437), borderRadius: BorderRadius.circular(20)), child: Text('аз $firstPrice', maxLines: 1, style: const TextStyle(color: Color(0xFFB8D9C9), fontSize: 9, fontWeight: FontWeight.w900)))
                       else
                         Text(game.sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: muted, fontSize: 9)),
                     ]),
@@ -112,8 +112,8 @@ class _HomePageState extends State<HomePage> {
               onSelected: (_) => setState(() => category = value),
               showCheckmark: false,
               labelStyle: TextStyle(color: selected ? Colors.white : Colors.white70, fontSize: 12, fontWeight: FontWeight.w800),
-              selectedColor: const Color(0xFF253B34),
-              backgroundColor: const Color(0xFF15191B),
+              selectedColor: const Color(0xFF1B4437),
+              backgroundColor: const Color(0xFF10231E),
               side: BorderSide(color: selected ? green.withOpacity(.55) : Colors.white10),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             );
@@ -139,7 +139,7 @@ class _HomePageState extends State<HomePage> {
                     boxShadow: [BoxShadow(color: Colors.black.withOpacity(.25), blurRadius: 14, offset: const Offset(0, 6))],
                   ),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Icon(isDiamond ? Icons.diamond_rounded : (name.toLowerCase().contains('level') ? Icons.trending_up_rounded : Icons.confirmation_number_rounded), color: isDiamond ? const Color(0xFF36BFFF) : const Color(0xFFFF4C9A), size: 29),
+                    isDiamond ? const DiamondGemIcon(size: 32) : Icon(name.toLowerCase().contains('level') ? HeroiconsOutline.chartBar : HeroiconsOutline.ticket, color: green, size: 29),
                     const Spacer(),
                     Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, height: 1.15, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 3),
@@ -147,7 +147,7 @@ class _HomePageState extends State<HomePage> {
                     const Spacer(),
                     Row(children: [
                       Expanded(child: Text(price, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900))),
-                      Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFF168BFF), shape: BoxShape.circle), child: const Icon(Icons.shopping_cart_outlined, size: 18, color: Colors.white)),
+                      Container(width: 36, height: 36, decoration: const BoxDecoration(color: Color(0xFF4D9B7C), shape: BoxShape.circle), child: const Icon(HeroiconsOutline.shoppingBag, size: 18, color: Colors.white)),
                     ]),
                   ]),
                 ),
@@ -178,12 +178,12 @@ class _HomeQuickActions extends StatelessWidget {
   final ValueChanged<int> onTap;
   const _HomeQuickActions({required this.onTap});
   @override Widget build(BuildContext context) {
-    const items = [(Icons.grid_view_rounded, 'Ҳамааш'), (Icons.credit_card_rounded, 'SmartPay'), (Icons.verified_rounded, 'Исбот'), (Icons.help_outline_rounded, 'Чӣ тавр?')];
+    const items = [(HeroiconsOutline.squares2x2, 'Ҳамааш'), (HeroiconsOutline.creditCard, 'SmartPay'), (HeroiconsOutline.checkBadge, 'Исбот'), (HeroiconsOutline.questionMarkCircle, 'Чӣ тавр?')];
     return SizedBox(height: 104, child: Row(children: List.generate(items.length, (i) => Expanded(child: InkWell(
       onTap: () => onTap(i == 0 ? 0 : i == 1 ? 1 : i == 2 ? 2 : 3),
       borderRadius: BorderRadius.circular(18),
       child: Column(children: [
-        Container(width: 62, height: 62, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF101A16), border: Border.all(color: const Color(0xFF278BFF), width: 2), boxShadow: [BoxShadow(color: const Color(0xFF168BFF).withOpacity(.16), blurRadius: 13)]), child: Icon(items[i].$1, color: const Color(0xFF65B7FF), size: 29)),
+        Container(width: 62, height: 62, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF10231E), border: Border.all(color: const Color(0xFF4D9B7C), width: 2), boxShadow: [BoxShadow(color: const Color(0xFF4D9B7C).withOpacity(.16), blurRadius: 13)]), child: Icon(items[i].$1, color: const Color(0xFFB8D9C9), size: 29)),
         const SizedBox(height: 7), Text(items[i].$2, maxLines: 1, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800)),
       ]),
     )))));
@@ -206,7 +206,7 @@ class _FreeFireHero extends StatelessWidget {
       child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Spacer(),
         Row(children: [
-          Container(width: 48, height: 48, padding: const EdgeInsets.all(5), decoration: BoxDecoration(color: Colors.black.withOpacity(.65), borderRadius: BorderRadius.circular(13)), child: Image.asset('assets/logo/Free_Fire.png', fit: BoxFit.contain)),
+          SizedBox(width: 48, height: 48, child: Image.asset('assets/logo/Free_Fire.png', fit: BoxFit.contain)),
           const SizedBox(width: 12),
           const Expanded(child: Text('Free Fire СНГ', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900))),
         ]),
@@ -216,7 +216,7 @@ class _FreeFireHero extends StatelessWidget {
         Row(children: [
           Container(padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8), decoration: BoxDecoration(color: Colors.black.withOpacity(.42), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white24)), child: const Text('аз 8,71 TJS', style: TextStyle(fontWeight: FontWeight.w800))),
           const SizedBox(width: 9),
-          Container(padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 9), decoration: BoxDecoration(color: const Color(0xFF168BFF), borderRadius: BorderRadius.circular(30)), child: const Text('Харидан', style: TextStyle(fontWeight: FontWeight.w900))),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 9), decoration: BoxDecoration(color: const Color(0xFF4D9B7C), borderRadius: BorderRadius.circular(30)), child: const Text('Харидан', style: TextStyle(fontWeight: FontWeight.w900))),
         ]),
       ])),
     ),
@@ -232,7 +232,7 @@ class _VipBanner extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(colors: [Color(0xFF0B2B26), Color(0xFF155D4A), Color(0xFF123A65)]),
+        gradient: const LinearGradient(colors: [Color(0xFF0B2B26), Color(0xFF155D4A), Color(0xFF10231E)]),
         border: Border.all(color: Colors.white.withOpacity(.12)),
       ),
       child: const Row(children: [
@@ -273,9 +273,9 @@ class _BenefitTile extends StatelessWidget {
   const _BenefitTile({required this.icon, required this.title, required this.sub});
   @override Widget build(BuildContext context) => Container(
     height: 112, padding: const EdgeInsets.all(13),
-    decoration: BoxDecoration(color: const Color(0xFF111A16), borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white.withOpacity(.08))),
+    decoration: BoxDecoration(color: const Color(0xFF10231E), borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white.withOpacity(.08))),
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(icon, color: const Color(0xFF58AFFF), size: 29), const SizedBox(height: 6),
+      Icon(icon, color: const Color(0xFF4D9B7C), size: 29), const SizedBox(height: 6),
       Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
       const SizedBox(height: 3), Text(sub, textAlign: TextAlign.center, style: const TextStyle(color: muted, fontSize: 9)),
     ]),
@@ -286,7 +286,7 @@ class _ReviewCard extends StatelessWidget {
   const _ReviewCard();
   @override Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: const Color(0xFF171A1D), borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white.withOpacity(.08))),
+    decoration: BoxDecoration(color: const Color(0xFF10231E), borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white.withOpacity(.08))),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
       Text('★★★★★', style: TextStyle(color: Color(0xFFFFC928), fontSize: 17, letterSpacing: 2)),
       SizedBox(height: 9),
@@ -301,7 +301,7 @@ class _NexaStep extends StatelessWidget {
   const _NexaStep({required this.number, required this.title, required this.description});
   @override Widget build(BuildContext context) => Container(
     margin: const EdgeInsets.only(bottom: 8), padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(color: const Color(0xFF111A16), borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.white.withOpacity(.08))),
+    decoration: BoxDecoration(color: const Color(0xFF10231E), borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.white.withOpacity(.08))),
     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(number, style: const TextStyle(color: green, fontSize: 12, fontWeight: FontWeight.w900)),
       const SizedBox(width: 13),

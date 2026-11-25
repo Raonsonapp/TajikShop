@@ -2,6 +2,8 @@ name: Almaz TJ Android Build
 
 on:
   push:
+    branches: [ main, 'design/taj-donate-forest-glass' ]
+  pull_request:
     branches: [ main ]
   workflow_dispatch:
 

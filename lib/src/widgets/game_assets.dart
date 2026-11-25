@@ -32,18 +32,9 @@ class GameLogo extends StatelessWidget {
   final double size;
   const GameLogo({super.key, required this.game, this.size = 76});
   @override
-  Widget build(BuildContext context) => Container(
-    width: size, height: size, padding: const EdgeInsets.all(6),
-    decoration: BoxDecoration(
-      color: const Color(0xFF07110D),
-      borderRadius: BorderRadius.circular(size * .27),
-      border: Border.all(color: const Color(0xFF278BFF).withOpacity(.85), width: 1.4),
-      boxShadow: [
-        BoxShadow(color: const Color(0xFF168BFF).withOpacity(.20), blurRadius: 16),
-        BoxShadow(color: green.withOpacity(.08), blurRadius: 12),
-      ],
-    ),
-    child: ClipRRect(borderRadius: BorderRadius.circular(size * .21), child: _AlmazBrandImage(game: game, size: size - 12)),
+  Widget build(BuildContext context) => SizedBox(
+    width: size, height: size,
+    child: _AlmazBrandImage(game: game, size: size),
   );
 }
 
@@ -64,7 +55,7 @@ class GameGrid extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF101A16),
+              color: const Color(0xFF10231E),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: Colors.white.withOpacity(.10)),
               boxShadow: [BoxShadow(color: green.withOpacity(.06), blurRadius: 18, offset: const Offset(0, 6))],
@@ -149,4 +140,42 @@ class _AlmazBankImage extends StatelessWidget {
       color: green,
     ),
   );
+}
+
+
+class DiamondGemIcon extends StatelessWidget {
+  final double size;
+  const DiamondGemIcon({super.key, this.size = 30});
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: size, height: size,
+    child: CustomPaint(painter: _DiamondGemPainter()),
+  );
+}
+
+class _DiamondGemPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final path = Path()
+      ..moveTo(w * .22, h * .12)
+      ..lineTo(w * .78, h * .12)
+      ..lineTo(w * .98, h * .40)
+      ..lineTo(w * .50, h * .94)
+      ..lineTo(w * .02, h * .40)
+      ..close();
+    final paint = Paint()..shader = const LinearGradient(
+      begin: Alignment.topLeft, end: Alignment.bottomRight,
+      colors: [Color(0xFFB8D9C9), Color(0xFF4D9B7C), Color(0xFF1E604B)],
+    ).createShader(Offset.zero & size);
+    canvas.drawPath(path, paint);
+    final facets = Paint()..color = Colors.white.withOpacity(.25);
+    final left = Path()..moveTo(w*.22,h*.12)..lineTo(w*.50,h*.12)..lineTo(w*.50,h*.94)..lineTo(w*.02,h*.40)..close();
+    final right = Path()..moveTo(w*.50,h*.12)..lineTo(w*.78,h*.12)..lineTo(w*.98,h*.40)..lineTo(w*.50,h*.94)..close();
+    canvas.drawPath(left, facets);
+    canvas.drawPath(right, Paint()..color = const Color(0xFF0B2B26).withOpacity(.16));
+    canvas.drawPath(path, Paint()..style=PaintingStyle.stroke..strokeWidth=1.1..color=Colors.white.withOpacity(.35));
+  }
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
