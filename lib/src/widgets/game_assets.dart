@@ -99,3 +99,54 @@ class Benefit extends StatelessWidget {
     ]),
   ));
 }
+
+
+class SectionTitle extends StatelessWidget {
+  final String title;
+  final String trailing;
+  const SectionTitle(this.title, this.trailing, {super.key});
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            letterSpacing: .55,
+          ),
+        ),
+      ),
+      if (trailing.isNotEmpty)
+        Text(
+          trailing,
+          style: const TextStyle(
+            color: green,
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+    ],
+  );
+}
+
+class _AlmazBankImage extends StatelessWidget {
+  final String domain;
+  final double size;
+  const _AlmazBankImage({required this.domain, required this.size});
+
+  @override
+  Widget build(BuildContext context) => Image.network(
+    'https://www.google.com/s2/favicons?domain=$domain&sz=128',
+    width: size,
+    height: size,
+    fit: BoxFit.contain,
+    errorBuilder: (_, __, ___) => Icon(
+      Icons.account_balance_rounded,
+      size: size,
+      color: green,
+    ),
+  );
+}
