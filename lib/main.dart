@@ -27,7 +27,7 @@ part 'src/screens/cart_screen.dart';
 part 'src/widgets/live_products_section.dart';
 part 'src/screens/auth_screen.dart';
 
-const bg=Color(0xFF111315), surface=Color(0xFF191C1F), green=Color(0xFF39FF72), lime=Color(0xFFB8FFCB), muted=Color(0xFFA1A1AA), gold=Color(0xFF39FF72);
+const bg=Color(0xFF050807), surface=Color(0xFF0B2B26), green=Color(0xFF39FF72), lime=Color(0xFFB8FFCB), muted=Color(0xFFA1A1AA), gold=Color(0xFF39FF72);
 final ValueNotifier<bool> almazLightMode = ValueNotifier<bool>(false);
 final ValueNotifier<String> almazLanguage = ValueNotifier<String>('tg');
 Color get card => almazLightMode.value ? const Color(0xFFFFFFFF) : const Color(0xFF1B1E21);
