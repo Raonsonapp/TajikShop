@@ -19,3 +19,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/brand/taj_donate_logo.webp
+    - assets/logo/
