@@ -14,9 +14,12 @@ class AlmazApp extends StatelessWidget {
         brightness: light ? Brightness.light : Brightness.dark,
         scaffoldBackgroundColor: light ? const Color(0xFFF3F7F4) : bg,
         colorScheme: light
-          ? ColorScheme.fromSeed(seedColor: const Color(0xFF087A3B), brightness: Brightness.light)
-          : const ColorScheme.dark(primary: green, surface: surface),
+          ? ColorScheme.fromSeed(seedColor: surface, brightness: Brightness.light)
+          : const ColorScheme.dark(primary: green, secondary: green, surface: surface),
         useMaterial3: true,
+        primaryColor: surface,
+        iconTheme: const IconThemeData(color: green),
+        filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(backgroundColor: surface, foregroundColor: Colors.white)),
         fontFamily: 'Roboto',
       ),
       home: const AlmazSplash(),
