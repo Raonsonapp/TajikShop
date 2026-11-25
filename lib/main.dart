@@ -24,7 +24,6 @@ part 'src/widgets/empty_state.dart';
 part 'src/widgets/api_status_card.dart';
 part 'src/state/cart_store.dart';
 part 'src/screens/cart_screen.dart';
-part 'src/widgets/live_products_section.dart';
 part 'src/screens/auth_screen.dart';
 
 const bg=Color(0xFF050807), surface=Color(0xFF0B2B26), green=Color(0xFF39FF72), lime=Color(0xFFB8FFCB), muted=Color(0xFFA1A1AA), gold=Color(0xFF39FF72);
