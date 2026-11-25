@@ -36,6 +36,7 @@ class GameLogo extends StatelessWidget {
     width: size, height: size,
     child: _AlmazBrandImage(game: game, size: size),
   );
+}
 
 class GameGrid extends StatelessWidget {
   const GameGrid({super.key});
@@ -54,7 +55,7 @@ class GameGrid extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF101A16),
+              color: const Color(0xFF10231E),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: Colors.white.withOpacity(.10)),
               boxShadow: [BoxShadow(color: green.withOpacity(.06), blurRadius: 18, offset: const Offset(0, 6))],
