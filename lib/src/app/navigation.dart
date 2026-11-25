@@ -16,7 +16,7 @@ class GlassBottomNavigation extends StatelessWidget {
   const GlassBottomNavigation({super.key,required this.index,required this.onChanged});
   @override Widget build(BuildContext context) {
     final labels=['Дӯкон','Баланс','Сабад','Фармоишҳо','Профил'].map(tr).toList();
-    const icons=[HeroiconsOutline.shoppingBag,HeroiconsOutline.creditCard,HeroiconsOutline.shoppingCart,HeroiconsOutline.documentText,HeroiconsOutline.user];
+    const icons=[HeroiconsOutline.shoppingBag,HeroiconsOutline.creditCard,HeroiconsOutline.shoppingBag,HeroiconsOutline.documentText,HeroiconsOutline.user];
     return Padding(padding:const EdgeInsets.fromLTRB(12,5,12,10),child:ClipRRect(
       borderRadius:BorderRadius.circular(26),
       child:BackdropFilter(filter:ImageFilter.blur(sigmaX:28,sigmaY:28),child:Container(
