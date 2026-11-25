@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:heroicons_flutter/heroicons_flutter.dart';
 import 'services/almaz_api.dart';
 
 part 'src/app/app_root.dart';
@@ -25,11 +26,12 @@ part 'src/widgets/api_status_card.dart';
 part 'src/state/cart_store.dart';
 part 'src/screens/cart_screen.dart';
 part 'src/screens/auth_screen.dart';
+part 'src/screens/notifications_screen.dart';
 
-const bg=Color(0xFF050807), surface=Color(0xFF0B2B26), green=Color(0xFF39FF72), lime=Color(0xFFB8FFCB), muted=Color(0xFFA1A1AA), gold=Color(0xFF39FF72);
+const bg=Color(0xFF050907), surface=Color(0xFF0B2B26), green=Color(0xFF4D9B7C), lime=Color(0xFFB8D9C9), muted=Color(0xFFA1AAA5), gold=Color(0xFF4D9B7C);
 final ValueNotifier<bool> almazLightMode = ValueNotifier<bool>(false);
 final ValueNotifier<String> almazLanguage = ValueNotifier<String>('tg');
-Color get card => almazLightMode.value ? const Color(0xFFFFFFFF) : const Color(0xFF1B1E21);
+Color get card => almazLightMode.value ? const Color(0xFFF2F7F4) : const Color(0xFF10231E);
 String tr(String key) {
   const words = <String, Map<String, String>>{
     'Дӯкон': {'ru':'Магазин','uz':'Do‘kon'},
